@@ -103,6 +103,20 @@
   .share-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
   .share-msg{font-family:var(--mono);font-size:12.5px;color:var(--accent);min-height:1.4em;margin-top:8px}
   dialog.share .note{color:var(--muted);font-size:12px;margin:6px 0 0}
+  /* weekly leaderboard dialog (shares dialog.share chrome) */
+  dialog.board{width:min(640px,calc(100vw - 32px))}
+  .board-tabs{margin-bottom:8px}
+  .board-week{font-family:var(--mono);font-size:12px;color:var(--muted);min-height:1.3em;margin-bottom:10px}
+  .board-form{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-bottom:8px}
+  .board-form .score{font-family:var(--display);font-size:24px;color:var(--gold);line-height:1}
+  .board-form .hint{flex:1 1 160px;color:var(--muted);font-size:12px}
+  .board-form input{background:var(--bg);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:7px 10px;font-size:14px;width:11em;max-width:100%}
+  .board-list td.n{font-family:var(--mono);color:var(--muted);width:2.5em}
+  .board-list td.s{font-family:var(--display);color:var(--gold);font-size:17px;white-space:nowrap}
+  .board-list td.s small{font-family:var(--body);color:var(--muted);font-size:11.5px;margin-left:6px}
+  .board-list td.w{font-family:var(--mono);color:var(--muted);font-size:12px}
+  .board-list tr.me td{background:var(--accent-soft)} .board-list tr.me td:not(.s){color:var(--accent)}
+  .board-list .empty{color:var(--muted);text-align:center;padding:18px 0;font-size:13px}
 
   /* coach */
   .coach{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -226,6 +240,7 @@
         <button class="btn" id="dStart" hidden data-i18n="drill.start">시작</button>
         <button class="btn ghost" id="dReset" data-i18n="drill.reset">세션 초기화</button>
         <button class="btn ghost" id="dShare" hidden>세션 카드</button>
+        <button class="btn ghost" id="dBoard" hidden data-i18n="board.open">주간 순위</button>
       </div>
     </section>
 
@@ -286,6 +301,25 @@
     <p class="note" data-i18n="share.discordNote">디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.</p>
   </dialog>
 
+  <dialog class="share board" id="boardDlg" aria-labelledby="boardTitle">
+    <h2 id="boardTitle" data-i18n="board.title">주간 순위</h2>
+    <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button></div>
+    <div class="board-week" id="boardWeek"></div>
+    <form class="board-form" id="boardForm" hidden>
+      <b class="score" id="boardMyScore"></b>
+      <span class="hint" id="boardMyHint"></span>
+      <input id="boardNick" maxlength="12" autocomplete="off" spellcheck="false" data-i18n-aria="board.nickPh" aria-label="닉네임 (2~12자)">
+      <button class="btn" id="boardSubmit" type="submit" data-i18n="board.submit">등록</button>
+    </form>
+    <div class="share-msg" id="boardMsg"></div>
+    <div class="tbl board-list" id="boardList"></div>
+    <div class="share-actions">
+      <button class="btn ghost" id="boardRefresh" data-i18n="board.refresh">새로고침</button>
+      <button class="btn ghost" id="boardClose" data-i18n="share.close">닫기</button>
+    </div>
+    <p class="note" data-i18n="board.note">닉네임과 기록만 저장됩니다. 등록하지 않아도 순위를 볼 수 있습니다. 매주 월요일 0시(KST)에 초기화됩니다.</p>
+  </dialog>
+
   <section class="records" data-i18n-aria="records.aria" aria-label="기록">
     <div class="card chart" id="histCard">
       <h2 data-i18n="hist.title">초풍 버튼 타이밍 분포</h2>
@@ -329,7 +363,9 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const STORE = 'wave-ewgf-dojo-v1';
 const detectLang = () => { const l = (typeof navigator!=='undefined' && navigator.language || '').toLowerCase(); return l.startsWith('ko')?'ko':l.startsWith('ja')?'ja':'en'; };
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}};
+const NICK_BAD = /[\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e]/; // control, zero-width and bidi chars; must match worker/index.js validate()
+const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
+let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}, nick:''};
 const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function validKey(slot, code){
   const arrows = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
@@ -342,6 +378,7 @@ try{
     if(s.v>=4 && WINDOWS.includes(s.window)) store.window=s.window;
     if([1,-1].includes(s.side)) store.side=s.side;
     if([0,1].includes(s.fx)) store.fx=s.fx;
+    if(typeof s.nick==='string' && nickOk(s.nick)) store.nick=s.nick;
     const keys = {...store.keys};
     for(const k of Object.keys(keys)) if(validKey(k,s.keys?.[k])) keys[k]=s.keys[k];
     if(new Set(Object.values(keys)).size===Object.keys(keys).length) store.keys=keys;
@@ -447,6 +484,13 @@ ko:{
   'share.copy':'이미지 복사', 'share.download':'PNG 저장', 'share.tweet':'X(트위터)에 공유', 'share.close':'닫기',
   'share.discordNote':'디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.',
   'share.copied':'이미지를 클립보드에 복사했습니다.', 'share.copyFail':'이 브라우저는 이미지 복사를 지원하지 않습니다. PNG 저장을 이용하세요.',
+  'board.open':'주간 순위', 'board.title':'주간 순위', 'board.tabsAria':'순위표 선택', 'board.week':(a,b)=>a+' ~ '+b+' (KST) · 월요일 0시 초기화',
+  'board.submit':'등록', 'board.nickPh':'닉네임 (2~12자)', 'board.refresh':'새로고침', 'board.prompt':'이 결과를 등록할 수 있습니다',
+  'board.hRank':'순위', 'board.hNick':'닉네임', 'board.hScore':'기록', 'board.hWin':'판정',
+  'board.empty':'이번 주 기록이 아직 없습니다. 첫 번째로 등록해 보세요.', 'board.loading':'불러오는 중…', 'board.total':n=>'참가 '+n+'명',
+  'board.loadFail':'순위표를 불러올 수 없습니다. 잠시 후 다시 시도하세요.', 'board.submitFail':'등록에 실패했습니다. 잠시 후 다시 시도하세요.',
+  'board.nickBad':'닉네임은 2~12자로 입력하세요.', 'board.done':(r,n)=>'등록 완료 · 현재 '+r+'위 / '+n+'명',
+  'board.note':'닉네임과 기록만 저장됩니다. 등록하지 않아도 순위를 볼 수 있습니다. 매주 월요일 0시(KST)에 초기화됩니다.',
   'card.session':'이번 세션 통계', 'card.rate':'초풍 성공률', 'card.hits':'성공 / 시도', 'card.dps':'대시/초', 'card.bestDps':'최고 대시/초', 'card.dashes':'총 대시',
   'card.chain':'최고 연속 대시', 'card.tries':'초풍 시도', 'card.mean':'평균 버튼 오프셋', 'card.window':w=>'초풍 판정 폭 '+w,
   'card.hist':'버튼 타이밍 분포 (d/f 기준, 프레임)', 'card.wave':'웨이브 속도 (대시/초)', 'card.noData':'아직 기록이 없습니다',
@@ -546,6 +590,13 @@ en:{
   'share.copy':'Copy image', 'share.download':'Save PNG', 'share.tweet':'Share on X (Twitter)', 'share.close':'Close',
   'share.discordNote':'Discord: click "Copy image", then paste into the chat with Ctrl+V. If copying is unavailable, save the PNG and attach it.',
   'share.copied':'Image copied to the clipboard.', 'share.copyFail':'This browser cannot copy images. Use Save PNG instead.',
+  'board.open':'Weekly ranking', 'board.title':'Weekly ranking', 'board.tabsAria':'Choose a board', 'board.week':(a,b)=>a+' – '+b+' (KST) · resets Monday 00:00',
+  'board.submit':'Submit', 'board.nickPh':'Nickname (2–12 chars)', 'board.refresh':'Refresh', 'board.prompt':'You can submit this result',
+  'board.hRank':'#', 'board.hNick':'Nickname', 'board.hScore':'Result', 'board.hWin':'Window',
+  'board.empty':'No entries this week yet. Be the first.', 'board.loading':'Loading…', 'board.total':n=>n+' entries',
+  'board.loadFail':'Could not load the ranking. Try again later.', 'board.submitFail':'Submission failed. Try again later.',
+  'board.nickBad':'Nickname must be 2–12 characters.', 'board.done':(r,n)=>'Submitted · rank '+r+' of '+n,
+  'board.note':'Only your nickname and result are stored. You can view the ranking without submitting. Resets every Monday 00:00 KST.',
   'card.session':'This session', 'card.rate':'EWGF success rate', 'card.hits':'Hits / tries', 'card.dps':'dashes/s', 'card.bestDps':'Best dashes/s', 'card.dashes':'Total dashes',
   'card.chain':'Best dash chain', 'card.tries':'EWGF tries', 'card.mean':'Avg button offset', 'card.window':w=>'EWGF window '+w,
   'card.hist':'Button timing (frames from d/f)', 'card.wave':'Wave speed (dashes/s)', 'card.noData':'No data yet',
@@ -645,6 +696,13 @@ ja:{
   'share.copy':'画像をコピー', 'share.download':'PNG保存', 'share.tweet':'X(Twitter)で共有', 'share.close':'閉じる',
   'share.discordNote':'Discord: 「画像をコピー」後、チャット欄に Ctrl+V で貼り付けてください。コピーできない場合は PNG を保存して添付してください。',
   'share.copied':'画像をクリップボードにコピーしました。', 'share.copyFail':'このブラウザは画像コピーに対応していません。PNG保存をご利用ください。',
+  'board.open':'週間ランキング', 'board.title':'週間ランキング', 'board.tabsAria':'ランキングを選択', 'board.week':(a,b)=>a+' ～ '+b+' (KST) · 月曜0時にリセット',
+  'board.submit':'登録', 'board.nickPh':'ニックネーム (2～12文字)', 'board.refresh':'更新', 'board.prompt':'この結果を登録できます',
+  'board.hRank':'順位', 'board.hNick':'ニックネーム', 'board.hScore':'記録', 'board.hWin':'判定',
+  'board.empty':'今週の記録はまだありません。最初に登録してみましょう。', 'board.loading':'読み込み中…', 'board.total':n=>'参加 '+n+'人',
+  'board.loadFail':'ランキングを読み込めません。しばらくしてからもう一度お試しください。', 'board.submitFail':'登録に失敗しました。しばらくしてからもう一度お試しください。',
+  'board.nickBad':'ニックネームは2～12文字で入力してください。', 'board.done':(r,n)=>'登録完了 · 現在 '+r+'位 / '+n+'人',
+  'board.note':'保存されるのはニックネームと記録だけです。登録しなくてもランキングは見られます。毎週月曜0時(KST)にリセットされます。',
   'card.session':'今回のセッション', 'card.rate':'最風成功率', 'card.hits':'成功 / 試行', 'card.dps':'ダッシュ/秒', 'card.bestDps':'最高ダッシュ/秒', 'card.dashes':'総ダッシュ',
   'card.chain':'最高連続ダッシュ', 'card.tries':'最風試行', 'card.mean':'平均ボタンオフセット', 'card.window':w=>'最風判定幅 '+w,
   'card.hist':'ボタンタイミング分布 (3基準、フレーム)', 'card.wave':'ウェーブ速度 (ダッシュ/秒)', 'card.noData':'まだ記録がありません',
@@ -1077,7 +1135,9 @@ function renderMode(){
   $('dName').textContent=T('mode.'+mode+'.name'); $('dDesc').textContent=T('mode.'+mode+'.desc'); $('dStart').hidden=!M.start;
   $('hudHint').textContent = T('hint.'+mode);
   const sb = $('dShare'); sb.textContent = T(M.start?'share.card':'share.session'); sb.hidden = !!M.start && !drill.result;
+  renderBoardBtn();
 }
+function renderBoardBtn(){ $('dBoard').hidden = !BOARD_URL || drill.running || !!drill.cdTimer; }
 function clearShare(){ drill.result=null; $('dShare').hidden = !!MODES[mode].start; }
 function setMode(m){
   endDrill(true); clearCommand(); updateHud(); mode = m; drill.result=null;
@@ -1092,9 +1152,10 @@ function startDrill(){
   $('dStart').disabled=true;
   let c = 3; $('hudCenter').textContent=c;
   drill.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(drill.cdTimer); drill.cdTimer=null; $('hudCenter').textContent='GO!'; drill.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; },500); clearCommand(); updateHud(); drill.running=true; drill.tStart=performance.now(); } }, 1000);
+  renderBoardBtn();
 }
 function endDrill(cancel){
-  const wasRunning = drill.running; drill.running=false; clearInterval(drill.cdTimer); drill.cdTimer=null; clearTimeout(drill.messageTimer); drill.messageTimer=null; $('dStart').disabled=false; $('hudCenter').textContent='';
+  const wasRunning = drill.running; drill.running=false; clearInterval(drill.cdTimer); drill.cdTimer=null; clearTimeout(drill.messageTimer); drill.messageTimer=null; $('dStart').disabled=false; $('hudCenter').textContent=''; renderBoardBtn();
   if(cancel || !wasRunning) { $('dProg').textContent=''; return; }
   const since = a => a.t>=drill.tStart;
   let rec, text, at = session.attempts.filter(since);
@@ -1109,6 +1170,7 @@ function endDrill(cancel){
     const rate = Math.round(ok/drill.target*100);
     const offs = at.filter(a=>a.off!=null).map(a=>a.off); const mean = offs.length? offs.reduce((s,v)=>s+v,0)/offs.length:0;
     rec = {date:Date.now(), score:rate, hits:ok, target:drill.target, mean, label:rate+'%', sub:T('rec.ewgfSub',ok,drill.target,fmtF(mean))};
+    if(mode==='combo10'){ const c = session.cycles.filter(since); rec.dps = c.length? +(c.reduce((s,x)=>s+x.dps,0)/c.length).toFixed(2) : 0; } // combo10 tie-breaker (shown by recText)
     text = T('drill.end', ok, drill.target, rate);
     $('hudCenter').textContent = rate+'%';
   }
@@ -1130,12 +1192,15 @@ function drillTick(now){
 }
 function recText(m, r){ // prefer numeric fields so old records re-render in the current language
   if(m==='wave10' && Number.isFinite(r.dashes)) return {label:T('rec.dps',(+r.score).toFixed(1)), sub:T('rec.waveSub',r.dashes,r.chain||0)};
-  if(Number.isFinite(r.hits) && Number.isFinite(r.target) && Number.isFinite(r.mean)) return {label:r.score+'%', sub:T('rec.ewgfSub',r.hits,r.target,fmtF(r.mean))};
+  if(Number.isFinite(r.hits) && Number.isFinite(r.target) && Number.isFinite(r.mean)){
+    const dps = m==='combo10' && Number.isFinite(r.dps) ? ' · '+T('rec.dps',r.dps.toFixed(1)) : ''; // combo10 ranks by dash/s, so show it
+    return {label:r.score+'%', sub:T('rec.ewgfSub',r.hits,r.target,fmtF(r.mean))+dps};
+  }
   return {label:r.label, sub:r.sub};
 }
 function renderBests(){
   const el = $('bests');
-  el.innerHTML = ['wave10','ewgf20','combo10'].map(m => {
+  el.innerHTML = BOARDS.map(m => {
     const rs = store.records[m]; const best = rs.length? rs.reduce((a,b)=>b.score>a.score?b:a):null;
     const last = rs.length? rs[rs.length-1]:null;
     const bt = best && recText(m,best), lt = last && recText(m,last);
@@ -1347,6 +1412,88 @@ $('shareTweet').addEventListener('click', () => {
   try{ window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(shareModel.tweet), '_blank', 'noopener'); }catch(e){}
 });
 
+/* ---------- weekly leaderboard (Cloudflare Worker in worker/; see worker/README.md) ---------- */
+const BOARD_URL = 'https://mishima-dojo-board.mishima-dojo.workers.dev'; // Cloudflare Worker in worker/ (no trailing slash). Empty → leaderboard UI hidden.
+const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per start-mode drill; must match worker/index.js BOARDS and #boardTabs
+const board = { tab:'wave10', data:{}, msg:'', submitting:false, seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise)
+function boardEntry(r, m){ // pure: finished drill result → submission payload (null in free practice / no result). Unit-tested.
+  if(!r || !r.rec || !MODES[m] || !MODES[m].start) return null;
+  const rec = r.rec, e = {board:m, win:r.window, lang:store.lang};
+  if(m==='wave10'){ e.score = +rec.score; e.tie = rec.chain||0; e.detail = {dashes:rec.dashes, chain:rec.chain||0}; }
+  else if(m==='combo10'){ e.score = rec.score; e.tie = rec.dps||0; e.detail = {hits:rec.hits, target:rec.target, mean:rec.mean, dps:rec.dps||0}; }
+  else { e.score = rec.score; e.tie = -Math.abs(rec.mean) || 0; e.detail = {hits:rec.hits, target:rec.target, mean:rec.mean}; }
+  return e;
+}
+function boardRowText(m, row){ const x = recText(m, {score:row.score, ...(row.detail||{})}); return {label: x.label ?? String(row.score), sub: x.sub ?? ''}; }
+function boardWeekText(d){
+  const f = ms => { const x = new Date(ms + 9*3600e3); return (x.getUTCMonth()+1)+'/'+x.getUTCDate(); }; // KST calendar day, whatever the viewer's zone
+  return T('board.week', f(d.start), f(d.end - 86400000));
+}
+function setBoardMsg(m){ board.msg = m; $('boardMsg').textContent = msg(m); }
+async function boardFetch(path, init){
+  const headers = {...(init && init.body ? {'content-type':'application/json'} : {}), ...(init && init.headers || {})}; // GET stays preflight-free
+  const res = await fetch(BOARD_URL + path, {...init, headers});
+  const j = await res.json().catch(() => null);
+  if(!res.ok || !j) throw new Error((j && j.error) || ('http '+res.status));
+  return j;
+}
+function renderBoard(){
+  if(!BOARD_URL) return;
+  const t = board.tab, d = board.data[t];
+  document.querySelectorAll('#boardTabs button').forEach(b => b.setAttribute('aria-pressed', b.dataset.board===t?'true':'false'));
+  $('boardWeek').textContent = d ? boardWeekText(d) + (d.total ? ' · ' + T('board.total', d.total) : '') : '';
+  const e = boardEntry(drill.result, mode), canSubmit = !!(e && e.board===t && !drill.result.submitted);
+  $('boardForm').hidden = !canSubmit;
+  if(canSubmit){
+    const rt = boardRowText(t, e); $('boardMyScore').textContent = rt.label; $('boardMyHint').textContent = rt.sub + ' · ' + T('board.prompt');
+    const inp = $('boardNick'); inp.placeholder = T('board.nickPh'); if(!inp.value) inp.value = store.nick || '';
+    $('boardSubmit').disabled = board.submitting;
+  }
+  $('boardMsg').textContent = msg(board.msg);
+  const mine = drill.result && drill.result.submitted ? drill.result.submitted.id : null;
+  const rows = d ? d.rows : [];
+  $('boardList').innerHTML = !d ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('board.empty'))}</div>` :
+    `<table><thead><tr><th>${escapeHTML(T('board.hRank'))}</th><th>${escapeHTML(T('board.hNick'))}</th><th>${escapeHTML(T('board.hScore'))}</th><th>${escapeHTML(T('board.hWin'))}</th></tr></thead><tbody>` +
+    rows.map(r => { const x = boardRowText(t, r); return `<tr${r.id===mine?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="w">${(r.win/FRAME).toFixed(1)}f</td></tr>`; }).join('') +
+    '</tbody></table>';
+}
+async function boardLoad(){
+  const t = board.tab, seq = ++board.seq; setBoardMsg(['board.loading']); renderBoard();
+  let d = null;
+  try{ d = await boardFetch('/top?board='+t); } catch(e){}
+  if(seq!==board.seq) return; // superseded by a newer load or a submit: drop this response entirely
+  if(d){ board.data[t] = d; setBoardMsg(''); } else setBoardMsg(['board.loadFail']);
+  renderBoard();
+}
+async function boardSubmit(){
+  const r = drill.result, e = boardEntry(r, mode); if(!e || r.submitted || board.submitting) return;
+  const nick = $('boardNick').value.replace(/\s+/g,' ').trim();
+  if(!nickOk(nick)) return setBoardMsg(['board.nickBad']);
+  board.submitting = true; renderBoard();
+  try{
+    const res = await boardFetch('/submit', {method:'POST', body:JSON.stringify({...e, nick})});
+    r.submitted = {id:res.id, rank:res.rank, total:res.total}; store.nick = nick; save();
+    board.seq++; board.data[e.board] = res; board.tab = e.board; setBoardMsg(['board.done', res.rank, res.total]);
+  }catch(err){ setBoardMsg([err.message==='nick' ? 'board.nickBad' : 'board.submitFail']); } // other 400s are contract bugs; the user can only retry
+  board.submitting = false; renderBoard();
+}
+function openBoard(){
+  if(!BOARD_URL || drill.running || drill.cdTimer) return;
+  if(MODES[mode].start) board.tab = mode;
+  setBoardMsg(''); renderBoard();
+  const d = $('boardDlg'); if(!d.open) d.showModal();
+  boardLoad();
+}
+$('dBoard').addEventListener('click', openBoard);
+$('boardClose').addEventListener('click', () => $('boardDlg').close());
+$('boardRefresh').addEventListener('click', boardLoad);
+$('boardForm').addEventListener('submit', ev => { ev.preventDefault(); boardSubmit(); });
+$('boardTabs').addEventListener('click', ev => {
+  const b = ev.target && ev.target.closest ? ev.target.closest('button[data-board]') : null;
+  if(!b || b.dataset.board===board.tab || board.submitting) return;
+  board.tab = b.dataset.board; setBoardMsg(''); renderBoard(); boardLoad();
+});
+
 /* ---------- language ---------- */
 function applyStatic(){
   if(document.documentElement) document.documentElement.lang = store.lang;
@@ -1365,6 +1512,7 @@ function renderAll(){
   setCoach(ui.coach); setTrend(ui.trend); renderSeg(ui.seg);
   renderBests(); renderLog(); renderHist(); renderWave();
   $('shareMsg').textContent = msg(ui.shareMsg); if($('shareDlg').open) renderShare();
+  renderBoard();
   if(drill.running) drillTick(performance.now());
 }
 function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); renderAll(); }

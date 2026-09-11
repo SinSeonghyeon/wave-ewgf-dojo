@@ -35,6 +35,6 @@
 
 ## 개발
 
-- 테스트: `node --test tests/dojo.test.cjs` (Node 18 이상, 의존성 없음) · 브라우저 스모크: `node tests/smoke-chrome.js` (로컬 Chrome/Edge).
+- 테스트: `node --test tests/dojo.test.cjs tests/board.test.cjs` (Node 18 이상, 의존성 없음) · 브라우저 스모크: `node tests/smoke-chrome.js` (로컬 Chrome/Edge).
 - AI 에이전트 규칙은 [AGENTS.md](AGENTS.md), 진행 계획은 [.agents/docs/PLAN.md](.agents/docs/PLAN.md), 코드 구조는 [.agents/docs/CODE_MAP.md](.agents/docs/CODE_MAP.md).
 - `Claude_full.bat` / `Codex_full.bat` (macOS는 `.command`): 해당 CLI를 설치·확인하고 전체 권한 모드로 실행하는 런처.

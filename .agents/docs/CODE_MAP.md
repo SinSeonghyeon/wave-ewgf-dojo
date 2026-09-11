@@ -35,6 +35,12 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
 OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagline[2], keywords, note=app.tagline, chips[{cmd,tag}](og.chipWave/og.chipEwgf), modeName은 chips에서 파생, 예시 히스토그램은 WINDOW_DEFAULT 기준). drawCard는 model.tagline이 있으면 hero·지표 타일 대신 태그라인+칩을 그림
           앱 안에서는 호출하지 않음. tools/make-og.js가 index.html 사본의 IIFE 끝에 globalThis.__og 훅을 붙여 헤드리스 Chrome에서 그린 뒤 루트 og.png로 저장. 공유 카드는 기본 스타일 그대로(나무 스타일로 바꾸려면 buildCard 반환값에 style:'wood' 한 줄)
           문서 제목은 applyStatic()에서 T('app.docTitle')(검색용, 앱 이름과 분리). <head>의 정적 title/og:title은 크롤러용으로 HTML에 직접 둠
+주간 순위 BOARD_URL(Worker 주소, 빈 문자열이면 #dBoard 버튼과 renderBoard()가 모두 꺼짐) · board{tab,data[board]={week,start,end,total,rows},msg,submitting,seq}(seq: 가장 최근 boardLoad만 msg/data를 건드림. 탭 전환·등록 경합 방지) · BOARDS = MODES 중 start 모드 목록(순위 탭·renderBests 순서) · nickOk/NICK_BAD(워커 validate와 같은 규칙) · renderBoardBtn(드릴 카운트다운·진행 중에는 #dBoard 숨김)
+          boardEntry(drill.result, mode): 순수. 드릴 결과 → {board,win,lang,score,tie,detail}. wave10 score=대시/초·tie=최고 연속·detail{dashes,chain} / ewgf20 score=성공률·tie=−|mean|(−0 방지)·detail{hits,target,mean} / combo10 tie=detail.dps(드릴 중 cycles 평균 대시/초). 자유 연습·결과 없음 → null
+          boardRowText(board,row): recText 재사용으로 표 셀 문자열(현재 언어) · boardWeekText(d): KST 기준 M/D ~ M/D
+          openBoard → renderBoard + boardLoad(GET /top?board=) · boardSubmit(POST /submit, 닉네임 2~12자 공백 정리) 성공 시 drill.result.submitted={id,rank,total}로 재등록 차단, store.nick 저장, 응답의 rows로 표 갱신·내 행(tr.me) 강조
+          #boardDlg: 탭(#boardTabs, segc·aria-pressed) · 주간 범위(#boardWeek) · 등록 폼(#boardForm, 현재 탭 == 드릴 모드이고 미등록일 때만) · 메시지(#boardMsg, [key,...args]) · 표(#boardList) · 새로고침/닫기. renderAll()이 renderBoard()를 호출해 언어 전환 시 다시 그림
+          서버 코드는 worker/ (CODE_MAP 범위 밖, worker/README.md 참조). 앱은 fetch 두 종류만 쓰고 응답 shape는 {week,start,end,board,total,rows[{id,rank,nick,score,tie,detail,win,created_at}]} (+ submit 시 ok,id,rank)
 모드      MODES{free,wave10(10초),ewgf20(20회),combo10(10회)} · setMode → renderMode · startDrill(3초 카운트다운) · endDrill(기록 저장) · drillTick
 설정 UI   segSel(id,attr,cb): winSel/sideSel/fxSel/langSel · renderKeys(): 키 리맵(중복·방향키 충돌 거부, Esc 취소)
 스테이지  canvas · world/anim/ghosts/pops/sparks/dust/bolts · fx{crouchDash,ewgf,wgf,jab,stumble} · pop(text) 폰트는 displayFont()
@@ -66,11 +72,14 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 
 - `og.png`: Open Graph 이미지 1200×630. `node tools/make-og.js [--lang ko|en|ja] [--out 경로]`로 생성(헤드리스 Chrome/Edge + CDP, 의존성 없음, Google Fonts 서브셋을 카드 문자열로 미리 로드). drawCard·og.* 문자열·색 토큰이 바뀌면 다시 생성해 커밋. 페이지 오류(폰트 요청 실패 포함)가 있으면 종료 코드 1.
 - `tools/cdp.js`: 헤드리스 Chrome/Edge 실행·CDP 연결·evalJs·오류 수집을 한 곳에 둔 공용 모듈. `tests/smoke-chrome.js`와 `tools/make-og.js`가 씀(포트 9333/9334, 프로필 분리로 동시 실행 가능). 브라우저 자동화가 필요한 스크립트는 여기서 `launch()`를 가져다 쓴다.
+- `worker/`: 주간 순위 백엔드(Cloudflare Worker + D1). `index.js`(ESM, `weekKey`·`weekBounds`·`validate`·`handle` export + default fetch), `schema.sql`, `package.json`(`"type":"module"`만. Node 18~20에서 테스트가 ESM으로 불러오기 위해 필요), `wrangler.toml`(database_id 기입 완료), `README.md`(배포 순서·설계). 배포는 사용자가 `npx wrangler deploy`. 앱과 계약이 바뀌면 `index.html`의 boardEntry/renderBoard와 `tests/board.test.cjs`를 함께 고친다.
+- `tests/fake-d1.js`: Worker가 쓰는 SQL 4문장만 흉내 내는 메모리 D1. 단위 테스트와 스모크 테스트가 공유.
 - `bgm.mp3`, `웨이브사운드.mp3`, `초풍사운드.mp3`: 저장소에 있으나 아직 재생 코드 없음. 사용자가 자체 제작이라고 확인(2026-09-11). 소리 피드백 기능(PLAN 4단계)에서 사용.
 
 ## 검증
 
 - `node --test tests/dojo.test.cjs`: 배포 HTML의 실제 스크립트를 읽어 DOM·게임패드·시간을 모사. 판정, 드릴 경계, 패드 동시 입력·재연결, 저장 데이터 검증, 누적 통계, 판정 폭 경계, 언어 전환, 세 사전 키 집합 일치, 공유 카드 모델(histBins/buildCard/shareSource), OG 카드 모델(buildOgCard)과 `<head>`의 정적 SEO/OG 태그(og:image 절대 주소·1200×630·theme-color가 `--bg`와 일치·외부 스크립트 없음)를 검증한다. 테스트 하네스의 `querySelectorAll`은 빈 배열을 돌려주므로 정적 텍스트 치환은 여기서 검증되지 않는다. 하네스에는 `createElement`·캔버스 컨텍스트가 없으므로 그리기·클립보드 코드는 클릭 핸들러 안에서만 호출해야 한다.
-- `node tests/smoke-chrome.js`: 로컬 Chrome/Edge를 헤드리스로 띄워 CDP로 조작. 키보드로 6N23+2 입력, ko/en/ja 왕복 전환, 일본어로 웨이브 10초 드릴을 끝까지 돌린 뒤 공유 카드 열기·1200×630 PNG 생성·이미지 복사 시도(file://에서는 거부되어 안내 문구)·언어 전환·닫기. JS 오류가 있거나 카드 검사가 실패하면 종료 코드 1. 약 15초 걸린다.
+- `node --test tests/board.test.cjs`: Worker 핸들러를 가짜 D1로 직접 호출. 주차 키 경계(일요일 15:00 UTC), 닉네임 정규화·범위 검증, 동점 순위 공유·보드/주차 격리, 20위 캡, CORS 프리플라이트·400/404/413·500(스택 비노출). 두 파일을 함께 돌리려면 `node --test tests/dojo.test.cjs tests/board.test.cjs`.
+- `node tests/smoke-chrome.js`: 로컬 Chrome/Edge를 헤드리스로 띄워 CDP로 조작. 시작 시 `worker/index.js`를 로컬 http로 감싸고(가짜 D1) `BOARD_URL`만 그 주소로 바꾼 index.html 사본을 임시 폴더에 만들어 연다(원본은 건드리지 않음). 키보드로 6N23+2 입력, ko/en/ja 왕복 전환, 일본어로 웨이브 10초 드릴을 끝까지 돌린 뒤 공유 카드 열기·1200×630 PNG 생성·이미지 복사 시도(file://에서는 거부되어 안내 문구)·언어 전환·닫기, 이어서 주간 순위 열기→닉네임 등록→내 행 강조→다른 보드 빈 상태→ko 전환→닫기와 가짜 D1에 저장된 행을 검사한다. JS 오류가 있거나 검사가 실패하면 종료 코드 1. 약 20초 걸린다.
 - 실제 키보드·게임패드 지연, DirectInput 장치별 hat 매핑, 화면 폭별 시각 품질은 자동 검증에 없다.
 - 캔버스 입자·더미 물리는 프레임마다 고정량으로 갱신하므로 주사율에 따라 연출 속도가 달라진다. 판정은 시각 기반이라 영향 없음.

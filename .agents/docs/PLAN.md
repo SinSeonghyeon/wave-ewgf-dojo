@@ -24,6 +24,12 @@
 - [x] 1-5. SEO 기본 (2026-09-11). `<title>`·meta description(한/영 병기, 정적 하나)·robots·theme-color·canonical, Open Graph/Twitter Card, 정적 `og.png`(1200×630, `node tools/make-og.js`로 재생성). 검색용 문서 제목은 `app.docTitle` 키(ko/en/ja)로 앱 이름과 분리.
 - [ ] 1-6. 배포처 공략. 디시 철권 갤러리, 철권 디스코드, r/Tekken, 트위터 FGC. 치지직·유튜브 철권 스트리머 5명에게 DM ("방송에서 써보라").
 - [ ] 1-7. 간단한 방문 집계. **다음 작업.** 외부 스크립트 없이 가능한 방법(Cloudflare 무료 분석 등) 또는 Pages 이후 Plausible/GA 중 하나.
+- [x] 1-8. 주간 순위(리더보드) (2026-09-12). Worker 배포 주소 `https://mishima-dojo-board.mishima-dojo.workers.dev`(`index.html`의 `BOARD_URL`). Cloudflare 계정은 사용자 소유, D1 `mishima-dojo-board`(APAC), workers.dev 서브도메인 `mishima-dojo`. 스펙(2026-09-12 사용자 결정):
+  - 보드 3개 = 드릴 3개. 정상 종료(endDrill)한 결과만 등록 가능. 웨이브 10초: 대시/초(동점 최고 연속) · 초풍 20회: 성공률(동점 |평균 오프셋| 작은 쪽) · 웨이브 초풍 10회: 성공률(동점 드릴 중 평균 대시/초).
+  - 주간 초기화: 월요일 0시 KST. 지난 기록은 지우지 않고 조회에서만 빠짐. 상위 20위 + 내 순위/참가자 수.
+  - 식별: 계정 없음. 결과 화면 "주간 순위" 버튼 → 닉네임(2~12자) 입력 → 등록. 등록 안 해도 조회 가능. 닉네임은 localStorage(`store.nick`)에 기억. 같은 결과는 한 번만 등록.
+  - 치팅 방지 없음(사용자 결정). 서버는 형식·범위만 검사. 판정 폭은 보드를 나누지 않고 열에 표기.
+  - 백엔드: Cloudflare Worker + D1(`worker/`). 앱은 `fetch`만 쓰므로 단일 파일·외부 라이브러리 없음 유지. `BOARD_URL`이 비어 있으면 UI 전체가 숨겨진다.
 
 ## 2단계. 저마찰 수익 (유입 생기면 바로)
 
@@ -55,3 +61,5 @@
 - 2026-09-11: 1-5 완료. `<head>`에 검색용 title·description·robots·theme-color·canonical·OG/Twitter 메타 22줄 추가. `og.png`는 `buildOgCard()`(태그라인·예시 히스토그램, 개인 수치 없음) + `drawCard` 소개용 분기로 그려 `tools/make-og.js`(헤드리스 Chrome+CDP)가 저장. 문자열 7키(`app.docTitle`, `og.*`)를 ko/en/ja에 추가, 단위 테스트 2개 추가(총 27개). 미반영 메모: `<!DOCTYPE>`·`<meta charset>`·viewport 메타가 없어 모바일은 데스크톱 폭으로 렌더된다. 레이아웃이 바뀔 수 있어 사용자 결정 후 별도 작업.
 - 2026-09-12: 1-5 리뷰·정리. `<head>` twitter:title/description/image 중복 4줄 제거(X는 og:*로 폴백, twitter:card만 유지). 헤드리스 CDP 코드를 `tools/cdp.js`로 추출해 smoke-chrome.js·make-og.js가 공유. `og.pill` 키 삭제, 칩 문자열(og.chipWave/og.chipEwgf)을 buildOgCard 모델로 옮겨 drawCard에서 하드코딩 제거. `WINDOWS`/`WINDOW_DEFAULT` 상수 도입. 테스트가 head의 canonical/og:url·`<title>`을 스크립트의 SITE_URL·app.docTitle과 대조. 사용자 요청으로 og.png를 도장 나무 간판 스타일(널빤지 배경·현판·종이 차트 패널, `model.style==='wood'`)로 재생성. 공유 카드는 기존 다크 스타일 유지(사용자 결정 대기).
 - 2026-09-11: 에이전트 공용 구조로 재편. 규칙은 루트 AGENTS.md(CLAUDE.md는 @AGENTS.md 포인터), 문서는 .agents/docs/(이 파일, CODE_MAP.md, reviews/), 임시 파일은 .sandbox/(gitignore). README는 사람용으로 축소. Claude/Codex 런처 스크립트 추가.
+- 2026-09-12: 1-8 완료. 사용자 지시로 에이전트가 `wrangler login`(브라우저 승인은 사용자)·D1 생성·스키마 적용·workers.dev 서브도메인 `mishima-dojo` 등록(API)·배포까지 실행. 배포는 Cloudflare 이메일 인증 후에야 통과했다. 백엔드 `worker/`(index.js·schema.sql·wrangler.toml·README.md): Cloudflare Worker + D1, `/top`·`/submit`, 주차 키 = KST 월요일 날짜, 순위 = 더 나은 (score,tie) 수 + 1. 앱: `#dBoard` "주간 순위" 버튼 → `#boardDlg`(보드 탭 3개·주간 범위·등록 폼·상위 20 표·내 행 강조). `boardEntry`(순수, 드릴 결과 → 제출 페이로드)·`boardRowText`(recText 재사용). 문자열 20키 ko/en/ja. `store.nick` 추가. 테스트: `tests/board.test.cjs` 5개(가짜 D1 `tests/fake-d1.js`로 핸들러 직접 호출: 주차 경계, 검증, 동점 순위, 20위 캡, CORS/오류), dojo.test.cjs 1개 추가(총 33). 스모크 테스트는 워커 핸들러를 로컬 http로 감싸 실제 Chrome에서 열기→등록→내 행→다른 보드 빈 상태→ko 전환→닫기까지 확인. `BOARD_URL`은 배포 주소로 채워져 있다(비어 있으면 숨김). 방문 집계(1-7)는 미착수.
+- 2026-09-12: 1-8 코드 리뷰 반영(10건). 앱: 순위 요청 경합 수정(`board.seq`로 최신 로드만 msg/data 반영, 등록 중엔 탭 전환·중복 등록 차단 → 이전엔 느린 회선에서 탭 전환 시 같은 결과가 두 번 등록될 수 있었다), 서버 400 `nick`을 "닉네임 2~12자" 문구로 표시하고 워커와 같은 문자 규칙(`NICK_BAD`·`nickOk`)을 클라이언트·저장소 로더에도 적용, 드릴 카운트다운·진행 중 `#dBoard` 숨김(`renderBoardBtn`), combo10 기록에 `rec.dps` 저장해 순위 표·최고 기록에 동점 기준(대시/초)을 표시, GET에는 content-type을 붙이지 않아 preflight 제거, `BOARDS`(MODES의 start 모드)로 renderBests 순서 파생. 워커: `Object.hasOwn`으로 `constructor` 같은 상속 키 거부, `BOARDS`·`WINDOWS` export, `worker/package.json`(`"type":"module"`, Node 18~20에서 ESM 로드용). 테스트: 앱↔워커 계약 교차 검증 1개 추가(총 34), 상속 키 400 검사, 픽스처 닉네임을 중립 이름으로 교체(설계 결정 3). 스모크 테스트 실패 시에도 임시 폴더 삭제. 문서: 설계 결정 4에 Worker 명시, "채움/Paste" 등 배포 전 문구 정리.

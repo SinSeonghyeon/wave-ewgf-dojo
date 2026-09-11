@@ -17,3 +17,6 @@ Desktop.ini
 node_modules/
 npm-debug.log*
 *.log
+
+# Wrangler local state (worker/ deploy cache)
+.wrangler/

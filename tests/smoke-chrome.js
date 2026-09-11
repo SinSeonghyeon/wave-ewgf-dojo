@@ -1,13 +1,42 @@
 // Browser smoke test: node tests/smoke-chrome.js
 // Launches headless Chrome over CDP (tools/cdp.js, no npm deps), loads index.html, feeds a 6N23+2 via keyboard,
-// switches ko/en/ja, runs a wave10 drill in ja, opens the share card, and fails if any JS error was logged.
+// switches ko/en/ja, runs a wave10 drill in ja, opens the share card, submits the result to the weekly leaderboard
+// (the real worker/index.js handler served over local http with tests/fake-d1.js), and fails if any JS error was logged.
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const http = require('http');
+const {pathToFileURL} = require('url');
 const {launch, fileUrl, sleep} = require('../tools/cdp');
+const fakeD1 = require('./fake-d1');
 
+// Wrap the Cloudflare Worker handler in a plain http server so the browser talks to the real code path (CORS included).
+async function serveWorker(db){
+  const worker = await import(pathToFileURL(path.join(__dirname,'../worker/index.js')).href);
+  const srv = http.createServer(async (req, res) => {
+    try{
+      const chunks = []; for await (const c of req) chunks.push(c);
+      const body = ['GET','HEAD','OPTIONS'].includes(req.method) ? undefined : Buffer.concat(chunks);
+      const out = await worker.default.fetch(new Request('http://127.0.0.1'+req.url, {method:req.method, headers:req.headers, body}), {DB:db});
+      res.writeHead(out.status, Object.fromEntries(out.headers)); res.end(Buffer.from(await out.arrayBuffer()));
+    }catch(e){ res.writeHead(500); res.end(String(e)); }
+  });
+  await new Promise(r => srv.listen(0, '127.0.0.1', r));
+  return {srv, url:'http://127.0.0.1:'+srv.address().port};
+}
+
+let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:true}); }catch(e){} };
 (async () => {
+  const db = fakeD1();
+  const {srv, url:boardUrl} = await serveWorker(db);
+  // Point a scratch copy of the app at the local worker (BOARD_URL is a const in the shipped file; the copy is never committed).
+  const src = fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+  if(!/const BOARD_URL = '[^']*';/.test(src)) throw new Error('BOARD_URL constant not found in index.html');
+  dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html');
+  fs.writeFileSync(page, src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`));
   const b = await launch({port:9333, profile:'dojo-smoke-profile'});
   const {send, evalJs, errors} = b;
-  await b.navigate(fileUrl(path.join(__dirname,'../index.html')));
+  await b.navigate(fileUrl(page));
   const out = {};
   const snap = async () => evalJs(`(() => {
     const q=s=>document.querySelector(s); const css=getComputedStyle(document.documentElement);
@@ -48,9 +77,30 @@ const {launch, fileUrl, sleep} = require('../tools/cdp');
   await evalJs(`document.querySelector('#shareClose').click()`); await sleep(100);
   out.card.closed = !(await evalJs(`document.querySelector('#shareDlg').open`));
   if(!out.card.open || out.card.w!==1200 || out.card.h!==630 || !out.card.png.startsWith('data:image/png;base64') || out.drillEnd.shareHidden) errors.push('share card check failed: '+JSON.stringify(out.card));
+  // weekly leaderboard (UI is in en here): open on the finished wave10 result → submit with a nickname → my row highlighted → other board empty → ko re-render → close
+  await evalJs(`document.querySelector('#dBoard').click()`); await sleep(800);
+  out.board = await evalJs(`(() => { const q=s=>document.querySelector(s); return {open:q('#boardDlg').open, btnHidden:q('#dBoard').hidden, title:q('#boardTitle').textContent, week:q('#boardWeek').textContent,
+    formHidden:q('#boardForm').hidden, my:q('#boardMyScore').textContent, hint:q('#boardMyHint').textContent, empty:q('#boardList .empty')?.textContent, msg:q('#boardMsg').textContent,
+    tabs:[...document.querySelectorAll('#boardTabs button')].map(b=>b.textContent+':'+b.getAttribute('aria-pressed'))}; })()`);
+  await evalJs(`document.querySelector('#boardNick').value='스모크 테스트'; document.querySelector('#boardSubmit').click()`); await sleep(1000);
+  out.board.afterSubmit = await evalJs(`({msg:document.querySelector('#boardMsg').textContent, formHidden:document.querySelector('#boardForm').hidden, week:document.querySelector('#boardWeek').textContent,
+    rows:[...document.querySelectorAll('#boardList tbody tr')].map(r=>[...r.children].map(c=>c.textContent)), me:!!document.querySelector('#boardList tr.me')})`);
+  await evalJs(`document.querySelector('#boardTabs button[data-board="ewgf20"]').click()`); await sleep(800);
+  out.board.ewgfTab = await evalJs(`({empty:document.querySelector('#boardList .empty')?.textContent, formHidden:document.querySelector('#boardForm').hidden, pressed:document.querySelector('#boardTabs button[data-board="ewgf20"]').getAttribute('aria-pressed')})`);
+  await evalJs(`document.querySelector('#langSel button[data-lang="ko"]').click()`); await sleep(300);
+  out.board.ko = await evalJs(`({title:document.querySelector('#boardTitle').textContent, empty:document.querySelector('#boardList .empty')?.textContent, week:document.querySelector('#boardWeek').textContent})`);
+  await evalJs(`document.querySelector('#boardClose').click()`); await sleep(100);
+  out.board.closed = !(await evalJs(`document.querySelector('#boardDlg').open`));
+  out.board.stored = db.rows.map(r => ({board:r.board, nick:r.nick, score:r.score, tie:r.tie, win:r.win, week:r.week}));
+  const bd = out.board, sub = bd.afterSubmit;
+  if(!bd.open || bd.btnHidden || bd.formHidden || !bd.empty || !bd.my || !/^\d+\/\d+ – \d+\/\d+ \(KST\)/.test(bd.week)) errors.push('leaderboard open check failed: '+JSON.stringify(bd));
+  if(!sub || !sub.formHidden || !sub.me || sub.rows.length!==1 || sub.rows[0][1]!=='스모크 테스트' || sub.rows[0][0]!=='1' || !/rank 1 of 1/.test(sub.msg) || !/1 entries/.test(sub.week)) errors.push('leaderboard submit check failed: '+JSON.stringify(sub));
+  if(!bd.ewgfTab.empty || bd.ewgfTab.formHidden!==true || bd.ewgfTab.pressed!=='true' || bd.ko.title!=='주간 순위' || !/아직 없습니다/.test(bd.ko.empty||'') || !bd.closed) errors.push('leaderboard tab/lang check failed: '+JSON.stringify(bd));
+  if(bd.stored.length!==1 || bd.stored[0].board!=='wave10' || bd.stored[0].nick!=='스모크 테스트' || bd.stored[0].win!==12) errors.push('leaderboard storage check failed: '+JSON.stringify(bd.stored));
+  for(const s of JSON.stringify(bd).match(/\b(board|mode|share|rec)\.[a-zA-Z]+/g)||[]) errors.push('raw i18n key leaked into leaderboard UI: '+s);
   out.errors = errors;
   console.log(JSON.stringify(out,null,1));
-  b.close();
+  b.close(); srv.close(); rmTmp();
   if(errors.length){ console.error('JS ERRORS:', errors); process.exit(1); }
   process.exit(0);
-})().catch(e => { console.error('FAIL', e); process.exit(1); });
+})().catch(e => { console.error('FAIL', e); rmTmp(); process.exit(1); });

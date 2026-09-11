@@ -20,7 +20,7 @@ function boot(saved){
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id)});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,drill,store,setMode,startDrill,endDrill,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,drill,store,setMode,startDrill,endDrill,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -231,4 +231,40 @@ test('static head carries the SEO and Open Graph tags that crawlers read without
   const bg=html.match(/:root\{[^}]*--bg:(#[0-9A-Fa-f]{6})/)[1];assert.ok(head.includes(`<meta name="theme-color" content="${bg}">`));
   for(const banned of ['<script','http://']) assert.equal(head.includes(banned),false,'head must not contain '+banned);
   assert.match(html,/document\.title = T\('app\.docTitle'\)/);
+});
+
+test('leaderboard entry is built only from a finished drill, one metric pair per board',()=>{
+  const a=boot({v:4,lang:'ko',window:8});
+  assert.match(a.BOARD_URL,/^$|^https:\/\/[^/]+$/,'BOARD_URL is empty or an https origin without trailing slash');
+  assert.equal(a.boardEntry(null,'wave10'),null);assert.equal(a.boardEntry(a.drill.result,'free'),null);
+  const plain=x=>JSON.parse(JSON.stringify(x)); // vm-realm objects have a foreign prototype; compare by value
+  const run=(mode,play)=>{a.setMode(mode);a.startDrill();const cd=a.timers.get(a.drill.cdTimer);a.time(4000);cd();cd();cd();play();a.endDrill();return a.boardEntry(a.drill.result,mode);};
+  const wave=run('wave10',()=>{dash(a,4100);a.time(14100);});
+  assert.deepEqual(plain(wave),{board:'wave10',win:8,lang:'ko',score:0.1,tie:1,detail:{dashes:1,chain:1}});
+  assert.deepEqual(plain(a.boardRowText('wave10',wave)),{label:'0.1 대시/초',sub:'1회 · 최고 연속 1'});
+  const ewgf=run('ewgf20',()=>{dash(a,4100);a.onButton(2,4160);});
+  assert.deepEqual(plain(ewgf),{board:'ewgf20',win:8,lang:'ko',score:5,tie:0,detail:{hits:1,target:20,mean:0}});
+  assert.equal(Object.is(ewgf.tie,-0),false,'tie must not be -0');
+  const combo=run('combo10',()=>{dash(a,4100);for(const t of [4200,4400]){a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}a.onButton(2,4500);});
+  assert.equal(combo.board,'combo10');assert.equal(combo.score,10);assert.deepEqual(plain(Object.keys(combo.detail)),['hits','target','mean','dps']);
+  assert.equal(combo.detail.hits,1);assert.ok(combo.detail.dps>4&&combo.detail.dps<8,'mean dash/s of the drill cycles');assert.equal(combo.tie,combo.detail.dps);
+  assert.equal(a.boardRowText('combo10',combo).sub,'1/10 · 평균 +0.0f · '+combo.detail.dps.toFixed(1)+' 대시/초','combo10 shows its tie-breaker');
+  assert.equal(a.boardRowText('combo10',{score:50,detail:{hits:5,target:10,mean:1}}).sub,'5/10 · 평균 +0.1f','rows without dps (old records) render as before');
+  a.setLang('en');assert.equal(a.boardRowText('ewgf20',ewgf).sub,'1/20 · avg +0.0f');
+  a.setMode('free');assert.equal(a.boardEntry(a.drill.result,'free'),null);
+  for(const [n,ok] of [['ab',true],['한글닉네임열두글자까지만',true],['a',false],['1234567890123',false],['ab\u200bcd',false],['a\u0000b',false]]) assert.equal(a.nickOk(n),ok,JSON.stringify(n));
+});
+
+test('app and worker agree on the leaderboard contract (boards, windows, detail fields)',async()=>{
+  const w=await import(require('node:url').pathToFileURL(require('node:path').join(__dirname,'../worker/index.js')).href);
+  const a=boot({v:4,lang:'ko',window:15});
+  assert.deepEqual([...a.WINDOWS],w.WINDOWS);assert.deepEqual([...a.BOARDS],Object.keys(w.BOARDS));
+  assert.deepEqual(html.match(/<button data-board="(\w+)"/g).map(x=>x.match(/"(\w+)"/)[1]),Object.keys(w.BOARDS),'#boardTabs buttons');
+  const run=(mode,play)=>{a.setMode(mode);a.startDrill();const cd=a.timers.get(a.drill.cdTimer);a.time(4000);cd();cd();cd();play();a.endDrill();return JSON.parse(JSON.stringify(a.boardEntry(a.drill.result,mode)));};
+  const entries={wave10:run('wave10',()=>{dash(a,4100);a.time(14100);}),ewgf20:run('ewgf20',()=>{dash(a,4100);a.onButton(2,4160);}),
+    combo10:run('combo10',()=>{dash(a,4100);for(const t of [4200,4400]){a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}a.onButton(2,4500);})};
+  for(const [m,e] of Object.entries(entries)){
+    const v=w.validate({...e,nick:'smoke'});assert.equal(v.error,undefined,m+': '+JSON.stringify(e));
+    assert.deepEqual(Object.keys(v.value.detail),Object.keys(e.detail),m+' detail fields');assert.equal(v.value.win,15);
+  }
 });
