@@ -7,7 +7,7 @@
 - 저장소: https://github.com/SinSeonghyeon/wave-ewgf-dojo
 - 비공개 아티팩트(구): https://claude.ai/code/artifact/a7218420-6343-45ea-938f-19493e07059a
 - 로컬 실행: `index.html`을 브라우저로 열면 끝. 키보드와 게임패드 모두 인식.
-- 개발 세션: Claude Code에서 진행. 다음 세션에서 이어갈 때 이 문서와 아래 "설계 결정"을 먼저 읽을 것.
+- 개발 세션: Claude Code에서 진행. 다음 세션에서 이어갈 때 이 문서, 아래 "설계 결정", 그리고 [PLAN.md](PLAN.md)의 체크박스와 진행 로그를 먼저 읽을 것.
 
 ## 기능 요약
 
@@ -79,8 +79,19 @@ i18n  I18N{ko,en,ja} · T(key,...args) · msg(v) · setLang → renderAll() (정
 
 ## 개발 검증
 
-- Node.js 18 이상에서 `node --test tests/dojo.test.cjs` 실행. 외부 패키지는 필요 없다. 16개 테스트(판정·드릴·패드·저장·언어 전환).
-- 브라우저 스모크 테스트는 헤드리스 Chrome + CDP로 수동 실행(세션 스크래치 스크립트). 언어 3종 전환, JS 오류 0건, 일본어 폰트 적용을 확인하는 용도.
+- Node.js 18 이상에서 `node --test tests/dojo.test.cjs` 실행. 외부 패키지는 필요 없다. 19개 테스트(판정 경계·기본값 및 저장 설정 호환성·드릴·패드·저장·언어 전환).
+- 브라우저 스모크 테스트: `node tests/smoke-chrome.js`. 로컬 Chrome/Edge를 헤드리스로 띄워 CDP로 조작한다(npm 의존성 없음). 키보드로 6N23+2를 넣고, ko/en/ja를 왕복 전환하고, 일본어 상태로 웨이브 10초 드릴을 돌린 뒤 JS 오류가 하나라도 있으면 실패한다. 결과 JSON을 눈으로 훑어 문구가 맞는지 확인하는 용도.
+- 코드 변경 후 최소 검증 순서: `node --test tests/dojo.test.cjs` → `node tests/smoke-chrome.js` → 커밋·푸시 → Pages 반영 확인(약 1분, `curl -s https://sinseonghyeon.github.io/wave-ewgf-dojo/ | grep -o "<title>[^<]*</title>"`).
+
+## 작업 규칙 (세션 인계용)
+
+- **커밋은 파일을 명시해서 추가한다. `git add -A` 금지.** 이 폴더에는 다른 세션이나 사용자가 파일을 수시로 떨어뜨린다(2026-09-11에 외부 mp3가 공개 저장소에 쓸려 들어가 히스토리를 재작성했다).
+- **같은 폴더에서 여러 Claude 세션이 동시에 돌 수 있다.** 시작할 때 `git status`와 `git log origin/main..main`, `git log main..origin/main`으로 갈라짐을 확인한다. 로컬 main이 원격과 다르면 작업 트리 변경이 없는지 보고 `git fetch && git reset --hard origin/main`으로 맞춘다. 커밋 전에 `git status --short`에 낯선 파일이 있으면 커밋에 넣지 말고 사용자에게 묻는다.
+- **Claude Code 권한:** 공개 저장소 생성, rebase/reset, force push 같은 작업은 자동 모드 분류기가 막을 수 있다. 막히면 사용자가 프롬프트에 `! <명령>` 형태로 직접 실행하거나, 사용자가 명시적으로 지시하면 재시도한다. 이번 세션에서는 사용자가 force push를 직접 승인했다.
+- **사운드 리소스** `bgm.mp3`, `웨이브사운드.mp3`, `초풍사운드.mp3`는 저장소에 있지만 아직 `index.html`에서 쓰지 않는다. 사용자가 자체 제작이라고 확인했다. 소리 피드백 기능(PLAN 4단계 "연습 품질")을 만들 때 사용.
+- **저장소 이름은 `wave-ewgf-dojo`로 유지 중.** 앱 이름과 다르지만 Pages 주소가 바뀌므로 사용자 결정 없이는 바꾸지 않는다.
+- 문서 갱신 규칙: 기능을 끝내면 PLAN.md 체크박스 `[x]`와 날짜, 진행 로그 한 줄, 설계 결정이 바뀌면 이 README의 "설계 결정" 번호를 추가한다.
+
 - 테스트는 배포 HTML의 실제 스크립트를 읽고, DOM·게임패드·시간을 모사해 판정과 드릴 전환을 검증한다. 실제 하드웨어 입력 지연이나 화면의 시각적 품질은 별도 확인이 필요하다.
 - 판정 기한은 입력 이벤트에서도 검사한다. 공격 판정 후 커맨드는 소비되며 다음 시도에는 새 커맨드가 필요하다.
 - 모드 전환·세션 초기화·포커스 이탈은 진행 중 드릴과 카운트다운을 취소한다. 시작 전 커맨드는 드릴에 이어지지 않는다.
