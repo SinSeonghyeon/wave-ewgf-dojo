@@ -25,6 +25,31 @@ function boot(saved){
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
 function dash(a,t=1000){a.onDir('f',t);a.onDir('n',t+20);a.onDir('d',t+40);a.onDir('df',t+60);}
+test('default window and legacy or invalid saved windows use Normal 12ms',()=>{
+  for(const saved of [undefined,{v:3,window:8},{v:4},{v:4,window:100},{v:4,window:'12'}]){
+    assert.equal(boot(saved).store.window,12);
+  }
+});
+
+test('valid saved window choices survive the default change',()=>{
+  for(const window of [8,12,15]) assert.equal(boot({v:4,window}).store.window,window);
+});
+
+test('EWGF accepts both window boundaries and rejects inputs just outside',()=>{
+  for(const saved of [undefined,...[8,12,15].map(window=>({v:4,window}))]){
+    const window=saved?.window??12;
+    for(const off of [-window-1,-window,window,window+1]){
+      const a=boot(saved);
+      a.onDir('f',1000);a.onDir('n',1020);a.onDir('d',1040);
+      if(off<0){a.onButton(2,1060+off);a.onDir('df',1060);}
+      else {a.onDir('df',1060);a.onButton(2,1060+off);}
+      assert.equal(a.session.attempts.length,1);
+      assert.equal(a.session.attempts[0].off,off);
+      assert.equal(a.session.attempts[0].kind,Math.abs(off)<=window?'ewgf':off<0?'early':'wgf');
+    }
+  }
+});
+
 test('normal EWGF consumes its command',()=>{
   const a=boot();dash(a);a.onButton(2,1060);a.onButton(2,1064);
   assert.deepEqual(Array.from(a.session.attempts,x=>x.kind),['ewgf','no_cd']);
