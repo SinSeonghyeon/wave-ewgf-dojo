@@ -3,7 +3,9 @@
 철권 미시마류 커맨드(웨이브 대시, 초풍) 입력을 브라우저에서 프레임 단위로 판정하고, 코치 피드백과 기록을 남기는 연습 도구.
 비공식 팬 제작. 파일 하나(`index.html`)로 동작하며 빌드나 의존 파일이 없다.
 
-- 배포(비공개 아티팩트): https://claude.ai/code/artifact/a7218420-6343-45ea-938f-19493e07059a
+- 공개 배포: https://sinseonghyeon.github.io/wave-ewgf-dojo/ (GitHub Pages, main 브랜치 루트)
+- 저장소: https://github.com/SinSeonghyeon/wave-ewgf-dojo
+- 비공개 아티팩트(구): https://claude.ai/code/artifact/a7218420-6343-45ea-938f-19493e07059a
 - 로컬 실행: `index.html`을 브라우저로 열면 끝. 키보드와 게임패드 모두 인식.
 - 개발 세션: Claude Code에서 진행. 다음 세션에서 이어갈 때 이 문서와 아래 "설계 결정"을 먼저 읽을 것.
 
@@ -85,7 +87,7 @@
 
 ## 추후 계획
 
-1. **GitHub 저장소 + GitHub Pages 배포.** 로컬 Git 저장소는 있다. 공개 배포 주소가 생겨야 아래 항목이 가능.
+1. ~~GitHub 저장소 + GitHub Pages 배포.~~ 완료(2026-09-11). 진행 계획은 [PLAN.md](PLAN.md).
 2. **수익화 (우선순위 순).**  
    쿠팡 파트너스 제휴(레버·히트박스·패드 "연습 장비" 섹션) → 카카오 애드핏 배너(애드센스는 단일 도구 사이트 심사 통과가 어려움) → 후원 버튼(토스/Buy Me a Coffee) → 유료 기능(캐릭터별 커맨드 팩, 클라우드 기록, 리플레이).  
    IP 리스크 때문에 공식 캐릭터 자산은 계속 쓰지 않는다.

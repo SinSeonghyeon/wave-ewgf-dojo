@@ -11,7 +11,7 @@
 
 ## 1단계. 공개 주소와 유입
 
-- [ ] 1-1. GitHub 저장소 생성 + GitHub Pages 배포. `wave-ewgf-dojo.html`을 `index.html`로 서빙.
+- [x] 1-1. GitHub 저장소 생성 + GitHub Pages 배포 (2026-09-11). https://sinseonghyeon.github.io/wave-ewgf-dojo/ · 저장소 https://github.com/SinSeonghyeon/wave-ewgf-dojo
 - [ ] 1-2. 짧은 도메인 연결 (선택). Pages 기본 주소로 먼저 시작해도 됨.
 - [ ] 1-3. 영어 UI 토글. 문자열을 딕셔너리로 빼고 `ko`/`en` 전환. localStorage에 저장.
 - [ ] 1-4. 결과 공유 카드. 드릴 종료 시 성공률·평균 오프셋·히스토그램을 캔버스로 그려 PNG 저장/클립보드 복사. 트위터·디스코드 공유 유도.
@@ -36,3 +36,4 @@
 ## 진행 로그
 
 - 2026-09-11: 플랜 작성.
+- 2026-09-11: 1-1 완료. 공개 저장소 생성, Pages 활성화. 앱 파일은 index.html로 개명.
