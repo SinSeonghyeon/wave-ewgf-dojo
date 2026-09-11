@@ -13,7 +13,7 @@
 
 - [x] 1-1. GitHub 저장소 생성 + GitHub Pages 배포 (2026-09-11). https://sinseonghyeon.github.io/wave-ewgf-dojo/ · 저장소 https://github.com/SinSeonghyeon/wave-ewgf-dojo
 - [ ] 1-2. 짧은 도메인 연결 (선택). Pages 기본 주소로 먼저 시작해도 됨.
-- [ ] 1-3. 영어 UI 토글. 문자열을 딕셔너리로 빼고 `ko`/`en` 전환. localStorage에 저장.
+- [x] 1-3. 언어 토글 ko/en/ja (2026-09-11). 185개 문자열 사전, 브라우저 언어 자동 감지, localStorage 저장. 일본어까지 포함해 완료.
 - [ ] 1-4. 결과 공유 카드. 드릴 종료 시 성공률·평균 오프셋·히스토그램을 캔버스로 그려 PNG 저장/클립보드 복사. 트위터·디스코드 공유 유도.
 - [ ] 1-5. SEO 기본. `<title>`, meta description, OG 이미지, 한/영 키워드("철권 초풍 연습", "EWGF trainer", "wave dash practice").
 - [ ] 1-6. 배포처 공략. 디시 철권 갤러리, 철권 디스코드, r/Tekken, 트위터 FGC. 치지직·유튜브 철권 스트리머 5명에게 DM ("방송에서 써보라").
@@ -37,3 +37,4 @@
 
 - 2026-09-11: 플랜 작성.
 - 2026-09-11: 1-1 완료. 공개 저장소 생성, Pages 활성화. 앱 파일은 index.html로 개명.
+- 2026-09-11: 1-3 완료. 앱 이름을 "미시마 도장"으로 변경(Mishima Dojo / 三島道場). 한/영/일 UI 토글, 언어 전환 테스트 3개 추가(총 16개).

@@ -1,6 +1,6 @@
-<title>웨이브 초풍 도장</title>
+<title>미시마 도장</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Dela+Gothic+One&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
   :root{
     --bg:#0B0E13; --bg2:#10151D; --panel:#141A23; --panel2:#1B2330; --line:#273140; --line2:#334052;
@@ -92,6 +92,8 @@
   .seg{display:flex;height:22px;border-radius:4px;overflow:hidden;background:var(--panel2);margin-top:4px}
   .seg div{display:grid;place-items:center;font-family:var(--mono);font-size:11px;color:#04202f;font-weight:700;min-width:0;overflow:hidden;white-space:nowrap;transition:flex .15s}
   .seg .s1{background:var(--seg1)} .seg .s2{background:var(--seg2)} .seg .s3{background:var(--seg3);color:#dff4ff} .seg .s4{background:var(--seg4);color:#dff4ff} .seg .s5{background:var(--seg5);color:#dff4ff}
+  .seg-legend em{font-style:normal}
+  .legend em{font-style:normal}
   .seg-legend{display:flex;gap:10px;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--muted);flex-wrap:wrap}
   .seg-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
@@ -101,8 +103,8 @@
   .stat.acc b{color:var(--accent)} .stat.gold b{color:var(--gold)}
   details.settings{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:0 14px}
   details.settings summary{cursor:pointer;padding:10px 0;font-weight:500;color:var(--ink2);list-style:none;display:flex;justify-content:space-between}
-  details.settings summary::after{content:"펼치기";font-size:11px;color:var(--muted);font-family:var(--mono)}
-  details.settings[open] summary::after{content:"접기"}
+  details.settings summary::after{content:attr(data-more);font-size:11px;color:var(--muted);font-family:var(--mono)}
+  details.settings[open] summary::after{content:attr(data-less)}
   .set{display:flex;flex-direction:column;gap:10px;padding-bottom:14px}
   .set .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
   .set label.t{color:var(--muted);font-size:12.5px}
@@ -144,118 +146,130 @@
   .best small{color:var(--muted);font-size:11.5px}
   footer{color:var(--faint);font-size:12px;border-top:1px solid var(--line);padding-top:12px}
   @media (prefers-reduced-motion:reduce){.key.listen{animation:none}}
+  html[lang="ja"]{--display:'Dela Gothic One','Noto Sans JP',system-ui,sans-serif;--body:'Noto Sans JP','Hiragino Sans','Yu Gothic',system-ui,sans-serif}
+  html[lang="en"]{--body:'Noto Sans KR',system-ui,-apple-system,'Segoe UI',sans-serif}
+  html[lang="ja"] .brand h1{font-size:28px}
+  .top-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .lang{display:inline-flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden}
+  .lang button{background:transparent;border:0;color:var(--muted);padding:6px 9px;font-size:12px;font-family:var(--mono)}
+  .lang button+button{border-left:1px solid var(--line2)}
+  .lang button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
 </style>
+
 
 <div class="wrap">
   <header class="top">
     <div class="brand">
       <span class="kanji" aria-hidden="true">風</span>
       <div>
-        <h1>웨이브 초풍 도장</h1>
-        <p>미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정</p>
+        <h1 data-i18n="app.title">미시마 도장</h1>
+        <p data-i18n="app.tagline">미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정</p>
       </div>
     </div>
-    <nav class="modes" role="tablist" aria-label="연습 모드" id="modes">
-      <button role="tab" data-mode="free" aria-selected="true">자유 연습</button>
-      <button role="tab" data-mode="wave10" aria-selected="false">웨이브 10초</button>
-      <button role="tab" data-mode="ewgf20" aria-selected="false">초풍 20회</button>
-      <button role="tab" data-mode="combo10" aria-selected="false">웨이브 초풍 10회</button>
+    <nav class="modes" role="tablist" data-i18n-aria="modes.aria" aria-label="연습 모드" id="modes">
+      <button role="tab" data-mode="free" aria-selected="true" data-i18n="mode.free.name">자유 연습</button>
+      <button role="tab" data-mode="wave10" aria-selected="false" data-i18n="mode.wave10.name">웨이브 10초</button>
+      <button role="tab" data-mode="ewgf20" aria-selected="false" data-i18n="mode.ewgf20.name">초풍 20회</button>
+      <button role="tab" data-mode="combo10" aria-selected="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button>
     </nav>
-    <div class="src" id="srcBadge">⌨ 키보드 대기</div>
+    <div class="top-right">
+      <div class="lang" id="langSel" role="group" aria-label="Language"><button data-lang="ko" aria-pressed="true">한국어</button><button data-lang="en" aria-pressed="false">EN</button><button data-lang="ja" aria-pressed="false">日本語</button></div>
+      <div class="src" id="srcBadge">⌨ 키보드 대기</div>
+    </div>
   </header>
 
   <main class="main">
-    <section class="stage-wrap" aria-label="연습 스테이지">
+    <section class="stage-wrap" data-i18n-aria="stage.aria" aria-label="연습 스테이지">
       <div class="stage" id="stageBox">
-        <canvas id="stage" aria-label="SD 캐릭터 연출 화면"></canvas>
+        <canvas id="stage" data-i18n-aria="stage.canvasAria" aria-label="SD 캐릭터 연출 화면"></canvas>
         <div class="hud">
           <div class="hud-chain" id="hudChain"><span id="hudChainN">0</span><small>WAVE</small></div>
           <div class="hud-timer" id="hudTimer"></div>
           <div class="hud-center" id="hudCenter"></div>
-          <div class="hud-hint" id="hudHint">6N23 = 크라우치 대시 · 3 직후 ↓를 떼 6(캔슬), 떼고 다시 6N23 · 3 과 동시에 I(2) = 초풍</div>
+          <div class="hud-hint" id="hudHint"></div>
         </div>
       </div>
-      <div class="inputs" id="inputs" aria-label="입력 기록"></div>
+      <div class="inputs" id="inputs" data-i18n-aria="inputs.aria" aria-label="입력 기록"></div>
       <div class="drill">
         <div class="d-name" id="dName">자유 연습</div>
-        <div class="d-desc" id="dDesc">제한 없이 웨이브와 초풍을 섞어 연습합니다. 모든 입력이 기록됩니다.</div>
+        <div class="d-desc" id="dDesc"></div>
         <div class="d-prog" id="dProg"></div>
-        <button class="btn" id="dStart" hidden>시작</button>
-        <button class="btn ghost" id="dReset">세션 초기화</button>
+        <button class="btn" id="dStart" hidden data-i18n="drill.start">시작</button>
+        <button class="btn ghost" id="dReset" data-i18n="drill.reset">세션 초기화</button>
       </div>
     </section>
 
-    <aside class="coach" aria-label="코치 패널">
+    <aside class="coach" data-i18n-aria="coach.aria" aria-label="코치 패널">
       <div class="result" id="resultCard">
         <div class="r-kind" id="rKind">READY</div>
-        <div class="r-title" id="rTitle">입력을 기다리는 중</div>
-        <div class="r-off" id="rOff">키보드 또는 게임패드로 입력하세요</div>
+        <div class="r-title" id="rTitle"></div>
+        <div class="r-off" id="rOff"></div>
       </div>
       <div class="coach-box">
         <h3>COACH</h3>
-        <div class="coach-msg" id="coachMsg">먼저 <strong>→(6)</strong>를 톡 치고 뗀 뒤, <strong>↓(2)</strong>를 누르고 그대로 →를 더해 <strong>↓→(3)</strong>. 이게 크라우치 대시 한 번입니다. 이어가려면 3 직후 ↓를 떼 <strong>6으로 캔슬</strong>하고, 떼었다가 다시 6N23.</div>
-        <div class="coach-trend" id="coachTrend">최근 시도가 쌓이면 경향 분석이 여기에 표시됩니다.</div>
+        <div class="coach-msg" id="coachMsg"></div>
+        <div class="coach-trend" id="coachTrend"></div>
       </div>
       <div class="coach-box">
-        <h3>마지막 대시 구간 (ms)</h3>
+        <h3 data-i18n="seg.title">마지막 대시 구간 (ms)</h3>
         <div class="seg" id="segBar"><div class="s1" style="flex:1">6</div><div class="s2" style="flex:1">N</div><div class="s3" style="flex:1">2</div><div class="s4" style="flex:1">3</div><div class="s5" style="flex:1">캔슬6</div></div>
-        <div class="seg-legend"><span><i style="background:var(--seg1)"></i>시작 6 유지</span><span><i style="background:var(--seg2)"></i>중립</span><span><i style="background:var(--seg3)"></i>2 유지</span><span><i style="background:var(--seg4)"></i>3 유지 → 캔슬 6</span><span><i style="background:var(--seg5)"></i>캔슬 6 → 다음 시작 6</span></div>
+        <div class="seg-legend"><span><i style="background:var(--seg1)"></i><em data-i18n="seg.l1">시작 6 유지</em></span><span><i style="background:var(--seg2)"></i><em data-i18n="seg.l2">중립</em></span><span><i style="background:var(--seg3)"></i><em data-i18n="seg.l3">2 유지</em></span><span><i style="background:var(--seg4)"></i><em data-i18n="seg.l4">3 유지 → 캔슬 6</em></span><span><i style="background:var(--seg5)"></i><em data-i18n="seg.l5">캔슬 6 → 다음 시작 6</em></span></div>
       </div>
-      <div class="stats" aria-label="이번 세션 기록">
-        <div class="stat acc"><b id="stDps">0.0</b><span>최고 웨이브 속도 (대시/초)</span></div>
-        <div class="stat"><b id="stChain">0</b><span>최고 연속 대시</span></div>
-        <div class="stat"><b id="stDash">0</b><span>총 대시</span></div>
-        <div class="stat gold"><b id="stRate">–</b><span>초풍 성공률</span></div>
-        <div class="stat"><b id="stTry">0</b><span>초풍 시도</span></div>
-        <div class="stat"><b id="stMean">–</b><span>평균 버튼 오프셋</span></div>
+      <div class="stats" data-i18n-aria="stats.aria" aria-label="이번 세션 기록">
+        <div class="stat acc"><b id="stDps">0.0</b><span data-i18n="stat.dps">최고 웨이브 속도 (대시/초)</span></div>
+        <div class="stat"><b id="stChain">0</b><span data-i18n="stat.chain">최고 연속 대시</span></div>
+        <div class="stat"><b id="stDash">0</b><span data-i18n="stat.dash">총 대시</span></div>
+        <div class="stat gold"><b id="stRate">–</b><span data-i18n="stat.rate">초풍 성공률</span></div>
+        <div class="stat"><b id="stTry">0</b><span data-i18n="stat.try">초풍 시도</span></div>
+        <div class="stat"><b id="stMean">–</b><span data-i18n="stat.mean">평균 버튼 오프셋</span></div>
       </div>
       <details class="settings">
-        <summary>입력 · 판정 설정</summary>
+        <summary id="setSummary" data-i18n="set.title" data-more="펼치기" data-less="접기">입력 · 판정 설정</summary>
         <div class="set">
-          <div class="row"><label class="t">초풍 판정 폭</label>
-            <div class="segc" id="winSel"><button data-win="8" aria-pressed="true">저스트 0.5f</button><button data-win="12" aria-pressed="false">보통 0.7f</button><button data-win="15" aria-pressed="false">관대 0.9f</button></div></div>
-          <div class="row"><label class="t">캐릭터 방향</label>
-            <div class="segc" id="sideSel"><button data-side="1" aria-pressed="true">1P (→ 가 앞)</button><button data-side="-1" aria-pressed="false">2P (← 가 앞)</button></div></div>
-          <div class="row"><label class="t">연출 (흔들림·플래시)</label>
-            <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true">켜기</button><button data-fx="0" aria-pressed="false">끄기</button></div></div>
+          <div class="row"><label class="t" data-i18n="set.window">초풍 판정 폭</label>
+            <div class="segc" id="winSel"><button data-win="8" aria-pressed="true" data-i18n="set.win8">저스트 0.5f</button><button data-win="12" aria-pressed="false" data-i18n="set.win12">보통 0.7f</button><button data-win="15" aria-pressed="false" data-i18n="set.win15">관대 0.9f</button></div></div>
+          <div class="row"><label class="t" data-i18n="set.side">캐릭터 방향</label>
+            <div class="segc" id="sideSel"><button data-side="1" aria-pressed="true" data-i18n="set.side1">1P (→ 가 앞)</button><button data-side="-1" aria-pressed="false" data-i18n="set.side2">2P (← 가 앞)</button></div></div>
+          <div class="row"><label class="t" data-i18n="set.fx">연출 (흔들림·플래시)</label>
+            <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div>
-            <label class="t">키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
+            <label class="t" data-i18n="set.keys">키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
             <div class="keys" id="keys"></div>
           </div>
-          <div class="row"><label class="t">게임패드</label><span class="note" id="padStatus">연결 안 됨 · 패드 아무 버튼이나 누르면 감지</span></div>
-          <p class="note">패드 기본 배치: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>, 십자키·왼쪽 스틱 모두 방향으로 인식. 브라우저 입력은 약 4ms 단위로 읽히므로 실제 게임보다 오차가 조금 있습니다. 기본 판정은 실제 게임과 같은 1프레임(저스트)이며, 처음 감을 잡을 때만 잠시 넓혀 쓰세요.</p>
+          <div class="row"><label class="t" data-i18n="set.pad">게임패드</label><span class="note" id="padStatus"></span></div>
+          <p class="note" data-i18n-html="set.padNote"></p>
         </div>
       </details>
     </aside>
   </main>
 
-  <section class="records" aria-label="기록">
+  <section class="records" data-i18n-aria="records.aria" aria-label="기록">
     <div class="card chart" id="histCard">
-      <h2>초풍 버튼 타이밍 분포</h2>
-      <p class="sub">d/f 입력 시점을 0으로, 2(RP) 버튼이 눌린 프레임 차이 · 최근 60회</p>
+      <h2 data-i18n="hist.title">초풍 버튼 타이밍 분포</h2>
+      <p class="sub" data-i18n="hist.sub">d/f 입력 시점을 0으로, 2(RP) 버튼이 눌린 프레임 차이 · 최근 60회</p>
       <div id="hist"></div>
-      <div class="legend"><span><i style="background:var(--accent)"></i>초풍 (판정 안)</span><span><i style="background:var(--warn)"></i>빠름 (d+2)</span><span><i style="background:var(--red)"></i>늦음 (풍신권)</span></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i><em data-i18n="hist.lOk">초풍 (판정 안)</em></span><span><i style="background:var(--warn)"></i><em data-i18n="hist.lEarly">빠름 (d+2)</em></span><span><i style="background:var(--red)"></i><em data-i18n="hist.lLate">늦음 (풍신권)</em></span></div>
       <div class="tip" id="histTip"></div>
     </div>
     <div class="card chart" id="waveCard">
-      <h2>웨이브 속도 추이</h2>
-      <p class="sub">크라우치 대시 한 번당 속도 (대시/초) · 최근 40회, 5 이상이면 상급</p>
+      <h2 data-i18n="wave.title">웨이브 속도 추이</h2>
+      <p class="sub" data-i18n="wave.sub">크라우치 대시 한 번당 속도 (대시/초) · 최근 40회, 5 이상이면 상급</p>
       <div id="waveChart"></div>
       <div class="tip" id="waveTip"></div>
     </div>
     <div class="card">
-      <h2>모드별 최고 기록</h2>
-      <p class="sub">이 브라우저에 저장됩니다</p>
+      <h2 data-i18n="best.title">모드별 최고 기록</h2>
+      <p class="sub" data-i18n="best.sub">이 브라우저에 저장됩니다</p>
       <div class="bests" id="bests"></div>
     </div>
     <div class="card">
-      <h2>최근 시도 로그</h2>
-      <p class="sub">차트와 같은 데이터 · 최근 12건</p>
-      <div class="tbl"><table><thead><tr><th>시각</th><th>종류</th><th>결과</th><th>수치</th><th>메모</th></tr></thead><tbody id="logBody"><tr><td colspan="5" style="color:var(--muted)">아직 기록이 없습니다.</td></tr></tbody></table></div>
+      <h2 data-i18n="log.title">최근 시도 로그</h2>
+      <p class="sub" data-i18n="log.sub">차트와 같은 데이터 · 최근 12건</p>
+      <div class="tbl"><table><thead><tr><th data-i18n="log.hTime">시각</th><th data-i18n="log.hType">종류</th><th data-i18n="log.hRes">결과</th><th data-i18n="log.hNum">수치</th><th data-i18n="log.hMemo">메모</th></tr></thead><tbody id="logBody"></tbody></table></div>
     </div>
   </section>
 
-  <footer>표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.</footer>
+  <footer data-i18n="footer">표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.</footer>
 </div>
 
 <script>
@@ -270,7 +284,8 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- persistent settings ---------- */
 const STORE = 'wave-ewgf-dojo-v1';
-let store = {v:4, window:8, side:1, fx:1, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}};
+const detectLang = () => { const l = (typeof navigator!=='undefined' && navigator.language || '').toLowerCase(); return l.startsWith('ko')?'ko':l.startsWith('ja')?'ja':'en'; };
+let store = {v:4, lang:detectLang(), window:8, side:1, fx:1, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}};
 const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function validKey(slot, code){
   const arrows = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
@@ -279,6 +294,7 @@ function validKey(slot, code){
 try{
   const s = JSON.parse(localStorage.getItem(STORE)||'null');
   if(s && typeof s==='object'){
+    if(['ko','en','ja'].includes(s.lang)) store.lang=s.lang;
     if(s.v>=4 && [8,12,15].includes(s.window)) store.window=s.window;
     if([1,-1].includes(s.side)) store.side=s.side;
     if([0,1].includes(s.fx)) store.fx=s.fx;
@@ -295,12 +311,286 @@ try{
 }catch(e){}
 const save = () => { try{ localStorage.setItem(STORE, JSON.stringify(store)); }catch(e){} };
 
+/* ---------- i18n ---------- */
+const LANGS = ['ko','en','ja'];
+const LOCALE = {ko:'ko-KR', en:'en-US', ja:'ja-JP'};
+const I18N = {
+ko:{
+  'app.title':'미시마 도장',
+  'app.tagline':'미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정',
+  'modes.aria':'연습 모드', 'stage.aria':'연습 스테이지', 'stage.canvasAria':'SD 캐릭터 연출 화면', 'inputs.aria':'입력 기록', 'coach.aria':'코치 패널', 'stats.aria':'이번 세션 기록', 'records.aria':'기록',
+  'src.wait':'⌨ 키보드 대기', 'src.kb':'⌨ 키보드', 'src.pad':'🎮 게임패드',
+  'mode.free.name':'자유 연습', 'mode.free.desc':'제한 없이 웨이브와 초풍을 섞어 연습합니다. 모든 입력이 기록됩니다.',
+  'mode.wave10.name':'웨이브 10초', 'mode.wave10.desc':'10초 동안 최대한 많은 크라우치 대시. 캔슬 6이 빠지면 연속이 끊깁니다. 대시/초와 최고 연속 횟수를 기록합니다.',
+  'mode.ewgf20.name':'초풍 20회', 'mode.ewgf20.desc':'초풍을 20번 시도해 성공률과 평균 버튼 오프셋을 기록합니다.',
+  'mode.combo10.name':'웨이브 초풍 10회', 'mode.combo10.desc':'웨이브를 3회 이상 이어간 뒤 초풍으로 마무리. 10번 시도해 성공률을 기록합니다.',
+  'hint.free':'6N23 = 크라우치 대시 · 3 직후 ↓를 떼 6(캔슬), 떼고 다시 6N23 · 3 과 동시에 I(2) = 초풍',
+  'hint.wave10':'시작 후 6N23 6 N 6N23 6 N … 반복 · 3 직후 ↓만 떼면 캔슬 6, 떼었다가 다시 6',
+  'hint.ewgf20':'6 떼고 2 그리고 3 과 동시에 오른손(2) · 기본 판정은 0.5프레임(설정에서 변경)',
+  'hint.combo10':'6N23 6 N … 웨이브 3회 이상 → 마지막 3 과 동시에 2',
+  'drill.start':'시작', 'drill.reset':'세션 초기화',
+  'ready.title':'입력을 기다리는 중', 'ready.sub':'키보드 또는 게임패드로 입력하세요', 'ready.reset':'세션 초기화됨',
+  'coach.intro':'먼저 <strong>→(6)</strong>를 톡 치고 뗀 뒤, <strong>↓(2)</strong>를 누르고 그대로 →를 더해 <strong>↓→(3)</strong>. 이게 크라우치 대시 한 번입니다. 이어가려면 3 직후 ↓를 떼 <strong>6으로 캔슬</strong>하고, 떼었다가 다시 6N23.',
+  'trend.intro':'최근 시도가 쌓이면 경향 분석이 여기에 표시됩니다.',
+  'trend.few':'최근 시도가 3회 이상 쌓이면 경향 분석이 표시됩니다.',
+  'seg.title':'마지막 대시 구간 (ms)', 'seg.names':['6','N','2','3','캔슬6'],
+  'seg.l1':'시작 6 유지', 'seg.l2':'중립', 'seg.l3':'2 유지', 'seg.l4':'3 유지 → 캔슬 6', 'seg.l5':'캔슬 6 → 다음 시작 6',
+  'stat.dps':'최고 웨이브 속도 (대시/초)', 'stat.chain':'최고 연속 대시', 'stat.dash':'총 대시', 'stat.rate':'초풍 성공률', 'stat.try':'초풍 시도', 'stat.mean':'평균 버튼 오프셋',
+  'set.title':'입력 · 판정 설정', 'set.more':'펼치기', 'set.less':'접기',
+  'set.window':'초풍 판정 폭', 'set.win8':'저스트 0.5f', 'set.win12':'보통 0.7f', 'set.win15':'관대 0.9f',
+  'set.side':'캐릭터 방향', 'set.side1':'1P (→ 가 앞)', 'set.side2':'2P (← 가 앞)',
+  'set.fx':'연출 (흔들림·플래시)', 'set.on':'켜기', 'set.off':'끄기',
+  'set.keys':'키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)', 'set.keyListen':'키 입력…',
+  'set.keyConflict':'이미 사용 중이거나 방향키와 충돌하는 키입니다. 다른 키를 누르세요. Esc로 취소합니다.',
+  'set.pad':'게임패드', 'set.padNone':'연결 안 됨 · 패드 아무 버튼이나 누르면 감지', 'set.padOn':'연결됨 · ',
+  'set.padNote':'패드 기본 배치: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>, 십자키·왼쪽 스틱 모두 방향으로 인식. 브라우저 입력은 약 4ms 단위로 읽히므로 실제 게임보다 오차가 조금 있습니다. 기본 판정은 0.5프레임(저스트)이며, 처음 감을 잡을 때만 잠시 넓혀 쓰세요.',
+  'hist.title':'초풍 버튼 타이밍 분포', 'hist.sub':'d/f 입력 시점을 0으로, 2(RP) 버튼이 눌린 프레임 차이 · 최근 60회',
+  'hist.lOk':'초풍 (판정 안)', 'hist.lEarly':'빠름 (d+2)', 'hist.lLate':'늦음 (풍신권)', 'hist.aria':'초풍 버튼 타이밍 히스토그램',
+  'hist.empty':'초풍을 시도하면 분포가 쌓입니다', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}회 · ${k}`, 'hist.kOk':'초풍', 'hist.kEarly':'빠름', 'hist.kLate':'늦음',
+  'wave.title':'웨이브 속도 추이', 'wave.sub':'크라우치 대시 한 번당 속도 (대시/초) · 최근 40회, 5 이상이면 상급', 'wave.aria':'웨이브 속도 추이',
+  'wave.top':'상급 (5 이상)', 'wave.empty':'크라우치 대시를 2회 이상 연속으로 넣으면 그려집니다', 'wave.old':'오래된 대시', 'wave.recent':'최근',
+  'wave.tip':(dps,ms,f)=>`${dps} 대시/초 · 사이클 ${ms}ms (${f}f)`,
+  'best.title':'모드별 최고 기록', 'best.sub':'이 브라우저에 저장됩니다', 'best.none':'아직 기록 없음', 'best.last':'최근: ',
+  'rec.dps':d=>d+' 대시/초', 'rec.waveSub':(n,c)=>n+'회 · 최고 연속 '+c, 'rec.ewgfSub':(ok,tg,m)=>ok+'/'+tg+' · 평균 '+m,
+  'log.title':'최근 시도 로그', 'log.sub':'차트와 같은 데이터 · 최근 12건', 'log.hTime':'시각', 'log.hType':'종류', 'log.hRes':'결과', 'log.hNum':'수치', 'log.hMemo':'메모', 'log.empty':'아직 기록이 없습니다.',
+  'log.tDash':'대시', 'log.tEwgf':'초풍', 'log.tWave':'웨이브',
+  'log.rCancel':'캔슬 누락', 'log.rFail':'실패', 'log.rChain':n=>n+'연속', 'log.mNoCancel':'6N23 뒤 6 없음', 'log.mAfterWave':n=>'웨이브 '+n+'회 후', 'log.mCycle':ms=>'평균 사이클 '+ms+'ms',
+  'res.ewgf':'초풍', 'res.combo_short':'웨이브 부족', 'res.wgf':'풍신권(늦음)', 'res.early':'빠름(d+2)', 'res.no_df':'d/f 없음', 'res.early_stage':'커맨드 미완성', 'res.no_cd':'커맨드 없음',
+  'r.noCancel.title':'캔슬 6 누락', 'r.noCancel.sub':'앞 대시가 캔슬되지 않아 연속으로 이어지지 않았습니다',
+  'r.wave.title':n=>'웨이브 ×'+n, 'r.wave.sub':(dps,ms,f)=>dps+' 대시/초 · 사이클 '+ms+'ms ('+f+'f)',
+  'r.cd.title':'크라우치 대시', 'r.cd.sub':(a,b,c)=>'f '+a+'ms · N '+b+'ms · d '+c+'ms',
+  'coach.noCancel':'↓→ 다음에 <strong>6(→)</strong>이 빠졌습니다. 크라우치 대시는 후딜레이가 있어서 ↓→ 직후 ↓를 떼 6을 넣어야 캔슬됩니다. 순서는 <strong>6N23 <u>6</u> N 6N23 <u>6</u> N …</strong> — 6이 두 번씩 들어갑니다.',
+  'coach.firstCD':'좋습니다. 이어가려면 ↓→ 직후 ↓를 떼 <strong>6</strong>을 넣고(캔슬), 떼었다가 다시 <strong>6</strong> → 중립 → ↓ → ↓→ 를 반복하세요.',
+  'fault.f_before_d.title':'입력 순서 오류', 'fault.f_before_d.coach':'→ 를 뗀 뒤에 ↓ 를 누르세요. 지금은 → 를 잡은 채 ↓ 가 들어가 바로 ↓→ 가 됐습니다. 순서는 <strong>f, 중립, d, d/f</strong>.',
+  'fault.n_to_df.title':'d 없이 d/f', 'fault.n_to_df.coach':'중립에서 곧장 ↓→ 가 들어갔습니다. ↓ 를 먼저 찍고 → 를 더해 ↓→ 로 미는 두 단계여야 합니다.',
+  'fault.cancel_as_start.title':'시작 6 누락', 'fault.cancel_as_start.coach':'캔슬용 6 을 다음 대시의 시작 6 으로 겸해 썼습니다. 캔슬 6 을 떼고 <strong>6 을 한 번 더</strong> 넣은 뒤 ↓, ↓→ 입니다: 6N23 6 <u>N 6</u> N23.',
+  'coach.wrongBtn':n=>'초풍은 <strong>2 (오른손 펀치)</strong> 입니다. 방금 누른 버튼은 '+n+'번.',
+  'a.ewgf.title':'초풍!', 'a.ewgf.sub':(f,ms)=>'버튼 오프셋 '+f+' ('+ms+')', 'a.afterWave':n=>' · 웨이브 '+n+'회 후',
+  'a.ewgf.perfect':'완벽한 저스트. 이 감각을 <strong>손에 기억</strong>시키세요 — d/f 로 미는 손과 2 를 누르는 손이 한 동작이었습니다.',
+  'a.ewgf.late':f=>'성공. 버튼이 d/f 보다 '+f+' 뒤에 들어왔습니다. 조금만 더 <strong>동시에</strong> 누르면 저스트 판정도 통과합니다.',
+  'a.ewgf.early':f=>'성공. 버튼이 d/f 보다 살짝 먼저('+f+') 들어왔습니다. ↓→ 로 미는 순간에 맞춰 <strong>아주 조금 늦게</strong> 눌러도 됩니다.',
+  'a.combo.title':'초풍 (웨이브 부족)', 'a.combo.coach':n=>'초풍은 됐지만 앞의 웨이브가 '+n+'회였습니다. 이 모드는 <strong>웨이브 3회 이상</strong> 후에 초풍을 넣어야 인정됩니다.',
+  'a.wgf.title':'풍신권', 'a.wgf.sub':(f,ms)=>'공격 버튼이 '+f+' ('+ms+') 늦었습니다',
+  'a.wgf.slow':f=>'공격 버튼이 <strong>너무 느렸습니다</strong> ('+f+'). d/f 를 잡고 나서 버튼을 찾지 말고, ↓→ 로 미는 동작과 2 를 <strong>한 박자</strong>로 묶으세요.',
+  'a.wgf.close':f=>'아깝습니다. 버튼이 '+f+' 늦어 일반 풍신권이 나갔습니다. 2 를 d/f 와 <strong>동시에</strong> — ↓ 에서 → 를 더하는 순간 손가락을 이미 버튼 위에 올려 두세요.',
+  'a.early.title':'너무 빨랐습니다', 'a.early.sub':(f,ms)=>'버튼이 d/f 보다 '+f+' ('+ms+') 먼저 눌림 → 앉아 잽(d+2)',
+  'a.early.coach':'2 가 d/f 보다 먼저 들어가 <strong>앉아 잽</strong>이 나갔습니다. ↓ 를 찍은 뒤 → 를 더해 ↓→ 가 되는 <strong>바로 그 순간</strong>에 눌러야 합니다. 버튼을 서두르지 마세요.',
+  'a.no_df.title':'d/f 누락', 'a.no_df.sub':'↓ 상태에서 2 를 누르고 ↓→ 가 오지 않음',
+  'a.no_df.coach':'↓ 만 누른 채 버튼이 나갔습니다. ↓ 를 유지하면서 <strong>→ 를 더해</strong> ↓→ 를 만들고, 그 순간 2 를 누르세요.',
+  'a.early_stage.title':'커맨드 미완성', 'a.early_stage.subF':'→ 를 누른 상태에서 2 (f+2)', 'a.early_stage.subN':'중립에서 2 (잽)',
+  'a.early_stage.coach':'크라우치 대시가 끝나기 전에 버튼을 눌렀습니다. <strong>→, 떼고, ↓, ↓→</strong> 까지 완성한 뒤 마지막 ↓→ 와 동시에 2.',
+  'a.no_cd.title':'커맨드 없음', 'a.no_cd.sub':'크라우치 대시 없이 2 만 눌림',
+  'a.no_cd.coach':'초풍 커맨드는 <strong>f, N, d, d/f+2</strong> 입니다. → 를 톡 치고 뗀 뒤 ↓, ↓→ 를 넣고 마지막에 2.',
+  'seg.n.f':'f 유지', 'seg.n.n':'중립', 'seg.n.d':'d 유지', 'seg.n.df':'d/f 유지', 'seg.n.c':'캔슬 6 → 시작 6',
+  'seg.a.f':'→ 를 너무 오래 잡고 있습니다. <strong>톡 치듯</strong> 짧게 누르고 바로 떼세요.',
+  'seg.a.n':'→ 를 뗀 뒤 ↓ 까지 텀이 깁니다. <strong>떼자마자</strong> ↓ 를 누르세요.',
+  'seg.a.d':'↓ 에서 ↓→ 로 넘어가는 게 느립니다. ↓ 를 찍고 <strong>바로 → 를 더해</strong> 미세요.',
+  'seg.a.df':'↓→ 를 오래 잡고 있습니다. ↓→ 직후 <strong>↓ 만 떼서</strong> 곧바로 캔슬 6 을 넣으세요.',
+  'seg.a.c':'캔슬 6 에서 다음 시작 6 까지 텀이 깁니다. 6 을 <strong>떼자마자 다시 6</strong> 을 톡 치세요.',
+  'tempo.5':'<strong>상급 속도</strong>입니다. ', 'tempo.4':'빠른 편입니다. ', 'tempo.3':'안정적입니다. ', 'tempo.0':'아직 느립니다. ',
+  'wave.worst':(name,ms)=>'가장 긴 구간은 <strong>'+name+'</strong> ('+ms+'ms). ',
+  'wave.even':'구간이 고르게 짧습니다. 이 리듬을 유지하며 <strong>연속 횟수</strong>를 늘려 보세요.',
+  'trend.head':(n,hit,mean,sd)=>'최근 '+n+'회: 초풍 '+hit+'회 · 평균 '+mean+' · 편차 '+sd+'f. ',
+  'trend.noisy':'타이밍이 들쭉날쭉합니다. 웨이브 리듬을 일정하게 만든 뒤 마지막 d/f 에 버튼을 "얹는" 느낌으로 통일하세요.',
+  'trend.late':ms=>'전반적으로 늦는 경향입니다. 버튼을 지금보다 약 '+ms+'ms 일찍, d/f 와 동시에.',
+  'trend.early':ms=>'전반적으로 빠른 경향입니다. ↓→ 가 들어간 것을 느끼고 누르는 쪽으로 약 '+ms+'ms 늦추세요.',
+  'trend.stable':'타이밍이 안정적입니다. 판정 폭을 한 단계 좁혀 보거나, 웨이브 3회 이상 후 초풍(웨이브 초풍 모드)으로 넘어가세요.',
+  'chain.end':(n,dps,name,ms)=>'웨이브 '+n+'연속 종료 · 평균 '+dps+' 대시/초. 평균적으로 가장 긴 구간은 '+name+' ('+ms+'ms)',
+  'chain.fix':' — 여기를 줄이면 속도가 바로 올라갑니다.', 'chain.ok':' — 균형이 좋습니다.',
+  'drill.waveEnd':(n,dps)=>'10초 종료 · '+n+'회 ('+dps+' 대시/초)', 'drill.end':(ok,tg,r)=>'종료 · 성공 '+ok+'/'+tg+' ('+r+'%)', 'drill.dashes':n=>n+' 대시',
+  'pop.ewgf':'초풍!', 'pop.wgf':'풍신권',
+  'footer':'표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.',
+},
+en:{
+  'app.title':'Mishima Dojo',
+  'app.tagline':'Mishima-style input trainer · Judges 6N23 6 N 6N23 … wave dashes and 6N23+2 EWGF frame by frame',
+  'modes.aria':'Practice mode', 'stage.aria':'Practice stage', 'stage.canvasAria':'SD character stage', 'inputs.aria':'Input history', 'coach.aria':'Coach panel', 'stats.aria':'Session stats', 'records.aria':'Records',
+  'src.wait':'⌨ Keyboard ready', 'src.kb':'⌨ Keyboard', 'src.pad':'🎮 Gamepad',
+  'mode.free.name':'Free practice', 'mode.free.desc':'Mix wave dashes and EWGFs freely. Every input is recorded.',
+  'mode.wave10.name':'Wave 10s', 'mode.wave10.desc':'As many crouch dashes as you can in 10 seconds. A missing cancel 6 breaks the chain. Records dashes/s and best chain.',
+  'mode.ewgf20.name':'EWGF ×20', 'mode.ewgf20.desc':'20 EWGF attempts. Records success rate and average button offset.',
+  'mode.combo10.name':'Wave EWGF ×10', 'mode.combo10.desc':'Wave dash 3+ times, then finish with EWGF. 10 attempts, records success rate.',
+  'hint.free':'6N23 = crouch dash · right after 3 release ↓ for 6 (cancel), release, then 6N23 again · press I(2) with 3 = EWGF',
+  'hint.wave10':'After GO repeat 6N23 6 N 6N23 6 N … · release only ↓ right after 3 for the cancel 6, release, then 6 again',
+  'hint.ewgf20':'6, release, 2, then right punch (2) together with 3 · default window 0.5f (change in settings)',
+  'hint.combo10':'6N23 6 N … wave 3+ times → press 2 with the final 3',
+  'drill.start':'Start', 'drill.reset':'Reset session',
+  'ready.title':'Waiting for input', 'ready.sub':'Use keyboard or gamepad', 'ready.reset':'Session reset',
+  'coach.intro':'Tap <strong>→(6)</strong> and release, press <strong>↓(2)</strong>, then add → for <strong>↓→(3)</strong>. That is one crouch dash. To chain, release ↓ right after 3 to <strong>cancel with 6</strong>, release, then 6N23 again.',
+  'trend.intro':'Trend analysis appears here once attempts accumulate.',
+  'trend.few':'Trend analysis appears after 3 or more recent attempts.',
+  'seg.title':'Last dash segments (ms)', 'seg.names':['6','N','2','3','cancel 6'],
+  'seg.l1':'Start 6 held', 'seg.l2':'Neutral', 'seg.l3':'2 held', 'seg.l4':'3 held → cancel 6', 'seg.l5':'Cancel 6 → next start 6',
+  'stat.dps':'Best wave speed (dashes/s)', 'stat.chain':'Best chain', 'stat.dash':'Total dashes', 'stat.rate':'EWGF rate', 'stat.try':'EWGF attempts', 'stat.mean':'Avg button offset',
+  'set.title':'Input · judgement settings', 'set.more':'expand', 'set.less':'collapse',
+  'set.window':'EWGF window', 'set.win8':'Just 0.5f', 'set.win12':'Normal 0.7f', 'set.win15':'Lenient 0.9f',
+  'set.side':'Facing', 'set.side1':'1P (→ is forward)', 'set.side2':'2P (← is forward)',
+  'set.fx':'Effects (shake · flash)', 'set.on':'On', 'set.off':'Off',
+  'set.keys':'Key bindings — click a slot, then press a key (arrow keys ↑↓←→ always work)', 'set.keyListen':'press key…',
+  'set.keyConflict':'That key is already in use or conflicts with the arrow keys. Press another key. Esc cancels.',
+  'set.pad':'Gamepad', 'set.padNone':'Not connected · press any pad button to detect', 'set.padOn':'Connected · ',
+  'set.padNote':'Default pad layout: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>; d-pad and left stick both count as direction. Browser input is polled at roughly 4ms, so expect slight deviation from the real game. The default window is 0.5 frames (just frame); widen it only while getting a feel for the motion.',
+  'hist.title':'EWGF button timing', 'hist.sub':'Frame difference of the 2 (RP) press relative to the d/f input at 0 · last 60',
+  'hist.lOk':'EWGF (in window)', 'hist.lEarly':'Early (d+2)', 'hist.lLate':'Late (WGF)', 'hist.aria':'EWGF button timing histogram',
+  'hist.empty':'Attempt an EWGF and the distribution builds up here', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}× · ${k}`, 'hist.kOk':'EWGF', 'hist.kEarly':'early', 'hist.kLate':'late',
+  'wave.title':'Wave speed trend', 'wave.sub':'Speed per crouch dash (dashes/s) · last 40, 5+ is advanced', 'wave.aria':'Wave speed trend',
+  'wave.top':'Advanced (5+)', 'wave.empty':'Chain 2 or more crouch dashes to draw the chart', 'wave.old':'older', 'wave.recent':'recent',
+  'wave.tip':(dps,ms,f)=>`${dps} dashes/s · cycle ${ms}ms (${f}f)`,
+  'best.title':'Best records by mode', 'best.sub':'Saved in this browser', 'best.none':'No record yet', 'best.last':'Last: ',
+  'rec.dps':d=>d+' dashes/s', 'rec.waveSub':(n,c)=>n+' dashes · best chain '+c, 'rec.ewgfSub':(ok,tg,m)=>ok+'/'+tg+' · avg '+m,
+  'log.title':'Recent attempts', 'log.sub':'Same data as the charts · last 12', 'log.hTime':'Time', 'log.hType':'Type', 'log.hRes':'Result', 'log.hNum':'Value', 'log.hMemo':'Note', 'log.empty':'No records yet.',
+  'log.tDash':'Dash', 'log.tEwgf':'EWGF', 'log.tWave':'Wave',
+  'log.rCancel':'No cancel', 'log.rFail':'Fail', 'log.rChain':n=>n+' chain', 'log.mNoCancel':'No 6 after 6N23', 'log.mAfterWave':n=>'after '+n+(n===1?' wave':' waves'), 'log.mCycle':ms=>'avg cycle '+ms+'ms',
+  'res.ewgf':'EWGF', 'res.combo_short':'Short wave', 'res.wgf':'WGF (late)', 'res.early':'Early (d+2)', 'res.no_df':'No d/f', 'res.early_stage':'Incomplete', 'res.no_cd':'No command',
+  'r.noCancel.title':'Missing cancel 6', 'r.noCancel.sub':'The previous dash was not cancelled, so the chain broke',
+  'r.wave.title':n=>'Wave ×'+n, 'r.wave.sub':(dps,ms,f)=>dps+' dashes/s · cycle '+ms+'ms ('+f+'f)',
+  'r.cd.title':'Crouch dash', 'r.cd.sub':(a,b,c)=>'f '+a+'ms · N '+b+'ms · d '+c+'ms',
+  'coach.noCancel':'The <strong>6 (→)</strong> after ↓→ is missing. A crouch dash has recovery, so release ↓ right after ↓→ and input 6 to cancel it. The order is <strong>6N23 <u>6</u> N 6N23 <u>6</u> N …</strong> — 6 goes in twice each cycle.',
+  'coach.firstCD':'Good. To chain, release ↓ right after ↓→ and input <strong>6</strong> (cancel), release, then repeat <strong>6</strong> → neutral → ↓ → ↓→.',
+  'fault.f_before_d.title':'Wrong input order', 'fault.f_before_d.coach':'Release → before pressing ↓. You pressed ↓ while holding →, which became ↓→ immediately. The order is <strong>f, neutral, d, d/f</strong>.',
+  'fault.n_to_df.title':'d/f without d', 'fault.n_to_df.coach':'↓→ went in straight from neutral. Press ↓ first, then add → to roll into ↓→: two steps.',
+  'fault.cancel_as_start.title':'Missing start 6', 'fault.cancel_as_start.coach':'You reused the cancel 6 as the next dash\'s start 6. Release the cancel 6, input <strong>6 once more</strong>, then ↓, ↓→: 6N23 6 <u>N 6</u> N23.',
+  'coach.wrongBtn':n=>'EWGF uses <strong>2 (right punch)</strong>. You pressed button '+n+'.',
+  'a.ewgf.title':'EWGF!', 'a.ewgf.sub':(f,ms)=>'Button offset '+f+' ('+ms+')', 'a.afterWave':n=>' · after '+n+(n===1?' wave':' waves'),
+  'a.ewgf.perfect':'Perfect just frame. <strong>Memorise this feel</strong> — the hand rolling into d/f and the hand pressing 2 moved as one.',
+  'a.ewgf.late':f=>'Success. The button landed '+f+' after d/f. Press a little more <strong>simultaneously</strong> and it passes the just-frame window too.',
+  'a.ewgf.early':f=>'Success. The button landed slightly before d/f ('+f+'). You can press <strong>a touch later</strong>, right as you roll into ↓→.',
+  'a.combo.title':'EWGF (short wave)', 'a.combo.coach':n=>'EWGF landed, but only '+n+(n===1?' wave':' waves')+' came before it. This mode requires <strong>3 or more waves</strong> before the EWGF.',
+  'a.wgf.title':'Wind God Fist', 'a.wgf.sub':(f,ms)=>'Attack button was '+f+' ('+ms+') late',
+  'a.wgf.slow':f=>'The attack button was <strong>far too late</strong> ('+f+'). Don\'t hunt for the button after reaching d/f; bind the ↓→ roll and 2 into <strong>one beat</strong>.',
+  'a.wgf.close':f=>'So close. The button was '+f+' late, giving a regular WGF. Press 2 <strong>together with</strong> d/f — have the finger already on the button as you add → to ↓.',
+  'a.early.title':'Too early', 'a.early.sub':(f,ms)=>'Button pressed '+f+' ('+ms+') before d/f → crouch jab (d+2)',
+  'a.early.coach':'2 went in before d/f, giving a <strong>crouch jab</strong>. Press it at <strong>the exact moment</strong> ↓ becomes ↓→ as you add →. Don\'t rush the button.',
+  'a.no_df.title':'Missing d/f', 'a.no_df.sub':'Pressed 2 while holding ↓, and ↓→ never came',
+  'a.no_df.coach':'The button went out while only ↓ was held. Keep ↓ and <strong>add →</strong> for ↓→, then press 2 at that moment.',
+  'a.early_stage.title':'Incomplete command', 'a.early_stage.subF':'2 while holding → (f+2)', 'a.early_stage.subN':'2 from neutral (jab)',
+  'a.early_stage.coach':'You pressed the button before the crouch dash finished. Complete <strong>→, release, ↓, ↓→</strong>, then press 2 together with the final ↓→.',
+  'a.no_cd.title':'No command', 'a.no_cd.sub':'2 pressed without a crouch dash',
+  'a.no_cd.coach':'The EWGF command is <strong>f, N, d, d/f+2</strong>. Tap → and release, then ↓, ↓→, and 2 at the end.',
+  'seg.n.f':'f held', 'seg.n.n':'neutral', 'seg.n.d':'d held', 'seg.n.df':'d/f held', 'seg.n.c':'cancel 6 → start 6',
+  'seg.a.f':'You hold → too long. <strong>Tap it</strong> and release immediately.',
+  'seg.a.n':'The gap between releasing → and pressing ↓ is long. Press ↓ <strong>as soon as</strong> you release.',
+  'seg.a.d':'The move from ↓ to ↓→ is slow. Press ↓ and <strong>add → right away</strong>.',
+  'seg.a.df':'You hold ↓→ too long. Right after ↓→, <strong>release only ↓</strong> and put in the cancel 6 immediately.',
+  'seg.a.c':'The gap from cancel 6 to the next start 6 is long. <strong>Tap 6 again</strong> the moment you release it.',
+  'tempo.5':'<strong>Advanced speed</strong>. ', 'tempo.4':'Fast. ', 'tempo.3':'Steady. ', 'tempo.0':'Still slow. ',
+  'wave.worst':(name,ms)=>'Longest segment: <strong>'+name+'</strong> ('+ms+'ms). ',
+  'wave.even':'Segments are evenly short. Keep this rhythm and extend the <strong>chain length</strong>.',
+  'trend.head':(n,hit,mean,sd)=>'Last '+n+': '+hit+' EWGF · avg '+mean+' · spread '+sd+'f. ',
+  'trend.noisy':'Timing is inconsistent. Make the wave rhythm steady first, then "lay" the button onto the final d/f the same way every time.',
+  'trend.late':ms=>'You tend to be late. Press about '+ms+'ms earlier, together with d/f.',
+  'trend.early':ms=>'You tend to be early. Feel ↓→ register, then press: about '+ms+'ms later.',
+  'trend.stable':'Timing is stable. Try one step narrower window, or move on to EWGF after 3+ waves (Wave EWGF mode).',
+  'chain.end':(n,dps,name,ms)=>'Wave chain of '+n+' ended · avg '+dps+' dashes/s. Longest segment on average: '+name+' ('+ms+'ms)',
+  'chain.fix':' — shorten this and speed goes up immediately.', 'chain.ok':' — well balanced.',
+  'drill.waveEnd':(n,dps)=>'10s over · '+n+' dashes ('+dps+' dashes/s)', 'drill.end':(ok,tg,r)=>'Done · '+ok+'/'+tg+' ('+r+'%)', 'drill.dashes':n=>n+' dashes',
+  'pop.ewgf':'EWGF!', 'pop.wgf':'WGF',
+  'footer':'Notation: 6 = forward (f), N = neutral, 2 = down (d), 3 = down-forward (d/f), button 2 = right punch (RP). Wave = 6N23 6 N 6N23 6 N … (the 6 after 3 cancels the recovery). 1 frame = 16.67ms. Unofficial fan-made practice tool.',
+},
+ja:{
+  'app.title':'三島道場',
+  'app.tagline':'三島流入力トレーナー · 6N23 6 N 6N23 … のウェーブと 6N23+2 の最風をフレーム単位で判定',
+  'modes.aria':'練習モード', 'stage.aria':'練習ステージ', 'stage.canvasAria':'SDキャラクター演出画面', 'inputs.aria':'入力履歴', 'coach.aria':'コーチパネル', 'stats.aria':'セッション記録', 'records.aria':'記録',
+  'src.wait':'⌨ キーボード待機', 'src.kb':'⌨ キーボード', 'src.pad':'🎮 ゲームパッド',
+  'mode.free.name':'自由練習', 'mode.free.desc':'制限なしでウェーブと最風を混ぜて練習します。すべての入力が記録されます。',
+  'mode.wave10.name':'ウェーブ10秒', 'mode.wave10.desc':'10秒間にできるだけ多くの風神ステップ。キャンセル6が抜けると連続が途切れます。ダッシュ/秒と最高連続回数を記録します。',
+  'mode.ewgf20.name':'最風20回', 'mode.ewgf20.desc':'最風を20回試行し、成功率と平均ボタンオフセットを記録します。',
+  'mode.combo10.name':'ウェーブ最風10回', 'mode.combo10.desc':'ウェーブを3回以上つないでから最風で締める。10回試行して成功率を記録します。',
+  'hint.free':'6N23 = 風神ステップ · 3の直後に↓を離して6(キャンセル)、離してまた6N23 · 3と同時にI(2) = 最風',
+  'hint.wave10':'開始後 6N23 6 N 6N23 6 N … を繰り返す · 3の直後に↓だけ離すとキャンセル6、離してまた6',
+  'hint.ewgf20':'6を離して2、そして3と同時に右パンチ(2) · 初期判定は0.5フレーム(設定で変更)',
+  'hint.combo10':'6N23 6 N … ウェーブ3回以上 → 最後の3と同時に2',
+  'drill.start':'開始', 'drill.reset':'セッション初期化',
+  'ready.title':'入力待ち', 'ready.sub':'キーボードまたはゲームパッドで入力してください', 'ready.reset':'セッションを初期化しました',
+  'coach.intro':'まず<strong>→(6)</strong>を軽く押して離し、<strong>↓(2)</strong>を押したまま→を足して<strong>↓→(3)</strong>。これが風神ステップ1回です。つなげるには3の直後に↓を離して<strong>6でキャンセル</strong>し、離してまた6N23。',
+  'trend.intro':'試行が溜まると傾向分析がここに表示されます。',
+  'trend.few':'直近の試行が3回以上溜まると傾向分析が表示されます。',
+  'seg.title':'最後のステップ区間 (ms)', 'seg.names':['6','N','2','3','ｷｬﾝｾﾙ6'],
+  'seg.l1':'始動6保持', 'seg.l2':'ニュートラル', 'seg.l3':'2保持', 'seg.l4':'3保持 → キャンセル6', 'seg.l5':'キャンセル6 → 次の始動6',
+  'stat.dps':'最高ウェーブ速度 (ダッシュ/秒)', 'stat.chain':'最高連続ステップ', 'stat.dash':'総ステップ数', 'stat.rate':'最風成功率', 'stat.try':'最風試行', 'stat.mean':'平均ボタンオフセット',
+  'set.title':'入力・判定設定', 'set.more':'開く', 'set.less':'閉じる',
+  'set.window':'最風判定幅', 'set.win8':'ジャスト 0.5f', 'set.win12':'普通 0.7f', 'set.win15':'甘め 0.9f',
+  'set.side':'キャラの向き', 'set.side1':'1P (→が前)', 'set.side2':'2P (←が前)',
+  'set.fx':'演出 (揺れ・フラッシュ)', 'set.on':'オン', 'set.off':'オフ',
+  'set.keys':'キー設定 — 枠を押してから使いたいキーを入力 (矢印キー↑↓←→は常に使用可)', 'set.keyListen':'キー入力…',
+  'set.keyConflict':'すでに使用中か矢印キーと衝突するキーです。別のキーを押してください。Escでキャンセル。',
+  'set.pad':'ゲームパッド', 'set.padNone':'未接続 · パッドのボタンを押すと検出', 'set.padOn':'接続済み · ',
+  'set.padNote':'パッド初期配置: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>、十字キー・左スティックとも方向として認識。ブラウザ入力は約4ms単位で読まれるため、実機よりわずかに誤差があります。初期判定は0.5フレーム(ジャスト)です。感覚をつかむ間だけ広げて使ってください。',
+  'hist.title':'最風ボタンタイミング分布', 'hist.sub':'3(d/f)入力時点を0とした2(RP)ボタン押下のフレーム差 · 直近60回',
+  'hist.lOk':'最風 (判定内)', 'hist.lEarly':'早い (2+2)', 'hist.lLate':'遅い (風神拳)', 'hist.aria':'最風ボタンタイミングのヒストグラム',
+  'hist.empty':'最風を試行すると分布が溜まります', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}回 · ${k}`, 'hist.kOk':'最風', 'hist.kEarly':'早い', 'hist.kLate':'遅い',
+  'wave.title':'ウェーブ速度推移', 'wave.sub':'風神ステップ1回あたりの速度 (ダッシュ/秒) · 直近40回、5以上で上級', 'wave.aria':'ウェーブ速度推移',
+  'wave.top':'上級 (5以上)', 'wave.empty':'風神ステップを2回以上連続で入れると描画されます', 'wave.old':'古い', 'wave.recent':'最近',
+  'wave.tip':(dps,ms,f)=>`${dps} ダッシュ/秒 · サイクル ${ms}ms (${f}f)`,
+  'best.title':'モード別最高記録', 'best.sub':'このブラウザに保存されます', 'best.none':'記録なし', 'best.last':'最近: ',
+  'rec.dps':d=>d+' ダッシュ/秒', 'rec.waveSub':(n,c)=>n+'回 · 最高連続 '+c, 'rec.ewgfSub':(ok,tg,m)=>ok+'/'+tg+' · 平均 '+m,
+  'log.title':'最近の試行ログ', 'log.sub':'チャートと同じデータ · 直近12件', 'log.hTime':'時刻', 'log.hType':'種類', 'log.hRes':'結果', 'log.hNum':'数値', 'log.hMemo':'メモ', 'log.empty':'まだ記録がありません。',
+  'log.tDash':'ステップ', 'log.tEwgf':'最風', 'log.tWave':'ウェーブ',
+  'log.rCancel':'キャンセル抜け', 'log.rFail':'失敗', 'log.rChain':n=>n+'連続', 'log.mNoCancel':'6N23の後に6なし', 'log.mAfterWave':n=>'ウェーブ'+n+'回後', 'log.mCycle':ms=>'平均サイクル '+ms+'ms',
+  'res.ewgf':'最風', 'res.combo_short':'ウェーブ不足', 'res.wgf':'風神拳(遅い)', 'res.early':'早い(2+2)', 'res.no_df':'3なし', 'res.early_stage':'コマンド未完成', 'res.no_cd':'コマンドなし',
+  'r.noCancel.title':'キャンセル6抜け', 'r.noCancel.sub':'前のステップがキャンセルされず連続が途切れました',
+  'r.wave.title':n=>'ウェーブ ×'+n, 'r.wave.sub':(dps,ms,f)=>dps+' ダッシュ/秒 · サイクル '+ms+'ms ('+f+'f)',
+  'r.cd.title':'風神ステップ', 'r.cd.sub':(a,b,c)=>'6 '+a+'ms · N '+b+'ms · 2 '+c+'ms',
+  'coach.noCancel':'↓→の次の<strong>6(→)</strong>が抜けています。風神ステップには硬直があるので、↓→の直後に↓を離して6を入れないとキャンセルされません。順番は<strong>6N23 <u>6</u> N 6N23 <u>6</u> N …</strong> — 6が2回ずつ入ります。',
+  'coach.firstCD':'いいですね。つなげるには↓→の直後に↓を離して<strong>6</strong>(キャンセル)、離してまた<strong>6</strong> → N → ↓ → ↓→ を繰り返してください。',
+  'fault.f_before_d.title':'入力順エラー', 'fault.f_before_d.coach':'→を離してから↓を押してください。今は→を押したまま↓が入り、すぐ↓→になりました。順番は<strong>6、N、2、3</strong>。',
+  'fault.n_to_df.title':'2なしで3', 'fault.n_to_df.coach':'ニュートラルから直接↓→が入りました。↓を先に入れてから→を足して↓→へ倒す2段階が必要です。',
+  'fault.cancel_as_start.title':'始動6抜け', 'fault.cancel_as_start.coach':'キャンセル用の6を次のステップの始動6として兼用しました。キャンセル6を離して<strong>もう一度6</strong>を入れてから↓、↓→です: 6N23 6 <u>N 6</u> N23。',
+  'coach.wrongBtn':n=>'最風は<strong>2 (右パンチ)</strong>です。今押したボタンは'+n+'番。',
+  'a.ewgf.title':'最風!', 'a.ewgf.sub':(f,ms)=>'ボタンオフセット '+f+' ('+ms+')', 'a.afterWave':n=>' · ウェーブ'+n+'回後',
+  'a.ewgf.perfect':'完璧なジャスト。この感覚を<strong>手に覚えさせて</strong>ください — 3へ倒す手と2を押す手が一つの動作でした。',
+  'a.ewgf.late':f=>'成功。ボタンが3より'+f+'遅れて入りました。もう少し<strong>同時に</strong>押せばジャスト判定も通ります。',
+  'a.ewgf.early':f=>'成功。ボタンが3よりわずかに早く('+f+')入りました。↓→へ倒す瞬間に合わせて<strong>ほんの少し遅く</strong>押しても大丈夫です。',
+  'a.combo.title':'最風 (ウェーブ不足)', 'a.combo.coach':n=>'最風は出ましたが、その前のウェーブが'+n+'回でした。このモードは<strong>ウェーブ3回以上</strong>の後に最風を入れないと認められません。',
+  'a.wgf.title':'風神拳', 'a.wgf.sub':(f,ms)=>'攻撃ボタンが'+f+' ('+ms+')遅れました',
+  'a.wgf.slow':f=>'攻撃ボタンが<strong>遅すぎました</strong>('+f+')。3を押してからボタンを探すのではなく、↓→へ倒す動作と2を<strong>一拍</strong>にまとめてください。',
+  'a.wgf.close':f=>'惜しい。ボタンが'+f+'遅れて通常の風神拳が出ました。2を3と<strong>同時に</strong> — ↓に→を足す瞬間には指をボタンに乗せておきましょう。',
+  'a.early.title':'早すぎました', 'a.early.sub':(f,ms)=>'ボタンが3より'+f+' ('+ms+')早く押されました → しゃがみジャブ(2+2)',
+  'a.early.coach':'2が3より先に入って<strong>しゃがみジャブ</strong>が出ました。↓を入れてから→を足して↓→になる<strong>まさにその瞬間</strong>に押してください。ボタンを急がないこと。',
+  'a.no_df.title':'3抜け', 'a.no_df.sub':'↓のまま2を押し、↓→が来ませんでした',
+  'a.no_df.coach':'↓だけ押した状態でボタンが出ました。↓を保持しながら<strong>→を足して</strong>↓→を作り、その瞬間に2を押してください。',
+  'a.early_stage.title':'コマンド未完成', 'a.early_stage.subF':'→を押したまま2 (6+2)', 'a.early_stage.subN':'ニュートラルで2 (ジャブ)',
+  'a.early_stage.coach':'風神ステップが終わる前にボタンを押しました。<strong>→、離す、↓、↓→</strong>まで完成させてから、最後の↓→と同時に2。',
+  'a.no_cd.title':'コマンドなし', 'a.no_cd.sub':'風神ステップなしで2だけ押されました',
+  'a.no_cd.coach':'最風のコマンドは<strong>6、N、2、3+2</strong>です。→を軽く押して離し、↓、↓→を入れて最後に2。',
+  'seg.n.f':'6保持', 'seg.n.n':'ニュートラル', 'seg.n.d':'2保持', 'seg.n.df':'3保持', 'seg.n.c':'キャンセル6 → 始動6',
+  'seg.a.f':'→を長く押しすぎています。<strong>軽く叩くように</strong>短く押してすぐ離してください。',
+  'seg.a.n':'→を離してから↓までの間が長いです。<strong>離した瞬間に</strong>↓を押してください。',
+  'seg.a.d':'↓から↓→への移行が遅いです。↓を入れたら<strong>すぐ→を足して</strong>倒してください。',
+  'seg.a.df':'↓→を長く押しすぎています。↓→の直後に<strong>↓だけ離して</strong>すぐキャンセル6を入れてください。',
+  'seg.a.c':'キャンセル6から次の始動6までの間が長いです。6を<strong>離した瞬間にまた6</strong>を軽く押してください。',
+  'tempo.5':'<strong>上級の速度</strong>です。', 'tempo.4':'速い方です。', 'tempo.3':'安定しています。', 'tempo.0':'まだ遅いです。',
+  'wave.worst':(name,ms)=>'一番長い区間は<strong>'+name+'</strong> ('+ms+'ms)。',
+  'wave.even':'区間が均等に短いです。このリズムを保ちながら<strong>連続回数</strong>を伸ばしましょう。',
+  'trend.head':(n,hit,mean,sd)=>'直近'+n+'回: 最風'+hit+'回 · 平均 '+mean+' · ばらつき '+sd+'f。',
+  'trend.noisy':'タイミングがばらついています。ウェーブのリズムを一定にしてから、最後の3にボタンを「乗せる」感覚で統一してください。',
+  'trend.late':ms=>'全体的に遅れる傾向です。ボタンを今より約'+ms+'ms早く、3と同時に。',
+  'trend.early':ms=>'全体的に早い傾向です。↓→が入ったのを感じてから押す方向で、約'+ms+'ms遅らせてください。',
+  'trend.stable':'タイミングが安定しています。判定幅を一段階狭めるか、ウェーブ3回以上の後の最風(ウェーブ最風モード)に進みましょう。',
+  'chain.end':(n,dps,name,ms)=>'ウェーブ'+n+'連続終了 · 平均 '+dps+' ダッシュ/秒。平均で一番長い区間は'+name+' ('+ms+'ms)',
+  'chain.fix':' — ここを縮めれば速度がすぐ上がります。', 'chain.ok':' — バランスが良いです。',
+  'drill.waveEnd':(n,dps)=>'10秒終了 · '+n+'回 ('+dps+' ダッシュ/秒)', 'drill.end':(ok,tg,r)=>'終了 · 成功 '+ok+'/'+tg+' ('+r+'%)', 'drill.dashes':n=>n+' ステップ',
+  'pop.ewgf':'最風!', 'pop.wgf':'風神拳',
+  'footer':'表記: 6 = 前, N = ニュートラル, 2 = 下, 3 = 斜め下前, ボタン2 = 右パンチ(RP)。ウェーブ = 6N23 6 N 6N23 6 N … (3の後の6が硬直キャンセル)。1フレーム = 16.67ms基準。非公式ファン製作の練習ツールです。',
+},
+};
+const T = (key, ...args) => {
+  const d = I18N[store.lang] || I18N.ko;
+  const v = key in d ? d[key] : I18N.ko[key];
+  if(v===undefined) return key;
+  return typeof v==='function' ? v(...args) : v;
+};
+const msg = v => typeof v==='function' ? v() : Array.isArray(v) ? T(...v) : (v==null?'':v);
+const displayFont = () => store.lang==='ja' ? '"Dela Gothic One", "Noto Sans JP", sans-serif' : '"Black Han Sans", "Noto Sans KR", sans-serif';
+
 /* ---------- session state ---------- */
 const session = { dashes:0, bestChain:0, bestDps:0, tries:0, hits:0, offsetSum:0, offsetCount:0, cycles:[], attempts:[], log:[] };
 /* states: 0 idle · 1 시작 6 · 2 중립 · 3 d · 4 d/f(대시 중) · 5 캔슬 6 · 6 캔슬 후 중립 · 7 d/f 뗀 뒤 캔슬 대기 */
 const cd = { state:0, tF:0, tN:0, tD:0, tDF:0, tC:0, tRel:0, lastDF:-1e9, cancelled:true, chain:0, chainCycles:[], pending:null };
 let mode = 'free';
 const drill = { running:false, tStart:0, dur:0, count:0, target:0, cdTimer:null, messageTimer:null };
+/* last rendered texts, kept as re-evaluable messages so a language switch can redraw them */
+const ui = { result:{cls:'',kind:'READY',title:['ready.title'],sub:['ready.sub']}, coach:['coach.intro'], trend:['trend.intro'], seg:null, padId:null };
 
 /* ---------- input layer ---------- */
 const held = new Set();               // keyboard codes
@@ -311,6 +601,7 @@ let lastInputT = performance.now();
 const history = [];                    // {t, dir|btn}
 const srcBadge = $('srcBadge');
 let lastSrc = '';
+function setSrc(src){ lastSrc=src; srcBadge.textContent = T(src==='pad'?'src.pad':'src.kb'); srcBadge.classList.add('on'); }
 
 function dirName(x,y){
   const fx = x*store.side;             // +1 forward
@@ -322,7 +613,7 @@ function recomputeDir(t, src){
   const x = clamp(kbDir.x + padDir.x, -1, 1), y = clamp(kbDir.y + padDir.y, -1, 1);
   const d = dirName(x,y);
   if(d!==curDir){ curDir = d; onDir(d, t); }
-  if(src && src!==lastSrc){ lastSrc=src; srcBadge.textContent = src==='pad'?'🎮 게임패드':'⌨ 키보드'; srcBadge.classList.add('on'); }
+  if(src && src!==lastSrc) setSrc(src);
 }
 function kbVector(){
   const k = store.keys;
@@ -337,7 +628,7 @@ addEventListener('keydown', e => {
     e.preventDefault();
     if(e.code==='Escape'){ listening=null; renderKeys(); return; }
     if(!validKey(listening,e.code) || Object.entries(store.keys).some(([k,v])=>k!==listening && v===e.code)){
-      setCoach('이미 사용 중이거나 방향키와 충돌하는 키입니다. 다른 키를 누르세요. Esc로 취소합니다.'); return;
+      setCoach(['set.keyConflict']); return;
     }
     store.keys[listening]=e.code; listening=null; resetInput(); save(); renderKeys(); return;
   }
@@ -350,7 +641,7 @@ addEventListener('keydown', e => {
   const k = store.keys;
   if(e.code===k.b1) onButton(1,t); else if(e.code===k.b2) onButton(2,t); else if(e.code===k.b3) onButton(3,t); else if(e.code===k.b4) onButton(4,t);
   else { kbVector(); recomputeDir(t,'kb'); }
-  if(lastSrc!=='kb'){ lastSrc='kb'; srcBadge.textContent='⌨ 키보드'; srcBadge.classList.add('on'); }
+  if(lastSrc!=='kb') setSrc('kb');
 });
 addEventListener('keyup', e => {
   if(!held.has(e.code)) return;
@@ -365,11 +656,12 @@ addEventListener('blur', () => { resetInput(); endDrill(true); });
 
 /* gamepad */
 let padIndex = null;
-addEventListener('gamepadconnected', e => { padIndex = e.gamepad.index; $('padStatus').textContent = '연결됨 · ' + e.gamepad.id.slice(0,40); });
+function renderPadStatus(){ $('padStatus').textContent = ui.padId==null ? T('set.padNone') : T('set.padOn') + ui.padId; }
+addEventListener('gamepadconnected', e => { padIndex = e.gamepad.index; ui.padId = e.gamepad.id.slice(0,40); renderPadStatus(); });
 function releasePad(){
   padIndex=null; padDir={x:0,y:0}; padBtn.fill(false); clearCommand();
   curDir=dirName(kbDir.x,kbDir.y); updateHud();
-  $('padStatus').textContent='연결 안 됨 · 패드 아무 버튼이나 누르면 감지';
+  ui.padId=null; renderPadStatus();
 }
 addEventListener('gamepaddisconnected', e => { if(e.gamepad.index===padIndex) releasePad(); });
 const HAT = [[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[-1,1]]; // 위부터 시계방향 8방향
@@ -384,7 +676,7 @@ function pollPad(){
   let gp = null;
   for(const p of pads){ if(p && (padIndex===null || p.index===padIndex)){ gp=p; break; } }
   if(!gp){ if(padIndex!==null) releasePad(); return; }
-  if(padIndex===null){ padIndex=gp.index; $('padStatus').textContent='연결됨 · '+gp.id.slice(0,40); }
+  if(padIndex===null){ padIndex=gp.index; ui.padId=gp.id.slice(0,40); renderPadStatus(); }
   const t = performance.now();
   const b = gp.buttons, ax = gp.axes;
   const on = i => !!(b[i] && (b[i].pressed || b[i].value>0.5));
@@ -397,7 +689,7 @@ function pollPad(){
   const map = [2,3,0,1]; // 1=X/□ 2=Y/△ 3=A/✕ 4=B/○
   if(changed) recomputeDir(t,'pad'); // 같은 샘플의 방향을 먼저 반영해야 d/f+2를 판정할 수 있다.
   map.forEach((bi,i) => { const p = on(bi); if(p && !padBtn[i]) onButton(i+1,t); padBtn[i]=p; });
-  if(padBtn.some(Boolean) && lastSrc!=='pad'){ lastSrc='pad'; srcBadge.textContent='🎮 게임패드'; srcBadge.classList.add('on'); }
+  if(padBtn.some(Boolean) && lastSrc!=='pad') setSrc('pad');
 }
 setInterval(pollPad, 4);
 
@@ -494,27 +786,29 @@ function completeCD(t){
   fx.crouchDash();
   renderSeg(cyc);
   if(noCancel && !cd.pending){
-    showResult('wgf','NO CANCEL','캔슬 6 누락', '앞 대시가 캔슬되지 않아 연속으로 이어지지 않았습니다');
-    setCoach('↓→ 다음에 <strong>6(→)</strong>이 빠졌습니다. 크라우치 대시는 후딜레이가 있어서 ↓→ 직후 ↓를 떼 6을 넣어야 캔슬됩니다. 순서는 <strong>6N23 <u>6</u> N 6N23 <u>6</u> N …</strong> — 6이 두 번씩 들어갑니다.');
-    addLog(t,'대시','캔슬 누락','', '6N23 뒤 6 없음');
+    showResult('wgf','NO CANCEL',['r.noCancel.title'],['r.noCancel.sub']);
+    setCoach(['coach.noCancel']);
+    addLog(t,'log.tDash',['log.rCancel'],'',['log.mNoCancel'],'no');
   }
-  else if(cd.chain>=2 && !cd.pending){ showResult('wave','WAVE','웨이브 ×'+cd.chain, cyc.cycle? (1000/cyc.cycle).toFixed(1)+' 대시/초 · 사이클 '+Math.round(cyc.cycle)+'ms ('+(cyc.cycle/FRAME).toFixed(1)+'f)':'' ); coachWaveLive(cyc); }
-  else if(cd.chain===1 && !cd.pending){ showResult('wave','CROUCH DASH','크라우치 대시', 'f '+Math.round(cyc.fHold)+'ms · N '+Math.round(cyc.nGap)+'ms · d '+Math.round(cyc.dHold)+'ms'); if(!cd.chainCycles.length || session.dashes<=1) setCoach('좋습니다. 이어가려면 ↓→ 직후 ↓를 떼 <strong>6</strong>을 넣고(캔슬), 떼었다가 다시 <strong>6</strong> → 중립 → ↓ → ↓→ 를 반복하세요.'); }
+  else if(cd.chain>=2 && !cd.pending){
+    const n = cd.chain, c = cyc.cycle;
+    showResult('wave','WAVE',['r.wave.title',n], c? ['r.wave.sub',(1000/c).toFixed(1),Math.round(c),(c/FRAME).toFixed(1)] : '');
+    coachWaveLive(cyc);
+  }
+  else if(cd.chain===1 && !cd.pending){
+    showResult('wave','CROUCH DASH',['r.cd.title'],['r.cd.sub',Math.round(cyc.fHold),Math.round(cyc.nGap),Math.round(cyc.dHold)]);
+    if(!cd.chainCycles.length || session.dashes<=1) setCoach(['coach.firstCD']);
+  }
   if(cd.pending) resolvePending(t, t);
   updateStats(); updateHud();
 }
 function fault(kind, t){
-  const msgs = {
-    f_before_d: ['MISS','입력 순서 오류','→ 를 뗀 뒤에 ↓ 를 누르세요. 지금은 → 를 잡은 채 ↓ 가 들어가 바로 ↓→ 가 됐습니다. 순서는 <strong>f, 중립, d, d/f</strong>.'],
-    n_to_df: ['MISS','d 없이 d/f','중립에서 곧장 ↓→ 가 들어갔습니다. ↓ 를 먼저 찍고 → 를 더해 ↓→ 로 미는 두 단계여야 합니다.'],
-    cancel_as_start: ['MISS','시작 6 누락','캔슬용 6 을 다음 대시의 시작 6 으로 겸해 썼습니다. 캔슬 6 을 떼고 <strong>6 을 한 번 더</strong> 넣은 뒤 ↓, ↓→ 입니다: 6N23 6 <u>N 6</u> N23.'],
-  };
-  const m = msgs[kind]; if(!m) return;
+  if(!['f_before_d','n_to_df','cancel_as_start'].includes(kind)) return;
   clearCommand(); updateHud();
-  showResult('miss', m[0], m[1], '');
-  setCoach(m[2]);
+  showResult('miss', 'MISS', ['fault.'+kind+'.title'], '');
+  setCoach(['fault.'+kind+'.coach']);
   fx.stumble();
-  addLog(t, '대시', '실패', '', m[1]);
+  addLog(t, 'log.tDash', ['log.rFail'], '', ['fault.'+kind+'.title'], 'no');
 }
 
 /* ---------- button / EWGF ---------- */
@@ -522,7 +816,7 @@ function onButton(n, t){
   drillTick(t); tick(t);
   pushHistory({t, btn:n});
   if(n!==2){
-    if(cd.state>=3 && (mode==='ewgf20'||mode==='combo10')) setCoach('초풍은 <strong>2 (오른손 펀치)</strong> 입니다. 방금 누른 버튼은 '+n+'번.');
+    if(cd.state>=3 && (mode==='ewgf20'||mode==='combo10')) setCoach(['coach.wrongBtn', n]);
     return;
   }
   const off = t - cd.lastDF;
@@ -556,93 +850,87 @@ function attempt(kind, off, t){
   session.tries++; if(kind==='ewgf') session.hits++;
   if(off!=null){ session.offsetSum+=off; session.offsetCount++; }
   const comboOK = chainBefore>=3;
-  let title, sub, cls, coach, res;
+  const f = off==null?'':fmtF(off), ms = off==null?'':fmtMs(off);
+  let title, sub, cls, coach, res, rowCls;
   switch(kind){
     case 'ewgf':
-      cls='ewgf'; title='초풍!'; res='초풍';
-      sub = '버튼 오프셋 '+fmtF(off)+' ('+fmtMs(off)+')' + (chainBefore>1?' · 웨이브 '+chainBefore+'회 후':'');
-      coach = Math.abs(off)<=Math.min(8, store.window/2) ? '완벽한 저스트. 이 감각을 <strong>손에 기억</strong>시키세요 — d/f 로 미는 손과 2 를 누르는 손이 한 동작이었습니다.'
-            : (off>0 ? '성공. 버튼이 d/f 보다 '+fmtF(off)+' 뒤에 들어왔습니다. 조금만 더 <strong>동시에</strong> 누르면 저스트 판정도 통과합니다.'
-                     : '성공. 버튼이 d/f 보다 살짝 먼저('+fmtF(off)+') 들어왔습니다. ↓→ 로 미는 순간에 맞춰 <strong>아주 조금 늦게</strong> 눌러도 됩니다.');
-      if(mode==='combo10' && !comboOK) { coach = '초풍은 됐지만 앞의 웨이브가 '+chainBefore+'회였습니다. 이 모드는 <strong>웨이브 3회 이상</strong> 후에 초풍을 넣어야 인정됩니다.'; title='초풍 (웨이브 부족)'; cls='wgf'; res='웨이브 부족'; }
+      cls='ewgf'; title=['a.ewgf.title']; res='ewgf'; rowCls='ok';
+      sub = () => T('a.ewgf.sub', f, ms) + (chainBefore>1 ? T('a.afterWave', chainBefore) : '');
+      coach = Math.abs(off)<=Math.min(8, store.window/2) ? ['a.ewgf.perfect'] : (off>0 ? ['a.ewgf.late', f] : ['a.ewgf.early', f]);
+      if(mode==='combo10' && !comboOK) { coach = ['a.combo.coach', chainBefore]; title=['a.combo.title']; cls='wgf'; res='combo_short'; rowCls='wg'; }
       fx.ewgf(); break;
     case 'wgf':
-      cls='wgf'; title='풍신권'; res='풍신권(늦음)';
-      sub = '공격 버튼이 '+fmtF(off)+' ('+fmtMs(off)+') 늦었습니다';
-      coach = off>100 ? '공격 버튼이 <strong>너무 느렸습니다</strong> ('+fmtF(off)+'). d/f 를 잡고 나서 버튼을 찾지 말고, ↓→ 로 미는 동작과 2 를 <strong>한 박자</strong>로 묶으세요.'
-            : '아깝습니다. 버튼이 '+fmtF(off)+' 늦어 일반 풍신권이 나갔습니다. 2 를 d/f 와 <strong>동시에</strong> — ↓ 에서 → 를 더하는 순간 손가락을 이미 버튼 위에 올려 두세요.';
+      cls='wgf'; title=['a.wgf.title']; res='wgf'; rowCls='wg';
+      sub = ['a.wgf.sub', f, ms];
+      coach = off>100 ? ['a.wgf.slow', f] : ['a.wgf.close', f];
       fx.wgf(); break;
     case 'early':
-      cls='miss'; title='너무 빨랐습니다'; res='빠름(d+2)';
-      sub = '버튼이 d/f 보다 '+fmtF(off)+' ('+fmtMs(off)+') 먼저 눌림 → 앉아 잽(d+2)';
-      coach = '2 가 d/f 보다 먼저 들어가 <strong>앉아 잽</strong>이 나갔습니다. ↓ 를 찍은 뒤 → 를 더해 ↓→ 가 되는 <strong>바로 그 순간</strong>에 눌러야 합니다. 버튼을 서두르지 마세요.';
+      cls='miss'; title=['a.early.title']; res='early'; rowCls='no';
+      sub = ['a.early.sub', f, ms];
+      coach = ['a.early.coach'];
       fx.jab(); break;
     case 'no_df':
-      cls='miss'; title='d/f 누락'; res='d/f 없음';
-      sub = '↓ 상태에서 2 를 누르고 ↓→ 가 오지 않음';
-      coach = '↓ 만 누른 채 버튼이 나갔습니다. ↓ 를 유지하면서 <strong>→ 를 더해</strong> ↓→ 를 만들고, 그 순간 2 를 누르세요.';
+      cls='miss'; title=['a.no_df.title']; res='no_df'; rowCls='no';
+      sub = ['a.no_df.sub'];
+      coach = ['a.no_df.coach'];
       fx.jab(); break;
     case 'early_stage':
-      cls='miss'; title='커맨드 미완성'; res='커맨드 미완성';
-      sub = cd.state===1 ? '→ 를 누른 상태에서 2 (f+2)' : '중립에서 2 (잽)';
-      coach = '크라우치 대시가 끝나기 전에 버튼을 눌렀습니다. <strong>→, 떼고, ↓, ↓→</strong> 까지 완성한 뒤 마지막 ↓→ 와 동시에 2.';
+      cls='miss'; title=['a.early_stage.title']; res='early_stage'; rowCls='no';
+      sub = [cd.state===1 ? 'a.early_stage.subF' : 'a.early_stage.subN'];
+      coach = ['a.early_stage.coach'];
       fx.jab(); break;
     default:
-      cls='miss'; title='커맨드 없음'; res='커맨드 없음';
-      sub = '크라우치 대시 없이 2 만 눌림';
-      coach = '초풍 커맨드는 <strong>f, N, d, d/f+2</strong> 입니다. → 를 톡 치고 뗀 뒤 ↓, ↓→ 를 넣고 마지막에 2.';
+      cls='miss'; title=['a.no_cd.title']; res='no_cd'; rowCls='no';
+      sub = ['a.no_cd.sub'];
+      coach = ['a.no_cd.coach'];
       fx.jab();
   }
   showResult(cls, kind==='ewgf'?'ELECTRIC WIND GOD FIST':kind==='wgf'?'WIND GOD FIST':'MISS', title, sub);
   setCoach(coach);
-  addLog(t, '초풍', res, off==null?'':fmtF(off)+' / '+fmtMs(off), chainBefore? '웨이브 '+chainBefore+'회 후':'');
+  addLog(t, 'log.tEwgf', ['res.'+res], off==null?'':f+' / '+ms, chainBefore? ['log.mAfterWave', chainBefore]:'', rowCls);
   if(drill.running && (mode==='ewgf20'||mode==='combo10')){ drill.count++; if(drill.count>=drill.target) endDrill(); }
   coachTrend(); updateStats(); renderHist(); renderLog();
   clearCommand(); updateHud();
 }
 
 /* ---------- coach text ---------- */
-function setCoach(html){ $('coachMsg').innerHTML = html; }
+function setCoach(m){ ui.coach = m; $('coachMsg').innerHTML = msg(m); }
+function setTrend(m){ ui.trend = m; $('coachTrend').textContent = msg(m); }
+const SEGKEYS = ['f','n','d','df','c'];
 function coachWaveLive(cyc){
-  const segs = [['f 유지',cyc.fHold,'→ 를 너무 오래 잡고 있습니다. <strong>톡 치듯</strong> 짧게 누르고 바로 떼세요.'],
-                ['중립',cyc.nGap,'→ 를 뗀 뒤 ↓ 까지 텀이 깁니다. <strong>떼자마자</strong> ↓ 를 누르세요.'],
-                ['d 유지',cyc.dHold,'↓ 에서 ↓→ 로 넘어가는 게 느립니다. ↓ 를 찍고 <strong>바로 → 를 더해</strong> 미세요.'],
-                ['d/f 유지',cyc.dfHold,'↓→ 를 오래 잡고 있습니다. ↓→ 직후 <strong>↓ 만 떼서</strong> 곧바로 캔슬 6 을 넣으세요.'],
-                ['캔슬 6 → 시작 6',cyc.cancelGap,'캔슬 6 에서 다음 시작 6 까지 텀이 깁니다. 6 을 <strong>떼자마자 다시 6</strong> 을 톡 치세요.']].filter(s=>s[1]!=null);
-  segs.sort((a,b)=>b[1]-a[1]);
+  const vals = [cyc.fHold, cyc.nGap, cyc.dHold, cyc.dfHold, cyc.cancelGap];
+  const segs = SEGKEYS.map((k,i)=>[k, vals[i]]).filter(s=>s[1]!=null).sort((a,b)=>b[1]-a[1]);
   const worst = segs[0];
   const dps = cyc.cycle?1000/cyc.cycle:0;
-  let tempo = dps>=5?'<strong>상급 속도</strong>입니다. ':dps>=4?'빠른 편입니다. ':dps>=3?'안정적입니다. ':'아직 느립니다. ';
-  if(worst && worst[1]>90) setCoach(tempo+'가장 긴 구간은 <strong>'+worst[0]+'</strong> ('+Math.round(worst[1])+'ms). '+worst[2]);
-  else setCoach(tempo+'구간이 고르게 짧습니다. 이 리듬을 유지하며 <strong>연속 횟수</strong>를 늘려 보세요.');
+  const tempoKey = dps>=5?'tempo.5':dps>=4?'tempo.4':dps>=3?'tempo.3':'tempo.0';
+  if(worst && worst[1]>90) setCoach(() => T(tempoKey) + T('wave.worst', T('seg.n.'+worst[0]), Math.round(worst[1])) + T('seg.a.'+worst[0]));
+  else setCoach(() => T(tempoKey) + T('wave.even'));
 }
 function coachTrend(){
   const recent = session.attempts.filter(a=>a.off!=null).slice(-10);
-  const el = $('coachTrend');
-  if(recent.length<3){ el.textContent = '최근 시도가 3회 이상 쌓이면 경향 분석이 표시됩니다.'; return; }
+  if(recent.length<3){ setTrend(['trend.few']); return; }
   const offs = recent.map(a=>a.off);
   const mean = offs.reduce((s,v)=>s+v,0)/offs.length;
   const sd = Math.sqrt(offs.reduce((s,v)=>s+(v-mean)**2,0)/offs.length);
   const hit = recent.filter(a=>a.kind==='ewgf').length;
-  let msg = '최근 '+recent.length+'회: 초풍 '+hit+'회 · 평균 '+fmtF(mean)+' · 편차 '+(sd/FRAME).toFixed(1)+'f. ';
-  if(sd>FRAME*1.8) msg += '타이밍이 들쭉날쭉합니다. 웨이브 리듬을 일정하게 만든 뒤 마지막 d/f 에 버튼을 "얹는" 느낌으로 통일하세요.';
-  else if(mean>FRAME) msg += '전반적으로 늦는 경향입니다. 버튼을 지금보다 약 '+Math.round(mean)+'ms 일찍, d/f 와 동시에.';
-  else if(mean<-FRAME) msg += '전반적으로 빠른 경향입니다. ↓→ 가 들어간 것을 느끼고 누르는 쪽으로 약 '+Math.round(-mean)+'ms 늦추세요.';
-  else msg += '타이밍이 안정적입니다. 판정 폭을 한 단계 좁혀 보거나, 웨이브 3회 이상 후 초풍(웨이브 초풍 모드)으로 넘어가세요.';
-  el.textContent = msg;
+  const tail = sd>FRAME*1.8 ? ['trend.noisy'] : mean>FRAME ? ['trend.late', Math.round(mean)] : mean<-FRAME ? ['trend.early', Math.round(-mean)] : ['trend.stable'];
+  setTrend(() => T('trend.head', recent.length, hit, fmtF(mean), (sd/FRAME).toFixed(1)) + T(...tail));
 }
 function renderSeg(cyc){
+  ui.seg = cyc;
+  const names = T('seg.names');
+  const bar = $('segBar');
+  if(!cyc){ [...bar.children].forEach((el,i)=>{ el.style.flex=1; el.textContent=names[i]; el.title=''; }); return; }
   const vals = [cyc.fHold, cyc.nGap, cyc.dHold, cyc.dfHold==null?0:cyc.dfHold, cyc.cancelGap==null?0:cyc.cancelGap].map(v=>Math.max(0,v));
   const total = vals.reduce((s,v)=>s+v,0)||1;
-  const names = ['6','N','2','3','캔슬6'];
-  const bar = $('segBar');
   [...bar.children].forEach((el,i)=>{ el.style.flex = Math.max(vals[i]/total, 0.04); el.textContent = vals[i] ? names[i]+' '+Math.round(vals[i]) : names[i]; el.title = names[i]+' '+Math.round(vals[i])+'ms'; });
 }
 
 /* ---------- result card / stats / hud / log ---------- */
 function showResult(cls, kind, title, sub){
+  ui.result = {cls, kind, title, sub};
   const c = $('resultCard'); c.className='result '+cls;
-  $('rKind').textContent=kind; $('rTitle').textContent=title; $('rOff').textContent=sub;
+  $('rKind').textContent=kind; $('rTitle').textContent=msg(title); $('rOff').textContent=msg(sub);
 }
 function updateStats(){
   $('stDps').textContent = session.bestDps.toFixed(1);
@@ -656,16 +944,15 @@ function updateStats(){
 function updateHud(){
   const h = $('hudChain'); $('hudChainN').textContent = cd.chain; h.classList.toggle('hot', cd.chain>=3);
 }
-function addLog(t, type, res, num, memo){
-  session.log.unshift({time:new Date(), type, res, num, memo}); if(session.log.length>12) session.log.pop(); renderLog();
+function addLog(t, type, res, num, memo, cls){
+  session.log.unshift({time:new Date(), type, res, num, memo, cls:cls||''}); if(session.log.length>12) session.log.pop(); renderLog();
 }
 function renderLog(){
   const tb = $('logBody');
-  if(!session.log.length){ tb.innerHTML='<tr><td colspan="5" style="color:var(--muted)">아직 기록이 없습니다.</td></tr>'; return; }
-  tb.innerHTML = session.log.map(r => {
-    const cls = r.res==='초풍'?'ok':/풍신|부족/.test(r.res)?'wg':/실패|빠름|없음|미완성/.test(r.res)?'no':'';
-    return `<tr><td class="m">${r.time.toLocaleTimeString('ko-KR',{hour12:false})}</td><td>${r.type}</td><td class="${cls}">${r.res}</td><td class="m">${r.num}</td><td style="color:var(--muted)">${r.memo}</td></tr>`;
-  }).join('');
+  if(!session.log.length){ tb.innerHTML='<tr><td colspan="5" style="color:var(--muted)">'+escapeHTML(T('log.empty'))+'</td></tr>'; return; }
+  tb.innerHTML = session.log.map(r =>
+    `<tr><td class="m">${r.time.toLocaleTimeString(LOCALE[store.lang],{hour12:false})}</td><td>${escapeHTML(T(r.type))}</td><td class="${r.cls}">${escapeHTML(msg(r.res))}</td><td class="m">${escapeHTML(msg(r.num))}</td><td style="color:var(--muted)">${escapeHTML(msg(r.memo))}</td></tr>`
+  ).join('');
 }
 
 /* ---------- tick: timeouts ---------- */
@@ -684,11 +971,12 @@ function endChain(now){
   const n = cd.chain, cyc = cd.chainCycles;
   if(n>=3){
     const span = cyc[cyc.length-1].t - cyc[0].t; const dps = (n-1)*1000/span;
-    addLog(now,'웨이브',n+'연속', dps.toFixed(1)+' 대시/초', '평균 사이클 '+Math.round(span/(n-1))+'ms');
+    addLog(now,'log.tWave',['log.rChain',n], ['rec.dps',dps.toFixed(1)], ['log.mCycle',Math.round(span/(n-1))], '');
     if(mode!=='ewgf20'){
       const avg = k => cyc.map(c=>c[k]).filter(v=>v!=null).reduce((s,v,_,a)=>s+v/a.length,0);
-      const segs=[['f 유지',avg('fHold')],['중립',avg('nGap')],['d 유지',avg('dHold')],['d/f 유지',avg('dfHold')],['캔슬 6 → 시작 6',avg('cancelGap')]].sort((a,b)=>b[1]-a[1]);
-      $('coachTrend').textContent = '웨이브 '+n+'연속 종료 · 평균 '+dps.toFixed(1)+' 대시/초. 평균적으로 가장 긴 구간은 '+segs[0][0]+' ('+Math.round(segs[0][1])+'ms)'+(segs[0][1]>90?' — 여기를 줄이면 속도가 바로 올라갑니다.':' — 균형이 좋습니다.');
+      const segs=[['f',avg('fHold')],['n',avg('nGap')],['d',avg('dHold')],['df',avg('dfHold')],['c',avg('cancelGap')]].sort((a,b)=>b[1]-a[1]);
+      const worst = segs[0];
+      setTrend(() => T('chain.end', n, dps.toFixed(1), T('seg.n.'+worst[0]), Math.round(worst[1])) + T(worst[1]>90?'chain.fix':'chain.ok'));
     }
   }
   cd.chain=0; cd.chainCycles=[]; updateHud(); renderWave();
@@ -696,19 +984,21 @@ function endChain(now){
 
 /* ---------- drills ---------- */
 const MODES = {
-  free:   {name:'자유 연습', desc:'제한 없이 웨이브와 초풍을 섞어 연습합니다. 모든 입력이 기록됩니다.', start:false},
-  wave10: {name:'웨이브 10초', desc:'10초 동안 최대한 많은 크라우치 대시. 캔슬 6이 빠지면 연속이 끊깁니다. 대시/초와 최고 연속 횟수를 기록합니다.', start:true, dur:10000},
-  ewgf20: {name:'초풍 20회', desc:'초풍을 20번 시도해 성공률과 평균 버튼 오프셋을 기록합니다.', start:true, target:20},
-  combo10:{name:'웨이브 초풍 10회', desc:'웨이브를 3회 이상 이어간 뒤 초풍으로 마무리. 10번 시도해 성공률을 기록합니다.', start:true, target:10},
+  free:   {start:false},
+  wave10: {start:true, dur:10000},
+  ewgf20: {start:true, target:20},
+  combo10:{start:true, target:10},
 };
+function renderMode(){
+  const M = MODES[mode];
+  $('dName').textContent=T('mode.'+mode+'.name'); $('dDesc').textContent=T('mode.'+mode+'.desc'); $('dStart').hidden=!M.start;
+  $('hudHint').textContent = T('hint.'+mode);
+}
 function setMode(m){
   endDrill(true); clearCommand(); updateHud(); mode = m;
   document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-selected', b.dataset.mode===m?'true':'false'));
-  const M = MODES[m]; $('dName').textContent=M.name; $('dDesc').textContent=M.desc; $('dStart').hidden=!M.start; $('dProg').textContent=''; $('hudTimer').textContent='';
-  $('hudHint').textContent = m==='wave10' ? '시작 후 6N23 6 N 6N23 6 N … 반복 · 3 직후 ↓만 떼면 캔슬 6, 떼었다가 다시 6'
-                           : m==='ewgf20' ? '6 떼고 2 그리고 3 과 동시에 오른손(2) · 기본 판정은 0.5프레임(설정에서 변경)'
-                           : m==='combo10' ? '6N23 6 N … 웨이브 3회 이상 → 마지막 3 과 동시에 2'
-                           : '6N23 = 크라우치 대시 · 3 직후 ↓를 떼 6(캔슬), 떼고 다시 6N23 · 3 과 동시에 I(2) = 초풍';
+  $('dProg').textContent=''; $('hudTimer').textContent='';
+  renderMode();
 }
 function startDrill(){
   const M = MODES[mode]; if(!M.start) return;
@@ -724,18 +1014,17 @@ function endDrill(cancel){
   const since = a => a.t>=drill.tStart;
   let rec, text;
   if(mode==='wave10'){
-    const cyc = session.cycles.filter(since);
-    const dps = drill.count/10;
-    rec = {date:Date.now(), score:dps, dashes:drill.count, chain:drill.bestChain||0, label:dps.toFixed(1)+' 대시/초', sub:drill.count+'회 · 최고 연속 '+(drill.bestChain||0)};
-    text = '10초 종료 · '+drill.count+'회 ('+dps.toFixed(1)+' 대시/초)';
+    const dps = drill.count/10, chain = drill.bestChain||0;
+    rec = {date:Date.now(), score:dps, dashes:drill.count, chain, label:T('rec.dps',dps.toFixed(1)), sub:T('rec.waveSub',drill.count,chain)};
+    text = T('drill.waveEnd', drill.count, dps.toFixed(1));
     $('hudCenter').textContent = drill.count+' DASH';
   } else {
     const at = session.attempts.filter(since).slice(-drill.target);
     const ok = at.filter(a => a.kind==='ewgf' && (mode!=='combo10' || a.chain>=3)).length;
     const rate = Math.round(ok/drill.target*100);
     const offs = at.filter(a=>a.off!=null).map(a=>a.off); const mean = offs.length? offs.reduce((s,v)=>s+v,0)/offs.length:0;
-    rec = {date:Date.now(), score:rate, hits:ok, label:rate+'%', sub:ok+'/'+drill.target+' · 평균 '+fmtF(mean)};
-    text = '종료 · 성공 '+ok+'/'+drill.target+' ('+rate+'%)';
+    rec = {date:Date.now(), score:rate, hits:ok, target:drill.target, mean, label:rate+'%', sub:T('rec.ewgfSub',ok,drill.target,fmtF(mean))};
+    text = T('drill.end', ok, drill.target, rate);
     $('hudCenter').textContent = rate+'%';
   }
   drill.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; }, 2200);
@@ -747,18 +1036,24 @@ function drillTick(now){
   if(mode==='wave10'){
     const left = Math.max(0, drill.dur-(now-drill.tStart));
     const el = $('hudTimer'); el.textContent = (left/1000).toFixed(1); el.classList.toggle('warn', left<3000);
-    $('dProg').textContent = drill.count+' 대시';
+    $('dProg').textContent = T('drill.dashes', drill.count);
     if(left<=0) endDrill();
   } else {
     $('dProg').textContent = drill.count+' / '+drill.target;
   }
+}
+function recText(m, r){ // prefer numeric fields so old records re-render in the current language
+  if(m==='wave10' && Number.isFinite(r.dashes)) return {label:T('rec.dps',(+r.score).toFixed(1)), sub:T('rec.waveSub',r.dashes,r.chain||0)};
+  if(Number.isFinite(r.hits) && Number.isFinite(r.target) && Number.isFinite(r.mean)) return {label:r.score+'%', sub:T('rec.ewgfSub',r.hits,r.target,fmtF(r.mean))};
+  return {label:r.label, sub:r.sub};
 }
 function renderBests(){
   const el = $('bests');
   el.innerHTML = ['wave10','ewgf20','combo10'].map(m => {
     const rs = store.records[m]; const best = rs.length? rs.reduce((a,b)=>b.score>a.score?b:a):null;
     const last = rs.length? rs[rs.length-1]:null;
-    return `<div class="best"><div class="k">${MODES[m].name}</div><b>${best?escapeHTML(best.label):'–'}</b><small>${best?escapeHTML(best.sub)+' · '+new Date(best.date).toLocaleDateString('ko-KR'):'아직 기록 없음'}</small>${last&&last!==best?`<small style="display:block">최근: ${escapeHTML(last.label)}</small>`:''}</div>`;
+    const bt = best && recText(m,best), lt = last && recText(m,last);
+    return `<div class="best"><div class="k">${escapeHTML(T('mode.'+m+'.name'))}</div><b>${best?escapeHTML(bt.label):'–'}</b><small>${best?escapeHTML(bt.sub)+' · '+new Date(best.date).toLocaleDateString(LOCALE[store.lang]):escapeHTML(T('best.none'))}</small>${last&&last!==best?`<small style="display:block">${escapeHTML(T('best.last'))}${escapeHTML(lt.label)}</small>`:''}</div>`;
   }).join('');
 }
 
@@ -774,7 +1069,7 @@ function renderHist(){
   const x0 = padL + (0+6)*bw + bw/2;
   const wl = padL + (-winF+6+0.5)*bw, wr = padL + (winF+6+0.5)*bw;
   const col = k => k==='ewgf'?'var(--accent)':k==='early'?'var(--warn)':'var(--red)';
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="초풍 버튼 타이밍 히스토그램">`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHTML(T('hist.aria'))}">`;
   s += `<rect x="${wl}" y="${padT}" width="${wr-wl}" height="${innerH}" fill="var(--accent-soft)"/>`;
   [1,2,3].forEach(i => { const y = padT + innerH - innerH*(i/3); s += `<line x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${W-padR}" y="${y-3}" font-size="10" fill="var(--faint)" text-anchor="end" font-family="JetBrains Mono,monospace">${Math.round(max*i/3)}</text>`; });
   bins.forEach((b,i) => {
@@ -785,7 +1080,7 @@ function renderHist(){
   });
   s += `<line x1="${x0}" x2="${x0}" y1="${padT-4}" y2="${padT+innerH}" stroke="var(--ink2)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
   s += `<text x="${x0+5}" y="${padT+6}" font-size="10" fill="var(--ink2)" font-family="JetBrains Mono,monospace">d/f</text>`;
-  if(!at.length) s += `<text x="${W/2}" y="${padT+innerH/2}" font-size="12" fill="var(--muted)" text-anchor="middle" font-family="Noto Sans KR,sans-serif">초풍을 시도하면 분포가 쌓입니다</text>`;
+  if(!at.length) s += `<text x="${W/2}" y="${padT+innerH/2}" font-size="12" fill="var(--muted)" text-anchor="middle" font-family="var(--body)">${escapeHTML(T('hist.empty'))}</text>`;
   s += '</svg>';
   const box = $('hist'); box.innerHTML = s;
   const tip = $('histTip');
@@ -793,7 +1088,7 @@ function renderHist(){
     const i = e.target.dataset.i; if(i==null){ tip.style.display='none'; return; }
     const b = bins[+i]; const r = $('histCard').getBoundingClientRect();
     tip.style.display='block'; tip.style.left=(e.clientX-r.left+12)+'px'; tip.style.top=(e.clientY-r.top-30)+'px';
-    tip.textContent = `${b.f>0?'+':''}${b.f}f (${Math.round(b.f*FRAME)}ms) · ${b.n}회 · ${b.kind==='ewgf'?'초풍':b.kind==='early'?'빠름':'늦음'}`;
+    tip.textContent = T('hist.tip', (b.f>0?'+':'')+b.f+'f', Math.round(b.f*FRAME), b.n, T(b.kind==='ewgf'?'hist.kOk':b.kind==='early'?'hist.kEarly':'hist.kLate'));
   });
   box.querySelector('svg').addEventListener('mouseleave', ()=> tip.style.display='none');
 }
@@ -803,10 +1098,10 @@ function renderWave(){
   const innerW = W-padL-padR, innerH=H-padT-padB, yMax=8;
   const X = i => padL + (pts.length>1 ? i/(pts.length-1)*innerW : innerW/2);
   const Y = v => padT + innerH - clamp(v,0,yMax)/yMax*innerH;
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="웨이브 속도 추이">`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHTML(T('wave.aria'))}">`;
   s += `<rect x="${padL}" y="${Y(yMax)}" width="${innerW}" height="${Y(5)-Y(yMax)}" fill="var(--accent-soft)"/>`;
   [2,4,6,8].forEach(v => { s += `<line x1="${padL}" x2="${W-padR}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${padL-6}" y="${Y(v)+3.5}" font-size="10" fill="var(--faint)" text-anchor="end" font-family="JetBrains Mono,monospace">${v}</text>`; });
-  s += `<text x="${padL+4}" y="${Y(8)+11}" font-size="10" fill="var(--accent)" font-family="Noto Sans KR,sans-serif">상급 (5 이상)</text>`;
+  s += `<text x="${padL+4}" y="${Y(8)+11}" font-size="10" fill="var(--accent)" font-family="var(--body)">${escapeHTML(T('wave.top'))}</text>`;
   if(pts.length>=2){
     const d = pts.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.dps).toFixed(1)).join(' ');
     s += `<path d="${d} L${X(pts.length-1)} ${Y(0)} L${X(0)} ${Y(0)} Z" fill="var(--accent)" opacity=".10"/>`;
@@ -815,9 +1110,9 @@ function renderWave(){
     s += `<text x="${X(li)-8}" y="${Y(pts[li].dps)-8}" font-size="11" fill="var(--ink)" text-anchor="end" font-family="JetBrains Mono,monospace">${pts[li].dps.toFixed(1)}</text>`;
     s += `<line id="wcross" x1="0" x2="0" y1="${padT}" y2="${padT+innerH}" stroke="var(--ink2)" stroke-dasharray="3 3" style="display:none"/>`;
   } else {
-    s += `<text x="${W/2}" y="${padT+innerH/2}" font-size="12" fill="var(--muted)" text-anchor="middle" font-family="Noto Sans KR,sans-serif">크라우치 대시를 2회 이상 연속으로 넣으면 그려집니다</text>`;
+    s += `<text x="${W/2}" y="${padT+innerH/2}" font-size="12" fill="var(--muted)" text-anchor="middle" font-family="var(--body)">${escapeHTML(T('wave.empty'))}</text>`;
   }
-  s += `<text x="${padL}" y="${H-6}" font-size="10" fill="var(--muted)" font-family="Noto Sans KR,sans-serif">오래된 대시</text><text x="${W-padR}" y="${H-6}" font-size="10" fill="var(--muted)" text-anchor="end" font-family="Noto Sans KR,sans-serif">최근</text>`;
+  s += `<text x="${padL}" y="${H-6}" font-size="10" fill="var(--muted)" font-family="var(--body)">${escapeHTML(T('wave.old'))}</text><text x="${W-padR}" y="${H-6}" font-size="10" fill="var(--muted)" text-anchor="end" font-family="var(--body)">${escapeHTML(T('wave.recent'))}</text>`;
   s += '</svg>';
   const box = $('waveChart'); box.innerHTML = s;
   const svg = box.querySelector('svg'), tip=$('waveTip'), cross = svg.querySelector('#wcross');
@@ -828,7 +1123,7 @@ function renderWave(){
     cross.style.display='block'; cross.setAttribute('x1',X(i)); cross.setAttribute('x2',X(i));
     const r = $('waveCard').getBoundingClientRect();
     tip.style.display='block'; tip.style.left=(e.clientX-r.left+12)+'px'; tip.style.top=(e.clientY-r.top-30)+'px';
-    tip.textContent = `${pts[i].dps.toFixed(2)} 대시/초 · 사이클 ${Math.round(pts[i].cycle)}ms (${(pts[i].cycle/FRAME).toFixed(1)}f)`;
+    tip.textContent = T('wave.tip', pts[i].dps.toFixed(2), Math.round(pts[i].cycle), (pts[i].cycle/FRAME).toFixed(1));
   });
   svg.addEventListener('mouseleave', ()=>{ tip.style.display='none'; if(cross) cross.style.display='none'; });
 }
@@ -843,22 +1138,42 @@ function segSel(id, attr, cb){
 segSel('winSel','win', v => { store.window=+v; save(); renderHist(); });
 segSel('sideSel','side', v => { endDrill(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); });
 segSel('fxSel','fx', v => { store.fx=+v; save(); });
+segSel('langSel','lang', v => { setLang(v); });
 const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK'};
 const pretty = c => c.replace(/^Key|^Digit|^Numpad/, m=>m==='Numpad'?'Num':'').replace('Arrow','');
 function renderKeys(){
-  $('keys').innerHTML = Object.keys(KEYLABEL).map(k => `<button class="key${listening===k?' listen':''}" data-k="${k}"><small>${KEYLABEL[k]}</small><b>${listening===k?'키 입력…':pretty(store.keys[k])}</b></button>`).join('');
+  $('keys').innerHTML = Object.keys(KEYLABEL).map(k => `<button class="key${listening===k?' listen':''}" data-k="${k}"><small>${KEYLABEL[k]}</small><b>${listening===k?escapeHTML(T('set.keyListen')):pretty(store.keys[k])}</b></button>`).join('');
   $('keys').querySelectorAll('.key').forEach(b => b.addEventListener('click', () => { listening = b.dataset.k; renderKeys(); }));
 }
-renderKeys();
 $('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
 $('dStart').addEventListener('click', startDrill);
 $('dReset').addEventListener('click', () => {
   endDrill(true); resetInput();
   Object.assign(session,{dashes:0,bestChain:0,bestDps:0,tries:0,hits:0,offsetSum:0,offsetCount:0,cycles:[],attempts:[],log:[]}); history.length=0; lastInputT=performance.now();
   updateStats(); updateHud(); renderHistory(); renderLog(); renderHist(); renderWave(); coachTrend();
-  showResult('', 'READY', '세션 초기화됨', '입력을 기다리는 중');
+  showResult('', 'READY', ['ready.reset'], ['ready.title']);
 });
 
+/* ---------- language ---------- */
+function applyStatic(){
+  if(document.documentElement) document.documentElement.lang = store.lang;
+  document.title = T('app.title');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = T(el.dataset.i18nHtml); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', T(el.dataset.i18nAria)); });
+  const sm = $('setSummary'); sm.dataset.more = T('set.more'); sm.dataset.less = T('set.less');
+  if(typeof sm.setAttribute==='function'){ sm.setAttribute('data-more', T('set.more')); sm.setAttribute('data-less', T('set.less')); }
+  document.querySelectorAll('#langSel button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang===store.lang?'true':'false'));
+  if(!lastSrc) srcBadge.textContent = T('src.wait'); else setSrc(lastSrc);
+}
+function renderAll(){
+  applyStatic(); renderMode(); renderPadStatus(); renderKeys();
+  showResult(ui.result.cls, ui.result.kind, ui.result.title, ui.result.sub);
+  setCoach(ui.coach); setTrend(ui.trend); renderSeg(ui.seg);
+  renderBests(); renderLog(); renderHist(); renderWave();
+  if(drill.running) drillTick(performance.now());
+}
+function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); renderAll(); }
 /* ================= STAGE (canvas) ================= */
 const canvas = $('stage'), ctx = canvas.getContext('2d');
 let W=800, H=360, dpr=1;
@@ -875,8 +1190,8 @@ function startAnim(kind){ anim.kind=kind; anim.t0=performance.now(); }
 function moveChar(dx, ms){ anim.moveT0=performance.now(); anim.moveFrom=world.charX; anim.moveTo=world.charX+dx*store.side; anim.moveDur=ms; }
 const fx = {
   crouchDash(){ startAnim('cd'); moveChar(46, 130); for(let i=0;i<4;i++) dust.push({x:world.charX, y:0, vx:(-1-Math.random()*1.5)*store.side, vy:-0.6-Math.random()*1.2, r:3+Math.random()*4, t:1}); },
-  ewgf(){ startAnim('ewgf'); anim.electric=true; moveChar(28, 120); if(store.fx && !reduced){ flash=1; shake=8; } pop('초풍!', 'var(--accent)', 58); tryHit(true); },
-  wgf(){ startAnim('ewgf'); anim.electric=false; moveChar(28, 120); pop('풍신권', '#F5A524', 34); tryHit(false); },
+  ewgf(){ startAnim('ewgf'); anim.electric=true; moveChar(28, 120); if(store.fx && !reduced){ flash=1; shake=8; } pop(T('pop.ewgf'), 'var(--accent)', 58); tryHit(true); },
+  wgf(){ startAnim('ewgf'); anim.electric=false; moveChar(28, 120); pop(T('pop.wgf'), '#F5A524', 34); tryHit(false); },
   jab(){ startAnim('jab'); pop('?', '#E5484D', 30); },
   stumble(){ startAnim('stumble'); pop('MISS', '#E5484D', 30); },
 };
@@ -1057,13 +1372,13 @@ function frame(now){
   // sparks
   for(let i=sparks.length-1;i>=0;i--){ const p=sparks[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.35; p.t-=0.035; if(p.t<=0){sparks.splice(i,1);continue;} ctx.fillStyle=p.c; ctx.globalAlpha=p.t; ctx.fillRect(p.x-world.camX-2, gy+p.y-2, 4, 4); ctx.globalAlpha=1; }
   // text pops
-  for(let i=pops.length-1;i>=0;i--){ const p=pops[i]; const t=(now-p.t0)/900; if(t>=1){pops.splice(i,1);continue;} const sc = t<0.15? 0.6+t/0.15*0.6 : 1.2-(t-0.15)*0.25; ctx.save(); ctx.translate(p.x-world.camX, gy-118-t*30); ctx.scale(sc,sc); ctx.globalAlpha = t>0.7? (1-t)/0.3:1; ctx.font=`${p.size}px "Black Han Sans", "Noto Sans KR", sans-serif`; ctx.textAlign='center'; ctx.lineWidth=6; ctx.strokeStyle='#04101a'; ctx.strokeText(p.text,0,0); ctx.fillStyle = p.color.startsWith('var')? '#4CC9FF' : p.color; ctx.fillText(p.text,0,0); ctx.restore(); }
+  for(let i=pops.length-1;i>=0;i--){ const p=pops[i]; const t=(now-p.t0)/900; if(t>=1){pops.splice(i,1);continue;} const sc = t<0.15? 0.6+t/0.15*0.6 : 1.2-(t-0.15)*0.25; ctx.save(); ctx.translate(p.x-world.camX, gy-118-t*30); ctx.scale(sc,sc); ctx.globalAlpha = t>0.7? (1-t)/0.3:1; ctx.font=`${p.size}px ${displayFont()}`; ctx.textAlign='center'; ctx.lineWidth=6; ctx.strokeStyle='#04101a'; ctx.strokeText(p.text,0,0); ctx.fillStyle = p.color.startsWith('var')? '#4CC9FF' : p.color; ctx.fillText(p.text,0,0); ctx.restore(); }
   ctx.restore();
   if(flash>0.02){ ctx.fillStyle=`rgba(180,235,255,${flash*0.55})`; ctx.fillRect(0,0,W,H); flash*=0.85; } else flash=0;
   requestAnimationFrame(frame);
 }
 /* ---------- boot ---------- */
-setMode('free'); renderBests(); renderHist(); renderWave(); renderHistory(); updateStats();
+renderAll(); setMode('free'); renderHistory(); updateStats();
 world.camX = world.charX - W*0.32;
 requestAnimationFrame(frame);
 })();
