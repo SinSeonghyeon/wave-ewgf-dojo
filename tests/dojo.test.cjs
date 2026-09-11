@@ -164,6 +164,30 @@ test('wave10 drill result becomes a share card model in the current language',()
   a.setLang('en');const e=a.buildCard(src);assert.equal(e.modeName,'Wave 10s');assert.equal(e.sub,'10s over · 2 dashes (0.2 dashes/s)');assert.equal(e.hero.label,'dashes/s');
   a.startDrill();assert.equal(a.drill.result,null);assert.equal(a.get('dShare').hidden,true);
 });
+test('completed EWGF card preserves the judgment window after settings change',()=>{
+  const a=boot({v:4,lang:'ko',window:12});a.setMode('ewgf20');a.startDrill();
+  const countdown=a.timers.get(a.drill.cdTimer);a.time(4000);countdown();countdown();countdown();
+  for(let i=0;i<20;i++){a.clearCommand();dash(a,4100+i*200);a.onButton(2,4170+i*200);}
+  assert.equal(a.drill.running,false);assert.equal(a.drill.result.rec.hits,20);
+  a.store.window=8;
+  const src=a.shareSource(), m=a.buildCard(src);
+  assert.equal(src.window,12);assert.equal(m.hero.value,'100%');
+  assert.equal(m.windowText,'초풍 판정 폭 보통 0.7f');assert.match(m.tweet,/보통 0\.7f/);
+  assert.equal(m.chart.window,12);
+});
+
+test('wave drill card counts only attempts made during the completed drill',()=>{
+  const a=boot({v:4,lang:'ko'});dash(a);a.onButton(2,1060);
+  a.setMode('wave10');a.startDrill();
+  const countdown=a.timers.get(a.drill.cdTimer);a.time(4000);countdown();countdown();countdown();
+  dash(a,4100);a.onButton(2,4160);a.endDrill();
+  a.clearCommand();dash(a,4500);a.onButton(2,4560);
+  assert.equal(a.session.attempts.length,3);
+  const src=a.shareSource(), m=a.buildCard(src);
+  assert.equal(src.attempts.length,1);assert.equal(src.attempts[0].t,4160);
+  assert.equal(m.metrics[2].value,'1');
+});
+
 test('free-practice session card uses live stats and never leaks raw i18n keys',()=>{
   const a=boot({v:4,lang:'ko'});
   let m=a.buildCard(a.shareSource());assert.equal(m.hero.label,'최고 대시/초');assert.equal(m.chart,null);assert.equal(m.sub,'이번 세션 통계');

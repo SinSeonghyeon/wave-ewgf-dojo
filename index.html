@@ -1061,14 +1061,14 @@ function endDrill(cancel){
   const wasRunning = drill.running; drill.running=false; clearInterval(drill.cdTimer); drill.cdTimer=null; clearTimeout(drill.messageTimer); drill.messageTimer=null; $('dStart').disabled=false; $('hudCenter').textContent='';
   if(cancel || !wasRunning) { $('dProg').textContent=''; return; }
   const since = a => a.t>=drill.tStart;
-  let rec, text, at = [];
+  let rec, text, at = session.attempts.filter(since);
   if(mode==='wave10'){
     const dps = drill.count/10, chain = drill.bestChain||0;
     rec = {date:Date.now(), score:dps, dashes:drill.count, chain, label:T('rec.dps',dps.toFixed(1)), sub:T('rec.waveSub',drill.count,chain)};
     text = T('drill.waveEnd', drill.count, dps.toFixed(1));
     $('hudCenter').textContent = drill.count+' DASH';
   } else {
-    at = session.attempts.filter(since).slice(-drill.target);
+    at = at.slice(-drill.target);
     const ok = at.filter(a => a.kind==='ewgf' && (mode!=='combo10' || a.chain>=3)).length;
     const rate = Math.round(ok/drill.target*100);
     const offs = at.filter(a=>a.off!=null).map(a=>a.off); const mean = offs.length? offs.reduce((s,v)=>s+v,0)/offs.length:0;
@@ -1079,7 +1079,7 @@ function endDrill(cancel){
   drill.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; }, 2200);
   $('dProg').textContent = text;
   store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); save(); renderBests();
-  drill.result = {rec, attempts:at, cycles:session.cycles.filter(since)}; $('dShare').hidden=false;
+  drill.result = {rec, attempts:at, cycles:session.cycles.filter(since), window:store.window}; $('dShare').hidden=false;
 }
 function drillTick(now){
   if(!drill.running) return;
@@ -1260,7 +1260,7 @@ let shareSrc = null, shareModel = null;
 function shareSource(){
   if(MODES[mode].start){
     if(!drill.result) return null;
-    const r = drill.result; return {kind:'drill', mode, rec:r.rec, attempts:r.attempts, cycles:r.cycles, window:store.window, date:r.rec.date};
+    const r = drill.result; return {kind:'drill', mode, rec:r.rec, attempts:r.attempts, cycles:r.cycles, window:r.window, date:r.rec.date};
   }
   return {kind:'session', mode, session, attempts:session.attempts, cycles:session.cycles, window:store.window, date:Date.now()};
 }

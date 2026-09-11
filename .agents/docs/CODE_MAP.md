@@ -28,7 +28,7 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
 차트      histBins(attempts,window): −6f~+9f 빈(순수) · renderHist(): 히스토그램, 판정 폭 음영 · renderWave(): 최근 40 사이클 대시/초 · SVG 문자열 직접 생성
 공유 카드 buildCard(src): 순수 데이터 → {app,modeName,sub,hero,metrics[],chart{hist|wave|null},windowText,dateText,url,tweet,file} (DOM 없음, 단위 테스트 대상)
           drawCard(g,model): 1200×630 캔버스 그리기. 색은 cssVar()로 :root 토큰을 읽음, 폰트는 displayFont()/--body/--mono, drawFighter+drawBolt 재사용
-          shareSource(): 드릴 모드는 drill.result{rec,attempts,cycles}(endDrill이 채움, startDrill/setMode/dReset이 비움), 자유 연습은 live session
+          shareSource(): 드릴 모드는 drill.result{rec,attempts,cycles,window}(endDrill이 당시 판정 폭과 웨이브 포함 시도 목록을 채움, startDrill/setMode/dReset이 비움), 자유 연습은 live session
           openShare → renderShare(document.fonts.load 후 그리기) → #shareDlg.showModal() · 복사(ClipboardItem, 실패 시 share.copyFail) · PNG 저장(a[download]) · X intent(텍스트만)
           renderAll()이 다이얼로그가 열려 있으면 현재 언어로 다시 그림. 버튼 #dShare 라벨은 renderMode()에서 share.card/share.session
 모드      MODES{free,wave10(10초),ewgf20(20회),combo10(10회)} · setMode → renderMode · startDrill(3초 카운트다운) · endDrill(기록 저장) · drillTick
