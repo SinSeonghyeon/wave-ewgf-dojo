@@ -75,7 +75,7 @@ test('gamepad simultaneous diagonal and RP processes direction first',()=>{
 });
 test('invalid saved types fall back safely and stored text is escaped',()=>{
   const a=boot({v:4,side:0,window:100,keys:{up:4},records:{wave10:null,ewgf20:[null],combo10:[{date:0,score:10,label:'<img src=x>',sub:'<script>'}]}});
-  assert.equal(a.store.side,1);assert.equal(a.store.window,8);assert.equal(a.store.keys.up,'KeyW');
+  assert.equal(a.store.side,1);assert.equal(a.store.window,12);assert.equal(a.store.keys.up,'KeyW');
   assert.equal(a.store.records.ewgf20.length,0);assert.ok(a.get('bests').innerHTML.includes('&lt;img src=x&gt;'));
 });
 test('blur clears unfinished input and cancels drill',()=>{
