@@ -1,0 +1,1019 @@
+<title>웨이브 초풍 도장</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+  :root{
+    --bg:#0B0E13; --bg2:#10151D; --panel:#141A23; --panel2:#1B2330; --line:#273140; --line2:#334052;
+    --ink:#EEF2F6; --ink2:#C3CCD8; --muted:#8C98AA; --faint:#5B687A;
+    --accent:#4CC9FF; --accent-soft:rgba(76,201,255,.14); --accent-deep:#1B7FB5;
+    --gold:#F5C542; --red:#E5484D; --red-soft:rgba(229,72,77,.16);
+    --good:#3DD68C; --warn:#F5A524; --warn-soft:rgba(245,165,36,.16);
+    --seg1:#A8E4FF; --seg2:#5FCFFF; --seg3:#2AA3DD; --seg4:#177AB0; --seg5:#0C517A;
+    --display:'Black Han Sans','Noto Sans KR',system-ui,sans-serif;
+    --body:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+    --mono:'JetBrains Mono','Cascadia Mono',Consolas,monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html{background:var(--bg)}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.55;
+       padding-inline:clamp(16px,3vw,36px);padding-block:18px 48px;
+       background-image:radial-gradient(1200px 500px at 70% -10%,rgba(76,201,255,.08),transparent 60%);}
+  a{color:var(--accent)}
+  button{font-family:inherit;font-size:inherit;cursor:pointer}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .wrap{width:100%;display:flex;flex-direction:column;gap:18px}
+
+  /* header */
+  .top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:14px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand .kanji{font-family:var(--display);font-size:44px;line-height:1;color:var(--accent);text-shadow:0 0 18px rgba(76,201,255,.55);width:52px;height:52px;display:grid;place-items:center;border:2px solid var(--accent-deep);border-radius:6px;background:var(--accent-soft)}
+  .brand h1{font-family:var(--display);font-weight:400;font-size:30px;line-height:1;margin:0;letter-spacing:.5px}
+  .brand p{margin:4px 0 0;color:var(--muted);font-size:12.5px;letter-spacing:.3px}
+  .modes{display:flex;gap:6px;flex-wrap:wrap}
+  .modes button{background:var(--panel);color:var(--ink2);border:1px solid var(--line);border-radius:4px;padding:8px 13px;font-weight:500;letter-spacing:.2px}
+  .modes button[aria-selected="true"]{background:var(--accent);color:#04202f;border-color:var(--accent);font-weight:700}
+  .modes button:hover:not([aria-selected="true"]){border-color:var(--line2);color:var(--ink)}
+  .src{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px dashed var(--line2);border-radius:4px;padding:6px 10px}
+  .src.on{color:var(--accent);border-style:solid;border-color:var(--accent-deep)}
+
+  /* main grid */
+  .main{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,.9fr);gap:18px;align-items:start}
+  @media (max-width:900px){.main{grid-template-columns:1fr}}
+
+  .stage{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg2);aspect-ratio:16/7.2;max-width:100%}
+  .stage canvas{display:block;width:100%;height:100%}
+  .hud{position:absolute;inset:0;pointer-events:none}
+  .hud-chain{position:absolute;left:14px;top:10px;display:flex;align-items:baseline;gap:6px}
+  .hud-chain span{font-family:var(--display);font-size:42px;line-height:1;color:var(--ink);text-shadow:0 2px 0 #000,0 0 14px rgba(76,201,255,.35);font-variant-numeric:tabular-nums}
+  .hud-chain small{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--muted)}
+  .hud-chain.hot span{color:var(--accent)}
+  .hud-timer{position:absolute;right:14px;top:10px;font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink);text-shadow:0 2px 0 #000;font-variant-numeric:tabular-nums}
+  .hud-timer.warn{color:var(--warn)}
+  .hud-center{position:absolute;left:0;right:0;top:34%;text-align:center;font-family:var(--display);font-size:64px;line-height:1;color:var(--gold);text-shadow:0 3px 0 #000,0 0 22px rgba(245,197,66,.5)}
+  .hud-hint{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--muted);text-shadow:0 1px 0 #000}
+
+  /* input history */
+  .inputs{margin-top:10px;display:flex;gap:4px;overflow:hidden;min-height:44px;align-items:flex-end}
+  .chip{display:flex;flex-direction:column;align-items:center;min-width:34px;gap:2px;flex:0 0 auto}
+  .chip .g{width:34px;height:30px;border-radius:4px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:15px;background:var(--panel2);border:1px solid var(--line);color:var(--ink2)}
+  .chip .g.dir{color:var(--ink)}
+  .chip .g.b1{background:#2a3d6b;border-color:#3f5ea3;color:#c9dbff}
+  .chip .g.b2{background:#1f4f3a;border-color:#2f8460;color:#bfffdc}
+  .chip .g.b3{background:#513a6b;border-color:#7d58a8;color:#e6d2ff}
+  .chip .g.b4{background:#6b2f33;border-color:#a8474e;color:#ffd0d3}
+  .chip .g.n{color:var(--faint)}
+  .chip .f{font-family:var(--mono);font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .chip.new .g{box-shadow:0 0 0 1px var(--accent)}
+
+  /* drill bar */
+  .drill{margin-top:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+  .drill .d-name{font-family:var(--display);font-size:18px;letter-spacing:.3px}
+  .drill .d-desc{color:var(--muted);flex:1 1 200px;font-size:13px}
+  .drill .d-prog{font-family:var(--mono);font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
+  .btn{background:var(--accent);color:#04202f;border:0;border-radius:4px;padding:8px 16px;font-weight:700;letter-spacing:.3px}
+  .btn.ghost{background:transparent;color:var(--ink2);border:1px solid var(--line2)}
+  .btn:disabled{opacity:.45;cursor:default}
+
+  /* coach */
+  .coach{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .result{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;position:relative;overflow:hidden;min-height:96px}
+  .result::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--faint)}
+  .result.ewgf::before{background:var(--accent)} .result.wgf::before{background:var(--warn)} .result.miss::before{background:var(--red)} .result.wave::before{background:var(--seg2)}
+  .result .r-kind{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+  .result .r-title{font-family:var(--display);font-size:34px;line-height:1.05;margin-top:4px}
+  .result.ewgf .r-title{color:var(--accent);text-shadow:0 0 16px rgba(76,201,255,.45)} .result.wgf .r-title{color:var(--warn)} .result.miss .r-title{color:var(--red)}
+  .result .r-off{font-family:var(--mono);font-size:14px;color:var(--ink2);margin-top:6px;font-variant-numeric:tabular-nums}
+  .coach-box{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+  .coach-box h3{margin:0 0 6px;font-size:11px;letter-spacing:2px;color:var(--muted);font-family:var(--mono);font-weight:500}
+  .coach-msg{font-size:14.5px;line-height:1.6;min-height:46px}
+  .coach-msg strong{color:var(--gold)}
+  .coach-trend{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);color:var(--ink2);font-size:13px}
+  .seg{display:flex;height:22px;border-radius:4px;overflow:hidden;background:var(--panel2);margin-top:4px}
+  .seg div{display:grid;place-items:center;font-family:var(--mono);font-size:11px;color:#04202f;font-weight:700;min-width:0;overflow:hidden;white-space:nowrap;transition:flex .15s}
+  .seg .s1{background:var(--seg1)} .seg .s2{background:var(--seg2)} .seg .s3{background:var(--seg3);color:#dff4ff} .seg .s4{background:var(--seg4);color:#dff4ff} .seg .s5{background:var(--seg5);color:#dff4ff}
+  .seg-legend{display:flex;gap:10px;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--muted);flex-wrap:wrap}
+  .seg-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .stat{background:var(--panel);padding:10px 12px}
+  .stat b{display:block;font-family:var(--mono);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+  .stat span{font-size:11px;color:var(--muted);letter-spacing:.3px}
+  .stat.acc b{color:var(--accent)} .stat.gold b{color:var(--gold)}
+  details.settings{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:0 14px}
+  details.settings summary{cursor:pointer;padding:10px 0;font-weight:500;color:var(--ink2);list-style:none;display:flex;justify-content:space-between}
+  details.settings summary::after{content:"펼치기";font-size:11px;color:var(--muted);font-family:var(--mono)}
+  details.settings[open] summary::after{content:"접기"}
+  .set{display:flex;flex-direction:column;gap:10px;padding-bottom:14px}
+  .set .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .set label.t{color:var(--muted);font-size:12.5px}
+  .segc{display:inline-flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden}
+  .segc button{background:transparent;border:0;color:var(--ink2);padding:5px 10px;font-size:12.5px}
+  .segc button+button{border-left:1px solid var(--line2)}
+  .segc button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .key{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:6px 4px;text-align:center;color:var(--ink2)}
+  .key small{display:block;font-size:10.5px;color:var(--muted);font-family:var(--mono)}
+  .key b{font-family:var(--mono);font-size:13px}
+  .key.listen{border-color:var(--accent);color:var(--accent);animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.5}}
+  .note{font-size:12px;color:var(--muted);line-height:1.5}
+  .note code{font-family:var(--mono);color:var(--ink2);font-size:11.5px}
+
+  /* records */
+  .records{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media (max-width:900px){.records{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;min-width:0}
+  .card h2{font-family:var(--display);font-weight:400;font-size:18px;margin:0;letter-spacing:.3px}
+  .card .sub{color:var(--muted);font-size:12px;margin:2px 0 10px}
+  .chart svg{width:100%;height:auto;display:block;overflow:visible}
+  .chart{position:relative}
+  .tip{position:absolute;pointer-events:none;background:#04101a;border:1px solid var(--line2);border-radius:4px;padding:5px 8px;font-family:var(--mono);font-size:11.5px;color:var(--ink);white-space:nowrap;display:none;z-index:2}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--ink2);margin-top:6px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{font-family:var(--mono);font-weight:500;font-size:11px;color:var(--muted);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);letter-spacing:.5px}
+  td{padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+  td.m{font-family:var(--mono);font-size:12px}
+  td.ok{color:var(--accent)} td.wg{color:var(--warn)} td.no{color:var(--red)}
+  .tbl{overflow-x:auto}
+  .bests{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  @media (max-width:520px){.bests{grid-template-columns:1fr}}
+  .best{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+  .best .k{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:1px}
+  .best b{display:block;font-family:var(--display);font-size:24px;color:var(--gold);line-height:1.1;margin-top:2px}
+  .best small{color:var(--muted);font-size:11.5px}
+  footer{color:var(--faint);font-size:12px;border-top:1px solid var(--line);padding-top:12px}
+  @media (prefers-reduced-motion:reduce){.key.listen{animation:none}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="kanji" aria-hidden="true">風</span>
+      <div>
+        <h1>웨이브 초풍 도장</h1>
+        <p>미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정</p>
+      </div>
+    </div>
+    <nav class="modes" role="tablist" aria-label="연습 모드" id="modes">
+      <button role="tab" data-mode="free" aria-selected="true">자유 연습</button>
+      <button role="tab" data-mode="wave10" aria-selected="false">웨이브 10초</button>
+      <button role="tab" data-mode="ewgf20" aria-selected="false">초풍 20회</button>
+      <button role="tab" data-mode="combo10" aria-selected="false">웨이브 초풍 10회</button>
+    </nav>
+    <div class="src" id="srcBadge">⌨ 키보드 대기</div>
+  </header>
+
+  <main class="main">
+    <section class="stage-wrap" aria-label="연습 스테이지">
+      <div class="stage" id="stageBox">
+        <canvas id="stage" aria-label="SD 캐릭터 연출 화면"></canvas>
+        <div class="hud">
+          <div class="hud-chain" id="hudChain"><span id="hudChainN">0</span><small>WAVE</small></div>
+          <div class="hud-timer" id="hudTimer"></div>
+          <div class="hud-center" id="hudCenter"></div>
+          <div class="hud-hint" id="hudHint">6N23 = 크라우치 대시 · 3 직후 ↓를 떼 6(캔슬), 떼고 다시 6N23 · 3 과 동시에 I(2) = 초풍</div>
+        </div>
+      </div>
+      <div class="inputs" id="inputs" aria-label="입력 기록"></div>
+      <div class="drill">
+        <div class="d-name" id="dName">자유 연습</div>
+        <div class="d-desc" id="dDesc">제한 없이 웨이브와 초풍을 섞어 연습합니다. 모든 입력이 기록됩니다.</div>
+        <div class="d-prog" id="dProg"></div>
+        <button class="btn" id="dStart" hidden>시작</button>
+        <button class="btn ghost" id="dReset">세션 초기화</button>
+      </div>
+    </section>
+
+    <aside class="coach" aria-label="코치 패널">
+      <div class="result" id="resultCard">
+        <div class="r-kind" id="rKind">READY</div>
+        <div class="r-title" id="rTitle">입력을 기다리는 중</div>
+        <div class="r-off" id="rOff">키보드 또는 게임패드로 입력하세요</div>
+      </div>
+      <div class="coach-box">
+        <h3>COACH</h3>
+        <div class="coach-msg" id="coachMsg">먼저 <strong>→(6)</strong>를 톡 치고 뗀 뒤, <strong>↓(2)</strong>를 누르고 그대로 →를 더해 <strong>↓→(3)</strong>. 이게 크라우치 대시 한 번입니다. 이어가려면 3 직후 ↓를 떼 <strong>6으로 캔슬</strong>하고, 떼었다가 다시 6N23.</div>
+        <div class="coach-trend" id="coachTrend">최근 시도가 쌓이면 경향 분석이 여기에 표시됩니다.</div>
+      </div>
+      <div class="coach-box">
+        <h3>마지막 대시 구간 (ms)</h3>
+        <div class="seg" id="segBar"><div class="s1" style="flex:1">6</div><div class="s2" style="flex:1">N</div><div class="s3" style="flex:1">2</div><div class="s4" style="flex:1">3</div><div class="s5" style="flex:1">캔슬6</div></div>
+        <div class="seg-legend"><span><i style="background:var(--seg1)"></i>시작 6 유지</span><span><i style="background:var(--seg2)"></i>중립</span><span><i style="background:var(--seg3)"></i>2 유지</span><span><i style="background:var(--seg4)"></i>3 유지 → 캔슬 6</span><span><i style="background:var(--seg5)"></i>캔슬 6 → 다음 시작 6</span></div>
+      </div>
+      <div class="stats" aria-label="이번 세션 기록">
+        <div class="stat acc"><b id="stDps">0.0</b><span>최고 웨이브 속도 (대시/초)</span></div>
+        <div class="stat"><b id="stChain">0</b><span>최고 연속 대시</span></div>
+        <div class="stat"><b id="stDash">0</b><span>총 대시</span></div>
+        <div class="stat gold"><b id="stRate">–</b><span>초풍 성공률</span></div>
+        <div class="stat"><b id="stTry">0</b><span>초풍 시도</span></div>
+        <div class="stat"><b id="stMean">–</b><span>평균 버튼 오프셋</span></div>
+      </div>
+      <details class="settings">
+        <summary>입력 · 판정 설정</summary>
+        <div class="set">
+          <div class="row"><label class="t">초풍 판정 폭</label>
+            <div class="segc" id="winSel"><button data-win="8" aria-pressed="true">저스트 0.5f</button><button data-win="12" aria-pressed="false">보통 0.7f</button><button data-win="15" aria-pressed="false">관대 0.9f</button></div></div>
+          <div class="row"><label class="t">캐릭터 방향</label>
+            <div class="segc" id="sideSel"><button data-side="1" aria-pressed="true">1P (→ 가 앞)</button><button data-side="-1" aria-pressed="false">2P (← 가 앞)</button></div></div>
+          <div class="row"><label class="t">연출 (흔들림·플래시)</label>
+            <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true">켜기</button><button data-fx="0" aria-pressed="false">끄기</button></div></div>
+          <div>
+            <label class="t">키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
+            <div class="keys" id="keys"></div>
+          </div>
+          <div class="row"><label class="t">게임패드</label><span class="note" id="padStatus">연결 안 됨 · 패드 아무 버튼이나 누르면 감지</span></div>
+          <p class="note">패드 기본 배치: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>, 십자키·왼쪽 스틱 모두 방향으로 인식. 브라우저 입력은 약 4ms 단위로 읽히므로 실제 게임보다 오차가 조금 있습니다. 기본 판정은 실제 게임과 같은 1프레임(저스트)이며, 처음 감을 잡을 때만 잠시 넓혀 쓰세요.</p>
+        </div>
+      </details>
+    </aside>
+  </main>
+
+  <section class="records" aria-label="기록">
+    <div class="card chart" id="histCard">
+      <h2>초풍 버튼 타이밍 분포</h2>
+      <p class="sub">d/f 입력 시점을 0으로, 2(RP) 버튼이 눌린 프레임 차이 · 최근 60회</p>
+      <div id="hist"></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>초풍 (판정 안)</span><span><i style="background:var(--warn)"></i>빠름 (d+2)</span><span><i style="background:var(--red)"></i>늦음 (풍신권)</span></div>
+      <div class="tip" id="histTip"></div>
+    </div>
+    <div class="card chart" id="waveCard">
+      <h2>웨이브 속도 추이</h2>
+      <p class="sub">크라우치 대시 한 번당 속도 (대시/초) · 최근 40회, 5 이상이면 상급</p>
+      <div id="waveChart"></div>
+      <div class="tip" id="waveTip"></div>
+    </div>
+    <div class="card">
+      <h2>모드별 최고 기록</h2>
+      <p class="sub">이 브라우저에 저장됩니다</p>
+      <div class="bests" id="bests"></div>
+    </div>
+    <div class="card">
+      <h2>최근 시도 로그</h2>
+      <p class="sub">차트와 같은 데이터 · 최근 12건</p>
+      <div class="tbl"><table><thead><tr><th>시각</th><th>종류</th><th>결과</th><th>수치</th><th>메모</th></tr></thead><tbody id="logBody"><tr><td colspan="5" style="color:var(--muted)">아직 기록이 없습니다.</td></tr></tbody></table></div>
+    </div>
+  </section>
+
+  <footer>표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.</footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+const FRAME = 1000/60;
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const fmtF = ms => (ms>=0?'+':'−') + Math.abs(ms/FRAME).toFixed(1) + 'f';
+const fmtMs = ms => (ms>=0?'+':'−') + Math.abs(Math.round(ms)) + 'ms';
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- persistent settings ---------- */
+const STORE = 'wave-ewgf-dojo-v1';
+let store = {v:4, window:8, side:1, fx:1, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}};
+try{ const s = JSON.parse(localStorage.getItem(STORE)||'null'); if(s){ if(!s.v || s.v<4 || ![8,12,15].includes(s.window)){ s.window=8; s.v=4; } store = {...store,...s, keys:{...store.keys,...(s.keys||{})}, records:{...store.records,...(s.records||{})}}; } }catch(e){}
+const save = () => { try{ localStorage.setItem(STORE, JSON.stringify(store)); }catch(e){} };
+
+/* ---------- session state ---------- */
+const session = { dashes:0, bestChain:0, bestDps:0, cycles:[], attempts:[], log:[] };
+/* states: 0 idle · 1 시작 6 · 2 중립 · 3 d · 4 d/f(대시 중) · 5 캔슬 6 · 6 캔슬 후 중립 · 7 d/f 뗀 뒤 캔슬 대기 */
+const cd = { state:0, tF:0, tN:0, tD:0, tDF:0, tC:0, tRel:0, lastDF:-1e9, cancelled:true, chain:0, chainCycles:[], pending:null };
+let mode = 'free';
+const drill = { running:false, tStart:0, dur:0, count:0, target:0, countdown:0, cdTimer:null };
+
+/* ---------- input layer ---------- */
+const held = new Set();               // keyboard codes
+let padDir = {x:0,y:0}, padBtn = [false,false,false,false,false];
+let kbDir = {x:0,y:0};
+let curDir = 'n';
+let lastInputT = performance.now();
+const history = [];                    // {t, dir|btn}
+const srcBadge = $('srcBadge');
+let lastSrc = '';
+
+function dirName(x,y){
+  const fx = x*store.side;             // +1 forward
+  if(y<0){ return fx>0?'df':fx<0?'db':'d'; }
+  if(y>0){ return fx>0?'uf':fx<0?'ub':'u'; }
+  return fx>0?'f':fx<0?'b':'n';
+}
+function recomputeDir(t, src){
+  const x = clamp(kbDir.x + padDir.x, -1, 1), y = clamp(kbDir.y + padDir.y, -1, 1);
+  const d = dirName(x,y);
+  if(d!==curDir){ curDir = d; onDir(d, t); }
+  if(src && src!==lastSrc){ lastSrc=src; srcBadge.textContent = src==='pad'?'🎮 게임패드':'⌨ 키보드'; srcBadge.classList.add('on'); }
+}
+function kbVector(){
+  const k = store.keys;
+  const up = held.has(k.up)||held.has('ArrowUp'), dn = held.has(k.down)||held.has('ArrowDown');
+  const lf = held.has(k.left)||held.has('ArrowLeft'), rt = held.has(k.right)||held.has('ArrowRight');
+  kbDir = { x:(rt?1:0)-(lf?1:0), y:(up?1:0)-(dn?1:0) };
+}
+const mappedCodes = () => new Set([...Object.values(store.keys),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
+let listening = null; // key remap slot
+addEventListener('keydown', e => {
+  if(listening){ e.preventDefault(); store.keys[listening]=e.code; listening=null; save(); renderKeys(); return; }
+  if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if(!mappedCodes().has(e.code)) return;
+  e.preventDefault();
+  if(e.repeat || held.has(e.code)) return;
+  held.add(e.code);
+  const t = e.timeStamp || performance.now();
+  const k = store.keys;
+  if(e.code===k.b1) onButton(1,t); else if(e.code===k.b2) onButton(2,t); else if(e.code===k.b3) onButton(3,t); else if(e.code===k.b4) onButton(4,t);
+  else { kbVector(); recomputeDir(t,'kb'); }
+  if(lastSrc!=='kb'){ lastSrc='kb'; srcBadge.textContent='⌨ 키보드'; srcBadge.classList.add('on'); }
+});
+addEventListener('keyup', e => {
+  if(!held.has(e.code)) return;
+  held.delete(e.code);
+  kbVector(); recomputeDir(e.timeStamp||performance.now(),'kb');
+});
+addEventListener('blur', () => { held.clear(); kbVector(); recomputeDir(performance.now()); });
+
+/* gamepad */
+let padIndex = null;
+addEventListener('gamepadconnected', e => { padIndex = e.gamepad.index; $('padStatus').textContent = '연결됨 · ' + e.gamepad.id.slice(0,40); });
+addEventListener('gamepaddisconnected', () => { padIndex=null; $('padStatus').textContent='연결 안 됨 · 패드 아무 버튼이나 누르면 감지'; padDir={x:0,y:0}; recomputeDir(performance.now()); });
+const HAT = [[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[-1,1]]; // 위부터 시계방향 8방향
+function hatVec(v){
+  if(v==null || v<-1.01 || v>1.01) return [0,0];   // 중립(약 1.29)은 범위 밖
+  return HAT[Math.round((v+1)*3.5)] || [0,0];
+}
+function pollPad(){
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  let gp = null;
+  for(const p of pads){ if(p && (padIndex===null || p.index===padIndex)){ gp=p; break; } }
+  if(!gp) return;
+  if(padIndex===null){ padIndex=gp.index; $('padStatus').textContent='연결됨 · '+gp.id.slice(0,40); }
+  const t = performance.now();
+  const b = gp.buttons, ax = gp.axes;
+  const on = i => !!(b[i] && (b[i].pressed || b[i].value>0.5));
+  const [hx,hy] = hatVec(ax[9]); // DirectInput 패드: 십자키가 hat 축(axes[9])으로 들어옴
+  const x = (on(15)?1:0)-(on(14)?1:0) + (ax[0]>0.5?1:ax[0]<-0.5?-1:0) + hx;
+  const y = (on(12)?1:0)-(on(13)?1:0) + (ax[1]<-0.5?1:ax[1]>0.5?-1:0) + hy;
+  const nx = clamp(x,-1,1), ny = clamp(y,-1,1);
+  let changed = false;
+  if(nx!==padDir.x || ny!==padDir.y){ padDir={x:nx,y:ny}; changed=true; }
+  const map = [2,3,0,1]; // 1=X/□ 2=Y/△ 3=A/✕ 4=B/○
+  map.forEach((bi,i) => { const p = on(bi); if(p && !padBtn[i]) onButton(i+1,t); padBtn[i]=p; });
+  if(changed) recomputeDir(t,'pad');
+  if(padBtn.some(Boolean) && lastSrc!=='pad'){ lastSrc='pad'; srcBadge.textContent='🎮 게임패드'; srcBadge.classList.add('on'); }
+}
+setInterval(pollPad, 4);
+
+/* ---------- history strip ---------- */
+const GLYPH = {n:'★',f:'→',b:'←',d:'↓',u:'↑',df:'↘',db:'↙',uf:'↗',ub:'↖'};
+const glyphFor = d => { // convert to facing-aware arrow for display
+  if(store.side===1) return GLYPH[d];
+  return {n:'★',f:'←',b:'→',d:'↓',u:'↑',df:'↙',db:'↘',uf:'↖',ub:'↗'}[d];
+};
+function pushHistory(ev){
+  ev.gap = ev.t - lastInputT; lastInputT = ev.t;
+  history.push(ev); if(history.length>40) history.shift();
+  renderHistory();
+}
+function renderHistory(){
+  const box = $('inputs');
+  const n = Math.max(6, Math.floor(box.clientWidth/38));
+  const items = history.slice(-n);
+  box.innerHTML = items.map((ev,i) => {
+    const cls = ev.btn ? 'b'+ev.btn : (ev.dir==='n'?'n':'dir');
+    const label = ev.btn ? ev.btn : glyphFor(ev.dir);
+    const gap = ev.gap>2000 ? '' : Math.round(ev.gap/FRAME) + 'f';
+    return `<div class="chip${i===items.length-1?' new':''}"><div class="g ${cls}">${label}</div><div class="f">${gap}</div></div>`;
+  }).join('');
+}
+
+/* ---------- crouch dash state machine ---------- */
+function resetCD(){ cd.state=0; }
+function onDir(dir, t){
+  pushHistory({t, dir});
+  switch(cd.state){
+    case 0: if(dir==='f'){ cd.state=1; cd.tF=t; } break;
+    case 1:
+      if(dir==='n'){ cd.state=2; cd.tN=t; }
+      else if(dir==='df'){ fault('f_before_d', t); resetCD(); }
+      else if(dir==='d'){ cd.state=3; cd.tN=t; cd.tD=t; }
+      else resetCD();
+      break;
+    case 2:
+      if(dir==='d'){ cd.state=3; cd.tD=t; }
+      else if(dir==='f'){ cd.state=1; cd.tF=t; }
+      else if(dir==='df'){ fault('n_to_df', t); resetCD(); }
+      else resetCD();
+      break;
+    case 3:
+      if(dir==='df'){ completeCD(t); }
+      else { if(cd.pending){ resolvePending(null, t); } resetCD(); if(dir==='f'){ cd.state=1; cd.tF=t; } }
+      break;
+    case 4: // d/f held (crouch dash active)
+      if(dir==='f'){ cancelCD(t); }
+      else if(dir==='n' || dir==='d'){ cd.state=7; cd.tRel=t; }
+      else resetCD();
+      break;
+    case 5: // cancel 6 held
+      if(dir==='n'){ cd.state=6; cd.tN=t; }
+      else if(dir==='df'){ fault('f_before_d', t); resetCD(); }
+      else if(dir==='d'){ fault('cancel_as_start', t); resetCD(); }
+      else resetCD();
+      break;
+    case 6: // neutral after cancel, waiting for the second 6
+      if(dir==='f'){ cd.state=1; cd.tF=t; }
+      else if(dir==='d'){ fault('cancel_as_start', t); resetCD(); }
+      else if(dir==='df'){ fault('n_to_df', t); resetCD(); }
+      else resetCD();
+      break;
+    case 7: // d/f released without 6 — a 6 arriving right away still counts as the cancel
+      if(dir==='f'){ cancelCD(t); }
+      else if(dir==='d' || dir==='df'){ cd.state=0; }
+      else resetCD();
+      break;
+  }
+}
+function cancelCD(t){ cd.state=5; cd.cancelled=true; cd.tC=t; }
+function completeCD(t){
+  const linked = (t - cd.lastDF <= 700) && cd.lastDF > 0;
+  const cyc = { t, fHold: cd.tN-cd.tF, nGap: cd.tD-cd.tN, dHold: t-cd.tD,
+                dfHold: (linked && cd.cancelled) ? cd.tC-cd.lastDF : null,
+                cancelGap: (linked && cd.cancelled) ? cd.tF-cd.tC : null, cycle: null };
+  let noCancel = false;
+  if(linked && cd.cancelled){ cd.chain++; cyc.cycle = t - cd.lastDF; }
+  else { if(linked && !cd.cancelled) noCancel = true; cd.chain=1; cd.chainCycles=[]; }
+  cd.chainCycles.push(cyc);
+  cd.lastDF = t; cd.tDF = t; cd.state = 4; cd.cancelled = false;
+  session.dashes++;
+  session.bestChain = Math.max(session.bestChain, cd.chain);
+  if(cyc.cycle){ const dps = 1000/cyc.cycle; session.cycles.push({t, cycle:cyc.cycle, dps}); if(session.cycles.length>200) session.cycles.shift(); }
+  if(cd.chain>=3){ const last3 = cd.chainCycles.slice(-3); const span = last3[2].t - last3[0].t; const dps = 2000/span; if(dps>session.bestDps) session.bestDps = dps; }
+  if(drill.running && mode==='wave10'){ drill.count++; drill.bestChain = Math.max(drill.bestChain||0, cd.chain); }
+  if(cyc.cycle) renderWave();
+  fx.crouchDash();
+  renderSeg(cyc);
+  if(noCancel && !cd.pending){
+    showResult('wgf','NO CANCEL','캔슬 6 누락', '앞 대시가 캔슬되지 않아 연속으로 이어지지 않았습니다');
+    setCoach('↓→ 다음에 <strong>6(→)</strong>이 빠졌습니다. 크라우치 대시는 후딜레이가 있어서 ↓→ 직후 ↓를 떼 6을 넣어야 캔슬됩니다. 순서는 <strong>6N23 <u>6</u> N 6N23 <u>6</u> N …</strong> — 6이 두 번씩 들어갑니다.');
+    addLog(t,'대시','캔슬 누락','', '6N23 뒤 6 없음');
+  }
+  else if(cd.chain>=2 && !cd.pending){ showResult('wave','WAVE','웨이브 ×'+cd.chain, cyc.cycle? (1000/cyc.cycle).toFixed(1)+' 대시/초 · 사이클 '+Math.round(cyc.cycle)+'ms ('+(cyc.cycle/FRAME).toFixed(1)+'f)':'' ); coachWaveLive(cyc); }
+  else if(cd.chain===1 && !cd.pending){ showResult('wave','CROUCH DASH','크라우치 대시', 'f '+Math.round(cyc.fHold)+'ms · N '+Math.round(cyc.nGap)+'ms · d '+Math.round(cyc.dHold)+'ms'); if(!cd.chainCycles.length || session.dashes<=1) setCoach('좋습니다. 이어가려면 ↓→ 직후 ↓를 떼 <strong>6</strong>을 넣고(캔슬), 떼었다가 다시 <strong>6</strong> → 중립 → ↓ → ↓→ 를 반복하세요.'); }
+  if(cd.pending) resolvePending(t, t);
+  updateStats(); updateHud();
+}
+function fault(kind, t){
+  const msgs = {
+    f_before_d: ['MISS','입력 순서 오류','→ 를 뗀 뒤에 ↓ 를 누르세요. 지금은 → 를 잡은 채 ↓ 가 들어가 바로 ↓→ 가 됐습니다. 순서는 <strong>f, 중립, d, d/f</strong>.'],
+    n_to_df: ['MISS','d 없이 d/f','중립에서 곧장 ↓→ 가 들어갔습니다. ↓ 를 먼저 찍고 → 를 더해 ↓→ 로 미는 두 단계여야 합니다.'],
+    cancel_as_start: ['MISS','시작 6 누락','캔슬용 6 을 다음 대시의 시작 6 으로 겸해 썼습니다. 캔슬 6 을 떼고 <strong>6 을 한 번 더</strong> 넣은 뒤 ↓, ↓→ 입니다: 6N23 6 <u>N 6</u> N23.'],
+  };
+  const m = msgs[kind]; if(!m) return;
+  cd.chain = 0;
+  showResult('miss', m[0], m[1], '');
+  setCoach(m[2]);
+  fx.stumble();
+  addLog(t, '대시', '실패', '', m[1]);
+}
+
+/* ---------- button / EWGF ---------- */
+function onButton(n, t){
+  pushHistory({t, btn:n});
+  if(n!==2){
+    if(cd.state>=3 && (mode==='ewgf20'||mode==='combo10')) setCoach('초풍은 <strong>2 (오른손 펀치)</strong> 입니다. 방금 누른 버튼은 '+n+'번.');
+    return;
+  }
+  const off = t - cd.lastDF;
+  if(cd.state===4 || cd.state===7 || (cd.state===5 && off<=250) || (off>=0 && off<=store.window)){ classify(off, t); return; }
+  if(cd.state===3){ cd.pending = {t}; return; }
+  if(cd.state===1||cd.state===2){
+    attempt('early_stage', null, t);
+    return;
+  }
+  attempt('no_cd', null, t);
+}
+function resolvePending(tDF, now){
+  const p = cd.pending; cd.pending=null; if(!p) return;
+  if(tDF===null){ attempt('no_df', null, now); return; }
+  classify(p.t - tDF, p.t);
+}
+function classify(off, t){
+  const w = store.window;
+  if(Math.abs(off)<=w) attempt('ewgf', off, t);
+  else if(off>w) attempt('wgf', off, t);
+  else attempt('early', off, t);
+}
+function attempt(kind, off, t){
+  const chainBefore = (t - cd.lastDF < 700) ? cd.chain : 0;
+  const a = { t, kind, off, chain: chainBefore, mode };
+  session.attempts.push(a); if(session.attempts.length>300) session.attempts.shift();
+  const comboOK = chainBefore>=3;
+  let title, sub, cls, coach, res;
+  switch(kind){
+    case 'ewgf':
+      cls='ewgf'; title='초풍!'; res='초풍';
+      sub = '버튼 오프셋 '+fmtF(off)+' ('+fmtMs(off)+')' + (chainBefore>1?' · 웨이브 '+chainBefore+'회 후':'');
+      coach = Math.abs(off)<=Math.min(8, store.window/2) ? '완벽한 저스트. 이 감각을 <strong>손에 기억</strong>시키세요 — d/f 로 미는 손과 2 를 누르는 손이 한 동작이었습니다.'
+            : (off>0 ? '성공. 버튼이 d/f 보다 '+fmtF(off)+' 뒤에 들어왔습니다. 조금만 더 <strong>동시에</strong> 누르면 저스트 판정도 통과합니다.'
+                     : '성공. 버튼이 d/f 보다 살짝 먼저('+fmtF(off)+') 들어왔습니다. ↓→ 로 미는 순간에 맞춰 <strong>아주 조금 늦게</strong> 눌러도 됩니다.');
+      if(mode==='combo10' && !comboOK) { coach = '초풍은 됐지만 앞의 웨이브가 '+chainBefore+'회였습니다. 이 모드는 <strong>웨이브 3회 이상</strong> 후에 초풍을 넣어야 인정됩니다.'; title='초풍 (웨이브 부족)'; cls='wgf'; res='웨이브 부족'; }
+      fx.ewgf(); break;
+    case 'wgf':
+      cls='wgf'; title='풍신권'; res='풍신권(늦음)';
+      sub = '공격 버튼이 '+fmtF(off)+' ('+fmtMs(off)+') 늦었습니다';
+      coach = off>100 ? '공격 버튼이 <strong>너무 느렸습니다</strong> ('+fmtF(off)+'). d/f 를 잡고 나서 버튼을 찾지 말고, ↓→ 로 미는 동작과 2 를 <strong>한 박자</strong>로 묶으세요.'
+            : '아깝습니다. 버튼이 '+fmtF(off)+' 늦어 일반 풍신권이 나갔습니다. 2 를 d/f 와 <strong>동시에</strong> — ↓ 에서 → 를 더하는 순간 손가락을 이미 버튼 위에 올려 두세요.';
+      fx.wgf(); break;
+    case 'early':
+      cls='miss'; title='너무 빨랐습니다'; res='빠름(d+2)';
+      sub = '버튼이 d/f 보다 '+fmtF(off)+' ('+fmtMs(off)+') 먼저 눌림 → 앉아 잽(d+2)';
+      coach = '2 가 d/f 보다 먼저 들어가 <strong>앉아 잽</strong>이 나갔습니다. ↓ 를 찍은 뒤 → 를 더해 ↓→ 가 되는 <strong>바로 그 순간</strong>에 눌러야 합니다. 버튼을 서두르지 마세요.';
+      fx.jab(); break;
+    case 'no_df':
+      cls='miss'; title='d/f 누락'; res='d/f 없음';
+      sub = '↓ 상태에서 2 를 누르고 ↓→ 가 오지 않음';
+      coach = '↓ 만 누른 채 버튼이 나갔습니다. ↓ 를 유지하면서 <strong>→ 를 더해</strong> ↓→ 를 만들고, 그 순간 2 를 누르세요.';
+      fx.jab(); break;
+    case 'early_stage':
+      cls='miss'; title='커맨드 미완성'; res='커맨드 미완성';
+      sub = cd.state===1 ? '→ 를 누른 상태에서 2 (f+2)' : '중립에서 2 (잽)';
+      coach = '크라우치 대시가 끝나기 전에 버튼을 눌렀습니다. <strong>→, 떼고, ↓, ↓→</strong> 까지 완성한 뒤 마지막 ↓→ 와 동시에 2.';
+      fx.jab(); break;
+    default:
+      cls='miss'; title='커맨드 없음'; res='커맨드 없음';
+      sub = '크라우치 대시 없이 2 만 눌림';
+      coach = '초풍 커맨드는 <strong>f, N, d, d/f+2</strong> 입니다. → 를 톡 치고 뗀 뒤 ↓, ↓→ 를 넣고 마지막에 2.';
+      fx.jab();
+  }
+  showResult(cls, kind==='ewgf'?'ELECTRIC WIND GOD FIST':kind==='wgf'?'WIND GOD FIST':'MISS', title, sub);
+  setCoach(coach);
+  addLog(t, '초풍', res, off==null?'':fmtF(off)+' / '+fmtMs(off), chainBefore? '웨이브 '+chainBefore+'회 후':'');
+  if(drill.running && (mode==='ewgf20'||mode==='combo10')){ drill.count++; if(drill.count>=drill.target) endDrill(); }
+  coachTrend(); updateStats(); renderHist(); renderLog();
+  cd.chain = 0; updateHud();
+}
+
+/* ---------- coach text ---------- */
+function setCoach(html){ $('coachMsg').innerHTML = html; }
+function coachWaveLive(cyc){
+  const segs = [['f 유지',cyc.fHold,'→ 를 너무 오래 잡고 있습니다. <strong>톡 치듯</strong> 짧게 누르고 바로 떼세요.'],
+                ['중립',cyc.nGap,'→ 를 뗀 뒤 ↓ 까지 텀이 깁니다. <strong>떼자마자</strong> ↓ 를 누르세요.'],
+                ['d 유지',cyc.dHold,'↓ 에서 ↓→ 로 넘어가는 게 느립니다. ↓ 를 찍고 <strong>바로 → 를 더해</strong> 미세요.'],
+                ['d/f 유지',cyc.dfHold,'↓→ 를 오래 잡고 있습니다. ↓→ 직후 <strong>↓ 만 떼서</strong> 곧바로 캔슬 6 을 넣으세요.'],
+                ['캔슬 6 → 시작 6',cyc.cancelGap,'캔슬 6 에서 다음 시작 6 까지 텀이 깁니다. 6 을 <strong>떼자마자 다시 6</strong> 을 톡 치세요.']].filter(s=>s[1]!=null);
+  segs.sort((a,b)=>b[1]-a[1]);
+  const worst = segs[0];
+  const dps = cyc.cycle?1000/cyc.cycle:0;
+  let tempo = dps>=5?'<strong>상급 속도</strong>입니다. ':dps>=4?'빠른 편입니다. ':dps>=3?'안정적입니다. ':'아직 느립니다. ';
+  if(worst && worst[1]>90) setCoach(tempo+'가장 긴 구간은 <strong>'+worst[0]+'</strong> ('+Math.round(worst[1])+'ms). '+worst[2]);
+  else setCoach(tempo+'구간이 고르게 짧습니다. 이 리듬을 유지하며 <strong>연속 횟수</strong>를 늘려 보세요.');
+}
+function coachTrend(){
+  const recent = session.attempts.filter(a=>a.off!=null).slice(-10);
+  const el = $('coachTrend');
+  if(recent.length<3){ el.textContent = '최근 시도가 3회 이상 쌓이면 경향 분석이 표시됩니다.'; return; }
+  const offs = recent.map(a=>a.off);
+  const mean = offs.reduce((s,v)=>s+v,0)/offs.length;
+  const sd = Math.sqrt(offs.reduce((s,v)=>s+(v-mean)**2,0)/offs.length);
+  const hit = recent.filter(a=>a.kind==='ewgf').length;
+  let msg = '최근 '+recent.length+'회: 초풍 '+hit+'회 · 평균 '+fmtF(mean)+' · 편차 '+(sd/FRAME).toFixed(1)+'f. ';
+  if(sd>FRAME*1.8) msg += '타이밍이 들쭉날쭉합니다. 웨이브 리듬을 일정하게 만든 뒤 마지막 d/f 에 버튼을 "얹는" 느낌으로 통일하세요.';
+  else if(mean>FRAME) msg += '전반적으로 늦는 경향입니다. 버튼을 지금보다 약 '+Math.round(mean)+'ms 일찍, d/f 와 동시에.';
+  else if(mean<-FRAME) msg += '전반적으로 빠른 경향입니다. ↓→ 가 들어간 것을 느끼고 누르는 쪽으로 약 '+Math.round(-mean)+'ms 늦추세요.';
+  else msg += '타이밍이 안정적입니다. 판정 폭을 한 단계 좁혀 보거나, 웨이브 3회 이상 후 초풍(웨이브 초풍 모드)으로 넘어가세요.';
+  el.textContent = msg;
+}
+function renderSeg(cyc){
+  const vals = [cyc.fHold, cyc.nGap, cyc.dHold, cyc.dfHold==null?0:cyc.dfHold, cyc.cancelGap==null?0:cyc.cancelGap].map(v=>Math.max(0,v));
+  const total = vals.reduce((s,v)=>s+v,0)||1;
+  const names = ['6','N','2','3','캔슬6'];
+  const bar = $('segBar');
+  [...bar.children].forEach((el,i)=>{ el.style.flex = Math.max(vals[i]/total, 0.04); el.textContent = vals[i] ? names[i]+' '+Math.round(vals[i]) : names[i]; el.title = names[i]+' '+Math.round(vals[i])+'ms'; });
+}
+
+/* ---------- result card / stats / hud / log ---------- */
+function showResult(cls, kind, title, sub){
+  const c = $('resultCard'); c.className='result '+cls;
+  $('rKind').textContent=kind; $('rTitle').textContent=title; $('rOff').textContent=sub;
+}
+function updateStats(){
+  $('stDps').textContent = session.bestDps.toFixed(1);
+  $('stChain').textContent = session.bestChain;
+  $('stDash').textContent = session.dashes;
+  const tries = session.attempts.length, hits = session.attempts.filter(a=>a.kind==='ewgf').length;
+  $('stTry').textContent = tries;
+  $('stRate').textContent = tries? Math.round(hits/tries*100)+'%':'–';
+  const offs = session.attempts.filter(a=>a.off!=null).map(a=>a.off);
+  $('stMean').textContent = offs.length? fmtF(offs.reduce((s,v)=>s+v,0)/offs.length):'–';
+}
+function updateHud(){
+  const h = $('hudChain'); $('hudChainN').textContent = cd.chain; h.classList.toggle('hot', cd.chain>=3);
+}
+function addLog(t, type, res, num, memo){
+  session.log.unshift({time:new Date(), type, res, num, memo}); if(session.log.length>12) session.log.pop(); renderLog();
+}
+function renderLog(){
+  const tb = $('logBody');
+  if(!session.log.length){ tb.innerHTML='<tr><td colspan="5" style="color:var(--muted)">아직 기록이 없습니다.</td></tr>'; return; }
+  tb.innerHTML = session.log.map(r => {
+    const cls = r.res==='초풍'?'ok':/풍신|부족/.test(r.res)?'wg':/실패|빠름|없음|미완성/.test(r.res)?'no':'';
+    return `<tr><td class="m">${r.time.toLocaleTimeString('ko-KR',{hour12:false})}</td><td>${r.type}</td><td class="${cls}">${r.res}</td><td class="m">${r.num}</td><td style="color:var(--muted)">${r.memo}</td></tr>`;
+  }).join('');
+}
+
+/* ---------- tick: timeouts ---------- */
+function tick(now){
+  if(cd.state===1 && now-cd.tF>250) cd.state=0;
+  else if(cd.state===2 && now-cd.tN>250) cd.state=0;
+  else if(cd.state===3 && now-cd.tD>250){ if(cd.pending) resolvePending(null, now); cd.state=0; }
+  else if(cd.state===4 && now-cd.tDF>450) cd.state=0;
+  else if(cd.state===5 && now-cd.tC>250) cd.state=0;
+  else if(cd.state===6 && now-cd.tN>250) cd.state=0;
+  else if(cd.state===7 && now-cd.tRel>120) cd.state=0;
+  if(cd.pending && now-cd.pending.t>120){ resolvePending(null, now); }
+  if(cd.chain>0 && now-cd.lastDF>700){ endChain(now); }
+}
+function endChain(now){
+  const n = cd.chain, cyc = cd.chainCycles;
+  if(n>=3){
+    const span = cyc[cyc.length-1].t - cyc[0].t; const dps = (n-1)*1000/span;
+    addLog(now,'웨이브',n+'연속', dps.toFixed(1)+' 대시/초', '평균 사이클 '+Math.round(span/(n-1))+'ms');
+    if(mode!=='ewgf20'){
+      const avg = k => cyc.map(c=>c[k]).filter(v=>v!=null).reduce((s,v,_,a)=>s+v/a.length,0);
+      const segs=[['f 유지',avg('fHold')],['중립',avg('nGap')],['d 유지',avg('dHold')],['d/f 유지',avg('dfHold')],['캔슬 6 → 시작 6',avg('cancelGap')]].sort((a,b)=>b[1]-a[1]);
+      $('coachTrend').textContent = '웨이브 '+n+'연속 종료 · 평균 '+dps.toFixed(1)+' 대시/초. 평균적으로 가장 긴 구간은 '+segs[0][0]+' ('+Math.round(segs[0][1])+'ms)'+(segs[0][1]>90?' — 여기를 줄이면 속도가 바로 올라갑니다.':' — 균형이 좋습니다.');
+    }
+  }
+  cd.chain=0; cd.chainCycles=[]; updateHud(); renderWave();
+}
+
+/* ---------- drills ---------- */
+const MODES = {
+  free:   {name:'자유 연습', desc:'제한 없이 웨이브와 초풍을 섞어 연습합니다. 모든 입력이 기록됩니다.', start:false},
+  wave10: {name:'웨이브 10초', desc:'10초 동안 최대한 많은 크라우치 대시. 캔슬 6이 빠지면 연속이 끊깁니다. 대시/초와 최고 연속 횟수를 기록합니다.', start:true, dur:10000},
+  ewgf20: {name:'초풍 20회', desc:'초풍을 20번 시도해 성공률과 평균 버튼 오프셋을 기록합니다.', start:true, target:20},
+  combo10:{name:'웨이브 초풍 10회', desc:'웨이브를 3회 이상 이어간 뒤 초풍으로 마무리. 10번 시도해 성공률을 기록합니다.', start:true, target:10},
+};
+function setMode(m){
+  mode = m; if(drill.running) endDrill(true);
+  document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-selected', b.dataset.mode===m?'true':'false'));
+  const M = MODES[m]; $('dName').textContent=M.name; $('dDesc').textContent=M.desc; $('dStart').hidden=!M.start; $('dProg').textContent=''; $('hudTimer').textContent='';
+  $('hudHint').textContent = m==='wave10' ? '시작 후 6N23 6 N 6N23 6 N … 반복 · 3 직후 ↓만 떼면 캔슬 6, 떼었다가 다시 6'
+                           : m==='ewgf20' ? '6 떼고 2 그리고 3 과 동시에 I(2) · 기본 판정은 1프레임(설정에서 변경)'
+                           : m==='combo10' ? '6N23 6 N … 웨이브 3회 이상 → 마지막 3 과 동시에 2'
+                           : '6N23 = 크라우치 대시 · 3 직후 ↓를 떼 6(캔슬), 떼고 다시 6N23 · 3 과 동시에 I(2) = 초풍';
+}
+function startDrill(){
+  const M = MODES[mode]; if(!M.start) return;
+  drill.running=false; drill.count=0; drill.bestChain=0; drill.target=M.target||0; drill.dur=M.dur||0;
+  $('dStart').disabled=true;
+  let c = 3; $('hudCenter').textContent=c;
+  drill.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(drill.cdTimer); $('hudCenter').textContent='GO!'; setTimeout(()=>{ if($('hudCenter').textContent==='GO!') $('hudCenter').textContent=''; },500); drill.running=true; drill.tStart=performance.now(); cd.chain=0; } }, 700);
+}
+function endDrill(cancel){
+  const wasRunning = drill.running; drill.running=false; clearInterval(drill.cdTimer); $('dStart').disabled=false; $('hudCenter').textContent='';
+  if(cancel || !wasRunning) { $('dProg').textContent=''; return; }
+  const since = a => a.t>=drill.tStart;
+  let rec, text;
+  if(mode==='wave10'){
+    const cyc = session.cycles.filter(since);
+    const dps = drill.count/10;
+    rec = {date:Date.now(), score:dps, dashes:drill.count, chain:drill.bestChain||0, label:dps.toFixed(1)+' 대시/초', sub:drill.count+'회 · 최고 연속 '+(drill.bestChain||0)};
+    text = '10초 종료 · '+drill.count+'회 ('+dps.toFixed(1)+' 대시/초)';
+    $('hudCenter').textContent = drill.count+' DASH';
+  } else {
+    const at = session.attempts.filter(since).slice(-drill.target);
+    const ok = at.filter(a => a.kind==='ewgf' && (mode!=='combo10' || a.chain>=3)).length;
+    const rate = Math.round(ok/drill.target*100);
+    const offs = at.filter(a=>a.off!=null).map(a=>a.off); const mean = offs.length? offs.reduce((s,v)=>s+v,0)/offs.length:0;
+    rec = {date:Date.now(), score:rate, hits:ok, label:rate+'%', sub:ok+'/'+drill.target+' · 평균 '+fmtF(mean)};
+    text = '종료 · 성공 '+ok+'/'+drill.target+' ('+rate+'%)';
+    $('hudCenter').textContent = rate+'%';
+  }
+  setTimeout(()=>{ if(!drill.running) $('hudCenter').textContent=''; }, 2200);
+  $('dProg').textContent = text;
+  store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); save(); renderBests();
+}
+function drillTick(now){
+  if(!drill.running) return;
+  if(mode==='wave10'){
+    const left = Math.max(0, drill.dur-(now-drill.tStart));
+    const el = $('hudTimer'); el.textContent = (left/1000).toFixed(1); el.classList.toggle('warn', left<3000);
+    $('dProg').textContent = drill.count+' 대시';
+    if(left<=0) endDrill();
+  } else {
+    $('dProg').textContent = drill.count+' / '+drill.target;
+  }
+}
+function renderBests(){
+  const el = $('bests');
+  el.innerHTML = ['wave10','ewgf20','combo10'].map(m => {
+    const rs = store.records[m]; const best = rs.length? rs.reduce((a,b)=>b.score>a.score?b:a):null;
+    const last = rs.length? rs[rs.length-1]:null;
+    return `<div class="best"><div class="k">${MODES[m].name}</div><b>${best?best.label:'–'}</b><small>${best?best.sub+' · '+new Date(best.date).toLocaleDateString('ko-KR'):'아직 기록 없음'}</small>${last&&last!==best?`<small style="display:block">최근: ${last.label}</small>`:''}</div>`;
+  }).join('');
+}
+
+/* ---------- charts ---------- */
+function renderHist(){
+  const W=520, H=190, padL=10, padR=10, padT=14, padB=28;
+  const bins = []; for(let f=-6; f<=9; f++) bins.push({f, n:0, kind: Math.abs(f*FRAME)<=store.window?'ewgf':f<0?'early':'wgf'});
+  const at = session.attempts.filter(a=>a.off!=null).slice(-60);
+  at.forEach(a => { const f = clamp(Math.round(a.off/FRAME), -6, 9); bins[f+6].n++; });
+  const max = Math.max(3, ...bins.map(b=>b.n));
+  const bw = (W-padL-padR)/bins.length, innerH = H-padT-padB;
+  const winF = store.window/FRAME;
+  const x0 = padL + (0+6)*bw + bw/2;
+  const wl = padL + (-winF+6+0.5)*bw, wr = padL + (winF+6+0.5)*bw;
+  const col = k => k==='ewgf'?'var(--accent)':k==='early'?'var(--warn)':'var(--red)';
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="초풍 버튼 타이밍 히스토그램">`;
+  s += `<rect x="${wl}" y="${padT}" width="${wr-wl}" height="${innerH}" fill="var(--accent-soft)"/>`;
+  [1,2,3].forEach(i => { const y = padT + innerH - innerH*(i/3); s += `<line x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${W-padR}" y="${y-3}" font-size="10" fill="var(--faint)" text-anchor="end" font-family="JetBrains Mono,monospace">${Math.round(max*i/3)}</text>`; });
+  bins.forEach((b,i) => {
+    const x = padL + i*bw + 2, w = bw-4, h = b.n? Math.max(4, innerH*b.n/max):0, y = padT+innerH-h;
+    if(b.n) s += `<path d="M${x} ${y+4} a4 4 0 0 1 4 -4 h${w-8} a4 4 0 0 1 4 4 v${h-4} h${-w} z" fill="${col(b.kind)}" data-i="${i}"/>`;
+    s += `<rect x="${padL+i*bw}" y="${padT}" width="${bw}" height="${innerH}" fill="transparent" data-i="${i}"/>`;
+    if((b.f%3)===0) s += `<text x="${padL+i*bw+bw/2}" y="${H-10}" font-size="10.5" fill="var(--muted)" text-anchor="middle" font-family="JetBrains Mono,monospace">${b.f>0?'+':''}${b.f}f</text>`;
+  });
+  s += `<line x1="${x0}" x2="${x0}" y1="${padT-4}" y2="${padT+innerH}" stroke="var(--ink2)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+  s += `<text x="${x0+5}" y="${padT+6}" font-size="10" fill="var(--ink2)" font-family="JetBrains Mono,monospace">d/f</text>`;
+  if(!at.length) s += `<text x="${W/2}" y="${padT+innerH/2}" font-size="12" fill="var(--muted)" text-anchor="middle" font-family="Noto Sans KR,sans-serif">초풍을 시도하면 분포가 쌓입니다</text>`;
+  s += '</svg>';
+  const box = $('hist'); box.innerHTML = s;
+  const tip = $('histTip');
+  box.querySelector('svg').addEventListener('mousemove', e => {
+    const i = e.target.dataset.i; if(i==null){ tip.style.display='none'; return; }
+    const b = bins[+i]; const r = $('histCard').getBoundingClientRect();
+    tip.style.display='block'; tip.style.left=(e.clientX-r.left+12)+'px'; tip.style.top=(e.clientY-r.top-30)+'px';
+    tip.textContent = `${b.f>0?'+':''}${b.f}f (${Math.round(b.f*FRAME)}ms) · ${b.n}회 · ${b.kind==='ewgf'?'초풍':b.kind==='early'?'빠름':'늦음'}`;
+  });
+  box.querySelector('svg').addEventListener('mouseleave', ()=> tip.style.display='none');
+}
+function renderWave(){
+  const W=520, H=190, padL=28, padR=12, padT=12, padB=24;
+  const pts = session.cycles.slice(-40);
+  const innerW = W-padL-padR, innerH=H-padT-padB, yMax=8;
+  const X = i => padL + (pts.length>1 ? i/(pts.length-1)*innerW : innerW/2);
+  const Y = v => padT + innerH - clamp(v,0,yMax)/yMax*innerH;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="웨이브 속도 추이">`;
+  s += `<rect x="${padL}" y="${Y(yMax)}" width="${innerW}" height="${Y(5)-Y(yMax)}" fill="var(--accent-soft)"/>`;
+  [2,4,6,8].forEach(v => { s += `<line x1="${padL}" x2="${W-padR}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${padL-6}" y="${Y(v)+3.5}" font-size="10" fill="var(--faint)" text-anchor="end" font-family="JetBrains Mono,monospace">${v}</text>`; });
+  s += `<text x="${padL+4}" y="${Y(8)+11}" font-size="10" fill="var(--accent)" font-family="Noto Sans KR,sans-serif">상급 (5 이상)</text>`;
+  if(pts.length>=2){
+    const d = pts.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.dps).toFixed(1)).join(' ');
+    s += `<path d="${d} L${X(pts.length-1)} ${Y(0)} L${X(0)} ${Y(0)} Z" fill="var(--accent)" opacity=".10"/>`;
+    s += `<path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+    const li = pts.length-1; s += `<circle cx="${X(li)}" cy="${Y(pts[li].dps)}" r="4.5" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>`;
+    s += `<text x="${X(li)-8}" y="${Y(pts[li].dps)-8}" font-size="11" fill="var(--ink)" text-anchor="end" font-family="JetBrains Mono,monospace">${pts[li].dps.toFixed(1)}</text>`;
+    s += `<line id="wcross" x1="0" x2="0" y1="${padT}" y2="${padT+innerH}" stroke="var(--ink2)" stroke-dasharray="3 3" style="display:none"/>`;
+  } else {
+    s += `<text x="${W/2}" y="${padT+innerH/2}" font-size="12" fill="var(--muted)" text-anchor="middle" font-family="Noto Sans KR,sans-serif">크라우치 대시를 2회 이상 연속으로 넣으면 그려집니다</text>`;
+  }
+  s += `<text x="${padL}" y="${H-6}" font-size="10" fill="var(--muted)" font-family="Noto Sans KR,sans-serif">오래된 대시</text><text x="${W-padR}" y="${H-6}" font-size="10" fill="var(--muted)" text-anchor="end" font-family="Noto Sans KR,sans-serif">최근</text>`;
+  s += '</svg>';
+  const box = $('waveChart'); box.innerHTML = s;
+  const svg = box.querySelector('svg'), tip=$('waveTip'), cross = svg.querySelector('#wcross');
+  svg.addEventListener('mousemove', e => {
+    if(pts.length<2) return;
+    const rect = svg.getBoundingClientRect(); const mx = (e.clientX-rect.left)/rect.width*W;
+    const i = clamp(Math.round((mx-padL)/innerW*(pts.length-1)),0,pts.length-1);
+    cross.style.display='block'; cross.setAttribute('x1',X(i)); cross.setAttribute('x2',X(i));
+    const r = $('waveCard').getBoundingClientRect();
+    tip.style.display='block'; tip.style.left=(e.clientX-r.left+12)+'px'; tip.style.top=(e.clientY-r.top-30)+'px';
+    tip.textContent = `${pts[i].dps.toFixed(2)} 대시/초 · 사이클 ${Math.round(pts[i].cycle)}ms (${(pts[i].cycle/FRAME).toFixed(1)}f)`;
+  });
+  svg.addEventListener('mouseleave', ()=>{ tip.style.display='none'; if(cross) cross.style.display='none'; });
+}
+
+/* ---------- settings UI ---------- */
+function segSel(id, attr, cb){
+  const el = $(id); el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    el.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); cb(b.dataset[attr]);
+  }));
+  el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr])===String(store[attr==='win'?'window':attr])?'true':'false'));
+}
+segSel('winSel','win', v => { store.window=+v; save(); renderHist(); });
+segSel('sideSel','side', v => { store.side=+v; save(); kbVector(); recomputeDir(performance.now()); renderHistory(); });
+segSel('fxSel','fx', v => { store.fx=+v; save(); });
+const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK'};
+const pretty = c => c.replace(/^Key|^Digit|^Numpad/, m=>m==='Numpad'?'Num':'').replace('Arrow','');
+function renderKeys(){
+  $('keys').innerHTML = Object.keys(KEYLABEL).map(k => `<button class="key${listening===k?' listen':''}" data-k="${k}"><small>${KEYLABEL[k]}</small><b>${listening===k?'키 입력…':pretty(store.keys[k])}</b></button>`).join('');
+  $('keys').querySelectorAll('.key').forEach(b => b.addEventListener('click', () => { listening = b.dataset.k; renderKeys(); }));
+}
+renderKeys();
+$('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+$('dStart').addEventListener('click', startDrill);
+$('dReset').addEventListener('click', () => {
+  Object.assign(session,{dashes:0,bestChain:0,bestDps:0,cycles:[],attempts:[],log:[]}); cd.chain=0; history.length=0;
+  updateStats(); updateHud(); renderHistory(); renderLog(); renderHist(); renderWave(); coachTrend();
+  showResult('', 'READY', '세션 초기화됨', '입력을 기다리는 중'); if(drill.running) endDrill(true);
+});
+
+/* ================= STAGE (canvas) ================= */
+const canvas = $('stage'), ctx = canvas.getContext('2d');
+let W=800, H=360, dpr=1;
+function resize(){ const r = $('stageBox').getBoundingClientRect(); dpr = Math.min(2, devicePixelRatio||1); W = Math.max(320, r.width); H = Math.max(160, r.height); canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); renderHistory(); }
+addEventListener('resize', resize); resize();
+
+const world = { charX:120, camX:0, dummyX:460, dummy:{y:0,vx:0,vy:0,rot:0,hit:0,alive:true,respawn:0} };
+const anim = { kind:'idle', t0:0, from:0, to:0, moveT0:0, moveFrom:0, moveTo:0 };
+const ghosts = [], pops = [], sparks = [], dust = [], bolts = [];
+let flash = 0, shake = 0;
+const SKIN='#F2C9A0', SKIN2='#D9A87C', HAIR='#141821', PANTS='#EDE7DD', PANTS2='#5A3E9E', GLOVE='#D1352F', BELT='#2B2F3A';
+
+function startAnim(kind){ anim.kind=kind; anim.t0=performance.now(); }
+function moveChar(dx, ms){ anim.moveT0=performance.now(); anim.moveFrom=world.charX; anim.moveTo=world.charX+dx*store.side; anim.moveDur=ms; }
+const fx = {
+  crouchDash(){ startAnim('cd'); moveChar(46, 130); for(let i=0;i<4;i++) dust.push({x:world.charX, y:0, vx:(-1-Math.random()*1.5)*store.side, vy:-0.6-Math.random()*1.2, r:3+Math.random()*4, t:1}); },
+  ewgf(){ startAnim('ewgf'); anim.electric=true; moveChar(28, 120); if(store.fx && !reduced){ flash=1; shake=8; } pop('초풍!', 'var(--accent)', 58); tryHit(true); },
+  wgf(){ startAnim('ewgf'); anim.electric=false; moveChar(28, 120); pop('풍신권', '#F5A524', 34); tryHit(false); },
+  jab(){ startAnim('jab'); pop('?', '#E5484D', 30); },
+  stumble(){ startAnim('stumble'); pop('MISS', '#E5484D', 30); },
+};
+function pop(text,color,size){ pops.push({text,color,size,t0:performance.now(),x:world.charX+30*store.side}); }
+function tryHit(electric){
+  const d = world.dummy; const dist = (world.dummyX - world.charX)*store.side;
+  if(!d.alive || dist<10 || dist>130) return;
+  setTimeout(()=>{ if(!d.alive) return; d.hit=1; d.vy = electric?-11:-6; d.vx=(electric?3.2:1.8)*store.side; d.rot=0;
+    for(let i=0;i<(electric?18:9);i++) sparks.push({x:world.dummyX, y:-46, vx:(Math.random()-0.5)*9, vy:-Math.random()*8-1, t:1, c: electric?(Math.random()<.5?'#DFF6FF':'#4CC9FF'):'#FFE9A8'});
+  }, 110);
+}
+
+function drawFighter(g, px, py, p, dir, alpha, tint){
+  g.save(); g.globalAlpha=alpha; g.translate(px,py); g.scale(dir,1);
+  const crouch=p.crouch||0, lean=(p.lean||0)*Math.PI/180, jump=p.jump||0, spread = 7 + 12*(p.spread||0);
+  g.translate(0,-jump);
+  const legL = 24 - 11*crouch;
+  g.lineCap='round'; g.lineJoin='round';
+  // legs
+  g.lineWidth=8; g.strokeStyle = tint||PANTS;
+  const tuck = p.tuck||0;
+  g.beginPath(); g.moveTo(-spread, -tuck*10); g.lineTo(-spread*0.35, -legL); g.stroke();
+  g.beginPath(); g.moveTo(spread, -tuck*8); g.lineTo(spread*0.3, -legL); g.stroke();
+  // shoes
+  g.fillStyle = tint||'#23272F';
+  g.beginPath(); g.ellipse(-spread-1, -tuck*10, 7, 3.5, 0, 0, Math.PI*2); g.fill();
+  g.beginPath(); g.ellipse(spread+2, -tuck*8, 7, 3.5, 0, 0, Math.PI*2); g.fill();
+  // hips / torso
+  g.translate(0,-legL); g.rotate(lean);
+  const T = 22 - 4*crouch;
+  // back arm
+  const armL = 17;
+  const arm = (sx, a, front) => {
+    const ex = sx + Math.sin(a)*armL, ey = -T+5 + Math.cos(a)*armL;
+    g.lineWidth=6.5; g.strokeStyle=tint||SKIN2; g.beginPath(); g.moveTo(sx,-T+5); g.lineTo(ex,ey); g.stroke();
+    g.fillStyle=tint||GLOVE; g.beginPath(); g.arc(ex,ey,6.5,0,Math.PI*2); g.fill();
+    if(!tint){ g.fillStyle='rgba(255,255,255,.25)'; g.beginPath(); g.arc(ex-2,ey-2,2.2,0,Math.PI*2); g.fill(); }
+    const m = g.getTransform();
+    return [(m.a*ex + m.c*ey + m.e)/dpr, (m.b*ex + m.d*ey + m.f)/dpr];
+  };
+  arm(-6, (p.armL==null?-25:p.armL)*Math.PI/180);
+  // belt + pants top
+  g.fillStyle = tint||PANTS; g.fillRect(-10, -4, 20, 6);
+  g.fillStyle = tint||BELT; g.fillRect(-10, -3, 20, 3);
+  // torso
+  g.fillStyle = tint||SKIN;
+  g.beginPath(); g.moveTo(-11,-T+2); g.quadraticCurveTo(-13,-T/2,-10,0); g.lineTo(10,0); g.quadraticCurveTo(13,-T/2,11,-T+2); g.quadraticCurveTo(0,-T-3,-11,-T+2); g.fill();
+  if(!tint){ g.strokeStyle=SKIN2; g.lineWidth=1.5; g.beginPath(); g.moveTo(0,-T+8); g.lineTo(0,-6); g.stroke(); g.beginPath(); g.moveTo(-8,-T+7); g.quadraticCurveTo(0,-T+11,8,-T+7); g.stroke(); }
+  // head
+  const hy = -T-15;
+  g.fillStyle = tint||SKIN; g.beginPath(); g.arc(0,hy,19,0,Math.PI*2); g.fill();
+  // hair (spiky, swept back)
+  g.fillStyle = tint||HAIR;
+  g.beginPath(); g.arc(0,hy-1,19.5,Math.PI*1.02,Math.PI*1.98); g.lineTo(-19.5,hy-1); g.fill();
+  g.beginPath();
+  g.moveTo(-19,hy-2); g.lineTo(-30,hy-12); g.lineTo(-17,hy-14); g.lineTo(-27,hy-26); g.lineTo(-11,hy-20);
+  g.lineTo(-12,hy-36); g.lineTo(-1,hy-22); g.lineTo(4,hy-38); g.lineTo(9,hy-21); g.lineTo(18,hy-31); g.lineTo(15,hy-14); g.lineTo(21,hy-8); g.closePath(); g.fill();
+  // sideburn
+  g.fillRect(-19,hy-2,5,12);
+  if(!tint){
+    // eyebrows (angry) + eyes
+    g.strokeStyle=HAIR; g.lineWidth=2.6; g.lineCap='round';
+    g.beginPath(); g.moveTo(3,hy-3); g.lineTo(14,hy-7); g.stroke();
+    g.beginPath(); g.moveTo(-3,hy-4); g.lineTo(-13,hy-8); g.stroke();
+    g.fillStyle='#fff'; g.beginPath(); g.ellipse(9,hy+2,4,4.5,0,0,Math.PI*2); g.fill(); g.beginPath(); g.ellipse(-7,hy+2,3.6,4.2,0,0,Math.PI*2); g.fill();
+    g.fillStyle='#1a1f2b'; g.beginPath(); g.arc(10,hy+2.5,2.2,0,Math.PI*2); g.fill(); g.beginPath(); g.arc(-6,hy+2.5,2,0,Math.PI*2); g.fill();
+    if(p.eyeGlow){ g.fillStyle='#4CC9FF'; g.beginPath(); g.arc(10,hy+2.5,2.4,0,Math.PI*2); g.fill(); g.beginPath(); g.arc(-6,hy+2.5,2.2,0,Math.PI*2); g.fill(); }
+    // scar + mouth
+    g.strokeStyle='#C4785A'; g.lineWidth=1.3; g.beginPath(); g.moveTo(5,hy+8); g.lineTo(11,hy+11); g.stroke();
+    g.strokeStyle='#8B4A3C'; g.lineWidth=1.8; g.beginPath(); g.moveTo(-2,hy+11); g.lineTo(6,hy+10.5); g.stroke();
+    if(p.sweat){ g.fillStyle='#8FDCFF'; g.beginPath(); g.moveTo(-20,hy-6); g.lineTo(-24,hy+4); g.lineTo(-16,hy+4); g.closePath(); g.fill(); }
+  }
+  // front arm
+  const fist = arm(6, (p.armR==null?30:p.armR)*Math.PI/180, true);
+  g.restore();
+  return fist;
+}
+function poseAt(now){
+  const t = now - anim.t0;
+  const e = x => 1-Math.pow(1-x,3);
+  switch(anim.kind){
+    case 'cd': { if(t<300){ const c = t<160? 0.85 : Math.max(0, 0.85-(t-160)/140);
+      return {crouch:c, lean:28*c, armR:-25+60*(1-c), armL:-45+15*(1-c), spread:0.8*c}; } break; }
+    case 'ewgf': {
+      if(t<70) return {crouch:0.95, lean:32, armR:-40, armL:-30, spread:0.9, eyeGlow:anim.electric};
+      if(t<260){ const k = e((t-70)/190); return {crouch:0.9*(1-k), lean:32-42*k, armR:-40+240*k, armL:-20, jump:38*Math.sin(k*Math.PI*0.5), tuck:k, spread:0.4, eyeGlow:anim.electric}; }
+      if(t<520){ const k=(t-260)/260; return {crouch:0, lean:-10+10*k, armR:200-40*k, armL:-20, jump:38*Math.cos(k*Math.PI/2), tuck:1-k, spread:0.2, eyeGlow:anim.electric&&k<.6}; }
+      break; }
+    case 'jab': { if(t<200){ const k = Math.sin(Math.min(1,t/200)*Math.PI); return {crouch:0.5, lean:12, armR:90*k+10, armL:-20, spread:0.4, sweat:true}; } break; }
+    case 'stumble': { if(t<420){ const k=Math.sin(t/420*Math.PI); return {crouch:0.15*k, lean:-18*k, armR:120*k, armL:100*k, spread:0.8, sweat:true}; } break; }
+  }
+  if(anim.kind!=='idle') anim.kind='idle';
+  return {crouch:0, lean:4+Math.sin(now/420)*2, jump:Math.abs(Math.sin(now/420))*2.5, armR:35+Math.sin(now/420)*4, armL:-30, spread:0.25};
+}
+function drawBolt(g, x, y, len, ang, w, color){
+  g.strokeStyle=color; g.lineWidth=w; g.lineCap='round'; g.beginPath(); g.moveTo(x,y);
+  let cx=x, cy=y; const segs=5+Math.floor(Math.random()*3);
+  for(let i=0;i<segs;i++){ const a = ang + (Math.random()-0.5)*1.4; cx += Math.cos(a)*len/segs; cy += Math.sin(a)*len/segs; g.lineTo(cx,cy); }
+  g.stroke();
+}
+function drawDummy(g, sx, gy, d){
+  g.save(); g.translate(sx, gy + d.y); g.rotate(d.rot);
+  // stand
+  g.fillStyle='#2A3140'; g.fillRect(-16,-4,32,5); g.fillStyle='#3A4353'; g.fillRect(-4,-70,8,68);
+  // bag
+  g.fillStyle='#B0332F'; g.beginPath(); g.roundRect(-14,-96,28,64,7); g.fill();
+  g.fillStyle='#8E2724'; g.fillRect(-14,-66,28,4); g.fillRect(-14,-46,28,4);
+  g.fillStyle='#E8D9C5'; g.font='bold 9px JetBrains Mono, monospace'; g.textAlign='center'; g.fillText('DUMMY',0,-52);
+  if(d.hit){ g.fillStyle='#fff'; g.font='bold 14px Black Han Sans, sans-serif'; g.fillText('><',0,-78); }
+  g.restore();
+}
+function frame(now){
+  tick(now); drillTick(now);
+  // movement
+  if(anim.moveDur){ const k = Math.min(1,(now-anim.moveT0)/anim.moveDur); world.charX = anim.moveFrom + (anim.moveTo-anim.moveFrom)*(1-Math.pow(1-k,3)); if(k>=1) anim.moveDur=0; if(k<1 && anim.kind==='cd' && Math.random()<0.6) ghosts.push({x:world.charX, t:1, pose:poseAt(now)}); }
+  // camera
+  const camTarget = world.charX - (store.side>0 ? 0.32 : 0.68)*W;
+  world.camX += (camTarget-world.camX)*0.12;
+  // dummy management
+  const d = world.dummy;
+  const ahead = (world.dummyX - world.charX)*store.side;
+  if(d.hit){ d.y += d.vy; d.vy += 0.45; world.dummyX += d.vx; d.rot += 0.12*store.side; if(d.y>0){ d.y=0; d.hit=0; d.alive=false; d.respawn=now+700; } }
+  const spawnDist = () => Math.min(300, W*0.5) + Math.random()*40;
+  if(!d.alive && now>d.respawn){ d.alive=true; d.rot=0; d.y=0; world.dummyX = world.charX + spawnDist()*store.side; }
+  if(d.alive && !d.hit && (ahead<-40 || ahead>W*1.2)){ world.dummyX = world.charX + spawnDist()*store.side; }
+
+  const gy = H*0.80;
+  ctx.save();
+  if(shake>0.3){ ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake); shake*=0.82; } else shake=0;
+  // background
+  const bg = ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#0D1219'); bg.addColorStop(0.78,'#131A24'); bg.addColorStop(0.781,'#1A2230'); bg.addColorStop(1,'#0E131B');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  // horizon glow
+  const hg = ctx.createRadialGradient(W*0.5,gy,10,W*0.5,gy,W*0.8); hg.addColorStop(0,'rgba(76,201,255,.10)'); hg.addColorStop(1,'rgba(76,201,255,0)');
+  ctx.fillStyle=hg; ctx.fillRect(0,0,W,gy);
+  // back grid (parallax)
+  ctx.strokeStyle='rgba(76,201,255,.07)'; ctx.lineWidth=1;
+  const off1 = ((-world.camX*0.3)%80+80)%80;
+  for(let x=off1-80; x<W; x+=80){ ctx.beginPath(); ctx.moveTo(x,gy*0.35); ctx.lineTo(x,gy); ctx.stroke(); }
+  for(let y=gy*0.35; y<gy; y+=26){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  // floor
+  ctx.strokeStyle='rgba(143,220,255,.14)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke();
+  ctx.strokeStyle='rgba(143,220,255,.07)';
+  const off2 = ((-world.camX)%48+48)%48;
+  for(let x=off2-48; x<W+48; x+=48){ ctx.beginPath(); ctx.moveTo(x,gy); ctx.lineTo(x-(x-W/2)*0.35, H); ctx.stroke(); }
+  for(let i=1;i<5;i++){ const y = gy + (H-gy)*(i*i/25); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  // distance marker (frames of travel)
+  ctx.fillStyle='rgba(140,152,170,.5)'; ctx.font='10px JetBrains Mono, monospace'; ctx.textAlign='left';
+  for(let x=off2-48, i=0; x<W+48; x+=48, i++){ const wx = Math.round((x+world.camX)/48); if(wx%5===0) ctx.fillText(wx*5+'', x+3, gy+12); }
+
+  const sx = world.charX - world.camX;
+  // dust
+  for(let i=dust.length-1;i>=0;i--){ const p=dust[i]; p.x+=p.vx; p.y+=p.vy; p.vy*=0.92; p.t-=0.04; if(p.t<=0){dust.splice(i,1);continue;} ctx.fillStyle=`rgba(180,190,205,${p.t*0.35})`; ctx.beginPath(); ctx.arc(p.x-world.camX, gy+p.y-2, p.r*(1+(1-p.t)), 0, Math.PI*2); ctx.fill(); }
+  // ghosts
+  for(let i=ghosts.length-1;i>=0;i--){ const g=ghosts[i]; g.t-=0.07; if(g.t<=0){ghosts.splice(i,1);continue;} drawFighter(ctx, g.x-world.camX, gy, g.pose, store.side, g.t*0.35, '#4CC9FF'); }
+  // dummy
+  if(d.alive) drawDummy(ctx, world.dummyX-world.camX, gy, d);
+  // shadow
+  const pose = poseAt(now);
+  ctx.fillStyle='rgba(0,0,0,.45)'; ctx.beginPath(); ctx.ellipse(sx, gy+2, 26-(pose.jump||0)*0.2, 5, 0, 0, Math.PI*2); ctx.fill();
+  // fighter
+  const fist = drawFighter(ctx, sx, gy, pose, store.side, 1, null);
+  // electricity
+  if(anim.kind==='ewgf' && anim.electric){
+    const t = now-anim.t0;
+    if(t>60 && t<420){
+      // fist position in screen space: recompute roughly from returned local coords
+      const fx_ = fist[0], fy_ = fist[1];
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      for(let i=0;i<7;i++){ drawBolt(ctx, fx_, fy_, 34+Math.random()*40, Math.random()*Math.PI*2, 2.2, 'rgba(143,220,255,.9)'); }
+      for(let i=0;i<4;i++){ drawBolt(ctx, fx_, fy_, 20+Math.random()*24, Math.random()*Math.PI*2, 1, '#ffffff'); }
+      const gl = ctx.createRadialGradient(fx_,fy_,2,fx_,fy_,46); gl.addColorStop(0,'rgba(76,201,255,.65)'); gl.addColorStop(1,'rgba(76,201,255,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(fx_,fy_,46,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+      // body aura
+      ctx.save(); ctx.globalCompositeOperation='lighter'; for(let i=0;i<3;i++) drawBolt(ctx, sx+(Math.random()-0.5)*30, gy-40-Math.random()*40, 30, Math.random()*Math.PI*2, 1.2, 'rgba(76,201,255,.5)'); ctx.restore();
+    }
+  }
+  // sparks
+  for(let i=sparks.length-1;i>=0;i--){ const p=sparks[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.35; p.t-=0.035; if(p.t<=0){sparks.splice(i,1);continue;} ctx.fillStyle=p.c; ctx.globalAlpha=p.t; ctx.fillRect(p.x-world.camX-2, gy+p.y-2, 4, 4); ctx.globalAlpha=1; }
+  // text pops
+  for(let i=pops.length-1;i>=0;i--){ const p=pops[i]; const t=(now-p.t0)/900; if(t>=1){pops.splice(i,1);continue;} const sc = t<0.15? 0.6+t/0.15*0.6 : 1.2-(t-0.15)*0.25; ctx.save(); ctx.translate(p.x-world.camX, gy-118-t*30); ctx.scale(sc,sc); ctx.globalAlpha = t>0.7? (1-t)/0.3:1; ctx.font=`${p.size}px "Black Han Sans", "Noto Sans KR", sans-serif`; ctx.textAlign='center'; ctx.lineWidth=6; ctx.strokeStyle='#04101a'; ctx.strokeText(p.text,0,0); ctx.fillStyle = p.color.startsWith('var')? '#4CC9FF' : p.color; ctx.fillText(p.text,0,0); ctx.restore(); }
+  ctx.restore();
+  if(flash>0.02){ ctx.fillStyle=`rgba(180,235,255,${flash*0.55})`; ctx.fillRect(0,0,W,H); flash*=0.85; } else flash=0;
+  requestAnimationFrame(frame);
+}
+/* ---------- boot ---------- */
+setMode('free'); renderBests(); renderHist(); renderWave(); renderHistory(); updateStats();
+world.camX = world.charX - W*0.32;
+requestAnimationFrame(frame);
+})();
+</script>
