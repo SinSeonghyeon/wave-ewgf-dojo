@@ -75,6 +75,15 @@
   .btn.ghost{background:transparent;color:var(--ink2);border:1px solid var(--line2)}
   .btn:disabled{opacity:.45;cursor:default}
 
+  /* share card dialog */
+  dialog.share{background:var(--panel);color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:16px;width:min(920px,calc(100vw - 32px));box-sizing:border-box}
+  dialog.share::backdrop{background:rgba(4,8,14,.72)}
+  dialog.share h2{margin:0 0 10px;font-family:var(--display);font-size:20px;letter-spacing:.3px}
+  dialog.share canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+  .share-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .share-msg{font-family:var(--mono);font-size:12.5px;color:var(--accent);min-height:1.4em;margin-top:8px}
+  dialog.share .note{color:var(--muted);font-size:12px;margin:6px 0 0}
+
   /* coach */
   .coach{display:flex;flex-direction:column;gap:12px;min-width:0}
   .result{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;position:relative;overflow:hidden;min-height:96px}
@@ -196,6 +205,7 @@
         <div class="d-prog" id="dProg"></div>
         <button class="btn" id="dStart" hidden data-i18n="drill.start">시작</button>
         <button class="btn ghost" id="dReset" data-i18n="drill.reset">세션 초기화</button>
+        <button class="btn ghost" id="dShare" hidden>세션 카드</button>
       </div>
     </section>
 
@@ -242,6 +252,19 @@
       </details>
     </aside>
   </main>
+
+  <dialog class="share" id="shareDlg" aria-labelledby="shareTitle">
+    <h2 id="shareTitle" data-i18n="share.title">결과 공유 카드</h2>
+    <canvas id="shareCanvas" width="1200" height="630" data-i18n-aria="share.canvasAria" aria-label="결과 공유 카드 미리보기"></canvas>
+    <div class="share-actions">
+      <button class="btn" id="shareCopy" data-i18n="share.copy">이미지 복사</button>
+      <button class="btn ghost" id="shareDl" data-i18n="share.download">PNG 저장</button>
+      <button class="btn ghost" id="shareTweet" data-i18n="share.tweet">X(트위터)에 공유</button>
+      <button class="btn ghost" id="shareClose" data-i18n="share.close">닫기</button>
+    </div>
+    <div class="share-msg" id="shareMsg"></div>
+    <p class="note" data-i18n="share.discordNote">디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.</p>
+  </dialog>
 
   <section class="records" data-i18n-aria="records.aria" aria-label="기록">
     <div class="card chart" id="histCard">
@@ -399,6 +422,14 @@ ko:{
   'chain.fix':' — 여기를 줄이면 속도가 바로 올라갑니다.', 'chain.ok':' — 균형이 좋습니다.',
   'drill.waveEnd':(n,dps)=>'10초 종료 · '+n+'회 ('+dps+' 대시/초)', 'drill.end':(ok,tg,r)=>'종료 · 성공 '+ok+'/'+tg+' ('+r+'%)', 'drill.dashes':n=>n+' 대시',
   'pop.ewgf':'초풍!', 'pop.wgf':'풍신권',
+  'share.card':'공유 카드', 'share.session':'세션 카드', 'share.title':'결과 공유 카드', 'share.canvasAria':'결과 공유 카드 미리보기',
+  'share.copy':'이미지 복사', 'share.download':'PNG 저장', 'share.tweet':'X(트위터)에 공유', 'share.close':'닫기',
+  'share.discordNote':'디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.',
+  'share.copied':'이미지를 클립보드에 복사했습니다.', 'share.copyFail':'이 브라우저는 이미지 복사를 지원하지 않습니다. PNG 저장을 이용하세요.',
+  'card.session':'이번 세션 통계', 'card.rate':'초풍 성공률', 'card.hits':'성공 / 시도', 'card.dps':'대시/초', 'card.bestDps':'최고 대시/초', 'card.dashes':'총 대시',
+  'card.chain':'최고 연속 대시', 'card.tries':'초풍 시도', 'card.mean':'평균 버튼 오프셋', 'card.window':w=>'초풍 판정 폭 '+w,
+  'card.hist':'버튼 타이밍 분포 (d/f 기준, 프레임)', 'card.wave':'웨이브 속도 (대시/초)', 'card.noData':'아직 기록이 없습니다',
+  'card.tweet':(name,summary,win)=>'미시마 도장 · '+name+' · '+summary+' · 판정 '+win+' #철권 #초풍 #TEKKEN',
   'footer':'표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.',
 },
 en:{
@@ -485,6 +516,14 @@ en:{
   'chain.fix':' — shorten this and speed goes up immediately.', 'chain.ok':' — well balanced.',
   'drill.waveEnd':(n,dps)=>'10s over · '+n+' dashes ('+dps+' dashes/s)', 'drill.end':(ok,tg,r)=>'Done · '+ok+'/'+tg+' ('+r+'%)', 'drill.dashes':n=>n+' dashes',
   'pop.ewgf':'EWGF!', 'pop.wgf':'WGF',
+  'share.card':'Share card', 'share.session':'Session card', 'share.title':'Result share card', 'share.canvasAria':'Result share card preview',
+  'share.copy':'Copy image', 'share.download':'Save PNG', 'share.tweet':'Share on X (Twitter)', 'share.close':'Close',
+  'share.discordNote':'Discord: click "Copy image", then paste into the chat with Ctrl+V. If copying is unavailable, save the PNG and attach it.',
+  'share.copied':'Image copied to the clipboard.', 'share.copyFail':'This browser cannot copy images. Use Save PNG instead.',
+  'card.session':'This session', 'card.rate':'EWGF success rate', 'card.hits':'Hits / tries', 'card.dps':'dashes/s', 'card.bestDps':'Best dashes/s', 'card.dashes':'Total dashes',
+  'card.chain':'Best dash chain', 'card.tries':'EWGF tries', 'card.mean':'Avg button offset', 'card.window':w=>'EWGF window '+w,
+  'card.hist':'Button timing (frames from d/f)', 'card.wave':'Wave speed (dashes/s)', 'card.noData':'No data yet',
+  'card.tweet':(name,summary,win)=>'Mishima Dojo · '+name+' · '+summary+' · window '+win+' #TEKKEN #EWGF',
   'footer':'Notation: 6 = forward (f), N = neutral, 2 = down (d), 3 = down-forward (d/f), button 2 = right punch (RP). Wave = 6N23 6 N 6N23 6 N … (the 6 after 3 cancels the recovery). 1 frame = 16.67ms. Unofficial fan-made practice tool.',
 },
 ja:{
@@ -571,6 +610,14 @@ ja:{
   'chain.fix':' — ここを縮めれば速度がすぐ上がります。', 'chain.ok':' — バランスが良いです。',
   'drill.waveEnd':(n,dps)=>'10秒終了 · '+n+'回 ('+dps+' ダッシュ/秒)', 'drill.end':(ok,tg,r)=>'終了 · 成功 '+ok+'/'+tg+' ('+r+'%)', 'drill.dashes':n=>n+' ステップ',
   'pop.ewgf':'最風!', 'pop.wgf':'風神拳',
+  'share.card':'共有カード', 'share.session':'セッションカード', 'share.title':'結果共有カード', 'share.canvasAria':'結果共有カードのプレビュー',
+  'share.copy':'画像をコピー', 'share.download':'PNG保存', 'share.tweet':'X(Twitter)で共有', 'share.close':'閉じる',
+  'share.discordNote':'Discord: 「画像をコピー」後、チャット欄に Ctrl+V で貼り付けてください。コピーできない場合は PNG を保存して添付してください。',
+  'share.copied':'画像をクリップボードにコピーしました。', 'share.copyFail':'このブラウザは画像コピーに対応していません。PNG保存をご利用ください。',
+  'card.session':'今回のセッション', 'card.rate':'最風成功率', 'card.hits':'成功 / 試行', 'card.dps':'ダッシュ/秒', 'card.bestDps':'最高ダッシュ/秒', 'card.dashes':'総ダッシュ',
+  'card.chain':'最高連続ダッシュ', 'card.tries':'最風試行', 'card.mean':'平均ボタンオフセット', 'card.window':w=>'最風判定幅 '+w,
+  'card.hist':'ボタンタイミング分布 (3基準、フレーム)', 'card.wave':'ウェーブ速度 (ダッシュ/秒)', 'card.noData':'まだ記録がありません',
+  'card.tweet':(name,summary,win)=>'三島道場 · '+name+' · '+summary+' · 判定 '+win+' #鉄拳 #最風 #TEKKEN',
   'footer':'表記: 6 = 前, N = ニュートラル, 2 = 下, 3 = 斜め下前, ボタン2 = 右パンチ(RP)。ウェーブ = 6N23 6 N 6N23 6 N … (3の後の6が硬直キャンセル)。1フレーム = 16.67ms基準。非公式ファン製作の練習ツールです。',
 },
 };
@@ -590,7 +637,7 @@ const cd = { state:0, tF:0, tN:0, tD:0, tDF:0, tC:0, tRel:0, lastDF:-1e9, cancel
 let mode = 'free';
 const drill = { running:false, tStart:0, dur:0, count:0, target:0, cdTimer:null, messageTimer:null };
 /* last rendered texts, kept as re-evaluable messages so a language switch can redraw them */
-const ui = { result:{cls:'',kind:'READY',title:['ready.title'],sub:['ready.sub']}, coach:['coach.intro'], trend:['trend.intro'], seg:null, padId:null };
+const ui = { result:{cls:'',kind:'READY',title:['ready.title'],sub:['ready.sub']}, coach:['coach.intro'], trend:['trend.intro'], seg:null, padId:null, shareMsg:'' };
 
 /* ---------- input layer ---------- */
 const held = new Set();               // keyboard codes
@@ -993,16 +1040,18 @@ function renderMode(){
   const M = MODES[mode];
   $('dName').textContent=T('mode.'+mode+'.name'); $('dDesc').textContent=T('mode.'+mode+'.desc'); $('dStart').hidden=!M.start;
   $('hudHint').textContent = T('hint.'+mode);
+  const sb = $('dShare'); sb.textContent = T(M.start?'share.card':'share.session'); sb.hidden = !!M.start && !drill.result;
 }
+function clearShare(){ drill.result=null; $('dShare').hidden = !!MODES[mode].start; }
 function setMode(m){
-  endDrill(true); clearCommand(); updateHud(); mode = m;
+  endDrill(true); clearCommand(); updateHud(); mode = m; drill.result=null;
   document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-selected', b.dataset.mode===m?'true':'false'));
   $('dProg').textContent=''; $('hudTimer').textContent='';
   renderMode();
 }
 function startDrill(){
   const M = MODES[mode]; if(!M.start) return;
-  endDrill(true);
+  endDrill(true); clearShare();
   drill.running=false; drill.count=0; drill.bestChain=0; drill.target=M.target||0; drill.dur=M.dur||0;
   $('dStart').disabled=true;
   let c = 3; $('hudCenter').textContent=c;
@@ -1012,14 +1061,14 @@ function endDrill(cancel){
   const wasRunning = drill.running; drill.running=false; clearInterval(drill.cdTimer); drill.cdTimer=null; clearTimeout(drill.messageTimer); drill.messageTimer=null; $('dStart').disabled=false; $('hudCenter').textContent='';
   if(cancel || !wasRunning) { $('dProg').textContent=''; return; }
   const since = a => a.t>=drill.tStart;
-  let rec, text;
+  let rec, text, at = [];
   if(mode==='wave10'){
     const dps = drill.count/10, chain = drill.bestChain||0;
     rec = {date:Date.now(), score:dps, dashes:drill.count, chain, label:T('rec.dps',dps.toFixed(1)), sub:T('rec.waveSub',drill.count,chain)};
     text = T('drill.waveEnd', drill.count, dps.toFixed(1));
     $('hudCenter').textContent = drill.count+' DASH';
   } else {
-    const at = session.attempts.filter(since).slice(-drill.target);
+    at = session.attempts.filter(since).slice(-drill.target);
     const ok = at.filter(a => a.kind==='ewgf' && (mode!=='combo10' || a.chain>=3)).length;
     const rate = Math.round(ok/drill.target*100);
     const offs = at.filter(a=>a.off!=null).map(a=>a.off); const mean = offs.length? offs.reduce((s,v)=>s+v,0)/offs.length:0;
@@ -1030,6 +1079,7 @@ function endDrill(cancel){
   drill.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; }, 2200);
   $('dProg').textContent = text;
   store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); save(); renderBests();
+  drill.result = {rec, attempts:at, cycles:session.cycles.filter(since)}; $('dShare').hidden=false;
 }
 function drillTick(now){
   if(!drill.running) return;
@@ -1058,11 +1108,15 @@ function renderBests(){
 }
 
 /* ---------- charts ---------- */
+function histBins(attempts, window){ // −6f..+9f bins; each attempt with an offset lands in one bin
+  const bins = []; for(let f=-6; f<=9; f++) bins.push({f, n:0, kind: Math.abs(f*FRAME)<=window?'ewgf':f<0?'early':'wgf'});
+  attempts.forEach(a => { if(a.off==null) return; const f = clamp(Math.round(a.off/FRAME), -6, 9); bins[f+6].n++; });
+  return bins;
+}
 function renderHist(){
   const W=520, H=190, padL=10, padR=10, padT=14, padB=28;
-  const bins = []; for(let f=-6; f<=9; f++) bins.push({f, n:0, kind: Math.abs(f*FRAME)<=store.window?'ewgf':f<0?'early':'wgf'});
   const at = session.attempts.filter(a=>a.off!=null).slice(-60);
-  at.forEach(a => { const f = clamp(Math.round(a.off/FRAME), -6, 9); bins[f+6].n++; });
+  const bins = histBins(at, store.window);
   const max = Math.max(3, ...bins.map(b=>b.n));
   const bw = (W-padL-padR)/bins.length, innerH = H-padT-padB;
   const winF = store.window/FRAME;
@@ -1128,6 +1182,53 @@ function renderWave(){
   svg.addEventListener('mouseleave', ()=>{ tip.style.display='none'; if(cross) cross.style.display='none'; });
 }
 
+/* ---------- share card: pure data model (no DOM, unit-tested) ---------- */
+const SITE_URL = 'https://sinseonghyeon.github.io/wave-ewgf-dojo/';
+function buildCard(src){
+  // src: {kind:'drill'|'session', mode, rec?, attempts, cycles, session?, window, date}
+  const m = src.mode, win = src.window ?? store.window, s = src.session || session;
+  const winText = T('set.win'+win), modeName = T('mode.'+m+'.name');
+  const metric = (k, v) => ({label:T(k), value:String(v)});
+  const attempts = src.attempts || [], cycles = src.cycles || [];
+  const bestChainOf = list => list.reduce((b,a)=>Math.max(b, a.chain||0), 0);
+  let hero, metrics, chart, summary, sub;
+  if(src.kind==='drill' && m==='wave10'){
+    const r = src.rec, dps = (+r.score).toFixed(1), chain = r.chain||0;
+    hero = {value:dps, label:T('card.dps')};
+    metrics = [metric('card.dashes', r.dashes), metric('card.chain', chain), metric('card.tries', attempts.length)];
+    chart = {type:'wave', pts:cycles.slice(-40).map(c=>c.dps)};
+    summary = T('rec.dps',dps)+' · '+T('rec.waveSub', r.dashes, chain);
+    sub = T('drill.waveEnd', r.dashes, dps);
+  } else if(src.kind==='drill'){
+    const r = src.rec;
+    hero = {value:r.score+'%', label:T('card.rate')};
+    metrics = [metric('card.hits', r.hits+' / '+r.target), metric('card.mean', fmtF(r.mean)), metric('card.chain', bestChainOf(attempts))];
+    chart = {type:'hist', bins:histBins(attempts, win), window:win};
+    summary = r.score+'% · '+T('rec.ewgfSub', r.hits, r.target, fmtF(r.mean));
+    sub = T('drill.end', r.hits, r.target, r.score);
+  } else {
+    const rate = s.tries? Math.round(s.hits/s.tries*100)+'%' : null;
+    const mean = s.offsetCount? fmtF(s.offsetSum/s.offsetCount) : '–';
+    const dps = (+s.bestDps||0).toFixed(1);
+    hero = rate!=null ? {value:rate, label:T('card.rate')} : {value:dps, label:T('card.bestDps')};
+    metrics = rate!=null
+      ? [metric('card.hits', s.hits+' / '+s.tries), metric('card.mean', mean), metric('card.bestDps', dps), metric('card.chain', s.bestChain)]
+      : [metric('card.dashes', s.dashes), metric('card.chain', s.bestChain), metric('card.tries', s.tries), metric('card.mean', mean)];
+    const withOff = attempts.filter(a=>a.off!=null).slice(-60);
+    chart = withOff.length ? {type:'hist', bins:histBins(withOff, win), window:win}
+          : cycles.length>=2 ? {type:'wave', pts:cycles.slice(-40).map(c=>c.dps)} : null;
+    summary = rate!=null ? rate+' · '+T('rec.ewgfSub', s.hits, s.tries, mean) : T('rec.dps',dps)+' · '+T('rec.waveSub', s.dashes, s.bestChain);
+    sub = T('card.session');
+  }
+  const d = new Date(src.date || Date.now());
+  const ymd = d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  return {
+    app:T('app.title'), modeName, sub, hero, metrics, chart,
+    windowText:T('card.window', winText), dateText:d.toLocaleDateString(LOCALE[store.lang]), url:SITE_URL,
+    tweet:T('card.tweet', modeName, summary, winText)+'\n'+SITE_URL, file:'mishima-dojo-'+m+'-'+ymd+'.png',
+  };
+}
+
 /* ---------- settings UI ---------- */
 function segSel(id, attr, cb){
   const el = $(id); el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
@@ -1148,10 +1249,53 @@ function renderKeys(){
 $('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
 $('dStart').addEventListener('click', startDrill);
 $('dReset').addEventListener('click', () => {
-  endDrill(true); resetInput();
+  endDrill(true); clearShare(); resetInput();
   Object.assign(session,{dashes:0,bestChain:0,bestDps:0,tries:0,hits:0,offsetSum:0,offsetCount:0,cycles:[],attempts:[],log:[]}); history.length=0; lastInputT=performance.now();
   updateStats(); updateHud(); renderHistory(); renderLog(); renderHist(); renderWave(); coachTrend();
   showResult('', 'READY', ['ready.reset'], ['ready.title']);
+});
+
+/* ---------- share card: dialog + actions ---------- */
+let shareSrc = null, shareModel = null;
+function shareSource(){
+  if(MODES[mode].start){
+    if(!drill.result) return null;
+    const r = drill.result; return {kind:'drill', mode, rec:r.rec, attempts:r.attempts, cycles:r.cycles, window:store.window, date:r.rec.date};
+  }
+  return {kind:'session', mode, session, attempts:session.attempts, cycles:session.cycles, window:store.window, date:Date.now()};
+}
+async function renderShare(){
+  if(!shareSrc) return;
+  shareModel = buildCard(shareSrc);
+  try{
+    if(document.fonts && document.fonts.load){
+      await Promise.all([`46px ${displayFont()}`, `700 20px ${cssVar('--body','sans-serif')}`, `700 28px ${cssVar('--mono','monospace')}`].map(f => document.fonts.load(f).catch(()=>{})));
+    }
+  }catch(e){}
+  drawCard($('shareCanvas').getContext('2d'), shareModel);
+}
+function setShareMsg(m){ ui.shareMsg = m; $('shareMsg').textContent = msg(m); }
+function openShare(){
+  shareSrc = shareSource(); if(!shareSrc) return;
+  setShareMsg('');
+  renderShare().then(() => { const d = $('shareDlg'); if(!d.open) d.showModal(); });
+}
+$('dShare').addEventListener('click', openShare);
+$('shareClose').addEventListener('click', () => $('shareDlg').close());
+$('shareCopy').addEventListener('click', () => {
+  const c = $('shareCanvas'), fail = () => setShareMsg(['share.copyFail']);
+  try{
+    if(!navigator.clipboard || !navigator.clipboard.write || typeof ClipboardItem==='undefined') return fail();
+    const png = new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('toBlob')), 'image/png'));
+    navigator.clipboard.write([new ClipboardItem({'image/png': png})]).then(() => setShareMsg(['share.copied']), fail);
+  }catch(e){ fail(); }
+});
+$('shareDl').addEventListener('click', () => {
+  try{ const a = document.createElement('a'); a.download = shareModel ? shareModel.file : 'mishima-dojo.png'; a.href = $('shareCanvas').toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove(); }catch(e){ setShareMsg(['share.copyFail']); }
+});
+$('shareTweet').addEventListener('click', () => {
+  if(!shareModel) return;
+  try{ window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(shareModel.tweet), '_blank', 'noopener'); }catch(e){}
 });
 
 /* ---------- language ---------- */
@@ -1171,6 +1315,7 @@ function renderAll(){
   showResult(ui.result.cls, ui.result.kind, ui.result.title, ui.result.sub);
   setCoach(ui.coach); setTrend(ui.trend); renderSeg(ui.seg);
   renderBests(); renderLog(); renderHist(); renderWave();
+  $('shareMsg').textContent = msg(ui.shareMsg); if($('shareDlg').open) renderShare();
   if(drill.running) drillTick(performance.now());
 }
 function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); renderAll(); }
@@ -1302,6 +1447,82 @@ function drawDummy(g, sx, gy, d){
   g.fillStyle='#E8D9C5'; g.font='bold 9px JetBrains Mono, monospace'; g.textAlign='center'; g.fillText('DUMMY',0,-52);
   if(d.hit){ g.fillStyle='#fff'; g.font='bold 14px Black Han Sans, sans-serif'; g.fillText('><',0,-78); }
   g.restore();
+}
+
+/* ---------- share card: canvas drawing (1200×630) ---------- */
+const cssVar = (name, fb) => { try{ const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v||fb; }catch(e){ return fb; } };
+function fitFont(g, text, maxW, size, font, weight, minSize){
+  let s = size; g.font = `${weight||''} ${s}px ${font}`.trim();
+  while(s>(minSize||12) && g.measureText(text).width>maxW){ s -= 2; g.font = `${weight||''} ${s}px ${font}`.trim(); }
+}
+function drawCard(g, model){
+  const CW=1200, CH=630;
+  const C = { bg:cssVar('--bg','#0B0E13'), panel:cssVar('--panel2','#1B2330'), line:cssVar('--line','#273140'), line2:cssVar('--line2','#334052'),
+    ink:cssVar('--ink','#EEF2F6'), ink2:cssVar('--ink2','#C3CCD8'), muted:cssVar('--muted','#8C98AA'), faint:cssVar('--faint','#5B687A'),
+    accent:cssVar('--accent','#4CC9FF'), accentSoft:cssVar('--accent-soft','rgba(76,201,255,.14)'), gold:cssVar('--gold','#F5C542'),
+    red:cssVar('--red','#E5484D'), warn:cssVar('--warn','#F5A524') };
+  const body = cssVar('--body','system-ui, sans-serif'), disp = displayFont(), mono = cssVar('--mono','"JetBrains Mono", monospace');
+  const rr = (x,y,w,h,r) => { g.beginPath(); g.roundRect(x,y,w,h,r); };
+  g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,CW,CH);
+  const bg = g.createLinearGradient(0,0,CW,CH); bg.addColorStop(0,C.bg); bg.addColorStop(1,C.panel); g.fillStyle=bg; g.fillRect(0,0,CW,CH);
+  const glow = g.createRadialGradient(220,140,10,220,140,560); glow.addColorStop(0,'rgba(76,201,255,.16)'); glow.addColorStop(1,'rgba(76,201,255,0)'); g.fillStyle=glow; g.fillRect(0,0,CW,CH);
+  g.strokeStyle=C.line2; g.lineWidth=2; g.strokeRect(1,1,CW-2,CH-2);
+  g.fillStyle=C.accent; g.fillRect(0,0,CW,6);
+  g.textBaseline='alphabetic';
+  // header: app name, mode pill, date
+  g.textAlign='left'; g.fillStyle=C.ink; fitFont(g, model.app, 520, 46, disp); g.fillText(model.app, 56, 86);
+  fitFont(g, model.modeName, 400, 20, body, 700); const mw = g.measureText(model.modeName).width;
+  g.fillStyle=C.accentSoft; rr(56, 104, mw+28, 36, 6); g.fill(); g.fillStyle=C.accent; g.fillText(model.modeName, 70, 129);
+  g.fillStyle=C.muted; fitFont(g, model.sub, 480, 16, body, 500); g.fillText(model.sub, mw+100, 129);
+  g.textAlign='right'; g.fillStyle=C.muted; g.font=`500 18px ${mono}`; g.fillText(model.dateText, CW-56, 86);
+  // hero number + label
+  g.textAlign='left'; g.fillStyle=C.gold; fitFont(g, model.hero.value, 500, 128, disp, '', 60); g.fillText(model.hero.value, 52, 292);
+  g.fillStyle=C.ink2; fitFont(g, model.hero.label, 500, 22, body, 500); g.fillText(model.hero.label, 56, 328);
+  // metric tiles (2 columns)
+  model.metrics.slice(0,4).forEach((mt,i) => {
+    const x = 56+(i%2)*270, y = 356+Math.floor(i/2)*84, w=254, h=72;
+    g.fillStyle='rgba(255,255,255,.04)'; rr(x,y,w,h,6); g.fill(); g.strokeStyle=C.line; g.lineWidth=1; rr(x+.5,y+.5,w-1,h-1,6); g.stroke();
+    g.fillStyle=C.ink; fitFont(g, mt.value, w-28, 28, mono, 700, 16); g.fillText(mt.value, x+14, y+34);
+    g.fillStyle=C.muted; fitFont(g, mt.label, w-28, 13, body, 500, 10); g.fillText(mt.label, x+14, y+58);
+  });
+  // chart panel
+  const cx=620, cy=160, cw=390, ch=280;
+  g.fillStyle='rgba(255,255,255,.035)'; rr(cx,cy,cw,ch,8); g.fill(); g.strokeStyle=C.line; g.lineWidth=1; rr(cx+.5,cy+.5,cw-1,ch-1,8); g.stroke();
+  const chart = model.chart, ix=cx+22, iy=cy+52, iw=cw-44, ih=ch-92;
+  g.fillStyle=C.ink2; g.textAlign='left';
+  if(chart && chart.type==='hist'){
+    fitFont(g, T('card.hist'), cw-40, 15, body, 700); g.fillText(T('card.hist'), cx+20, cy+32);
+    const bins = chart.bins, bw = iw/bins.length, max = Math.max(3, ...bins.map(b=>b.n)), winF = chart.window/FRAME;
+    g.fillStyle=C.accentSoft; g.fillRect(ix+(-winF+6+0.5)*bw, iy, 2*winF*bw, ih);
+    g.strokeStyle=C.line; g.lineWidth=1; [1,2,3].forEach(i => { const y = iy+ih-ih*(i/3); g.beginPath(); g.moveTo(ix,y); g.lineTo(ix+iw,y); g.stroke(); });
+    bins.forEach((b,i) => { if(!b.n) return; const h = Math.max(4, ih*b.n/max); g.fillStyle = b.kind==='ewgf'?C.accent:b.kind==='early'?C.warn:C.red; rr(ix+i*bw+2, iy+ih-h, bw-4, h, 3); g.fill(); });
+    const x0 = ix+6.5*bw; g.strokeStyle=C.ink2; g.setLineDash([4,4]); g.beginPath(); g.moveTo(x0,iy-6); g.lineTo(x0,iy+ih); g.stroke(); g.setLineDash([]);
+    g.fillStyle=C.muted; g.font=`500 12px ${mono}`; g.textAlign='center';
+    bins.forEach((b,i) => { if(b.f%3===0) g.fillText((b.f>0?'+':'')+b.f+'f', ix+i*bw+bw/2, iy+ih+20); });
+  } else if(chart && chart.type==='wave'){
+    fitFont(g, T('card.wave'), cw-40, 15, body, 700); g.fillText(T('card.wave'), cx+20, cy+32);
+    const pts = chart.pts, yMax=8, X = i => ix + (pts.length>1 ? i/(pts.length-1)*iw : iw/2), Y = v => iy+ih-clamp(v,0,yMax)/yMax*ih;
+    g.fillStyle=C.accentSoft; g.fillRect(ix, Y(yMax), iw, Y(5)-Y(yMax));
+    g.strokeStyle=C.line; g.lineWidth=1; g.fillStyle=C.faint; g.font=`500 12px ${mono}`; g.textAlign='right';
+    [2,4,6,8].forEach(v => { g.beginPath(); g.moveTo(ix,Y(v)); g.lineTo(ix+iw,Y(v)); g.stroke(); g.fillText(String(v), ix-4, Y(v)+4); });
+    if(pts.length>=2){
+      g.beginPath(); pts.forEach((v,i)=>{ i?g.lineTo(X(i),Y(v)):g.moveTo(X(i),Y(v)); }); g.lineTo(X(pts.length-1),Y(0)); g.lineTo(X(0),Y(0)); g.closePath(); g.fillStyle='rgba(76,201,255,.12)'; g.fill();
+      g.beginPath(); pts.forEach((v,i)=>{ i?g.lineTo(X(i),Y(v)):g.moveTo(X(i),Y(v)); }); g.strokeStyle=C.accent; g.lineWidth=3; g.lineJoin='round'; g.stroke();
+      const li = pts.length-1; g.fillStyle=C.accent; g.beginPath(); g.arc(X(li),Y(pts[li]),5,0,Math.PI*2); g.fill();
+    } else if(pts.length===1){ g.fillStyle=C.accent; g.beginPath(); g.arc(X(0),Y(pts[0]),5,0,Math.PI*2); g.fill(); }
+    g.fillStyle=C.muted; g.font=`500 12px ${body}`; g.textAlign='left'; g.fillText(T('wave.old'), ix, iy+ih+20); g.textAlign='right'; g.fillText(T('wave.recent'), ix+iw, iy+ih+20);
+  } else {
+    g.fillStyle=C.muted; g.textAlign='center'; fitFont(g, T('card.noData'), cw-40, 16, body, 500); g.fillText(T('card.noData'), cx+cw/2, cy+ch/2);
+  }
+  // fighter (own SD art) with bolts
+  g.save(); g.translate(1080, 548); g.scale(2.4, 2.4);
+  drawFighter(g, 0, 0, {crouch:0.35, lean:22, armR:118, armL:-30, spread:0.55, eyeGlow:true}, 1, 1, null);
+  g.restore();
+  [[1040,392,-2.2],[1152,372,-0.8],[1128,300,-1.6]].forEach(([x,y,a]) => { drawBolt(g, x, y, 70, a, 4, 'rgba(223,246,255,.9)'); drawBolt(g, x, y, 60, a+0.6, 2, C.accent); });
+  // footer band
+  g.strokeStyle=C.line; g.lineWidth=1; g.beginPath(); g.moveTo(56,566); g.lineTo(CW-56,566); g.stroke();
+  g.textAlign='left'; g.fillStyle=C.ink2; fitFont(g, model.windowText, 560, 17, body, 500); g.fillText(model.windowText, 56, 600);
+  g.textAlign='right'; g.fillStyle=C.accent; g.font=`500 17px ${mono}`; g.fillText(model.url, CW-56, 600);
 }
 function frame(now){
   tick(now); drillTick(now);

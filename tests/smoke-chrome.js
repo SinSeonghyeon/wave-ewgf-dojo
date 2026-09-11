@@ -53,6 +53,19 @@ const sleep = ms => new Promise(r=>setTimeout(r,ms));
   await evalJs(`document.querySelector('#modes button[data-mode="wave10"]').click(); document.querySelector('#dStart').click()`);
   await sleep(3300); await tap('KeyD'); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(30); await key('KeyS','keyup'); await key('KeyD','keyup'); await sleep(200);
   out.drillJa = await evalJs(`({prog:document.querySelector('#dProg').textContent, dName:document.querySelector('#dName').textContent, hint:document.querySelector('#hudHint').textContent})`);
+  // share card: wait for the 10s drill to end, open the card, try copy (must not throw even where the clipboard is unavailable), close
+  for(let i=0;i<40;i++){ if(!(await evalJs(`document.querySelector('#dShare').hidden`))) break; await sleep(300); }
+  out.drillEnd = await evalJs(`({prog:document.querySelector('#dProg').textContent, shareHidden:document.querySelector('#dShare').hidden, shareLabel:document.querySelector('#dShare').textContent})`);
+  await evalJs(`document.querySelector('#dShare').click()`); await sleep(800);
+  out.card = await evalJs(`(() => { const c=document.querySelector('#shareCanvas'); const d=document.querySelector('#shareDlg');
+    return {open:d.open, w:c.width, h:c.height, png:c.toDataURL('image/png').slice(0,22), title:d.querySelector('h2').textContent, buttons:[...d.querySelectorAll('button')].map(b=>b.textContent)}; })()`);
+  await evalJs(`document.querySelector('#shareCopy').click()`); await sleep(600);
+  out.card.copyMsg = await evalJs(`document.querySelector('#shareMsg').textContent`);
+  await evalJs(`document.querySelector('#langSel button[data-lang="en"]').click()`); await sleep(400);
+  out.card.copyMsgEn = await evalJs(`document.querySelector('#shareMsg').textContent`);
+  await evalJs(`document.querySelector('#shareClose').click()`); await sleep(100);
+  out.card.closed = !(await evalJs(`document.querySelector('#shareDlg').open`));
+  if(!out.card.open || out.card.w!==1200 || out.card.h!==630 || !out.card.png.startsWith('data:image/png;base64') || out.drillEnd.shareHidden) errors.push('share card check failed: '+JSON.stringify(out.card));
   out.errors = errors;
   console.log(JSON.stringify(out,null,1));
   if(errors.length){ console.error('JS ERRORS:', errors); ws.close(); chrome.kill(); process.exit(1); }

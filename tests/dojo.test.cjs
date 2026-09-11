@@ -20,7 +20,7 @@ function boot(saved){
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id)});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,drill,store,setMode,startDrill,pollPad,clearCommand,renderBests,setLang,T};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,drill,store,setMode,startDrill,endDrill,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,shareSource,SITE_URL};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -135,4 +135,45 @@ test('every dictionary key exists in all three languages',()=>{
   const a=boot();const langs=['ko','en','ja'];
   for(const l of langs){a.setLang(l);assert.equal(a.T('app.title')!=='app.title',true);}
   for(const key of ['a.ewgf.title','trend.stable','set.padNote','footer','mode.combo10.desc']){for(const l of langs){a.setLang(l);assert.notEqual(a.T(key),key);}}
+});
+test('the three dictionaries share exactly the same key set',()=>{
+  const {I18N}=boot();const ko=Object.keys(I18N.ko).sort();
+  for(const l of ['en','ja']) assert.deepEqual(Object.keys(I18N[l]).sort(),ko,'keys differ in '+l);
+});
+test('histBins puts offsets on the window boundary inside and just outside in the late bin',()=>{
+  const a=boot();const bins=a.histBins([{off:0},{off:-12},{off:12},{off:13},{off:null}],12);
+  assert.equal(bins.length,16);assert.equal(bins[0].f,-6);assert.equal(bins[15].f,9);
+  assert.equal(bins[6].n,1);assert.equal(bins[6].kind,'ewgf');assert.equal(bins[5].n,1);assert.equal(bins[5].kind,'early');
+  assert.equal(bins[7].n,2);assert.equal(bins[7].kind,'wgf');assert.equal(bins.reduce((s,b)=>s+b.n,0),4);
+  assert.equal(a.histBins([{off:30}],8)[8].kind,'wgf');assert.equal(a.histBins([],8)[4].kind,'early');
+});
+test('wave10 drill result becomes a share card model in the current language',()=>{
+  const a=boot({v:4,lang:'ko'});assert.equal(a.get('dShare').hidden,false);
+  a.setMode('wave10');assert.equal(a.get('dShare').hidden,true);assert.equal(a.get('dShare').textContent,'공유 카드');
+  a.startDrill();const countdown=a.timers.get(a.drill.cdTimer);a.time(4000);countdown();countdown();countdown();
+  dash(a,4100);a.onDir('f',4200);a.onDir('n',4220);dash(a,4240);
+  assert.equal(a.shareSource(),null);
+  a.endDrill();assert.equal(a.drill.result.rec.dashes,2);assert.equal(a.get('dShare').hidden,false);
+  const src=a.shareSource();assert.equal(src.kind,'drill');assert.equal(src.cycles.length,1);
+  const m=a.buildCard(src);
+  assert.equal(m.app,'미시마 도장');assert.equal(m.modeName,'웨이브 10초');assert.equal(m.hero.value,'0.2');assert.equal(m.hero.label,'대시/초');
+  assert.equal(m.chart.type,'wave');assert.equal(m.chart.pts.length,1);assert.equal(m.url,a.SITE_URL);
+  assert.deepEqual(Array.from(m.metrics,x=>x.value),['2','2','0']);assert.equal(m.windowText,'초풍 판정 폭 보통 0.7f');
+  assert.ok(m.tweet.includes('0.2 대시/초'));assert.ok(m.tweet.includes('최고 연속 2'));assert.ok(m.tweet.endsWith('\n'+a.SITE_URL));
+  assert.match(m.file,/^mishima-dojo-wave10-\d{8}\.png$/);
+  a.setLang('en');const e=a.buildCard(src);assert.equal(e.modeName,'Wave 10s');assert.equal(e.sub,'10s over · 2 dashes (0.2 dashes/s)');assert.equal(e.hero.label,'dashes/s');
+  a.startDrill();assert.equal(a.drill.result,null);assert.equal(a.get('dShare').hidden,true);
+});
+test('free-practice session card uses live stats and never leaks raw i18n keys',()=>{
+  const a=boot({v:4,lang:'ko'});
+  let m=a.buildCard(a.shareSource());assert.equal(m.hero.label,'최고 대시/초');assert.equal(m.chart,null);assert.equal(m.sub,'이번 세션 통계');
+  dash(a);a.onButton(2,1060);
+  const expect={ko:['초풍 성공률','자유 연습'],en:['EWGF success rate','Free practice'],ja:['最風成功率','自由練習']};
+  for(const l of ['ko','en','ja']){
+    a.setLang(l);m=a.buildCard(a.shareSource());
+    assert.equal(m.hero.value,'100%');assert.equal(m.hero.label,expect[l][0]);assert.equal(m.modeName,expect[l][1]);
+    assert.equal(m.chart.type,'hist');assert.equal(m.chart.bins.reduce((s,b)=>s+b.n,0),1);assert.equal(m.metrics.length,4);
+    for(const s of [m.sub,m.hero.label,m.windowText,m.tweet,...m.metrics.flatMap(x=>[x.label,x.value])]) assert.doesNotMatch(s,/(^|\s)(card|share|set|mode|rec)\.[a-zA-Z0-9]+/);
+  }
+  assert.equal(m.metrics[0].value,'1 / 1');
 });
