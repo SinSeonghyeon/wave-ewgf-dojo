@@ -21,9 +21,9 @@
   - 동작: 클립보드 복사(navigator.clipboard.write + ClipboardItem, 실패 시 안내) / PNG 다운로드(a[download]) / 트위터 공유 텍스트(intent URL, 텍스트만) / 디스코드는 이미지 복사 안내.
   - 캐릭터 그림은 자체 SD 도트만 사용(설계 결정 3).
   - 테스트: 카드 생성 함수가 순수 데이터 → 그리기 명령으로 분리되도록 만들어 node 테스트에서 텍스트 구성을 검증. 브라우저 스모크 테스트에 카드 생성 1회 추가.
-- [ ] 1-5. SEO 기본. **다음 작업.** `<title>`, meta description, OG 이미지, 한/영 키워드("철권 초풍 연습", "EWGF trainer", "wave dash practice").
+- [x] 1-5. SEO 기본 (2026-09-11). `<title>`·meta description(한/영 병기, 정적 하나)·robots·theme-color·canonical, Open Graph/Twitter Card, 정적 `og.png`(1200×630, `node tools/make-og.js`로 재생성). 검색용 문서 제목은 `app.docTitle` 키(ko/en/ja)로 앱 이름과 분리.
 - [ ] 1-6. 배포처 공략. 디시 철권 갤러리, 철권 디스코드, r/Tekken, 트위터 FGC. 치지직·유튜브 철권 스트리머 5명에게 DM ("방송에서 써보라").
-- [ ] 1-7. 간단한 방문 집계. 외부 스크립트 없이 가능한 방법(Cloudflare 무료 분석 등) 또는 Pages 이후 Plausible/GA 중 하나.
+- [ ] 1-7. 간단한 방문 집계. **다음 작업.** 외부 스크립트 없이 가능한 방법(Cloudflare 무료 분석 등) 또는 Pages 이후 Plausible/GA 중 하나.
 
 ## 2단계. 저마찰 수익 (유입 생기면 바로)
 
@@ -52,4 +52,6 @@
 - 2026-09-11: 잘못 커밋된 외부 파일명을 지우기 위해 히스토리 재작성 후 force push (사용자 승인). 이후 커밋은 `git add -A` 대신 파일을 명시해서 추가한다.
 - 2026-09-11: 세션 인계 준비. 브라우저 스모크 테스트를 tests/smoke-chrome.js로 저장소에 넣고, README에 "작업 규칙 (세션 인계용)" 추가, 1-4 스펙을 이 문서에 정리.
 - 2026-09-11: 1-4 완료. 드릴 종료 후 "공유 카드", 자유 연습에서 "세션 카드" 버튼 → `<dialog>`에 1200×630 캔버스 카드(모드·핵심 수치·히스토그램/웨이브 미니 차트·판정 폭·날짜·주소·자체 SD 캐릭터). 이미지 복사(ClipboardItem)·PNG 저장·X 공유(텍스트)·디스코드 안내. 카드 데이터는 순수 함수 `buildCard`로 분리해 단위 테스트 4개 추가(총 23개), 스모크 테스트에 카드 생성·복사·닫기 단계 추가. 문자열 25키를 ko/en/ja에 추가.
+- 2026-09-11: 1-5 완료. `<head>`에 검색용 title·description·robots·theme-color·canonical·OG/Twitter 메타 22줄 추가. `og.png`는 `buildOgCard()`(태그라인·예시 히스토그램, 개인 수치 없음) + `drawCard` 소개용 분기로 그려 `tools/make-og.js`(헤드리스 Chrome+CDP)가 저장. 문자열 7키(`app.docTitle`, `og.*`)를 ko/en/ja에 추가, 단위 테스트 2개 추가(총 27개). 미반영 메모: `<!DOCTYPE>`·`<meta charset>`·viewport 메타가 없어 모바일은 데스크톱 폭으로 렌더된다. 레이아웃이 바뀔 수 있어 사용자 결정 후 별도 작업.
+- 2026-09-12: 1-5 리뷰·정리. `<head>` twitter:title/description/image 중복 4줄 제거(X는 og:*로 폴백, twitter:card만 유지). 헤드리스 CDP 코드를 `tools/cdp.js`로 추출해 smoke-chrome.js·make-og.js가 공유. `og.pill` 키 삭제, 칩 문자열(og.chipWave/og.chipEwgf)을 buildOgCard 모델로 옮겨 drawCard에서 하드코딩 제거. `WINDOWS`/`WINDOW_DEFAULT` 상수 도입. 테스트가 head의 canonical/og:url·`<title>`을 스크립트의 SITE_URL·app.docTitle과 대조. 사용자 요청으로 og.png를 도장 나무 간판 스타일(널빤지 배경·현판·종이 차트 패널, `model.style==='wood'`)로 재생성. 공유 카드는 기존 다크 스타일 유지(사용자 결정 대기).
 - 2026-09-11: 에이전트 공용 구조로 재편. 규칙은 루트 AGENTS.md(CLAUDE.md는 @AGENTS.md 포인터), 문서는 .agents/docs/(이 파일, CODE_MAP.md, reviews/), 임시 파일은 .sandbox/(gitignore). README는 사람용으로 축소. Claude/Codex 런처 스크립트 추가.

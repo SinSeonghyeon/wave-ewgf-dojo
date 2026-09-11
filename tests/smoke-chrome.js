@@ -1,31 +1,13 @@
 // Browser smoke test: node tests/smoke-chrome.js
-// Launches headless Chrome over CDP (no npm deps), loads index.html, feeds a 6N23+2 via keyboard,
-// switches ko/en/ja, runs a wave10 drill in ja, and fails if any JS error was logged.
-const {spawn} = require('child_process');
+// Launches headless Chrome over CDP (tools/cdp.js, no npm deps), loads index.html, feeds a 6N23+2 via keyboard,
+// switches ko/en/ja, runs a wave10 drill in ja, opens the share card, and fails if any JS error was logged.
 const path = require('path');
-const os = require('os'); const fs = require('fs');
-const CHROME = ['C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(p=>fs.existsSync(p));
-if(!CHROME){ console.error('Chrome/Edge not found'); process.exit(2); }
-const PORT = 9333;
-const target = 'file:///' + path.resolve(__dirname,'../index.html').replace(/\\/g,'/');
-const chrome = spawn(CHROME, ['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check',`--remote-debugging-port=${PORT}`,'--user-data-dir='+path.join(os.tmpdir(),'dojo-smoke-profile'),'--window-size=1280,900','about:blank'], {stdio:'ignore'});
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const {launch, fileUrl, sleep} = require('../tools/cdp');
+
 (async () => {
-  let list;
-  for(let i=0;i<40;i++){ try{ list = await (await fetch(`http://127.0.0.1:${PORT}/json`)).json(); if(list.length) break; }catch(e){} await sleep(250); }
-  const page = list.find(t=>t.type==='page');
-  const ws = new WebSocket(page.webSocketDebuggerUrl);
-  await new Promise(r=>ws.onopen=r);
-  let id=0; const pending=new Map(); const errors=[];
-  ws.onmessage = ev => { const m=JSON.parse(ev.data); if(m.id&&pending.has(m.id)){ pending.get(m.id)(m); pending.delete(m.id);}
-    if(m.method==='Runtime.exceptionThrown') errors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);
-    if(m.method==='Log.entryAdded' && m.params.entry.level==='error') errors.push(m.params.entry.text);
-    if(m.method==='Runtime.consoleAPICalled' && m.params.type==='error') errors.push(m.params.args.map(a=>a.value).join(' ')); };
-  const send = (method, params={}) => new Promise(r=>{ const i=++id; pending.set(i,r); ws.send(JSON.stringify({id:i,method,params})); });
-  const evalJs = async expr => { const r = await send('Runtime.evaluate',{expression:expr,returnByValue:true,awaitPromise:true}); if(r.result.exceptionDetails) throw new Error(r.result.exceptionDetails.exception?.description||'eval error'); return r.result.result.value; };
-  await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
-  await send('Page.navigate',{url:target});
-  await sleep(1500);
+  const b = await launch({port:9333, profile:'dojo-smoke-profile'});
+  const {send, evalJs, errors} = b;
+  await b.navigate(fileUrl(path.join(__dirname,'../index.html')));
   const out = {};
   const snap = async () => evalJs(`(() => {
     const q=s=>document.querySelector(s); const css=getComputedStyle(document.documentElement);
@@ -68,7 +50,7 @@ const sleep = ms => new Promise(r=>setTimeout(r,ms));
   if(!out.card.open || out.card.w!==1200 || out.card.h!==630 || !out.card.png.startsWith('data:image/png;base64') || out.drillEnd.shareHidden) errors.push('share card check failed: '+JSON.stringify(out.card));
   out.errors = errors;
   console.log(JSON.stringify(out,null,1));
-  if(errors.length){ console.error('JS ERRORS:', errors); ws.close(); chrome.kill(); process.exit(1); }
-  ws.close(); chrome.kill();
+  b.close();
+  if(errors.length){ console.error('JS ERRORS:', errors); process.exit(1); }
   process.exit(0);
-})().catch(e => { console.error('FAIL', e); chrome.kill(); process.exit(1); });
+})().catch(e => { console.error('FAIL', e); process.exit(1); });

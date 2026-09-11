@@ -20,7 +20,7 @@ function boot(saved){
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id)});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,drill,store,setMode,startDrill,endDrill,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,shareSource,SITE_URL};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,drill,store,setMode,startDrill,endDrill,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -200,4 +200,35 @@ test('free-practice session card uses live stats and never leaks raw i18n keys',
     for(const s of [m.sub,m.hero.label,m.windowText,m.tweet,...m.metrics.flatMap(x=>[x.label,x.value])]) assert.doesNotMatch(s,/(^|\s)(card|share|set|mode|rec)\.[a-zA-Z0-9]+/);
   }
   assert.equal(m.metrics[0].value,'1 / 1');
+});
+
+test('OG card model has tagline and chart but no personal numbers, in all three languages',()=>{
+  const a=boot({v:4,lang:'ko'});
+  const names={ko:['미시마 도장','철권 초풍·웨이브 대시 연습'],en:['Mishima Dojo','Tekken EWGF & wave dash practice'],ja:['三島道場','鉄拳 最風・ウェーブ練習']};
+  for(const l of ['ko','en','ja']){
+    a.setLang(l);const m=a.buildOgCard();
+    assert.equal(m.app,names[l][0]);assert.equal(m.tagline[0],names[l][1]);assert.equal(m.tagline.length,2);
+    assert.equal(m.hero,null);assert.equal(m.metrics.length,0);assert.equal(m.url,a.SITE_URL);
+    assert.equal(m.chart.type,'hist');assert.equal(m.chart.window,a.store.window);assert.equal(m.chart.bins.reduce((s,b)=>s+b.n,0),40);
+    assert.equal(m.chips.map(c=>c.cmd).join(' '),'6N23 6N23+2');assert.equal(m.modeName,m.chips.map(c=>c.cmd+' '+c.tag).join(' · '));
+    for(const s of [m.modeName,m.keywords,m.note,m.windowText,m.dateText,...m.tagline,...m.chips.map(c=>c.tag)]) assert.doesNotMatch(s,/(^|\s)(og|app|card)\.[a-zA-Z0-9]+/);
+    assert.notEqual(a.T('app.docTitle'),a.T('app.title'));assert.ok(a.T('app.docTitle').startsWith(a.T('app.title')));
+  }
+});
+test('static head carries the SEO and Open Graph tags that crawlers read without JS',()=>{
+  const head=html.slice(0,html.indexOf('<style>'));
+  const a=boot({v:4,lang:'ko'}), url=a.SITE_URL;
+  // static <title> = Korean doc title + English suffix, so the crawler title and the in-app title cannot drift apart
+  assert.ok(head.includes(`<title>${a.T('app.docTitle')} (Mishima Dojo EWGF Trainer)</title>`));
+  assert.equal(head.match(/<meta name="twitter:/g).length,1,'X falls back to og:* tags; keep only twitter:card');
+  assert.match(head,/<meta name="description" content="[^"]{80,300}">/);
+  assert.match(head,/<meta name="robots" content="index,follow">/);
+  assert.ok(head.includes(`<link rel="canonical" href="${url}">`));
+  assert.ok(head.includes(`<meta property="og:url" content="${url}">`));
+  assert.ok(head.includes(`<meta property="og:image" content="${url}og.png">`));
+  assert.ok(head.includes('<meta property="og:image:width" content="1200">'));assert.ok(head.includes('<meta property="og:image:height" content="630">'));
+  assert.ok(head.includes('<meta name="twitter:card" content="summary_large_image">'));
+  const bg=html.match(/:root\{[^}]*--bg:(#[0-9A-Fa-f]{6})/)[1];assert.ok(head.includes(`<meta name="theme-color" content="${bg}">`));
+  for(const banned of ['<script','http://']) assert.equal(head.includes(banned),false,'head must not contain '+banned);
+  assert.match(html,/document\.title = T\('app\.docTitle'\)/);
 });

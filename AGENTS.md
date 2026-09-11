@@ -10,6 +10,7 @@
 - 코드: 루트 `index.html` 단일 파일(HTML+CSS+JS). 빌드 없음, 외부 라이브러리 없음.
 - 배포: GitHub Pages, main 브랜치 루트. https://sinseonghyeon.github.io/wave-ewgf-dojo/ (저장소 이름은 `wave-ewgf-dojo`로 유지. Pages 주소가 바뀌므로 사용자 결정 없이 바꾸지 않는다.)
 - 테스트: `node --test tests/dojo.test.cjs` (Node 18+, 의존성 없음) · `node tests/smoke-chrome.js` (로컬 Chrome/Edge 헤드리스, CDP).
+- 개발 도구: `tools/` (커밋 대상). `tools/cdp.js`는 헤드리스 브라우저 공용 모듈, `tools/make-og.js`는 `og.png` 재생성. 앱 자체는 여전히 `index.html` 하나다.
 - 사용자: 한국어. 철권 플레이어. C++·Unity 경험, 웹은 익숙하지 않음. 설명은 간결하게, 용어는 격투게임 표기(6N23, d/f, 저스트) 그대로.
 
 ## 문서 라우팅
