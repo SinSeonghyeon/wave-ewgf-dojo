@@ -271,15 +271,36 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* ---------- persistent settings ---------- */
 const STORE = 'wave-ewgf-dojo-v1';
 let store = {v:4, window:8, side:1, fx:1, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}};
-try{ const s = JSON.parse(localStorage.getItem(STORE)||'null'); if(s){ if(!s.v || s.v<4 || ![8,12,15].includes(s.window)){ s.window=8; s.v=4; } store = {...store,...s, keys:{...store.keys,...(s.keys||{})}, records:{...store.records,...(s.records||{})}}; } }catch(e){}
+const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function validKey(slot, code){
+  const arrows = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
+  return typeof code==='string' && /^[A-Za-z][A-Za-z0-9]{0,39}$/.test(code) && (!arrows[code] || arrows[code]===slot);
+}
+try{
+  const s = JSON.parse(localStorage.getItem(STORE)||'null');
+  if(s && typeof s==='object'){
+    if(s.v>=4 && [8,12,15].includes(s.window)) store.window=s.window;
+    if([1,-1].includes(s.side)) store.side=s.side;
+    if([0,1].includes(s.fx)) store.fx=s.fx;
+    const keys = {...store.keys};
+    for(const k of Object.keys(keys)) if(validKey(k,s.keys?.[k])) keys[k]=s.keys[k];
+    if(new Set(Object.values(keys)).size===Object.keys(keys).length) store.keys=keys;
+    for(const m of Object.keys(store.records)){
+      if(Array.isArray(s.records?.[m])) store.records[m]=s.records[m].filter(r =>
+        r && Number.isFinite(r.score) && Number.isFinite(r.date) &&
+        Math.abs(r.date)<=8640000000000000 && typeof r.label==='string' && typeof r.sub==='string'
+      ).slice(-30);
+    }
+  }
+}catch(e){}
 const save = () => { try{ localStorage.setItem(STORE, JSON.stringify(store)); }catch(e){} };
 
 /* ---------- session state ---------- */
-const session = { dashes:0, bestChain:0, bestDps:0, cycles:[], attempts:[], log:[] };
+const session = { dashes:0, bestChain:0, bestDps:0, tries:0, hits:0, offsetSum:0, offsetCount:0, cycles:[], attempts:[], log:[] };
 /* states: 0 idle · 1 시작 6 · 2 중립 · 3 d · 4 d/f(대시 중) · 5 캔슬 6 · 6 캔슬 후 중립 · 7 d/f 뗀 뒤 캔슬 대기 */
 const cd = { state:0, tF:0, tN:0, tD:0, tDF:0, tC:0, tRel:0, lastDF:-1e9, cancelled:true, chain:0, chainCycles:[], pending:null };
 let mode = 'free';
-const drill = { running:false, tStart:0, dur:0, count:0, target:0, countdown:0, cdTimer:null };
+const drill = { running:false, tStart:0, dur:0, count:0, target:0, cdTimer:null, messageTimer:null };
 
 /* ---------- input layer ---------- */
 const held = new Set();               // keyboard codes
@@ -312,7 +333,14 @@ function kbVector(){
 const mappedCodes = () => new Set([...Object.values(store.keys),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
 let listening = null; // key remap slot
 addEventListener('keydown', e => {
-  if(listening){ e.preventDefault(); store.keys[listening]=e.code; listening=null; save(); renderKeys(); return; }
+  if(listening){
+    e.preventDefault();
+    if(e.code==='Escape'){ listening=null; renderKeys(); return; }
+    if(!validKey(listening,e.code) || Object.entries(store.keys).some(([k,v])=>k!==listening && v===e.code)){
+      setCoach('이미 사용 중이거나 방향키와 충돌하는 키입니다. 다른 키를 누르세요. Esc로 취소합니다.'); return;
+    }
+    store.keys[listening]=e.code; listening=null; resetInput(); save(); renderKeys(); return;
+  }
   if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if(!mappedCodes().has(e.code)) return;
   e.preventDefault();
@@ -329,35 +357,46 @@ addEventListener('keyup', e => {
   held.delete(e.code);
   kbVector(); recomputeDir(e.timeStamp||performance.now(),'kb');
 });
-addEventListener('blur', () => { held.clear(); kbVector(); recomputeDir(performance.now()); });
+function resetInput(){
+  held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); curDir='n';
+  clearCommand(); updateHud();
+}
+addEventListener('blur', () => { resetInput(); endDrill(true); });
 
 /* gamepad */
 let padIndex = null;
 addEventListener('gamepadconnected', e => { padIndex = e.gamepad.index; $('padStatus').textContent = '연결됨 · ' + e.gamepad.id.slice(0,40); });
-addEventListener('gamepaddisconnected', () => { padIndex=null; $('padStatus').textContent='연결 안 됨 · 패드 아무 버튼이나 누르면 감지'; padDir={x:0,y:0}; recomputeDir(performance.now()); });
+function releasePad(){
+  padIndex=null; padDir={x:0,y:0}; padBtn.fill(false); clearCommand();
+  curDir=dirName(kbDir.x,kbDir.y); updateHud();
+  $('padStatus').textContent='연결 안 됨 · 패드 아무 버튼이나 누르면 감지';
+}
+addEventListener('gamepaddisconnected', e => { if(e.gamepad.index===padIndex) releasePad(); });
 const HAT = [[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[-1,1]]; // 위부터 시계방향 8방향
 function hatVec(v){
   if(v==null || v<-1.01 || v>1.01) return [0,0];   // 중립(약 1.29)은 범위 밖
   return HAT[Math.round((v+1)*3.5)] || [0,0];
 }
 function pollPad(){
-  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  if(document.hidden || !document.hasFocus()) return;
+  let pads;
+  try{ pads = navigator.getGamepads ? navigator.getGamepads() : []; }catch(e){ if(padIndex!==null) releasePad(); return; }
   let gp = null;
   for(const p of pads){ if(p && (padIndex===null || p.index===padIndex)){ gp=p; break; } }
-  if(!gp) return;
+  if(!gp){ if(padIndex!==null) releasePad(); return; }
   if(padIndex===null){ padIndex=gp.index; $('padStatus').textContent='연결됨 · '+gp.id.slice(0,40); }
   const t = performance.now();
   const b = gp.buttons, ax = gp.axes;
   const on = i => !!(b[i] && (b[i].pressed || b[i].value>0.5));
-  const [hx,hy] = hatVec(ax[9]); // DirectInput 패드: 십자키가 hat 축(axes[9])으로 들어옴
+  const [hx,hy] = gp.mapping==='standard' ? [0,0] : hatVec(ax[9]); // DirectInput hat 축
   const x = (on(15)?1:0)-(on(14)?1:0) + (ax[0]>0.5?1:ax[0]<-0.5?-1:0) + hx;
   const y = (on(12)?1:0)-(on(13)?1:0) + (ax[1]<-0.5?1:ax[1]>0.5?-1:0) + hy;
   const nx = clamp(x,-1,1), ny = clamp(y,-1,1);
   let changed = false;
   if(nx!==padDir.x || ny!==padDir.y){ padDir={x:nx,y:ny}; changed=true; }
   const map = [2,3,0,1]; // 1=X/□ 2=Y/△ 3=A/✕ 4=B/○
+  if(changed) recomputeDir(t,'pad'); // 같은 샘플의 방향을 먼저 반영해야 d/f+2를 판정할 수 있다.
   map.forEach((bi,i) => { const p = on(bi); if(p && !padBtn[i]) onButton(i+1,t); padBtn[i]=p; });
-  if(changed) recomputeDir(t,'pad');
   if(padBtn.some(Boolean) && lastSrc!=='pad'){ lastSrc='pad'; srcBadge.textContent='🎮 게임패드'; srcBadge.classList.add('on'); }
 }
 setInterval(pollPad, 4);
@@ -387,7 +426,11 @@ function renderHistory(){
 
 /* ---------- crouch dash state machine ---------- */
 function resetCD(){ cd.state=0; }
+function clearCommand(){
+  Object.assign(cd,{state:0,tF:0,tN:0,tD:0,tDF:0,tC:0,tRel:0,lastDF:-1e9,cancelled:true,chain:0,chainCycles:[],pending:null});
+}
 function onDir(dir, t){
+  drillTick(t); tick(t); // 판정 기한은 화면 주사율과 무관하게 입력 시각에 검사한다.
   pushHistory({t, dir});
   switch(cd.state){
     case 0: if(dir==='f'){ cd.state=1; cd.tF=t; } break;
@@ -467,7 +510,7 @@ function fault(kind, t){
     cancel_as_start: ['MISS','시작 6 누락','캔슬용 6 을 다음 대시의 시작 6 으로 겸해 썼습니다. 캔슬 6 을 떼고 <strong>6 을 한 번 더</strong> 넣은 뒤 ↓, ↓→ 입니다: 6N23 6 <u>N 6</u> N23.'],
   };
   const m = msgs[kind]; if(!m) return;
-  cd.chain = 0;
+  clearCommand(); updateHud();
   showResult('miss', m[0], m[1], '');
   setCoach(m[2]);
   fx.stumble();
@@ -476,6 +519,7 @@ function fault(kind, t){
 
 /* ---------- button / EWGF ---------- */
 function onButton(n, t){
+  drillTick(t); tick(t);
   pushHistory({t, btn:n});
   if(n!==2){
     if(cd.state>=3 && (mode==='ewgf20'||mode==='combo10')) setCoach('초풍은 <strong>2 (오른손 펀치)</strong> 입니다. 방금 누른 버튼은 '+n+'번.');
@@ -483,7 +527,11 @@ function onButton(n, t){
   }
   const off = t - cd.lastDF;
   if(cd.state===4 || cd.state===7 || (cd.state===5 && off<=250) || (off>=0 && off<=store.window)){ classify(off, t); return; }
-  if(cd.state===3){ cd.pending = {t}; return; }
+  if(cd.state===3){
+    if(cd.pending){ resolvePending(null,t); attempt('no_cd',null,t); }
+    else cd.pending = {t};
+    return;
+  }
   if(cd.state===1||cd.state===2){
     attempt('early_stage', null, t);
     return;
@@ -505,6 +553,8 @@ function attempt(kind, off, t){
   const chainBefore = (t - cd.lastDF < 700) ? cd.chain : 0;
   const a = { t, kind, off, chain: chainBefore, mode };
   session.attempts.push(a); if(session.attempts.length>300) session.attempts.shift();
+  session.tries++; if(kind==='ewgf') session.hits++;
+  if(off!=null){ session.offsetSum+=off; session.offsetCount++; }
   const comboOK = chainBefore>=3;
   let title, sub, cls, coach, res;
   switch(kind){
@@ -548,7 +598,7 @@ function attempt(kind, off, t){
   addLog(t, '초풍', res, off==null?'':fmtF(off)+' / '+fmtMs(off), chainBefore? '웨이브 '+chainBefore+'회 후':'');
   if(drill.running && (mode==='ewgf20'||mode==='combo10')){ drill.count++; if(drill.count>=drill.target) endDrill(); }
   coachTrend(); updateStats(); renderHist(); renderLog();
-  cd.chain = 0; updateHud();
+  clearCommand(); updateHud();
 }
 
 /* ---------- coach text ---------- */
@@ -598,11 +648,10 @@ function updateStats(){
   $('stDps').textContent = session.bestDps.toFixed(1);
   $('stChain').textContent = session.bestChain;
   $('stDash').textContent = session.dashes;
-  const tries = session.attempts.length, hits = session.attempts.filter(a=>a.kind==='ewgf').length;
+  const {tries,hits} = session;
   $('stTry').textContent = tries;
   $('stRate').textContent = tries? Math.round(hits/tries*100)+'%':'–';
-  const offs = session.attempts.filter(a=>a.off!=null).map(a=>a.off);
-  $('stMean').textContent = offs.length? fmtF(offs.reduce((s,v)=>s+v,0)/offs.length):'–';
+  $('stMean').textContent = session.offsetCount? fmtF(session.offsetSum/session.offsetCount):'–';
 }
 function updateHud(){
   const h = $('hudChain'); $('hudChainN').textContent = cd.chain; h.classList.toggle('hot', cd.chain>=3);
@@ -653,23 +702,24 @@ const MODES = {
   combo10:{name:'웨이브 초풍 10회', desc:'웨이브를 3회 이상 이어간 뒤 초풍으로 마무리. 10번 시도해 성공률을 기록합니다.', start:true, target:10},
 };
 function setMode(m){
-  mode = m; if(drill.running) endDrill(true);
+  endDrill(true); clearCommand(); updateHud(); mode = m;
   document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-selected', b.dataset.mode===m?'true':'false'));
   const M = MODES[m]; $('dName').textContent=M.name; $('dDesc').textContent=M.desc; $('dStart').hidden=!M.start; $('dProg').textContent=''; $('hudTimer').textContent='';
   $('hudHint').textContent = m==='wave10' ? '시작 후 6N23 6 N 6N23 6 N … 반복 · 3 직후 ↓만 떼면 캔슬 6, 떼었다가 다시 6'
-                           : m==='ewgf20' ? '6 떼고 2 그리고 3 과 동시에 I(2) · 기본 판정은 1프레임(설정에서 변경)'
+                           : m==='ewgf20' ? '6 떼고 2 그리고 3 과 동시에 오른손(2) · 기본 판정은 0.5프레임(설정에서 변경)'
                            : m==='combo10' ? '6N23 6 N … 웨이브 3회 이상 → 마지막 3 과 동시에 2'
                            : '6N23 = 크라우치 대시 · 3 직후 ↓를 떼 6(캔슬), 떼고 다시 6N23 · 3 과 동시에 I(2) = 초풍';
 }
 function startDrill(){
   const M = MODES[mode]; if(!M.start) return;
+  endDrill(true);
   drill.running=false; drill.count=0; drill.bestChain=0; drill.target=M.target||0; drill.dur=M.dur||0;
   $('dStart').disabled=true;
   let c = 3; $('hudCenter').textContent=c;
-  drill.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(drill.cdTimer); $('hudCenter').textContent='GO!'; setTimeout(()=>{ if($('hudCenter').textContent==='GO!') $('hudCenter').textContent=''; },500); drill.running=true; drill.tStart=performance.now(); cd.chain=0; } }, 700);
+  drill.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(drill.cdTimer); drill.cdTimer=null; $('hudCenter').textContent='GO!'; drill.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; },500); clearCommand(); updateHud(); drill.running=true; drill.tStart=performance.now(); } }, 1000);
 }
 function endDrill(cancel){
-  const wasRunning = drill.running; drill.running=false; clearInterval(drill.cdTimer); $('dStart').disabled=false; $('hudCenter').textContent='';
+  const wasRunning = drill.running; drill.running=false; clearInterval(drill.cdTimer); drill.cdTimer=null; clearTimeout(drill.messageTimer); drill.messageTimer=null; $('dStart').disabled=false; $('hudCenter').textContent='';
   if(cancel || !wasRunning) { $('dProg').textContent=''; return; }
   const since = a => a.t>=drill.tStart;
   let rec, text;
@@ -688,7 +738,7 @@ function endDrill(cancel){
     text = '종료 · 성공 '+ok+'/'+drill.target+' ('+rate+'%)';
     $('hudCenter').textContent = rate+'%';
   }
-  setTimeout(()=>{ if(!drill.running) $('hudCenter').textContent=''; }, 2200);
+  drill.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; }, 2200);
   $('dProg').textContent = text;
   store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); save(); renderBests();
 }
@@ -708,7 +758,7 @@ function renderBests(){
   el.innerHTML = ['wave10','ewgf20','combo10'].map(m => {
     const rs = store.records[m]; const best = rs.length? rs.reduce((a,b)=>b.score>a.score?b:a):null;
     const last = rs.length? rs[rs.length-1]:null;
-    return `<div class="best"><div class="k">${MODES[m].name}</div><b>${best?best.label:'–'}</b><small>${best?best.sub+' · '+new Date(best.date).toLocaleDateString('ko-KR'):'아직 기록 없음'}</small>${last&&last!==best?`<small style="display:block">최근: ${last.label}</small>`:''}</div>`;
+    return `<div class="best"><div class="k">${MODES[m].name}</div><b>${best?escapeHTML(best.label):'–'}</b><small>${best?escapeHTML(best.sub)+' · '+new Date(best.date).toLocaleDateString('ko-KR'):'아직 기록 없음'}</small>${last&&last!==best?`<small style="display:block">최근: ${escapeHTML(last.label)}</small>`:''}</div>`;
   }).join('');
 }
 
@@ -791,7 +841,7 @@ function segSel(id, attr, cb){
   el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr])===String(store[attr==='win'?'window':attr])?'true':'false'));
 }
 segSel('winSel','win', v => { store.window=+v; save(); renderHist(); });
-segSel('sideSel','side', v => { store.side=+v; save(); kbVector(); recomputeDir(performance.now()); renderHistory(); });
+segSel('sideSel','side', v => { endDrill(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); });
 segSel('fxSel','fx', v => { store.fx=+v; save(); });
 const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK'};
 const pretty = c => c.replace(/^Key|^Digit|^Numpad/, m=>m==='Numpad'?'Num':'').replace('Arrow','');
@@ -803,9 +853,10 @@ renderKeys();
 $('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
 $('dStart').addEventListener('click', startDrill);
 $('dReset').addEventListener('click', () => {
-  Object.assign(session,{dashes:0,bestChain:0,bestDps:0,cycles:[],attempts:[],log:[]}); cd.chain=0; history.length=0;
+  endDrill(true); resetInput();
+  Object.assign(session,{dashes:0,bestChain:0,bestDps:0,tries:0,hits:0,offsetSum:0,offsetCount:0,cycles:[],attempts:[],log:[]}); history.length=0; lastInputT=performance.now();
   updateStats(); updateHud(); renderHistory(); renderLog(); renderHist(); renderWave(); coachTrend();
-  showResult('', 'READY', '세션 초기화됨', '입력을 기다리는 중'); if(drill.running) endDrill(true);
+  showResult('', 'READY', '세션 초기화됨', '입력을 기다리는 중');
 });
 
 /* ================= STAGE (canvas) ================= */
