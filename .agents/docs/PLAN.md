@@ -48,3 +48,4 @@
 - 2026-09-11: 사운드 리소스 3개 커밋 (bgm.mp3, 웨이브사운드.mp3, 초풍사운드.mp3). 사용자 확인: 모두 자체 제작. 아직 index.html에서 재생하지 않음 (소리 피드백 기능은 별도 작업).
 - 2026-09-11: 잘못 커밋된 외부 파일명을 지우기 위해 히스토리 재작성 후 force push (사용자 승인). 이후 커밋은 `git add -A` 대신 파일을 명시해서 추가한다.
 - 2026-09-11: 세션 인계 준비. 브라우저 스모크 테스트를 tests/smoke-chrome.js로 저장소에 넣고, README에 "작업 규칙 (세션 인계용)" 추가, 1-4 스펙을 이 문서에 정리.
+- 2026-09-11: 에이전트 공용 구조로 재편. 규칙은 루트 AGENTS.md(CLAUDE.md는 @AGENTS.md 포인터), 문서는 .agents/docs/(이 파일, CODE_MAP.md, reviews/), 임시 파일은 .sandbox/(gitignore). README는 사람용으로 축소. Claude/Codex 런처 스크립트 추가.

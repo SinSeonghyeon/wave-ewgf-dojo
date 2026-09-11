@@ -1,0 +1,65 @@
+# CODE_MAP — `index.html` 구조
+
+단일 파일. 순서대로 `<title>`·폰트 링크 → `<style>` → 마크업 → `<script>`(IIFE) 하나. 시간 기준 `FRAME = 1000/60`. 키보드는 `event.timeStamp`, 패드는 폴링 시각(약 4ms 해상도).
+
+## 스크립트 구성 (위에서 아래 순서)
+
+```
+설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,keys,records} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save()
+i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[key,...args]|클로저 → 텍스트 · displayFont()
+          ui{result,coach,trend,seg,padId}: 마지막 표시 내용을 키/클로저로 보관 → setLang → renderAll()
+          정적 마크업은 data-i18n / data-i18n-html / data-i18n-aria 속성으로 applyStatic()이 채운다
+세션      session{dashes,bestChain,bestDps,tries,hits,offsetSum,offsetCount,cycles,attempts,log}
+입력      keydown/keyup → held Set → kbVector() → recomputeDir() · pollPad() 4ms → padDir/padBtn
+          dirName(x,y): side 반영해 'f','n','d','df',... · history[]: 입력 스트립(직전 입력과 프레임 간격)
+상태 머신 onDir(dir,t)  0 idle → 1 시작 6 → 2 중립 → 3 d(2) → 4 d/f(3, completeCD)
+          4 → 5 캔슬 6 (cancelCD) → 6 캔슬 후 중립 → 1 시작 6 …
+          4 → 7 (3을 뗐는데 6이 아직) → 120ms 안에 6이 오면 캔슬 인정
+          tick(now): 각 상태 250ms(4는 450ms) 타임아웃 · 체인은 마지막 3 후 700ms 지나면 endChain()
+          fault(kind): f_before_d / n_to_df / cancel_as_start
+초풍 판정 onButton(n,t) → classify(off) → attempt(kind, off, t)
+          off = 버튼 시각 − 마지막 3 시각 · |off| ≤ store.window → ewgf · off > window → wgf · off < −window → early
+          상태 3(d 유지)에서 버튼이 먼저 오면 cd.pending, 3이 오면 음수 오프셋으로 판정, 120ms 안에 3이 없으면 no_df
+          attempt 종류: ewgf / combo_short(웨이브 초풍 모드에서 웨이브 3회 미만) / wgf / early / no_df / early_stage / no_cd
+코치      setCoach(m) · setTrend(m) · coachWaveLive(cyc): 5구간 중 가장 긴 구간 조언 · coachTrend(): 최근 10회 평균·편차
+기록      addLog(t,typeKey,resMsg,num,memoMsg,cls) → session.log[12] · renderLog() 시각은 LOCALE[store.lang]
+          store.records[mode][30]: wave10 {score(dps),dashes,chain} · ewgf20/combo10 {score(%),hits,target,mean}
+          label/sub 문자열도 같이 저장(구버전 호환). recText()가 숫자 필드 우선으로 현재 언어로 다시 만든다
+차트      renderHist(): 히스토그램 −6f~+9f, 판정 폭 음영 · renderWave(): 최근 40 사이클 대시/초 · SVG 문자열 직접 생성
+모드      MODES{free,wave10(10초),ewgf20(20회),combo10(10회)} · setMode → renderMode · startDrill(3초 카운트다운) · endDrill(기록 저장) · drillTick
+설정 UI   segSel(id,attr,cb): winSel/sideSel/fxSel/langSel · renderKeys(): 키 리맵(중복·방향키 충돌 거부, Esc 취소)
+스테이지  canvas · world/anim/ghosts/pops/sparks/dust/bolts · fx{crouchDash,ewgf,wgf,jab,stumble} · pop(text) 폰트는 displayFont()
+          frame(): 카메라 → 더미 → 배경/바닥 → 먼지 → 잔상 → 더미 → 캐릭터 → 번개 → 스파크 → 텍스트 팝 → 플래시
+          drawFighter(g,x,y,pose,dir,alpha,tint) · poseAt(now): anim.kind('cd','ewgf','jab','stumble','idle')
+부트      renderAll(); setMode('free'); renderHistory(); updateStats(); requestAnimationFrame(frame)
+```
+
+## 판정 상수 (경험값. 너무 엄격·느슨하면 여기부터)
+
+- 상태 타임아웃 250ms, d/f 유지 상태 450ms, d/f 뗀 뒤 캔슬 대기 120ms, pending 버튼 120ms, 체인 종료 700ms.
+- 판정 폭 8/12/15ms(0.5f/0.7f/0.9f). 기본 12. "완벽한 저스트" 코치 문구는 `|off| ≤ min(8, window/2)`.
+- 웨이브 상급 기준 5 대시/초. 구간 조언은 가장 긴 구간이 90ms를 넘을 때만.
+
+## i18n 용어
+
+| ko | en | ja |
+|---|---|---|
+| 초풍 | EWGF | 最風 |
+| 풍신권 | WGF / Wind God Fist | 風神拳 |
+| 크라우치 대시 | crouch dash | 風神ステップ |
+| 웨이브 | wave (dash) | ウェーブ |
+| 캔슬 6 / 시작 6 | cancel 6 / start 6 | キャンセル6 / 始動6 |
+| 방향 | f, N, d, d/f | 텐키 6/N/2/3 |
+
+일본어일 때만 `html[lang=ja]`로 폰트를 Dela Gothic One / Noto Sans JP로 바꾼다. 언어는 `navigator.language`로 초기 선택(ko/ja 외는 en), `store.lang`에 저장.
+
+## 리소스
+
+- `bgm.mp3`, `웨이브사운드.mp3`, `초풍사운드.mp3`: 저장소에 있으나 아직 재생 코드 없음. 사용자가 자체 제작이라고 확인(2026-09-11). 소리 피드백 기능(PLAN 4단계)에서 사용.
+
+## 검증
+
+- `node --test tests/dojo.test.cjs`: 배포 HTML의 실제 스크립트를 읽어 DOM·게임패드·시간을 모사. 판정, 드릴 경계, 패드 동시 입력·재연결, 저장 데이터 검증, 누적 통계, 판정 폭 경계, 언어 전환을 검증한다. 테스트 하네스의 `querySelectorAll`은 빈 배열을 돌려주므로 정적 텍스트 치환은 여기서 검증되지 않는다.
+- `node tests/smoke-chrome.js`: 로컬 Chrome/Edge를 헤드리스로 띄워 CDP로 조작. 키보드로 6N23+2 입력, ko/en/ja 왕복 전환, 일본어로 웨이브 10초 드릴. JS 오류가 있으면 종료 코드 1. 출력 JSON을 훑어 문구를 확인하는 용도.
+- 실제 키보드·게임패드 지연, DirectInput 장치별 hat 매핑, 화면 폭별 시각 품질은 자동 검증에 없다.
+- 캔버스 입자·더미 물리는 프레임마다 고정량으로 갱신하므로 주사율에 따라 연출 속도가 달라진다. 판정은 시각 기반이라 영향 없음.
