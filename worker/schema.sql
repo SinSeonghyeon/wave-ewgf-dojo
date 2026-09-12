@@ -1,4 +1,4 @@
--- Mishima Dojo weekly leaderboard (Cloudflare D1 / SQLite).
+-- Mishima Dojo backend (Cloudflare D1 / SQLite). Idempotent: safe to re-run.
 -- Apply: npx wrangler d1 execute mishima-dojo-board --remote --file=schema.sql
 CREATE TABLE IF NOT EXISTS scores (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -13,3 +13,27 @@ CREATE TABLE IF NOT EXISTS scores (
   created_at INTEGER NOT NULL              -- epoch ms
 );
 CREATE INDEX IF NOT EXISTS scores_rank ON scores(week, board, score DESC, tie DESC, id ASC);
+-- One row per nick per board per week (2026-09-12 decision): /submit upserts and keeps the better result.
+CREATE UNIQUE INDEX IF NOT EXISTS scores_nick ON scores(week, board, nick);
+
+-- Claimed nicknames: key = NFKC-lowercased nick (unique), token = secret the claiming browser keeps (localStorage).
+CREATE TABLE IF NOT EXISTS nicks (
+  key        TEXT PRIMARY KEY,
+  nick       TEXT    NOT NULL,             -- display spelling as claimed
+  token      TEXT    NOT NULL,             -- 48 hex chars; scores/posts must present it
+  created_at INTEGER NOT NULL
+);
+
+-- Visit counter: one row per KST day, n = visits counted that day (the app counts each browser once per day).
+CREATE TABLE IF NOT EXISTS visits (
+  day TEXT PRIMARY KEY,                    -- 'YYYY-MM-DD' (KST)
+  n   INTEGER NOT NULL DEFAULT 0
+);
+
+-- Message board: nickname + one line of text, newest first, no threads.
+CREATE TABLE IF NOT EXISTS posts (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  nick       TEXT    NOT NULL,             -- 2..12 code points
+  text       TEXT    NOT NULL,             -- 1..200 code points, whitespace collapsed
+  created_at INTEGER NOT NULL              -- epoch ms
+);

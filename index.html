@@ -1,5 +1,5 @@
 <title>미시마 도장 | 철권 초풍·웨이브 대시 연습 (Mishima Dojo EWGF Trainer)</title>
-<meta name="description" content="철권 미시마류 초풍(EWGF)·웨이브 대시(6N23) 입력을 브라우저에서 프레임 단위로 판정하는 무료 연습 도구. 키보드·게임패드 지원, 판정 폭 0.5f/0.7f/0.9f, 타이밍 히스토그램과 드릴. Free Tekken EWGF trainer & wave dash practice tool with frame-accurate input judging.">
+<meta name="description" content="철권 미시마류 초풍(EWGF)·웨이브 대시(6N23) 입력을 브라우저에서 프레임 단위로 판정하는 무료 연습 도구. 키보드·게임패드 지원, 판정 폭 0.5f/0.7f/0.9f, 타이밍 히스토그램과 측정 모드. Free Tekken EWGF trainer & wave dash practice tool with frame-accurate input judging.">
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#0B0E13">
 <link rel="canonical" href="https://sinseonghyeon.github.io/wave-ewgf-dojo/">
@@ -86,11 +86,11 @@
   .chip .f{font-family:var(--mono);font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
   .chip.new .g{box-shadow:0 0 0 1px var(--accent)}
 
-  /* drill bar */
-  .drill{margin-top:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
-  .drill .d-name{font-family:var(--display);font-size:18px;letter-spacing:.3px}
-  .drill .d-desc{color:var(--muted);flex:1 1 200px;font-size:13px}
-  .drill .d-prog{font-family:var(--mono);font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
+  /* trial bar */
+  .trial{margin-top:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+  .trial .d-name{font-family:var(--display);font-size:18px;letter-spacing:.3px}
+  .trial .d-desc{color:var(--muted);flex:1 1 200px;font-size:13px}
+  .trial .d-prog{font-family:var(--mono);font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
   .btn{background:var(--accent);color:#04202f;border:0;border-radius:4px;padding:8px 16px;font-weight:700;letter-spacing:.3px}
   .btn.ghost{background:transparent;color:var(--ink2);border:1px solid var(--line2)}
   .btn:disabled{opacity:.45;cursor:default}
@@ -103,20 +103,51 @@
   .share-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
   .share-msg{font-family:var(--mono);font-size:12.5px;color:var(--accent);min-height:1.4em;margin-top:8px}
   dialog.share .note{color:var(--muted);font-size:12px;margin:6px 0 0}
-  /* weekly leaderboard dialog (shares dialog.share chrome) */
-  dialog.board{width:min(640px,calc(100vw - 32px))}
-  .board-tabs{margin-bottom:8px}
-  .board-week{font-family:var(--mono);font-size:12px;color:var(--muted);min-height:1.3em;margin-bottom:10px}
-  .board-form{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-bottom:8px}
-  .board-form .score{font-family:var(--display);font-size:24px;color:var(--gold);line-height:1}
-  .board-form .hint{flex:1 1 160px;color:var(--muted);font-size:12px}
-  .board-form input{background:var(--bg);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:7px 10px;font-size:14px;width:11em;max-width:100%}
+  /* trial bar: post-trial leaderboard status + first-time nickname form */
+  .trial .d-rank{font-family:var(--mono);font-size:12.5px;color:var(--accent);flex:1 1 100%;min-height:0}
+  .trial .d-rank:empty{display:none}
+  .posts-form input,.nick-form input{background:var(--bg);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:7px 10px;font-size:14px;max-width:100%}
+
+  /* weekly leaderboard card + message board card (inside .records) */
+  .board-tabs{margin:8px 0 6px}
+  .board-week{font-family:var(--mono);font-size:12px;color:var(--muted);min-height:1.3em}
+  .board-me{font-family:var(--mono);font-size:12.5px;color:var(--accent);min-height:1.4em;margin:4px 0 8px}
   .board-list td.n{font-family:var(--mono);color:var(--muted);width:2.5em}
   .board-list td.s{font-family:var(--display);color:var(--gold);font-size:17px;white-space:nowrap}
   .board-list td.s small{font-family:var(--body);color:var(--muted);font-size:11.5px;margin-left:6px}
   .board-list td.w{font-family:var(--mono);color:var(--muted);font-size:12px}
   .board-list tr.me td{background:var(--accent-soft)} .board-list tr.me td:not(.s){color:var(--accent)}
-  .board-list .empty{color:var(--muted);text-align:center;padding:18px 0;font-size:13px}
+  .board-list tr.sep td{text-align:center;color:var(--faint);padding:2px 0;border-bottom:0}
+  .board-list .empty,.posts .empty{color:var(--muted);text-align:center;padding:18px 0;font-size:13px}
+  .card-msg{font-family:var(--mono);font-size:12.5px;color:var(--accent);min-height:1.4em;margin-top:6px}
+  .card-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .posts-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .posts-form .post-nick{font-size:13px;color:var(--accent);white-space:nowrap} .posts-form input.text{flex:1 1 200px}
+  .posts{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto}
+  .post{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:8px 10px}
+  .post b{font-size:13px;color:var(--ink)} .post time{font-family:var(--mono);font-size:11px;color:var(--faint);margin-left:8px}
+  .post p{margin:3px 0 0;font-size:13.5px;line-height:1.5;color:var(--ink2);overflow-wrap:anywhere}
+  .visits{font-family:var(--mono);font-size:11.5px;color:var(--faint);flex-basis:100%;text-align:right}
+  .visits:empty{display:none}
+  .nick-btn{background:transparent;color:var(--accent);border:1px dashed var(--accent-deep);border-radius:4px;padding:6px 10px;font-family:var(--mono);font-size:12px}
+  .nick-btn:hover{border-style:solid}
+  /* first-run nickname gate (modal; Escape is blocked until a nickname exists) */
+  dialog.nick{width:min(460px,calc(100vw - 32px))}
+  .nick-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px} .nick-form input{flex:1 1 160px}
+  /* result banner in the share dialog: tier title + rank line + comment, colour and motion per tier */
+  .share-rank{--tier:var(--muted);border:1px solid var(--line);border-left:4px solid var(--tier);border-radius:6px;background:var(--panel2);padding:12px 16px;margin-bottom:12px}
+  .share-rank .tier-title{font-family:var(--display);font-size:30px;line-height:1.05;color:var(--tier);animation:tierPop .55s cubic-bezier(.2,1.4,.4,1) both}
+  .share-rank .tier-line{font-family:var(--mono);font-size:13px;color:var(--ink2);margin-top:6px}
+  .share-rank .tier-msg{margin:6px 0 0;font-size:15px;line-height:1.5;color:var(--ink)}
+  .share-rank.t6{--tier:var(--faint)} .share-rank.t5{--tier:var(--muted)} .share-rank.t4{--tier:var(--ink2)} .share-rank.t3{--tier:var(--seg2)}
+  .share-rank.t2{--tier:var(--accent)} .share-rank.t2 .tier-title{text-shadow:0 0 14px rgba(76,201,255,.5)}
+  .share-rank.t1{--tier:var(--gold)} .share-rank.t1 .tier-title{text-shadow:0 0 16px rgba(245,197,66,.55)}
+  .share-rank.t0{--tier:var(--gold);background:linear-gradient(100deg,var(--panel2),rgba(245,197,66,.12),var(--panel2));background-size:200% 100%;animation:tierShine 2.4s linear infinite}
+  .share-rank.t0 .tier-title{text-shadow:0 0 18px rgba(245,197,66,.8),0 0 40px rgba(245,197,66,.35);animation:tierPop .55s cubic-bezier(.2,1.4,.4,1) both,tierGlow 1.6s ease-in-out .6s infinite alternate}
+  @keyframes tierPop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+  @keyframes tierGlow{from{filter:brightness(1)}to{filter:brightness(1.35)}}
+  @keyframes tierShine{from{background-position:200% 0}to{background-position:-200% 0}}
+  @media (prefers-reduced-motion:reduce){.share-rank,.share-rank .tier-title{animation:none}}
 
   /* coach */
   .coach{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -192,7 +223,7 @@
   html[lang="ja"]{--display:'Dela Gothic One','Noto Sans JP',system-ui,sans-serif;--body:'Noto Sans JP','Hiragino Sans','Yu Gothic',system-ui,sans-serif}
   html[lang="en"]{--body:'Noto Sans KR',system-ui,-apple-system,'Segoe UI',sans-serif}
   html[lang="ja"] .brand h1{font-size:28px}
-  .top-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .top-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
   .lang{display:inline-flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden}
   .lang button{background:transparent;border:0;color:var(--muted);padding:6px 9px;font-size:12px;font-family:var(--mono)}
   .lang button+button{border-left:1px solid var(--line2)}
@@ -218,6 +249,8 @@
     <div class="top-right">
       <div class="lang" id="langSel" role="group" aria-label="Language"><button data-lang="ko" aria-pressed="true">한국어</button><button data-lang="en" aria-pressed="false">EN</button><button data-lang="ja" aria-pressed="false">日本語</button></div>
       <div class="src" id="srcBadge">⌨ 키보드 대기</div>
+      <button class="nick-btn" id="nickBtn" hidden></button>
+      <div class="visits" id="visits"></div>
     </div>
   </header>
 
@@ -233,14 +266,15 @@
         </div>
       </div>
       <div class="inputs" id="inputs" data-i18n-aria="inputs.aria" aria-label="입력 기록"></div>
-      <div class="drill">
+      <div class="trial">
         <div class="d-name" id="dName">자유 연습</div>
         <div class="d-desc" id="dDesc"></div>
         <div class="d-prog" id="dProg"></div>
-        <button class="btn" id="dStart" hidden data-i18n="drill.start">시작</button>
-        <button class="btn ghost" id="dReset" data-i18n="drill.reset">세션 초기화</button>
+        <button class="btn" id="dStart" hidden data-i18n="trial.start">시작</button>
+        <button class="btn ghost" id="dReset" data-i18n="trial.reset">세션 초기화</button>
         <button class="btn ghost" id="dShare" hidden>세션 카드</button>
-        <button class="btn ghost" id="dBoard" hidden data-i18n="board.open">주간 순위</button>
+        <span class="d-rank" id="dRank"></span>
+        <button class="btn ghost" id="dRankRetry" hidden data-i18n="board.retry">다시 시도</button>
       </div>
     </section>
 
@@ -290,6 +324,7 @@
 
   <dialog class="share" id="shareDlg" aria-labelledby="shareTitle">
     <h2 id="shareTitle" data-i18n="share.title">결과 공유 카드</h2>
+    <div class="share-rank" id="shareRank" hidden><div class="tier-title" id="shareTier"></div><div class="tier-line" id="shareRankLine"></div><p class="tier-msg" id="shareTierMsg"></p></div>
     <canvas id="shareCanvas" width="1200" height="630" data-i18n-aria="share.canvasAria" aria-label="결과 공유 카드 미리보기"></canvas>
     <div class="share-actions">
       <button class="btn" id="shareCopy" data-i18n="share.copy">이미지 복사</button>
@@ -301,26 +336,31 @@
     <p class="note" data-i18n="share.discordNote">디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.</p>
   </dialog>
 
-  <dialog class="share board" id="boardDlg" aria-labelledby="boardTitle">
-    <h2 id="boardTitle" data-i18n="board.title">주간 순위</h2>
-    <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button></div>
-    <div class="board-week" id="boardWeek"></div>
-    <form class="board-form" id="boardForm" hidden>
-      <b class="score" id="boardMyScore"></b>
-      <span class="hint" id="boardMyHint"></span>
-      <input id="boardNick" maxlength="12" autocomplete="off" spellcheck="false" data-i18n-aria="board.nickPh" aria-label="닉네임 (2~12자)">
-      <button class="btn" id="boardSubmit" type="submit" data-i18n="board.submit">등록</button>
-    </form>
-    <div class="share-msg" id="boardMsg"></div>
-    <div class="tbl board-list" id="boardList"></div>
-    <div class="share-actions">
-      <button class="btn ghost" id="boardRefresh" data-i18n="board.refresh">새로고침</button>
-      <button class="btn ghost" id="boardClose" data-i18n="share.close">닫기</button>
-    </div>
-    <p class="note" data-i18n="board.note">닉네임과 기록만 저장됩니다. 등록하지 않아도 순위를 볼 수 있습니다. 매주 월요일 0시(KST)에 초기화됩니다.</p>
+  <dialog class="share nick" id="nickDlg" aria-labelledby="nickTitle">
+    <h2 id="nickTitle" data-i18n="nick.title">닉네임 정하기</h2>
+    <p class="note" data-i18n="nick.note">주간 순위와 한마디에 쓰이는 이름입니다. 다른 사람과 겹칠 수 없고 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 새 닉네임을 정해야 합니다.</p>
+    <form class="nick-form" id="nickForm"><input id="nickInput" maxlength="12" autocomplete="off" spellcheck="false" data-i18n-aria="board.nickPh" aria-label="닉네임 (2~12자)"><button class="btn" id="nickSubmit" type="submit" data-i18n="nick.submit">시작</button><button class="btn ghost" id="nickClose" type="button" hidden data-i18n="share.close">닫기</button><button class="btn ghost" id="nickLater" type="button" hidden data-i18n="nick.later">나중에 · 순위 없이 연습</button></form>
+    <div class="share-msg" id="nickMsg"></div>
   </dialog>
 
   <section class="records" data-i18n-aria="records.aria" aria-label="기록">
+    <div class="card board-card" id="boardCard" hidden>
+      <h2 data-i18n="board.title">주간 순위</h2>
+      <p class="sub" data-i18n="board.note">상위 10명 · 닉네임당 주간 최고 기록 1건 · 매주 월요일 0시(KST) 초기화 · 닉네임과 기록만 저장됩니다</p>
+      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button></div>
+      <div class="board-week" id="boardWeek"></div>
+      <div class="board-me" id="boardMe"></div>
+      <div class="tbl board-list" id="boardList"></div>
+      <div class="card-msg" id="boardMsg"></div>
+      <div class="card-actions"><button class="btn ghost" id="boardRefresh" data-i18n="board.refresh">새로고침</button></div>
+    </div>
+    <div class="card posts-card" id="postsCard" hidden>
+      <h2 data-i18n="posts.title">한마디</h2>
+      <p class="sub" data-i18n="posts.sub">건의·질문·잡담 무엇이든 · 최신 50개 · 1분마다 새로 고침</p>
+      <form class="posts-form" id="postForm"><b class="post-nick" id="postNickLabel"></b><input class="text" id="postText" maxlength="200" autocomplete="off" data-i18n-aria="posts.ph" aria-label="하고 싶은 말 (200자)"><button class="btn" id="postSend" type="submit" data-i18n="posts.send">남기기</button></form>
+      <div class="card-msg" id="postMsg"></div>
+      <div class="posts" id="postList"></div>
+    </div>
     <div class="card chart" id="histCard">
       <h2 data-i18n="hist.title">초풍 버튼 타이밍 분포</h2>
       <p class="sub" data-i18n="hist.sub">d/f 입력 시점을 0으로, 2(RP) 버튼이 눌린 프레임 차이 · 최근 60회</p>
@@ -363,9 +403,9 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const STORE = 'wave-ewgf-dojo-v1';
 const detectLang = () => { const l = (typeof navigator!=='undefined' && navigator.language || '').toLowerCase(); return l.startsWith('ko')?'ko':l.startsWith('ja')?'ja':'en'; };
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
-const NICK_BAD = /[\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e]/; // control, zero-width and bidi chars; must match worker/index.js validate()
+const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}, nick:''};
+let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}, nick:'', nickToken:'', visitDay:''};
 const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function validKey(slot, code){
   const arrows = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
@@ -379,6 +419,8 @@ try{
     if([1,-1].includes(s.side)) store.side=s.side;
     if([0,1].includes(s.fx)) store.fx=s.fx;
     if(typeof s.nick==='string' && nickOk(s.nick)) store.nick=s.nick;
+    if(store.nick && typeof s.nickToken==='string' && /^[0-9a-f]{48}$/.test(s.nickToken)) store.nickToken=s.nickToken; // proves the nickname is ours (POST /nick); a token without a nickname is dropped
+    if(typeof s.visitDay==='string' && /^\d{4}-\d\d-\d\d$/.test(s.visitDay)) store.visitDay=s.visitDay; // last KST day this browser was counted
     const keys = {...store.keys};
     for(const k of Object.keys(keys)) if(validKey(k,s.keys?.[k])) keys[k]=s.keys[k];
     if(new Set(Object.values(keys)).size===Object.keys(keys).length) store.keys=keys;
@@ -409,7 +451,7 @@ ko:{
   'hint.wave10':'시작 후 6N23 6 N 6N23 6 N … 반복 · 3 직후 ↓만 떼면 캔슬 6, 떼었다가 다시 6',
   'hint.ewgf20':'6 떼고 2 그리고 3 과 동시에 오른손(2) · 기본 판정은 0.7프레임(설정에서 변경)',
   'hint.combo10':'6N23 6 N … 웨이브 3회 이상 → 마지막 3 과 동시에 2',
-  'drill.start':'시작', 'drill.reset':'세션 초기화',
+  'trial.start':'시작', 'trial.reset':'세션 초기화',
   'ready.title':'입력을 기다리는 중', 'ready.sub':'키보드 또는 게임패드로 입력하세요', 'ready.reset':'세션 초기화됨',
   'coach.intro':'먼저 <strong>→(6)</strong>를 톡 치고 뗀 뒤, <strong>↓(2)</strong>를 누르고 그대로 →를 더해 <strong>↓→(3)</strong>. 이게 크라우치 대시 한 번입니다. 이어가려면 3 직후 ↓를 떼 <strong>6으로 캔슬</strong>하고, 떼었다가 다시 6N23.',
   'trend.intro':'최근 시도가 쌓이면 경향 분석이 여기에 표시됩니다.',
@@ -478,19 +520,37 @@ ko:{
   'trend.stable':'타이밍이 안정적입니다. 판정 폭을 한 단계 좁혀 보거나, 웨이브 3회 이상 후 초풍(웨이브 초풍 모드)으로 넘어가세요.',
   'chain.end':(n,dps,name,ms)=>'웨이브 '+n+'연속 종료 · 평균 '+dps+' 대시/초. 평균적으로 가장 긴 구간은 '+name+' ('+ms+'ms)',
   'chain.fix':' — 여기를 줄이면 속도가 바로 올라갑니다.', 'chain.ok':' — 균형이 좋습니다.',
-  'drill.waveEnd':(n,dps)=>'10초 종료 · '+n+'회 ('+dps+' 대시/초)', 'drill.end':(ok,tg,r)=>'종료 · 성공 '+ok+'/'+tg+' ('+r+'%)', 'drill.dashes':n=>n+' 대시',
+  'trial.waveEnd':(n,dps)=>'10초 종료 · '+n+'회 ('+dps+' 대시/초)', 'trial.end':(ok,tg,r)=>'종료 · 성공 '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' 대시',
   'pop.ewgf':'초풍!', 'pop.wgf':'풍신권',
   'share.card':'공유 카드', 'share.session':'세션 카드', 'share.title':'결과 공유 카드', 'share.canvasAria':'결과 공유 카드 미리보기',
   'share.copy':'이미지 복사', 'share.download':'PNG 저장', 'share.tweet':'X(트위터)에 공유', 'share.close':'닫기',
   'share.discordNote':'디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.',
   'share.copied':'이미지를 클립보드에 복사했습니다.', 'share.copyFail':'이 브라우저는 이미지 복사를 지원하지 않습니다. PNG 저장을 이용하세요.',
-  'board.open':'주간 순위', 'board.title':'주간 순위', 'board.tabsAria':'순위표 선택', 'board.week':(a,b)=>a+' ~ '+b+' (KST) · 월요일 0시 초기화',
-  'board.submit':'등록', 'board.nickPh':'닉네임 (2~12자)', 'board.refresh':'새로고침', 'board.prompt':'이 결과를 등록할 수 있습니다',
+  'board.title':'주간 순위', 'board.tabsAria':'순위표 선택', 'board.week':(a,b)=>a+' ~ '+b+' (KST) · 월요일 0시 초기화',
+  'board.submit':'순위 등록', 'board.nickPh':'닉네임 (2~12자)', 'board.refresh':'새로고침', 'board.retry':'다시 시도',
+  'board.submitting':'순위 등록 중…',
   'board.hRank':'순위', 'board.hNick':'닉네임', 'board.hScore':'기록', 'board.hWin':'판정',
-  'board.empty':'이번 주 기록이 아직 없습니다. 첫 번째로 등록해 보세요.', 'board.loading':'불러오는 중…', 'board.total':n=>'참가 '+n+'명',
+  'board.empty':'이번 주 기록이 아직 없습니다. 측정 모드를 끝내면 첫 번째로 등록됩니다.', 'board.loading':'불러오는 중…', 'board.total':n=>'참가 '+n+'명',
   'board.loadFail':'순위표를 불러올 수 없습니다. 잠시 후 다시 시도하세요.', 'board.submitFail':'등록에 실패했습니다. 잠시 후 다시 시도하세요.',
-  'board.nickBad':'닉네임은 2~12자로 입력하세요.', 'board.done':(r,n)=>'등록 완료 · 현재 '+r+'위 / '+n+'명',
-  'board.note':'닉네임과 기록만 저장됩니다. 등록하지 않아도 순위를 볼 수 있습니다. 매주 월요일 0시(KST)에 초기화됩니다.',
+  'board.nickBad':'닉네임은 2~12자로 입력하세요.', 'board.done':(r,n,p)=>'등록 완료 · '+r+'위 / '+n+'명 · 상위 '+p+'%',
+  'board.kept':(r,n,p)=>'이번 주 최고 기록 유지 · '+r+'위 / '+n+'명 · 상위 '+p+'%', 'board.me':(r,n,p)=>'내 순위 '+r+'위 / '+n+'명 · 상위 '+p+'%',
+  'board.meNone':'이번 주에 등록한 기록이 없습니다', 'card.rank':(r,n,p)=>'주간 '+r+'위 / '+n+'명 · 상위 '+p+'%',
+  'nick.title':'닉네임 정하기', 'nick.note':'주간 순위와 한마디에 쓰이는 이름입니다. 다른 사람과 겹칠 수 없고 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 새 닉네임을 정해야 합니다.',
+  'nick.submit':'시작', 'nick.change':n=>'닉네임 · '+n, 'nick.checking':'확인 중…', 'nick.taken':'이미 사용 중인 닉네임입니다. 다른 이름을 정하세요.',
+  'nick.fail':'닉네임을 등록하지 못했습니다. 잠시 후 다시 시도하세요.', 'nick.tooFast':'너무 빠릅니다. 잠시 후 다시 시도하세요.', 'nick.expired':'닉네임 확인에 실패했습니다. 닉네임을 다시 정해 주세요.',
+  'nick.set':'닉네임 정하기', 'nick.needed':'닉네임을 정하면 순위에 등록됩니다.', 'nick.later':'나중에 · 순위 없이 연습',
+  'tier.0.title':'이 주의 최강', 'tier.0.msg':'이 주의 정점. 상대는 스타트 버튼을 찾고 있습니다.',
+  'tier.1.title':'고수', 'tier.1.msg':'프로 무대 준비되셨습니까? 방송을 켜세요.',
+  'tier.2.title':'상급', 'tier.2.msg':'눈으로 쫓을 수 없습니다. 상대 화면엔 잔상만 남습니다.',
+  'tier.3.title':'중상', 'tier.3.msg':'웨이브 좀 타시네요? 이제 상대가 백대시를 시작합니다.',
+  'tier.4.title':'중급', 'tier.4.msg':'손이 풀리기 시작했습니다. 반은 넘었습니다.',
+  'tier.5.title':'수련 중', 'tier.5.msg':'초풍이 나올 듯 말 듯. 오늘 한 판 더 갑시다.',
+  'tier.6.title':'입문', 'tier.6.msg':'분발하세요. 아직 멀었습니다. 6N23 6 N, 다시.',
+  'board.note':'상위 10명 · 닉네임당 주간 최고 기록 1건 · 매주 월요일 0시(KST) 초기화 · 닉네임과 기록만 저장됩니다',
+  'visits':(d,t)=>'오늘 방문 '+d+' · 누적 '+t, 'posts.title':'한마디', 'posts.sub':'건의·질문·잡담 무엇이든 · 최신 50개 · 1분마다 새로 고침',
+  'posts.ph':'하고 싶은 말 (200자)', 'posts.send':'남기기', 'posts.sending':'보내는 중…', 'posts.empty':'아직 글이 없습니다. 첫 글을 남겨 보세요.',
+  'posts.textBad':'내용은 1~200자로 입력하세요.', 'posts.tooFast':'너무 빠릅니다. 1분에 3개까지 남길 수 있습니다.',
+  'posts.loadFail':'글을 불러올 수 없습니다. 잠시 후 다시 시도하세요.', 'posts.sendFail':'글을 남기지 못했습니다. 잠시 후 다시 시도하세요.',
   'card.session':'이번 세션 통계', 'card.rate':'초풍 성공률', 'card.hits':'성공 / 시도', 'card.dps':'대시/초', 'card.bestDps':'최고 대시/초', 'card.dashes':'총 대시',
   'card.chain':'최고 연속 대시', 'card.tries':'초풍 시도', 'card.mean':'평균 버튼 오프셋', 'card.window':w=>'초풍 판정 폭 '+w,
   'card.hist':'버튼 타이밍 분포 (d/f 기준, 프레임)', 'card.wave':'웨이브 속도 (대시/초)', 'card.noData':'아직 기록이 없습니다',
@@ -499,7 +559,7 @@ ko:{
   'og.chipWave':'웨이브', 'og.chipEwgf':'초풍', 'og.altNames':'Mishima Dojo · 三島道場',
   'og.line1':'철권 초풍·웨이브 대시 연습', 'og.line2':'브라우저에서 프레임 단위로 판정',
   'og.keywords':'EWGF trainer · wave dash practice · 무료 · 키보드 / 게임패드',
-  'og.footer':'판정 폭 0.5f · 0.7f · 0.9f · 타이밍 히스토그램 · 드릴 · 공유 카드',
+  'og.footer':'판정 폭 0.5f · 0.7f · 0.9f · 타이밍 히스토그램 · 측정 모드 · 공유 카드',
   'footer':'표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.',
 },
 en:{
@@ -515,7 +575,7 @@ en:{
   'hint.wave10':'After GO repeat 6N23 6 N 6N23 6 N … · release only ↓ right after 3 for the cancel 6, release, then 6 again',
   'hint.ewgf20':'6, release, 2, then right punch (2) together with 3 · default window 0.7f (change in settings)',
   'hint.combo10':'6N23 6 N … wave 3+ times → press 2 with the final 3',
-  'drill.start':'Start', 'drill.reset':'Reset session',
+  'trial.start':'Start', 'trial.reset':'Reset session',
   'ready.title':'Waiting for input', 'ready.sub':'Use keyboard or gamepad', 'ready.reset':'Session reset',
   'coach.intro':'Tap <strong>→(6)</strong> and release, press <strong>↓(2)</strong>, then add → for <strong>↓→(3)</strong>. That is one crouch dash. To chain, release ↓ right after 3 to <strong>cancel with 6</strong>, release, then 6N23 again.',
   'trend.intro':'Trend analysis appears here once attempts accumulate.',
@@ -584,19 +644,37 @@ en:{
   'trend.stable':'Timing is stable. Try one step narrower window, or move on to EWGF after 3+ waves (Wave EWGF mode).',
   'chain.end':(n,dps,name,ms)=>'Wave chain of '+n+' ended · avg '+dps+' dashes/s. Longest segment on average: '+name+' ('+ms+'ms)',
   'chain.fix':' — shorten this and speed goes up immediately.', 'chain.ok':' — well balanced.',
-  'drill.waveEnd':(n,dps)=>'10s over · '+n+' dashes ('+dps+' dashes/s)', 'drill.end':(ok,tg,r)=>'Done · '+ok+'/'+tg+' ('+r+'%)', 'drill.dashes':n=>n+' dashes',
+  'trial.waveEnd':(n,dps)=>'10s over · '+n+' dashes ('+dps+' dashes/s)', 'trial.end':(ok,tg,r)=>'Done · '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' dashes',
   'pop.ewgf':'EWGF!', 'pop.wgf':'WGF',
   'share.card':'Share card', 'share.session':'Session card', 'share.title':'Result share card', 'share.canvasAria':'Result share card preview',
   'share.copy':'Copy image', 'share.download':'Save PNG', 'share.tweet':'Share on X (Twitter)', 'share.close':'Close',
   'share.discordNote':'Discord: click "Copy image", then paste into the chat with Ctrl+V. If copying is unavailable, save the PNG and attach it.',
   'share.copied':'Image copied to the clipboard.', 'share.copyFail':'This browser cannot copy images. Use Save PNG instead.',
-  'board.open':'Weekly ranking', 'board.title':'Weekly ranking', 'board.tabsAria':'Choose a board', 'board.week':(a,b)=>a+' – '+b+' (KST) · resets Monday 00:00',
-  'board.submit':'Submit', 'board.nickPh':'Nickname (2–12 chars)', 'board.refresh':'Refresh', 'board.prompt':'You can submit this result',
+  'board.title':'Weekly ranking', 'board.tabsAria':'Choose a board', 'board.week':(a,b)=>a+' – '+b+' (KST) · resets Monday 00:00',
+  'board.submit':'Submit to ranking', 'board.nickPh':'Nickname (2–12 chars)', 'board.refresh':'Refresh', 'board.retry':'Retry',
+  'board.submitting':'Submitting…',
   'board.hRank':'#', 'board.hNick':'Nickname', 'board.hScore':'Result', 'board.hWin':'Window',
-  'board.empty':'No entries this week yet. Be the first.', 'board.loading':'Loading…', 'board.total':n=>n+' entries',
+  'board.empty':'No entries this week yet. Finish a trial to be the first.', 'board.loading':'Loading…', 'board.total':n=>n+' entries',
   'board.loadFail':'Could not load the ranking. Try again later.', 'board.submitFail':'Submission failed. Try again later.',
-  'board.nickBad':'Nickname must be 2–12 characters.', 'board.done':(r,n)=>'Submitted · rank '+r+' of '+n,
-  'board.note':'Only your nickname and result are stored. You can view the ranking without submitting. Resets every Monday 00:00 KST.',
+  'board.nickBad':'Nickname must be 2–12 characters.', 'board.done':(r,n,p)=>'Submitted · rank '+r+' of '+n+' · top '+p+'%',
+  'board.kept':(r,n,p)=>'Your weekly best stands · rank '+r+' of '+n+' · top '+p+'%', 'board.me':(r,n,p)=>'You: rank '+r+' of '+n+' · top '+p+'%',
+  'board.meNone':'No entry from you this week', 'card.rank':(r,n,p)=>'Weekly rank '+r+' of '+n+' · top '+p+'%',
+  'nick.title':'Pick a nickname', 'nick.note':'Used for the weekly ranking and the shoutbox. It cannot clash with anyone else and is stored in this browser. Clearing browser data means picking a new one.',
+  'nick.submit':'Start', 'nick.change':n=>'Nickname · '+n, 'nick.checking':'Checking…', 'nick.taken':'That nickname is taken. Pick another.',
+  'nick.fail':'Could not register the nickname. Try again later.', 'nick.tooFast':'Too fast. Try again in a moment.', 'nick.expired':'Nickname check failed. Please pick a nickname again.',
+  'nick.set':'Pick a nickname', 'nick.needed':'Pick a nickname to enter the ranking.', 'nick.later':'Later · practise without ranking',
+  'tier.0.title':'Apex', 'tier.0.msg':'Top of the week. Your opponent is looking for the start button.',
+  'tier.1.title':'Master', 'tier.1.msg':'Ready for the pro stage? Turn the stream on.',
+  'tier.2.title':'Expert', 'tier.2.msg':'The eye cannot follow. Only afterimages on their screen.',
+  'tier.3.title':'Skilled', 'tier.3.msg':'Riding the wave now. Opponents start backdashing.',
+  'tier.4.title':'Rising', 'tier.4.msg':'Hands are waking up. Past the halfway mark.',
+  'tier.5.title':'Training', 'tier.5.msg':'The EWGF is almost there. One more set today.',
+  'tier.6.title':'Beginner', 'tier.6.msg':'Keep at it. Long way to go. 6N23 6 N, again.',
+  'board.note':'Top 10 · one weekly best per nickname · resets every Monday 00:00 KST · only your nickname and result are stored',
+  'visits':(d,t)=>'Today '+d+' · total '+t+' visits', 'posts.title':'Shoutbox', 'posts.sub':'Requests, questions, anything · latest 50 · refreshes every minute',
+  'posts.ph':'Say something (200 chars)', 'posts.send':'Post', 'posts.sending':'Sending…', 'posts.empty':'No posts yet. Be the first.',
+  'posts.textBad':'Text must be 1–200 characters.', 'posts.tooFast':'Too fast. Up to 3 posts per minute.',
+  'posts.loadFail':'Could not load posts. Try again later.', 'posts.sendFail':'Could not post. Try again later.',
   'card.session':'This session', 'card.rate':'EWGF success rate', 'card.hits':'Hits / tries', 'card.dps':'dashes/s', 'card.bestDps':'Best dashes/s', 'card.dashes':'Total dashes',
   'card.chain':'Best dash chain', 'card.tries':'EWGF tries', 'card.mean':'Avg button offset', 'card.window':w=>'EWGF window '+w,
   'card.hist':'Button timing (frames from d/f)', 'card.wave':'Wave speed (dashes/s)', 'card.noData':'No data yet',
@@ -605,7 +683,7 @@ en:{
   'og.chipWave':'wave', 'og.chipEwgf':'EWGF', 'og.altNames':'미시마 도장 · 三島道場',
   'og.line1':'Tekken EWGF & wave dash practice', 'og.line2':'Frame-accurate judging in your browser',
   'og.keywords':'EWGF trainer · wave dash practice · free · keyboard / gamepad',
-  'og.footer':'Windows 0.5f · 0.7f · 0.9f · timing histogram · drills · share cards',
+  'og.footer':'Windows 0.5f · 0.7f · 0.9f · timing histogram · trials · share cards',
   'footer':'Notation: 6 = forward (f), N = neutral, 2 = down (d), 3 = down-forward (d/f), button 2 = right punch (RP). Wave = 6N23 6 N 6N23 6 N … (the 6 after 3 cancels the recovery). 1 frame = 16.67ms. Unofficial fan-made practice tool.',
 },
 ja:{
@@ -621,7 +699,7 @@ ja:{
   'hint.wave10':'開始後 6N23 6 N 6N23 6 N … を繰り返す · 3の直後に↓だけ離すとキャンセル6、離してまた6',
   'hint.ewgf20':'6を離して2、そして3と同時に右パンチ(2) · 初期判定は0.7フレーム(設定で変更)',
   'hint.combo10':'6N23 6 N … ウェーブ3回以上 → 最後の3と同時に2',
-  'drill.start':'開始', 'drill.reset':'セッション初期化',
+  'trial.start':'開始', 'trial.reset':'セッション初期化',
   'ready.title':'入力待ち', 'ready.sub':'キーボードまたはゲームパッドで入力してください', 'ready.reset':'セッションを初期化しました',
   'coach.intro':'まず<strong>→(6)</strong>を軽く押して離し、<strong>↓(2)</strong>を押したまま→を足して<strong>↓→(3)</strong>。これが風神ステップ1回です。つなげるには3の直後に↓を離して<strong>6でキャンセル</strong>し、離してまた6N23。',
   'trend.intro':'試行が溜まると傾向分析がここに表示されます。',
@@ -690,19 +768,37 @@ ja:{
   'trend.stable':'タイミングが安定しています。判定幅を一段階狭めるか、ウェーブ3回以上の後の最風(ウェーブ最風モード)に進みましょう。',
   'chain.end':(n,dps,name,ms)=>'ウェーブ'+n+'連続終了 · 平均 '+dps+' ダッシュ/秒。平均で一番長い区間は'+name+' ('+ms+'ms)',
   'chain.fix':' — ここを縮めれば速度がすぐ上がります。', 'chain.ok':' — バランスが良いです。',
-  'drill.waveEnd':(n,dps)=>'10秒終了 · '+n+'回 ('+dps+' ダッシュ/秒)', 'drill.end':(ok,tg,r)=>'終了 · 成功 '+ok+'/'+tg+' ('+r+'%)', 'drill.dashes':n=>n+' ステップ',
+  'trial.waveEnd':(n,dps)=>'10秒終了 · '+n+'回 ('+dps+' ダッシュ/秒)', 'trial.end':(ok,tg,r)=>'終了 · 成功 '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' ステップ',
   'pop.ewgf':'最風!', 'pop.wgf':'風神拳',
   'share.card':'共有カード', 'share.session':'セッションカード', 'share.title':'結果共有カード', 'share.canvasAria':'結果共有カードのプレビュー',
   'share.copy':'画像をコピー', 'share.download':'PNG保存', 'share.tweet':'X(Twitter)で共有', 'share.close':'閉じる',
   'share.discordNote':'Discord: 「画像をコピー」後、チャット欄に Ctrl+V で貼り付けてください。コピーできない場合は PNG を保存して添付してください。',
   'share.copied':'画像をクリップボードにコピーしました。', 'share.copyFail':'このブラウザは画像コピーに対応していません。PNG保存をご利用ください。',
-  'board.open':'週間ランキング', 'board.title':'週間ランキング', 'board.tabsAria':'ランキングを選択', 'board.week':(a,b)=>a+' ～ '+b+' (KST) · 月曜0時にリセット',
-  'board.submit':'登録', 'board.nickPh':'ニックネーム (2～12文字)', 'board.refresh':'更新', 'board.prompt':'この結果を登録できます',
+  'board.title':'週間ランキング', 'board.tabsAria':'ランキングを選択', 'board.week':(a,b)=>a+' ～ '+b+' (KST) · 月曜0時にリセット',
+  'board.submit':'ランキングに登録', 'board.nickPh':'ニックネーム (2～12文字)', 'board.refresh':'更新', 'board.retry':'再試行',
+  'board.submitting':'登録中…',
   'board.hRank':'順位', 'board.hNick':'ニックネーム', 'board.hScore':'記録', 'board.hWin':'判定',
-  'board.empty':'今週の記録はまだありません。最初に登録してみましょう。', 'board.loading':'読み込み中…', 'board.total':n=>'参加 '+n+'人',
+  'board.empty':'今週の記録はまだありません。測定モードを終えると最初に登録されます。', 'board.loading':'読み込み中…', 'board.total':n=>'参加 '+n+'人',
   'board.loadFail':'ランキングを読み込めません。しばらくしてからもう一度お試しください。', 'board.submitFail':'登録に失敗しました。しばらくしてからもう一度お試しください。',
-  'board.nickBad':'ニックネームは2～12文字で入力してください。', 'board.done':(r,n)=>'登録完了 · 現在 '+r+'位 / '+n+'人',
-  'board.note':'保存されるのはニックネームと記録だけです。登録しなくてもランキングは見られます。毎週月曜0時(KST)にリセットされます。',
+  'board.nickBad':'ニックネームは2～12文字で入力してください。', 'board.done':(r,n,p)=>'登録完了 · '+r+'位 / '+n+'人 · 上位 '+p+'%',
+  'board.kept':(r,n,p)=>'今週の自己ベストを維持 · '+r+'位 / '+n+'人 · 上位 '+p+'%', 'board.me':(r,n,p)=>'自分の順位 '+r+'位 / '+n+'人 · 上位 '+p+'%',
+  'board.meNone':'今週の登録記録はありません', 'card.rank':(r,n,p)=>'週間 '+r+'位 / '+n+'人 · 上位 '+p+'%',
+  'nick.title':'ニックネームを決める', 'nick.note':'週間ランキングとひとことで使う名前です。他の人と重複できず、このブラウザに保存されます。ブラウザのデータを消すと新しく決め直す必要があります。',
+  'nick.submit':'開始', 'nick.change':n=>'ニックネーム · '+n, 'nick.checking':'確認中…', 'nick.taken':'そのニックネームは使用中です。別の名前にしてください。',
+  'nick.fail':'ニックネームを登録できませんでした。しばらくしてからもう一度お試しください。', 'nick.tooFast':'速すぎます。少し待ってからもう一度お試しください。', 'nick.expired':'ニックネームの確認に失敗しました。もう一度決めてください。',
+  'nick.set':'ニックネームを決める', 'nick.needed':'ニックネームを決めるとランキングに登録されます。', 'nick.later':'あとで · ランキングなしで練習',
+  'tier.0.title':'今週の頂点', 'tier.0.msg':'今週の頂点。相手はスタートボタンを探しています。',
+  'tier.1.title':'達人', 'tier.1.msg':'プロの舞台、準備はいいですか？配信をつけましょう。',
+  'tier.2.title':'上級', 'tier.2.msg':'目で追えません。相手の画面には残像だけ。',
+  'tier.3.title':'中上級', 'tier.3.msg':'ウェーブ乗れてますね？相手がバックダッシュを始めます。',
+  'tier.4.title':'中級', 'tier.4.msg':'手が温まってきました。半分は越えました。',
+  'tier.5.title':'修行中', 'tier.5.msg':'最風が出そうで出ない。今日もう一本。',
+  'tier.6.title':'入門', 'tier.6.msg':'精進あるのみ。まだまだこれから。6N23 6 N、もう一度。',
+  'board.note':'上位10人 · ニックネームごとに週間ベスト1件 · 毎週月曜0時(KST)にリセット · 保存されるのはニックネームと記録だけです',
+  'visits':(d,t)=>'今日の訪問 '+d+' · 累計 '+t, 'posts.title':'ひとこと', 'posts.sub':'要望・質問・雑談なんでも · 最新50件 · 1分ごとに更新',
+  'posts.ph':'言いたいこと (200文字)', 'posts.send':'投稿', 'posts.sending':'送信中…', 'posts.empty':'まだ投稿がありません。最初の一言をどうぞ。',
+  'posts.textBad':'本文は1～200文字で入力してください。', 'posts.tooFast':'速すぎます。1分に3件まで投稿できます。',
+  'posts.loadFail':'投稿を読み込めません。しばらくしてからもう一度お試しください。', 'posts.sendFail':'投稿できませんでした。しばらくしてからもう一度お試しください。',
   'card.session':'今回のセッション', 'card.rate':'最風成功率', 'card.hits':'成功 / 試行', 'card.dps':'ダッシュ/秒', 'card.bestDps':'最高ダッシュ/秒', 'card.dashes':'総ダッシュ',
   'card.chain':'最高連続ダッシュ', 'card.tries':'最風試行', 'card.mean':'平均ボタンオフセット', 'card.window':w=>'最風判定幅 '+w,
   'card.hist':'ボタンタイミング分布 (3基準、フレーム)', 'card.wave':'ウェーブ速度 (ダッシュ/秒)', 'card.noData':'まだ記録がありません',
@@ -711,7 +807,7 @@ ja:{
   'og.chipWave':'ウェーブ', 'og.chipEwgf':'最風', 'og.altNames':'미시마 도장 · Mishima Dojo',
   'og.line1':'鉄拳 最風・ウェーブ練習', 'og.line2':'ブラウザでフレーム単位に判定',
   'og.keywords':'EWGF trainer · wave dash practice · 無料 · キーボード / ゲームパッド',
-  'og.footer':'判定幅 0.5f · 0.7f · 0.9f · タイミング分布 · ドリル · 共有カード',
+  'og.footer':'判定幅 0.5f · 0.7f · 0.9f · タイミング分布 · 測定モード · 共有カード',
   'footer':'表記: 6 = 前, N = ニュートラル, 2 = 下, 3 = 斜め下前, ボタン2 = 右パンチ(RP)。ウェーブ = 6N23 6 N 6N23 6 N … (3の後の6が硬直キャンセル)。1フレーム = 16.67ms基準。非公式ファン製作の練習ツールです。',
 },
 };
@@ -729,7 +825,7 @@ const session = { dashes:0, bestChain:0, bestDps:0, tries:0, hits:0, offsetSum:0
 /* states: 0 idle · 1 시작 6 · 2 중립 · 3 d · 4 d/f(대시 중) · 5 캔슬 6 · 6 캔슬 후 중립 · 7 d/f 뗀 뒤 캔슬 대기 */
 const cd = { state:0, tF:0, tN:0, tD:0, tDF:0, tC:0, tRel:0, lastDF:-1e9, cancelled:true, chain:0, chainCycles:[], pending:null };
 let mode = 'free';
-const drill = { running:false, tStart:0, dur:0, count:0, target:0, cdTimer:null, messageTimer:null };
+const trial = { running:false, tStart:0, dur:0, count:0, target:0, cdTimer:null, messageTimer:null, openTimer:null };
 /* last rendered texts, kept as re-evaluable messages so a language switch can redraw them */
 const ui = { result:{cls:'',kind:'READY',title:['ready.title'],sub:['ready.sub']}, coach:['coach.intro'], trend:['trend.intro'], seg:null, padId:null, shareMsg:'' };
 
@@ -763,6 +859,7 @@ function kbVector(){
   kbDir = { x:(rt?1:0)-(lf?1:0), y:(up?1:0)-(dn?1:0) };
 }
 const mappedCodes = () => new Set([...Object.values(store.keys),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
+const modalOpen = () => $('nickDlg').open || $('shareDlg').open; // nickname gate / result card: game input is paused (called at pad-poll rate, so no DOM query)
 let listening = null; // key remap slot
 addEventListener('keydown', e => {
   if(listening){
@@ -774,6 +871,7 @@ addEventListener('keydown', e => {
     store.keys[listening]=e.code; listening=null; resetInput(); save(); renderKeys(); return;
   }
   if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if(modalOpen()) return;
   if(!mappedCodes().has(e.code)) return;
   e.preventDefault();
   if(e.repeat || held.has(e.code)) return;
@@ -793,7 +891,7 @@ function resetInput(){
   held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); curDir='n';
   clearCommand(); updateHud();
 }
-addEventListener('blur', () => { resetInput(); endDrill(true); });
+addEventListener('blur', () => { resetInput(); endTrial(true); });
 
 /* gamepad */
 let padIndex = null;
@@ -811,7 +909,7 @@ function hatVec(v){
   return HAT[Math.round((v+1)*3.5)] || [0,0];
 }
 function pollPad(){
-  if(document.hidden || !document.hasFocus()) return;
+  if(document.hidden || !document.hasFocus() || modalOpen()) return;
   let pads;
   try{ pads = navigator.getGamepads ? navigator.getGamepads() : []; }catch(e){ if(padIndex!==null) releasePad(); return; }
   let gp = null;
@@ -863,7 +961,7 @@ function clearCommand(){
   Object.assign(cd,{state:0,tF:0,tN:0,tD:0,tDF:0,tC:0,tRel:0,lastDF:-1e9,cancelled:true,chain:0,chainCycles:[],pending:null});
 }
 function onDir(dir, t){
-  drillTick(t); tick(t); // 판정 기한은 화면 주사율과 무관하게 입력 시각에 검사한다.
+  trialTick(t); tick(t); // 판정 기한은 화면 주사율과 무관하게 입력 시각에 검사한다.
   pushHistory({t, dir});
   switch(cd.state){
     case 0: if(dir==='f'){ cd.state=1; cd.tF=t; } break;
@@ -922,7 +1020,7 @@ function completeCD(t){
   session.bestChain = Math.max(session.bestChain, cd.chain);
   if(cyc.cycle){ const dps = 1000/cyc.cycle; session.cycles.push({t, cycle:cyc.cycle, dps}); if(session.cycles.length>200) session.cycles.shift(); }
   if(cd.chain>=3){ const last3 = cd.chainCycles.slice(-3); const span = last3[2].t - last3[0].t; const dps = 2000/span; if(dps>session.bestDps) session.bestDps = dps; }
-  if(drill.running && mode==='wave10'){ drill.count++; drill.bestChain = Math.max(drill.bestChain||0, cd.chain); }
+  if(trial.running && mode==='wave10'){ trial.count++; trial.bestChain = Math.max(trial.bestChain||0, cd.chain); }
   if(cyc.cycle) renderWave();
   fx.crouchDash();
   renderSeg(cyc);
@@ -954,7 +1052,7 @@ function fault(kind, t){
 
 /* ---------- button / EWGF ---------- */
 function onButton(n, t){
-  drillTick(t); tick(t);
+  trialTick(t); tick(t);
   pushHistory({t, btn:n});
   if(n!==2){
     if(cd.state>=3 && (mode==='ewgf20'||mode==='combo10')) setCoach(['coach.wrongBtn', n]);
@@ -1029,7 +1127,7 @@ function attempt(kind, off, t){
   showResult(cls, kind==='ewgf'?'ELECTRIC WIND GOD FIST':kind==='wgf'?'WIND GOD FIST':'MISS', title, sub);
   setCoach(coach);
   addLog(t, 'log.tEwgf', ['res.'+res], off==null?'':f+' / '+ms, chainBefore? ['log.mAfterWave', chainBefore]:'', rowCls);
-  if(drill.running && (mode==='ewgf20'||mode==='combo10')){ drill.count++; if(drill.count>=drill.target) endDrill(); }
+  if(trial.running && (mode==='ewgf20'||mode==='combo10')){ trial.count++; if(trial.count>=trial.target) endTrial(); }
   coachTrend(); updateStats(); renderHist(); renderLog();
   clearCommand(); updateHud();
 }
@@ -1123,7 +1221,7 @@ function endChain(now){
   cd.chain=0; cd.chainCycles=[]; updateHud(); renderWave();
 }
 
-/* ---------- drills ---------- */
+/* ---------- trials ---------- */
 const MODES = {
   free:   {start:false},
   wave10: {start:true, dur:10000},
@@ -1134,60 +1232,60 @@ function renderMode(){
   const M = MODES[mode];
   $('dName').textContent=T('mode.'+mode+'.name'); $('dDesc').textContent=T('mode.'+mode+'.desc'); $('dStart').hidden=!M.start;
   $('hudHint').textContent = T('hint.'+mode);
-  const sb = $('dShare'); sb.textContent = T(M.start?'share.card':'share.session'); sb.hidden = !!M.start && !drill.result;
-  renderBoardBtn();
+  const sb = $('dShare'); sb.textContent = T(M.start?'share.card':'share.session'); sb.hidden = !!M.start && !trial.result;
+  renderTrialRank();
 }
-function renderBoardBtn(){ $('dBoard').hidden = !BOARD_URL || drill.running || !!drill.cdTimer; }
-function clearShare(){ drill.result=null; $('dShare').hidden = !!MODES[mode].start; }
+function clearShare(){ trial.result=null; $('dShare').hidden = !!MODES[mode].start; renderTrialRank(); }
 function setMode(m){
-  endDrill(true); clearCommand(); updateHud(); mode = m; drill.result=null;
+  endTrial(true); clearCommand(); updateHud(); mode = m; trial.result=null;
   document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-selected', b.dataset.mode===m?'true':'false'));
   $('dProg').textContent=''; $('hudTimer').textContent='';
   renderMode();
 }
-function startDrill(){
+function startTrial(){
   const M = MODES[mode]; if(!M.start) return;
-  endDrill(true); clearShare();
-  drill.running=false; drill.count=0; drill.bestChain=0; drill.target=M.target||0; drill.dur=M.dur||0;
+  endTrial(true); clearShare();
+  trial.running=false; trial.count=0; trial.bestChain=0; trial.target=M.target||0; trial.dur=M.dur||0;
   $('dStart').disabled=true;
   let c = 3; $('hudCenter').textContent=c;
-  drill.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(drill.cdTimer); drill.cdTimer=null; $('hudCenter').textContent='GO!'; drill.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; },500); clearCommand(); updateHud(); drill.running=true; drill.tStart=performance.now(); } }, 1000);
-  renderBoardBtn();
+  trial.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(trial.cdTimer); trial.cdTimer=null; $('hudCenter').textContent='GO!'; trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; },500); clearCommand(); updateHud(); trial.running=true; trial.tStart=performance.now(); } }, 1000);
 }
-function endDrill(cancel){
-  const wasRunning = drill.running; drill.running=false; clearInterval(drill.cdTimer); drill.cdTimer=null; clearTimeout(drill.messageTimer); drill.messageTimer=null; $('dStart').disabled=false; $('hudCenter').textContent=''; renderBoardBtn();
+function endTrial(cancel){
+  const wasRunning = trial.running; trial.running=false; clearInterval(trial.cdTimer); trial.cdTimer=null; clearTimeout(trial.messageTimer); trial.messageTimer=null; clearTimeout(trial.openTimer); trial.openTimer=null; $('dStart').disabled=false; $('hudCenter').textContent='';
   if(cancel || !wasRunning) { $('dProg').textContent=''; return; }
-  const since = a => a.t>=drill.tStart;
+  const since = a => a.t>=trial.tStart;
   let rec, text, at = session.attempts.filter(since);
   if(mode==='wave10'){
-    const dps = drill.count/10, chain = drill.bestChain||0;
-    rec = {date:Date.now(), score:dps, dashes:drill.count, chain, label:T('rec.dps',dps.toFixed(1)), sub:T('rec.waveSub',drill.count,chain)};
-    text = T('drill.waveEnd', drill.count, dps.toFixed(1));
-    $('hudCenter').textContent = drill.count+' DASH';
+    const dps = trial.count/10, chain = trial.bestChain||0;
+    rec = {date:Date.now(), score:dps, dashes:trial.count, chain, label:T('rec.dps',dps.toFixed(1)), sub:T('rec.waveSub',trial.count,chain)};
+    text = T('trial.waveEnd', trial.count, dps.toFixed(1));
+    $('hudCenter').textContent = trial.count+' DASH';
   } else {
-    at = at.slice(-drill.target);
+    at = at.slice(-trial.target);
     const ok = at.filter(a => a.kind==='ewgf' && (mode!=='combo10' || a.chain>=3)).length;
-    const rate = Math.round(ok/drill.target*100);
+    const rate = Math.round(ok/trial.target*100);
     const offs = at.filter(a=>a.off!=null).map(a=>a.off); const mean = offs.length? offs.reduce((s,v)=>s+v,0)/offs.length:0;
-    rec = {date:Date.now(), score:rate, hits:ok, target:drill.target, mean, label:rate+'%', sub:T('rec.ewgfSub',ok,drill.target,fmtF(mean))};
+    rec = {date:Date.now(), score:rate, hits:ok, target:trial.target, mean, label:rate+'%', sub:T('rec.ewgfSub',ok,trial.target,fmtF(mean))};
     if(mode==='combo10'){ const c = session.cycles.filter(since); rec.dps = c.length? +(c.reduce((s,x)=>s+x.dps,0)/c.length).toFixed(2) : 0; } // combo10 tie-breaker (shown by recText)
-    text = T('drill.end', ok, drill.target, rate);
+    text = T('trial.end', ok, trial.target, rate);
     $('hudCenter').textContent = rate+'%';
   }
-  drill.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; }, 2200);
+  trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; }, 2200);
   $('dProg').textContent = text;
   store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); save(); renderBests();
-  drill.result = {rec, attempts:at, cycles:session.cycles.filter(since), window:store.window}; $('dShare').hidden=false;
+  trial.result = {rec, attempts:at, cycles:session.cycles.filter(since), window:store.window}; $('dShare').hidden=false;
+  boardSubmit(); // always to the weekly ranking (the server keeps only the weekly best); no-op without a claimed nickname
+  trial.openTimer = setTimeout(() => openShare().then(() => { trial.openTimer = null; }), 900); // result card after the HUD flash; openTimer stays set until it is open
 }
-function drillTick(now){
-  if(!drill.running) return;
+function trialTick(now){
+  if(!trial.running) return;
   if(mode==='wave10'){
-    const left = Math.max(0, drill.dur-(now-drill.tStart));
+    const left = Math.max(0, trial.dur-(now-trial.tStart));
     const el = $('hudTimer'); el.textContent = (left/1000).toFixed(1); el.classList.toggle('warn', left<3000);
-    $('dProg').textContent = T('drill.dashes', drill.count);
-    if(left<=0) endDrill();
+    $('dProg').textContent = T('trial.dashes', trial.count);
+    if(left<=0) endTrial();
   } else {
-    $('dProg').textContent = drill.count+' / '+drill.target;
+    $('dProg').textContent = trial.count+' / '+trial.target;
   }
 }
 function recText(m, r){ // prefer numeric fields so old records re-render in the current language
@@ -1286,27 +1384,27 @@ function renderWave(){
 /* ---------- share card: pure data model (no DOM, unit-tested) ---------- */
 const SITE_URL = 'https://sinseonghyeon.github.io/wave-ewgf-dojo/';
 function buildCard(src){
-  // src: {kind:'drill'|'session', mode, rec?, attempts, cycles, session?, window, date}
+  // src: {kind:'trial'|'session', mode, rec?, attempts, cycles, session?, window, date}
   const m = src.mode, win = src.window ?? store.window, s = src.session || session;
   const winText = T('set.win'+win), modeName = T('mode.'+m+'.name');
   const metric = (k, v) => ({label:T(k), value:String(v)});
   const attempts = src.attempts || [], cycles = src.cycles || [];
   const bestChainOf = list => list.reduce((b,a)=>Math.max(b, a.chain||0), 0);
   let hero, metrics, chart, summary, sub;
-  if(src.kind==='drill' && m==='wave10'){
+  if(src.kind==='trial' && m==='wave10'){
     const r = src.rec, dps = (+r.score).toFixed(1), chain = r.chain||0;
     hero = {value:dps, label:T('card.dps')};
     metrics = [metric('card.dashes', r.dashes), metric('card.chain', chain), metric('card.tries', attempts.length)];
     chart = {type:'wave', pts:cycles.slice(-40).map(c=>c.dps)};
     summary = T('rec.dps',dps)+' · '+T('rec.waveSub', r.dashes, chain);
-    sub = T('drill.waveEnd', r.dashes, dps);
-  } else if(src.kind==='drill'){
+    sub = T('trial.waveEnd', r.dashes, dps);
+  } else if(src.kind==='trial'){
     const r = src.rec;
     hero = {value:r.score+'%', label:T('card.rate')};
     metrics = [metric('card.hits', r.hits+' / '+r.target), metric('card.mean', fmtF(r.mean)), metric('card.chain', bestChainOf(attempts))];
     chart = {type:'hist', bins:histBins(attempts, win), window:win};
     summary = r.score+'% · '+T('rec.ewgfSub', r.hits, r.target, fmtF(r.mean));
-    sub = T('drill.end', r.hits, r.target, r.score);
+    sub = T('trial.end', r.hits, r.target, r.score);
   } else {
     const rate = s.tries? Math.round(s.hits/s.tries*100)+'%' : null;
     const mean = s.offsetCount? fmtF(s.offsetSum/s.offsetCount) : '–';
@@ -1321,12 +1419,13 @@ function buildCard(src){
     summary = rate!=null ? rate+' · '+T('rec.ewgfSub', s.hits, s.tries, mean) : T('rec.dps',dps)+' · '+T('rec.waveSub', s.dashes, s.bestChain);
     sub = T('card.session');
   }
+  const rankText = src.rank ? T('card.rank', src.rank.rank, src.rank.total, pctTop(src.rank.rank, src.rank.total))+' · '+T('tier.'+tierOf(src.rank.rank, src.rank.total)+'.title') : '';
   const d = new Date(src.date || Date.now());
   const ymd = d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
   return {
     app:T('app.title'), modeName, sub, hero, metrics, chart,
     windowText:T('card.window', winText), dateText:d.toLocaleDateString(LOCALE[store.lang]), url:SITE_URL,
-    tweet:T('card.tweet', modeName, summary, winText)+'\n'+SITE_URL, file:'mishima-dojo-'+m+'-'+ymd+'.png',
+    rankText, tweet:T('card.tweet', modeName, summary, winText)+(rankText ? '\n'+rankText : '')+'\n'+SITE_URL, file:'mishima-dojo-'+m+'-'+ymd+'.png',
   };
 }
 function buildOgCard(){
@@ -1351,7 +1450,7 @@ function segSel(id, attr, cb){
   el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr])===String(store[attr==='win'?'window':attr])?'true':'false'));
 }
 segSel('winSel','win', v => { store.window=+v; save(); renderHist(); });
-segSel('sideSel','side', v => { endDrill(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); });
+segSel('sideSel','side', v => { endTrial(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); });
 segSel('fxSel','fx', v => { store.fx=+v; save(); });
 segSel('langSel','lang', v => { setLang(v); });
 const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK'};
@@ -1361,41 +1460,44 @@ function renderKeys(){
   $('keys').querySelectorAll('.key').forEach(b => b.addEventListener('click', () => { listening = b.dataset.k; renderKeys(); }));
 }
 $('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
-$('dStart').addEventListener('click', startDrill);
+$('dStart').addEventListener('click', startTrial);
 $('dReset').addEventListener('click', () => {
-  endDrill(true); clearShare(); resetInput();
+  endTrial(true); clearShare(); resetInput();
   Object.assign(session,{dashes:0,bestChain:0,bestDps:0,tries:0,hits:0,offsetSum:0,offsetCount:0,cycles:[],attempts:[],log:[]}); history.length=0; lastInputT=performance.now();
   updateStats(); updateHud(); renderHistory(); renderLog(); renderHist(); renderWave(); coachTrend();
   showResult('', 'READY', ['ready.reset'], ['ready.title']);
 });
 
 /* ---------- share card: dialog + actions ---------- */
-let shareSrc = null, shareModel = null;
+let shareSrc = null, shareModel = null, shareSeq = 0;
 function shareSource(){
   if(MODES[mode].start){
-    if(!drill.result) return null;
-    const r = drill.result; return {kind:'drill', mode, rec:r.rec, attempts:r.attempts, cycles:r.cycles, window:r.window, date:r.rec.date};
+    if(!trial.result) return null;
+    const r = trial.result, s = r.submit && r.submit.state==='done' ? r.submit : null;
+    return {kind:'trial', mode, rec:r.rec, attempts:r.attempts, cycles:r.cycles, window:r.window, date:r.rec.date, rank: s ? {rank:s.rank, total:s.total, improved:s.improved} : null};
   }
   return {kind:'session', mode, session, attempts:session.attempts, cycles:session.cycles, window:store.window, date:Date.now()};
 }
 async function renderShare(){
   if(!shareSrc) return;
-  shareModel = buildCard(shareSrc);
+  const seq = ++shareSeq; shareModel = buildCard(shareSrc);
   try{
     if(document.fonts && document.fonts.load){
       await Promise.all([`46px ${displayFont()}`, `700 20px ${cssVar('--body','sans-serif')}`, `700 28px ${cssVar('--mono','monospace')}`].map(f => document.fonts.load(f).catch(()=>{})));
     }
   }catch(e){}
+  if(seq!==shareSeq) return; // a newer render (rank arrived, language switched) supersedes this one
   drawCard($('shareCanvas').getContext('2d'), shareModel);
 }
 function setShareMsg(m){ ui.shareMsg = m; $('shareMsg').textContent = msg(m); }
 function openShare(){
-  shareSrc = shareSource(); if(!shareSrc) return;
-  setShareMsg('');
-  renderShare().then(() => { const d = $('shareDlg'); if(!d.open) d.showModal(); });
+  shareSrc = shareSource(); if(!shareSrc) return Promise.resolve();
+  setShareMsg(''); renderShareRank();
+  return renderShare().then(() => { const d = $('shareDlg'); if(!d.open) d.showModal(); });
 }
 $('dShare').addEventListener('click', openShare);
 $('shareClose').addEventListener('click', () => $('shareDlg').close());
+$('shareDlg').addEventListener('close', () => { if(live.nickLost){ live.nickLost = false; openNick('nick.expired'); } }); // a token rejected mid-trial: ask once the card is out of the way
 $('shareCopy').addEventListener('click', () => {
   const c = $('shareCanvas'), fail = () => setShareMsg(['share.copyFail']);
   try{
@@ -1412,11 +1514,18 @@ $('shareTweet').addEventListener('click', () => {
   try{ window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(shareModel.tweet), '_blank', 'noopener'); }catch(e){}
 });
 
-/* ---------- weekly leaderboard (Cloudflare Worker in worker/; see worker/README.md) ---------- */
-const BOARD_URL = 'https://mishima-dojo-board.mishima-dojo.workers.dev'; // Cloudflare Worker in worker/ (no trailing slash). Empty → leaderboard UI hidden.
-const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per start-mode drill; must match worker/index.js BOARDS and #boardTabs
-const board = { tab:'wave10', data:{}, msg:'', submitting:false, seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise)
-function boardEntry(r, m){ // pure: finished drill result → submission payload (null in free practice / no result). Unit-tested.
+/* ---------- backend: weekly ranking, visit counter, shoutbox (Cloudflare Worker in worker/; see worker/README.md) ---------- */
+const BOARD_URL = 'https://mishima-dojo-board.mishima-dojo.workers.dev'; // Cloudflare Worker in worker/ (no trailing slash). Empty → all backend UI hidden.
+const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per start-mode trial; must match worker/index.js BOARDS and #boardTabs
+const board = { tab:'wave10', data:{}, msg:'', seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise)
+const live = { visits:null, posts:null, postsMsg:'', posting:false, visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false };
+// nickLater: the gate offers "practise without ranking" after the server itself failed · nickLost: a 403 arrived while the result card was up
+const TIERS = [1, 5, 10, 30, 50, 70]; // upper bounds of "top N%" for tier 0..5; anything above is tier 6
+// Tier for the result comment. Tiny boards count as ten players so 1st of 1 lands in tier 2, not "beginner" at top 100%.
+function tierOf(rank, total){ const p = pctTop(rank, Math.max(total, 10)); const i = TIERS.findIndex(t => p<=t); return i<0 ? 6 : i; }
+const pctTop = (rank, total) => Math.max(1, Math.ceil(rank / Math.max(1,total) * 100)); // "top N%" — 1st of 1 is top 100%
+const KST_DAY = () => new Date(Date.now() + 9*3600e3).toISOString().slice(0,10); // same key as the worker's dayKey
+function boardEntry(r, m){ // pure: finished trial result → submission payload (null in free practice / no result). Unit-tested.
   if(!r || !r.rec || !MODES[m] || !MODES[m].start) return null;
   const rec = r.rec, e = {board:m, win:r.window, lang:store.lang};
   if(m==='wave10'){ e.score = +rec.score; e.tie = rec.chain||0; e.detail = {dashes:rec.dashes, chain:rec.chain||0}; }
@@ -1429,70 +1538,169 @@ function boardWeekText(d){
   const f = ms => { const x = new Date(ms + 9*3600e3); return (x.getUTCMonth()+1)+'/'+x.getUTCDate(); }; // KST calendar day, whatever the viewer's zone
   return T('board.week', f(d.start), f(d.end - 86400000));
 }
+const cleanNick = v => String(v||'').replace(/\s+/g,' ').trim();
+const nickKey = n => n.normalize('NFKC').toLowerCase(); // same identity rule as the worker: a case/width change of my own nickname is not a new claim
+const hasNick = () => !!(store.nick && store.nickToken);
+const closeDlg = id => { const d = $(id); if(d.open && typeof d.close==='function') d.close(); };
+// Nickname gate: claimed once via POST /nick, unique server-side; the token comes back and every submit/post carries it.
+function renderNick(){
+  const has = hasNick();
+  $('nickInput').placeholder = T('board.nickPh'); $('nickMsg').textContent = msg(live.nickMsg); $('nickSubmit').disabled = live.nickBusy;
+  $('nickClose').hidden = !has; // the first-run gate has no way out but a nickname…
+  $('nickLater').hidden = has || !live.nickLater; // …unless the server itself could not answer: then practise without a ranking and claim later
+  const b = $('nickBtn'); b.hidden = !BOARD_URL; b.textContent = has ? T('nick.change', store.nick) : T('nick.set'); // always reachable: the gate can be dismissed (Escape, "later")
+  $('postNickLabel').textContent = has ? store.nick : '';
+}
+function openNick(msgKey){
+  if(!BOARD_URL) return;
+  if(trial.running || trial.cdTimer) endTrial(true); // a modal pauses input but not the clock: cancel rather than let the trial end blind
+  live.nickMsg = msgKey ? [msgKey] : ''; live.nickLater = false; $('nickInput').value = store.nick || ''; renderNick();
+  const d = $('nickDlg'); if(!d.open && typeof d.showModal==='function') d.showModal();
+}
+async function claimNick(n){
+  if(live.nickBusy) return;
+  live.nickBusy = true; live.nickMsg = ['nick.checking']; renderNick();
+  try{
+    const res = await boardFetch('/nick', {method:'POST', body:JSON.stringify({nick:n})});
+    store.nick = res.nick; store.nickToken = res.token; save(); live.nickMsg = ''; live.nickLost = false; closeDlg('nickDlg');
+    boardLoad(); renderPosts(); boardSubmit(); // a trial result that ended without a (valid) token is submitted now
+  }catch(err){
+    live.nickMsg = [err.message==='taken' ? 'nick.taken' : err.message==='rate' ? 'nick.tooFast' : err.message==='nick' ? 'board.nickBad' : 'nick.fail'];
+    live.nickLater = !['taken','nick'].includes(err.message); // the name is fine but the server is not: do not lock the whole app behind it
+  }
+  live.nickBusy = false; renderNick();
+}
+function lostNick(){ // server no longer recognises our token
+  store.nick = ''; store.nickToken = ''; save(); renderNick();
+  if($('shareDlg').open || trial.openTimer) live.nickLost = true; else openNick('nick.expired'); // the result card is up or about to open: ask after it closes instead of stacking modals
+}
+$('nickForm').addEventListener('submit', ev => {
+  ev.preventDefault(); const n = cleanNick($('nickInput').value);
+  if(!nickOk(n)){ live.nickMsg = ['board.nickBad']; renderNick(); return; }
+  if(hasNick() && nickKey(n)===nickKey(store.nick)){ closeDlg('nickDlg'); return; } // same identity (the server would answer 409 for a case change of my own name)
+  claimNick(n);
+});
+$('nickClose').addEventListener('click', () => closeDlg('nickDlg'));
+$('nickLater').addEventListener('click', () => closeDlg('nickDlg'));
+$('nickDlg').addEventListener('cancel', ev => { if(!hasNick()) ev.preventDefault(); }); // Escape should not skip the gate (browsers still allow it without user activation)…
+$('nickDlg').addEventListener('close', () => { renderNick(); renderTrialRank(); }); // …so whatever closed it, the header button and trial bar say how to get back
+$('nickBtn').addEventListener('click', () => openNick());
 function setBoardMsg(m){ board.msg = m; $('boardMsg').textContent = msg(m); }
 async function boardFetch(path, init){
-  const headers = {...(init && init.body ? {'content-type':'application/json'} : {}), ...(init && init.headers || {})}; // GET stays preflight-free
-  const res = await fetch(BOARD_URL + path, {...init, headers});
+  const headers = {...(init && init.body ? {'content-type':'application/json'} : {}), ...(init && init.headers || {})}; // GETs and bodiless POSTs stay preflight-free
+  const signal = typeof AbortSignal!=='undefined' && AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined; // a hung request must not pin busy flags (gate, submit, post) forever
+  const res = await fetch(BOARD_URL + path, {signal, ...init, headers});
   const j = await res.json().catch(() => null);
   if(!res.ok || !j) throw new Error((j && j.error) || ('http '+res.status));
   return j;
 }
 function renderBoard(){
   if(!BOARD_URL) return;
-  const t = board.tab, d = board.data[t];
+  const t = board.tab, d = board.data[t], me = d && d.me;
   document.querySelectorAll('#boardTabs button').forEach(b => b.setAttribute('aria-pressed', b.dataset.board===t?'true':'false'));
   $('boardWeek').textContent = d ? boardWeekText(d) + (d.total ? ' · ' + T('board.total', d.total) : '') : '';
-  const e = boardEntry(drill.result, mode), canSubmit = !!(e && e.board===t && !drill.result.submitted);
-  $('boardForm').hidden = !canSubmit;
-  if(canSubmit){
-    const rt = boardRowText(t, e); $('boardMyScore').textContent = rt.label; $('boardMyHint').textContent = rt.sub + ' · ' + T('board.prompt');
-    const inp = $('boardNick'); inp.placeholder = T('board.nickPh'); if(!inp.value) inp.value = store.nick || '';
-    $('boardSubmit').disabled = board.submitting;
-  }
+  $('boardMe').textContent = !d ? '' : me ? T('board.me', me.rank, d.total, pctTop(me.rank, d.total)) : T('board.meNone');
   $('boardMsg').textContent = msg(board.msg);
-  const mine = drill.result && drill.result.submitted ? drill.result.submitted.id : null;
   const rows = d ? d.rows : [];
+  const tr = r => { const x = boardRowText(t, r); return `<tr${me && r.id===me.id?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="w">${(r.win/FRAME).toFixed(1)}f</td></tr>`; };
+  const below = me && !rows.some(r => r.id===me.id) ? `<tr class="sep"><td colspan="4">⋯</td></tr>` + tr(me) : ''; // my row when it sits under the top list
   $('boardList').innerHTML = !d ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('board.empty'))}</div>` :
     `<table><thead><tr><th>${escapeHTML(T('board.hRank'))}</th><th>${escapeHTML(T('board.hNick'))}</th><th>${escapeHTML(T('board.hScore'))}</th><th>${escapeHTML(T('board.hWin'))}</th></tr></thead><tbody>` +
-    rows.map(r => { const x = boardRowText(t, r); return `<tr${r.id===mine?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="w">${(r.win/FRAME).toFixed(1)}f</td></tr>`; }).join('') +
-    '</tbody></table>';
+    rows.map(tr).join('') + below + '</tbody></table>';
 }
 async function boardLoad(){
+  if(!BOARD_URL) return;
   const t = board.tab, seq = ++board.seq; setBoardMsg(['board.loading']); renderBoard();
   let d = null;
-  try{ d = await boardFetch('/top?board='+t); } catch(e){}
+  try{ d = await boardFetch('/top?board='+t+(hasNick() ? '&nick='+encodeURIComponent(store.nick) : '')); } catch(e){} // an unclaimed name may belong to someone else
   if(seq!==board.seq) return; // superseded by a newer load or a submit: drop this response entirely
   if(d){ board.data[t] = d; setBoardMsg(''); } else setBoardMsg(['board.loadFail']);
   renderBoard();
 }
+// Post-trial status in the trial bar (and the banner in the result card): auto-submitted, retry on failure.
+const submitText = s => s.state==='busy' ? T('board.submitting') : s.state==='fail' ? T(s.error==='auth' ? 'nick.expired' : 'board.submitFail') : T(s.improved ? 'board.done' : 'board.kept', s.rank, s.total, pctTop(s.rank, s.total));
+function renderTrialRank(){
+  const r = trial.result, e = BOARD_URL ? boardEntry(r, mode) : null, s = e && r.submit;
+  $('dRankRetry').hidden = !(s && s.state==='fail');
+  $('dRank').textContent = !e ? '' : s ? submitText(s) : hasNick() ? '' : T('nick.needed'); // a result that ended without a nickname says so instead of going blank
+  renderShareRank();
+}
+function renderShareRank(){
+  const el = $('shareRank'), r = trial.result, s = shareSrc && shareSrc.kind==='trial' && r && r.submit;
+  el.hidden = !s; if(!s) return;
+  const done = s.state==='done', t = done ? tierOf(s.rank, s.total) : null;
+  el.className = 'share-rank' + (done ? ' t'+t : '');
+  $('shareTier').textContent = done ? T('tier.'+t+'.title') : '';
+  $('shareRankLine').textContent = submitText(s);
+  $('shareTierMsg').textContent = done ? T('tier.'+t+'.msg') : '';
+}
 async function boardSubmit(){
-  const r = drill.result, e = boardEntry(r, mode); if(!e || r.submitted || board.submitting) return;
-  const nick = $('boardNick').value.replace(/\s+/g,' ').trim();
-  if(!nickOk(nick)) return setBoardMsg(['board.nickBad']);
-  board.submitting = true; renderBoard();
+  const r = trial.result, e = boardEntry(r, mode); if(!BOARD_URL || !e || !hasNick() || (r.submit && r.submit.state!=='fail')) return renderTrialRank();
+  const nick = store.nick, tab0 = board.tab;
+  r.submit = {state:'busy'}; renderTrialRank();
   try{
-    const res = await boardFetch('/submit', {method:'POST', body:JSON.stringify({...e, nick})});
-    r.submitted = {id:res.id, rank:res.rank, total:res.total}; store.nick = nick; save();
-    board.seq++; board.data[e.board] = res; board.tab = e.board; setBoardMsg(['board.done', res.rank, res.total]);
-  }catch(err){ setBoardMsg([err.message==='nick' ? 'board.nickBad' : 'board.submitFail']); } // other 400s are contract bugs; the user can only retry
-  board.submitting = false; renderBoard();
+    const res = await boardFetch('/submit', {method:'POST', body:JSON.stringify({...e, nick, token:store.nickToken})});
+    r.submit = {state:'done', rank:res.rank, total:res.total, improved:res.improved};
+    if(nick===store.nick){ // the response describes this nickname's board; after a rename it is stale
+      board.data[e.board] = res;
+      if(board.tab===tab0){ board.seq++; board.tab = e.board; setBoardMsg(''); } // show the trial's board, unless the user moved to another tab meanwhile (seq: loads for the old tab are dropped)
+      renderBoard();
+    }
+  }catch(err){ r.submit = {state:'fail', error:err.message}; if(err.message==='auth') lostNick(); }
+  renderTrialRank();
+  if(r===trial.result && shareSrc && shareSrc.kind==='trial' && shareSrc.rec===r.rec){ shareSrc = shareSource(); renderShare(); } // the card (open, or still loading fonts before it opens) picks up the rank line
 }
-function openBoard(){
-  if(!BOARD_URL || drill.running || drill.cdTimer) return;
-  if(MODES[mode].start) board.tab = mode;
-  setBoardMsg(''); renderBoard();
-  const d = $('boardDlg'); if(!d.open) d.showModal();
-  boardLoad();
-}
-$('dBoard').addEventListener('click', openBoard);
-$('boardClose').addEventListener('click', () => $('boardDlg').close());
+$('dRankRetry').addEventListener('click', boardSubmit);
 $('boardRefresh').addEventListener('click', boardLoad);
-$('boardForm').addEventListener('submit', ev => { ev.preventDefault(); boardSubmit(); });
 $('boardTabs').addEventListener('click', ev => {
   const b = ev.target && ev.target.closest ? ev.target.closest('button[data-board]') : null;
-  if(!b || b.dataset.board===board.tab || board.submitting) return;
+  if(!b || b.dataset.board===board.tab) return;
   board.tab = b.dataset.board; setBoardMsg(''); renderBoard(); boardLoad();
 });
+// visit counter: each browser counts once per KST day (store.visitDay); otherwise just read the numbers
+async function visitsLoad(){
+  if(!BOARD_URL || live.visitsBusy) return;
+  const day = KST_DAY(), hit = store.visitDay !== day;
+  if(hit){ store.visitDay = day; save(); } // marked before the request: a reload or second tab mid-flight must not count twice (a failed POST is simply lost — approximate counter)
+  live.visitsBusy = true;
+  try{ live.visits = await boardFetch('/visits', hit ? {method:'POST'} : undefined); }catch(e){}
+  live.visitsBusy = false; renderVisits();
+}
+function renderVisits(){ const v = live.visits; $('visits').textContent = v ? T('visits', v.today, v.total) : ''; }
+// shoutbox: nickname + one line, newest first; the nickname field doubles as the ranking nickname editor
+function setPostsMsg(m){ live.postsMsg = m; $('postMsg').textContent = msg(m); }
+const postTime = t => new Date(t).toLocaleString(LOCALE[store.lang], {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
+async function postsLoad(){
+  if(!BOARD_URL) return;
+  try{ live.posts = (await boardFetch('/posts')).rows; if(live.postsMsg && live.postsMsg[0]==='posts.loadFail') setPostsMsg(''); }
+  catch(e){ if(!live.posts) setPostsMsg(['posts.loadFail']); }
+  renderPosts();
+}
+function renderPosts(){
+  if(!BOARD_URL) return;
+  const rows = live.posts, text = $('postText');
+  text.placeholder = T('posts.ph'); $('postSend').disabled = live.posting; $('postMsg').textContent = msg(live.postsMsg);
+  $('postList').innerHTML = !rows ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('posts.empty'))}</div>` :
+    rows.map(p => `<div class="post"><b>${escapeHTML(p.nick)}</b><time>${escapeHTML(postTime(p.created_at))}</time><p>${escapeHTML(p.text)}</p></div>`).join('');
+}
+async function postSend(){
+  if(!BOARD_URL || live.posting) return;
+  if(!hasNick()) return openNick();
+  const nick = store.nick, text = $('postText').value.replace(/\s+/g,' ').trim();
+  if(!text || [...text].length>200) return setPostsMsg(['posts.textBad']);
+  live.posting = true; setPostsMsg(['posts.sending']); renderPosts();
+  try{ live.posts = (await boardFetch('/posts', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, text})})).rows; $('postText').value = ''; setPostsMsg(''); }
+  catch(err){ setPostsMsg([err.message==='rate' ? 'posts.tooFast' : err.message==='text' ? 'posts.textBad' : 'posts.sendFail']); if(err.message==='auth') lostNick(); }
+  live.posting = false; renderPosts();
+}
+$('postForm').addEventListener('submit', ev => { ev.preventDefault(); postSend(); });
+function backendInit(){
+  $('boardCard').hidden = $('postsCard').hidden = !BOARD_URL;
+  if(!BOARD_URL) return;
+  boardLoad(); postsLoad(); visitsLoad(); renderNick();
+  if(!hasNick()){ openNick(); if(store.nick) claimNick(store.nick); } // first visit → gate; a nickname saved before tokens existed is claimed as-is
+  setInterval(() => { if(document.hidden) return; postsLoad(); visitsLoad(); }, 60000); // background tabs stay quiet
+}
 
 /* ---------- language ---------- */
 function applyStatic(){
@@ -1512,8 +1720,8 @@ function renderAll(){
   setCoach(ui.coach); setTrend(ui.trend); renderSeg(ui.seg);
   renderBests(); renderLog(); renderHist(); renderWave();
   $('shareMsg').textContent = msg(ui.shareMsg); if($('shareDlg').open) renderShare();
-  renderBoard();
-  if(drill.running) drillTick(performance.now());
+  renderBoard(); renderTrialRank(); renderVisits(); renderPosts(); if(BOARD_URL) renderNick();
+  if(trial.running) trialTick(performance.now());
 }
 function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); renderAll(); }
 /* ================= STAGE (canvas) ================= */
@@ -1748,6 +1956,7 @@ function drawCard(g, model){
       g.fillStyle=P.text; fitFont(g, mt.value, w-28, 28, mono, 700, 16); g.fillText(mt.value, x+14, y+34);
       g.fillStyle=P.muted; fitFont(g, mt.label, w-28, 13, body, 500, 10); g.fillText(mt.label, x+14, y+58);
     });
+    if(model.rankText){ g.fillStyle=C.gold; fitFont(g, model.rankText, 540, 20, body, 700, 13); g.fillText(model.rankText, 56, 548); } // weekly rank + tier, under the tiles
   }
   // chart panel (paper sheet in wood style)
   const cx=620, cy=160, cw=390, ch=280;
@@ -1791,7 +2000,7 @@ function drawCard(g, model){
   g.textAlign='right'; g.fillStyle=P.url; g.font=`500 17px ${mono}`; g.fillText(model.url, CW-56, 600);
 }
 function frame(now){
-  tick(now); drillTick(now);
+  tick(now); trialTick(now);
   // movement
   if(anim.moveDur){ const k = Math.min(1,(now-anim.moveT0)/anim.moveDur); world.charX = anim.moveFrom + (anim.moveTo-anim.moveFrom)*(1-Math.pow(1-k,3)); if(k>=1) anim.moveDur=0; if(k<1 && anim.kind==='cd' && Math.random()<0.6) ghosts.push({x:world.charX, t:1, pose:poseAt(now)}); }
   // camera
@@ -1865,7 +2074,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 /* ---------- boot ---------- */
-renderAll(); setMode('free'); renderHistory(); updateStats();
+renderAll(); setMode('free'); renderHistory(); updateStats(); backendInit();
 world.camX = world.charX - W*0.32;
 requestAnimationFrame(frame);
 })();

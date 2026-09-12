@@ -19,6 +19,7 @@
 | 기록 | 초풍 타이밍 히스토그램, 웨이브 속도 추이, 최근 로그 표, 모드별 최고 기록(브라우저에 저장) |
 | 연출 | 캔버스 SD 캐릭터: 대시 잔상·먼지, 초풍 시 번개·플래시·흔들림·"초풍!" 팝업, 샌드백 더미 타격 |
 | 설정 | 판정 폭(0.5f/0.7f/0.9f, 기본 0.7f), 1P/2P 방향, 연출 on/off, 키 리맵, 게임패드 상태 |
+| 온라인 | 첫 방문에 닉네임 지정(중복 불가, 브라우저에 저장) · 주간 순위(닉네임당 주간 최고 1건, 상위 10명 + 내 순위/상위 %, 측정 모드가 끝나면 자동 등록) · 측정 결과 창(상위 %별 등급·코멘트, 공유 카드) · 오늘·누적 방문자 수 · 한마디 게시판 |
 | 언어 | 한국어 / English / 日本語 |
 
 ## 조작 (기본값)
@@ -35,6 +36,6 @@
 
 ## 개발
 
-- 테스트: `node --test tests/dojo.test.cjs tests/board.test.cjs` (Node 18 이상, 의존성 없음) · 브라우저 스모크: `node tests/smoke-chrome.js` (로컬 Chrome/Edge).
+- 테스트: `node --test tests/dojo.test.cjs tests/board.test.cjs` (Node 22.13 이상, 의존성 없음) · 브라우저 스모크: `node tests/smoke-chrome.js` (로컬 Chrome/Edge).
 - AI 에이전트 규칙은 [AGENTS.md](AGENTS.md), 진행 계획은 [.agents/docs/PLAN.md](.agents/docs/PLAN.md), 코드 구조는 [.agents/docs/CODE_MAP.md](.agents/docs/CODE_MAP.md).
 - `Claude_full.bat` / `Codex_full.bat` (macOS는 `.command`): 해당 CLI를 설치·확인하고 전체 권한 모드로 실행하는 런처.

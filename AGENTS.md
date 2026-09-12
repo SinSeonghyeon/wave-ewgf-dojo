@@ -9,9 +9,9 @@
 - 이름: 미시마 도장 (Mishima Dojo / 三島道場). 철권 미시마류 웨이브 대시·초풍 입력을 브라우저에서 프레임 단위로 판정하는 연습 도구. 비공식 팬 제작.
 - 코드: 루트 `index.html` 단일 파일(HTML+CSS+JS). 빌드 없음, 외부 라이브러리 없음.
 - 배포: GitHub Pages, main 브랜치 루트. https://sinseonghyeon.github.io/wave-ewgf-dojo/ (저장소 이름은 `wave-ewgf-dojo`로 유지. Pages 주소가 바뀌므로 사용자 결정 없이 바꾸지 않는다.)
-- 테스트: `node --test tests/dojo.test.cjs tests/board.test.cjs` (Node 18+, 의존성 없음) · `node tests/smoke-chrome.js` (로컬 Chrome/Edge 헤드리스, CDP).
+- 테스트: `node --test tests/dojo.test.cjs tests/board.test.cjs` (Node 22.13+, 의존성 없음. 가짜 D1이 `node:sqlite`를 쓴다) · `node tests/smoke-chrome.js` (로컬 Chrome/Edge 헤드리스, CDP).
 - 개발 도구: `tools/` (커밋 대상). `tools/cdp.js`는 헤드리스 브라우저 공용 모듈, `tools/make-og.js`는 `og.png` 재생성. 앱 자체는 여전히 `index.html` 하나다.
-- 백엔드: `worker/` (Cloudflare Worker + D1, 주간 순위 전용). 배포는 사용자가 `npx wrangler deploy`로 한다(`worker/README.md`). 앱은 `fetch`로만 호출하며 `index.html`의 `BOARD_URL`이 비어 있으면 순위 UI가 숨겨진다.
+- 백엔드: `worker/` (Cloudflare Worker + D1: 주간 순위·방문자 수·한마디 게시판). 배포는 `npx wrangler deploy`(`worker/README.md`). 앱은 `fetch`로만 호출하며 `index.html`의 `BOARD_URL`이 비어 있으면 백엔드 UI 전체가 숨겨진다.
 - 사용자: 한국어. 철권 플레이어. C++·Unity 경험, 웹은 익숙하지 않음. 설명은 간결하게, 용어는 격투게임 표기(6N23, d/f, 저스트) 그대로.
 
 ## 문서 라우팅
@@ -27,7 +27,7 @@
 1. 웨이브 표기는 `6N23 6 N 6N23 6 N …`. 3 직후 6은 후딜레이 캔슬용이고 다음 대시는 별도의 시작 6이 필요하다. 캔슬 6 없이 다음 6N23이 오면 "캔슬 6 누락", 캔슬 6을 시작 6으로 겸용하면 "시작 6 누락".
 2. 초풍 판정 폭 기본값은 0.7f(±12ms, "보통"). 선택지는 0.5f·0.7f·0.9f뿐. 1f 이상 옵션은 두지 않는다.
 3. 철권 공식 캐릭터 이름·그림·음원을 쓰지 않는다. 자체 SD 도트와 자체 제작 리소스만. (수익화 시 IP 리스크 회피)
-4. 단일 파일, 외부 라이브러리 없음. 차트는 직접 SVG 문자열. 런타임 외부 자원은 Google Fonts와 주간 순위 Worker(`worker/`, `fetch`만 사용, `BOARD_URL`이 비면 UI 숨김. 2026-09-12 사용자 결정)뿐. 다른 엔드포인트를 늘리려면 먼저 묻는다.
+4. 단일 파일, 외부 라이브러리 없음. 차트는 직접 SVG 문자열. 런타임 외부 자원은 Google Fonts와 백엔드 Worker(`worker/`: 주간 순위·방문자 수·한마디, `fetch`만 사용, `BOARD_URL`이 비면 UI 숨김. 2026-09-12 사용자 결정)뿐. 다른 엔드포인트를 늘리려면 먼저 묻는다.
 5. 다크 단일 테마. 색 토큰은 `:root`에만 정의.
 6. 앱 이름은 "미시마 도장". 영어 Mishima Dojo, 일본어 三島道場.
 7. 사용자에게 보이는 모든 문자열은 `I18N` 사전(ko/en/ja)을 거친다. 새 문자열은 세 언어에 같은 키로 추가하고, 동적 문구는 `[key, ...args]` 배열이나 클로저로 저장해 언어 전환 시 다시 그린다. 테스트가 키 누락을 잡는다.

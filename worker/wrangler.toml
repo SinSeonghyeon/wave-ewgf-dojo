@@ -1,4 +1,4 @@
-# Cloudflare Worker for the weekly leaderboard. Deploy from this folder: npx wrangler deploy
+# Cloudflare Worker for the weekly leaderboard, visit counter and message board. Deploy from this folder: npx wrangler deploy
 name = "mishima-dojo-board"
 main = "index.js"
 compatibility_date = "2025-09-01"
@@ -8,3 +8,17 @@ binding = "DB"
 database_name = "mishima-dojo-board"
 # id of the live D1 (from `npx wrangler d1 create mishima-dojo-board`). Replace only when rebuilding on a new account.
 database_id = "c0d67c02-7449-4a4e-9d56-60ef07f3418e"
+
+# Per-IP limit for POST /posts (3 per minute). Optional: the Worker skips the check when the binding is absent.
+[[ratelimits]]
+name = "POST_LIMIT"
+namespace_id = "1001"
+simple = { limit = 3, period = 60 }
+
+# Per-IP limit for POST /nick (10 per minute): stops bulk nickname squatting.
+[[ratelimits]]
+name = "NICK_LIMIT"
+namespace_id = "1002"
+simple = { limit = 10, period = 60 }
+
+# Secrets (not in this file): ADMIN_TOKEN for DELETE /posts/:id → npx wrangler secret put ADMIN_TOKEN
