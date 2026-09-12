@@ -38,6 +38,7 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html');
   fs.writeFileSync(page, src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`));
   for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','donate-kakao.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
+  try{ fs.rmSync(path.join(os.tmpdir(),'dojo-smoke-profile'),{recursive:true,force:true}); }catch(e){} // fresh localStorage every run (a navigation at the end of the run flushes it to disk)
   const b = await launch({port:9333, profile:'dojo-smoke-profile'});
   const {send, evalJs, errors} = b;
   await b.navigate(fileUrl(page));
@@ -175,6 +176,41 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   if(out.db.scores.length!==1 || out.db.scores[0].board!=='wave10' || out.db.scores[0].nick!=='스모크 테스트' || out.db.scores[0].win!==12 || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
      || JSON.stringify(out.db.nicks)!==JSON.stringify([['스모크 테스트','스모크 테스트'],['스모크2','스모크2'],['점유됨','점유됨']])) errors.push('backend storage check failed: '+JSON.stringify(out.db));
   for(const s of JSON.stringify([out.gate, bd, out.posts, out.nick2, out.ko2, out.trialEnd]).match(/\b(board|mode|share|rec|posts|nick|tier)\.[a-zA-Z0-9.]+/g)||[]) errors.push('raw i18n key leaked into backend UI: '+s);
+  // touch controls (4-4): phone emulation shows the overlay, a rolled f,N,d,df + 2 on the on-screen pad judges as EWGF through the normal path, desktop hides it again
+  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
+  await send('Emulation.setEmulatedMedia',{features:[{name:'pointer',value:'coarse'},{name:'hover',value:'none'}]});
+  await b.navigate(fileUrl(page), 1800);
+  const tc = await evalJs(`(() => { const r = s => { const x = document.querySelector(s).getBoundingClientRect(); return {x:x.x, y:x.y, w:x.width, h:x.height}; };
+    return {ui:document.documentElement.classList.contains('touch-ui'), compat:document.compatMode, width:innerWidth, scrollW:document.documentElement.scrollWidth, shown:getComputedStyle(${q('#touch')}).display,
+      stage:r('#stageBox'), pad:r('#tpad'), b2:r('#tbtns [data-btn="2"]'), note:${q('.touch-note')}.textContent, sel:${q('#touchSel [data-touch="auto"]')}.getAttribute('aria-pressed'), badge:${q('#srcBadge')}.textContent, hint:r('#hudHint'), touchTop:r('#touch').y}; })()`);
+  const pc = {x:tc.pad.x+tc.pad.w/2, y:tc.pad.y+tc.pad.h/2}, R = tc.pad.w/2;
+  const tp = (x,y,id) => ({x, y, id, radiusX:6, radiusY:6, force:1});
+  const touch = (type, pts) => send('Input.dispatchTouchEvent',{type, touchPoints:pts});
+  await touch('touchStart',[tp(pc.x+R*0.7, pc.y, 1)]); await sleep(40);           // f
+  await touch('touchMove',[tp(pc.x+R*0.05, pc.y, 1)]); await sleep(30);           // N (dead zone)
+  await touch('touchMove',[tp(pc.x, pc.y+R*0.7, 1)]); await sleep(30);            // d
+  await touch('touchStart',[tp(pc.x+R*0.55, pc.y+R*0.55, 1), tp(tc.b2.x+tc.b2.w/2, tc.b2.y+tc.b2.h/2, 2)]); await sleep(40); // df + 2 in one dispatch
+  await touch('touchEnd',[tp(pc.x+R*0.55, pc.y+R*0.55, 1)]); await sleep(30); await touch('touchEnd',[]); await sleep(300);
+  tc.after = await evalJs(`({chips:[...document.querySelectorAll('#inputs .chip')].map(c => c.textContent.replace(/\\s+/g,'')).join(' '), title:${q('#rTitle')}.textContent, src:${q('#srcBadge')}.textContent,
+    knob:${q('#tknob')}.style.transform, dir:${q('#tdir')}.textContent, log:${q('#logBody')}.textContent.slice(0,60)})`);
+  // rotated phone: the stage widens to 16/9, pad and buttons stay inside the overlay (below the note, no overlap between them) and the mode hint sits just above it
+  await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:2,mobile:true});
+  await b.navigate(fileUrl(page), 1500);
+  tc.land = await evalJs(`(() => { const r = s => { const x = document.querySelector(s).getBoundingClientRect(); return {x:x.x, y:x.y, w:x.width, h:x.height, r:x.right, b:x.bottom}; };
+    return {stage:r('#stageBox'), touch:r('#touch'), note:r('.touch-note'), pad:r('#tpad'), btns:r('#tbtns'), hint:r('#hudHint'), hintShown:getComputedStyle(${q('#hudHint')}).display, hintText:${q('#hudHint')}.textContent}; })()`);
+  const L = tc.land, inside = (a, o) => a.y>=o.y-0.5 && a.b<=o.b+0.5 && a.x>=o.x-0.5 && a.r<=o.r+0.5;
+  if(!(L.stage.w>L.stage.h) || !inside(L.pad,L.touch) || !inside(L.btns,L.touch) || L.pad.y<L.note.b-0.5 || L.btns.y<L.note.b-0.5 || L.pad.r>L.btns.x || L.pad.w<80 || L.btns.w<80
+     || L.hintShown==='none' || L.hint.b>L.touch.y+0.5 || L.hint.y<L.stage.y+L.stage.h*0.46-1 || !L.hintText) errors.push('touch landscape layout check failed: '+JSON.stringify(L));
+  await send('Emulation.setEmulatedMedia',{features:[{name:'pointer',value:'fine'},{name:'hover',value:'hover'}]});
+  await send('Emulation.setTouchEmulationEnabled',{enabled:false});
+  await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+  await b.navigate(fileUrl(page), 1500);
+  tc.desktop = await evalJs(`({ui:document.documentElement.classList.contains('touch-ui'), shown:getComputedStyle(${q('#touch')}).display})`);
+  out.touch = tc;
+  if(!tc.ui || tc.compat!=='CSS1Compat' || tc.width!==390 || tc.scrollW>390 || tc.shown!=='block' || tc.sel!=='true' || tc.pad.w<150 || tc.b2.w<56 || tc.pad.y<tc.stage.y+tc.stage.h*0.5 || tc.badge!=='👆 터치 대기' || tc.hint.y<tc.stage.y+tc.stage.h*0.46-1 || tc.hint.y+tc.hint.h>tc.touchTop+0.5
+     || tc.after.title!=='초풍!' || tc.after.src!=='👆 터치' || !/^→[0-9f]* ★[0-9]+f ↓[0-9]+f ↘[0-9]+f/.test(tc.after.chips) || !tc.after.knob.startsWith('translate(calc(-50% + 0px)') || tc.after.dir!=='' || tc.desktop.ui || tc.desktop.shown!=='none')
+    errors.push('touch controls check failed: '+JSON.stringify(tc));
   out.errors = errors;
   console.log(JSON.stringify(out,null,1));
   b.close(); srv.close(); rmTmp();

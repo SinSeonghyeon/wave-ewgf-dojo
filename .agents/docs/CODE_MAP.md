@@ -5,7 +5,7 @@
 ## 스크립트 구성 (위에서 아래 순서)
 
 ```
-설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,sound,bgmVol,sfxVol,keys,records,nick,…} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save()
+설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,touch,sound,bgmVol,sfxVol,keys,records,nick,…} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save()
 소리      SND{bgm,wave,ewgf} 파일명 · snd{ok(typeof Audio),unlocked,bgm,pool,idx,lock,release} · 부트 때는 아무것도 만들지 않음(테스트 vm·og 생성이 미디어를 안 건드림)
           unlockAudio(): 첫 keydown/pointerdown/패드 버튼에서 1회 → 효과음 풀(이름당 Audio 3개, 라운드로빈) 생성 + bgmSync()
           bgmSync(): sound && bgmVol>0 && unlocked && !hidden이면 Web Locks(mishima-dojo-bgm) 획득 후 bgm 지연 생성·volume·play(). 같은 브라우저·사이트에서 한 창만 재생. 숨김/끄기/pagehide 시 대기 취소·pause·권한 반환, pageshow/visibilitychange/focus/blur에서 동기화. Web Locks 미지원은 hasFocus 조건으로 대체. NotAllowedError만 unlocked=false로 다음 제스처에 재시도(AbortError는 무시)
@@ -15,7 +15,8 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
           ui{result,coach,trend,seg,padId}: 마지막 표시 내용을 키/클로저로 보관 → setLang → renderAll()
           정적 마크업은 data-i18n / data-i18n-html / data-i18n-aria 속성으로 applyStatic()이 채운다
 세션      session{dashes,bestChain,bestDps,tries,hits,offsetSum,offsetCount,cycles,attempts,log}
-입력      keydown/keyup → held Set → kbVector() → recomputeDir() · pollPad() 4ms → padDir/padBtn
+입력      keydown/keyup → held Set → kbVector() → recomputeDir() · pollPad() 4ms → padDir/padBtn · 터치 오버레이 → touchDir/touchPress (아래 "터치" 줄)
+터치      html.touch-ui(applyTouchUI: store.touch 'auto'|'on'|'off', auto = (pointer:coarse) && maxTouchPoints>0, 미디어 쿼리 change에 재적용) → #touch 오버레이(스테이지 하단 46%, 데스크톱은 display:none) · #tpad 원형 슬라이드 패드: 첫 포인터가 setPointerCapture, 중심 대비 벡터 → touchVec(x,y,t): 반지름 22%(TOUCH_DEAD) 안은 N, 밖은 atan2를 45° 섹터로 반올림해 8방향 → touchDir → recomputeDir(t,'touch')(kbDir+padDir+touchDir 합) · #tbtns 2×2(1 2 / 3 4, 포인터 별도) pointerdown → touchPress(n,t): modalOpen이면 무시, unlockAudio, onButton · resetInput()이 touchDir·노브를 지움(touchRelease) · 판정·상태 머신은 손대지 않음 · 시각은 e.timeStamp(키보드와 같은 클록, pointermove가 한 프레임 늦게 와도 실제 시각) · 노브 좌표는 단위원으로 클램프(캡처된 손가락이 패드 밖으로 나가도 노브는 안에) · 패드 라벨은 glyphFor(2P 미러) · 모달이 열리면 pointermove도 무시, openShare가 resetInput() 후 showModal · 대기 배지는 touchOn이면 src.waitTouch · touch-ui면 frame()의 바닥 gy가 H*0.80 → H*0.46(발과 오버레이 사이 띠에 힌트 2줄이 들어갈 자리), .stage 비율 4/5(max-height 72vh, 가로 모드는 16/9), .hud-hint는 오버레이 바로 위 바닥 띠(bottom:calc(46% + 3px), 가로 모드는 한 줄 말줄임), #touch는 container-type:size라 패드 폭·버튼 칸이 오버레이 높이(cqh)로 제한됨 · 문서 기본 태그(<!doctype html>·<html lang="ko">·charset·viewport)는 2026-09-12 터치 작업 때 추가(그 전엔 쿼크 모드, 폰에서 980px로 렌더)
           dirName(x,y): side 반영해 'f','n','d','df',... · history[]: 입력 스트립(직전 입력과 프레임 간격)
 상태 머신 onDir(dir,t)  0 idle → 1 시작 6 → 2 중립 → 3 d(2) → 4 d/f(3, completeCD)
           4 → 5 캔슬 6 (cancelCD) → 6 캔슬 후 중립 → 1 시작 6 …
@@ -62,7 +63,7 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
           서버 코드는 worker/ (CODE_MAP 범위 밖, worker/README.md 참조). 응답 shape: /nick {ok,nick,token} | 409 taken · /top {week,start,end,board,total,rows[{id,rank,nick,score,tie,detail,win,created_at}],me|null} · /submit 같은 shape + {ok,id,rank,improved} · /visits {day,today,total} · /posts {rows[{id,nick,text,created_at}]}
 모드      MODES{free,wave10(10초),ewgf20(20회),combo10(10회)} · setMode → renderMode · startTrial(3초 카운트다운) · endTrial(기록 저장) · trialTick
 설정 UI   #setDlg(dialog.share.settings, aside 안에 둠) ← 스테이지 우상단 톱니 버튼 #setOpen(.hud-gear, pointer-events:auto) · #setClose · 열려 있으면 modalOpen()이 게임 입력을 멈춤(키 리맵 listening은 그보다 먼저 처리되어 동작)
-          segSel(id,attr,cb): winSel/sideSel/fxSel/soundSel/langSel · renderKeys(): 키 리맵(중복·방향키 충돌 거부, Esc 취소) · 볼륨 기본값 100/100
+          segSel(id,attr,cb): winSel/sideSel/fxSel/touchSel/soundSel/langSel · renderKeys(): 키 리맵(중복·방향키 충돌 거부, Esc 취소) · 볼륨 기본값 100/100
 스테이지  canvas · world/anim/ghosts/pops/sparks/dust/bolts · fx{crouchDash,ewgf(n,fromDash),wgf,jab,stumble,dash,backdash} · pop(text,color,size,opts) 폰트는 displayFont()
           STREAK[1..6] 연속 초풍 팝 스타일(size/color 토큰/glow/rings/sparks/shake, 6에서 고정) · pop opts {lvl,glow,rings,core,life} → 렌더러가 punch-in(easeOutBack)·shadowBlur·퍼지는 링·흰 코어를 그림. reduced motion이면 크기·색·글로우만
           frame(): 걷기(curDir f/b 유지 + idle/walk 이고 moveDur 없음, WALK_F/WALK_B px/s, 살아있는 더미 36px 앞에서 정지) → 이동 → 카메라 → 더미 → 배경/바닥 → 먼지 → 잔상(cd/dash/backdash) → 더미 → 캐릭터 → 번개 → 스파크 → 텍스트 팝 → 플래시
@@ -104,7 +105,8 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 - `node --test tests/dojo.test.cjs`: 배포 HTML의 실제 스크립트를 읽어 DOM·게임패드·시간을 모사. 판정, 측정 모드 경계, 패드 동시 입력·재연결, 저장 데이터 검증, 누적 통계, 판정 폭 경계, 언어 전환, 세 사전 키 집합 일치, 공유 카드 모델(histBins/buildCard/shareSource), OG 카드 모델(buildOgCard)과 `<head>`의 정적 SEO/OG 태그(og:image 절대 주소·1200×630·theme-color가 `--bg`와 일치·외부 스크립트 없음)를 검증한다. 테스트 하네스의 `querySelectorAll`은 빈 배열을 돌려주므로 정적 텍스트 치환은 여기서 검증되지 않는다. 하네스에는 `createElement`·캔버스 컨텍스트가 없으므로 그리기·클립보드 코드는 클릭 핸들러 안에서만 호출해야 한다.
 - `node --test tests/board.test.cjs`: Worker 핸들러를 `tests/fake-d1.js`(node:sqlite 인메모리 + 실제 schema.sql, D1 prepare/bind/run/all/first 모양)로 직접 호출. 주차·일 키 경계(15:00 UTC), 닉네임·본문 정규화·범위 검증, 닉네임 등록(대소문자·전각 무시 유니크, 토큰 없거나 틀리면 submit/posts 403, 등록 철자로 저장, 레이트 리밋 스텁), 닉네임당 1행 업서트(더 나쁘면 유지·improved=false), 동점 순위 공유·보드/주차 격리, 10위 캡 + 10위 밖 내 순위, 방문 집계, 게시판(50개 캡·검증·레이트 리밋 스텁·관리자 삭제 403/404), CORS·상속 키 400·404/413·500(스택 비노출). 두 파일을 함께 돌리려면 `node --test tests/dojo.test.cjs tests/board.test.cjs`.
 - `node tests/smoke-chrome.js`: 로컬 Chrome/Edge를 헤드리스로 띄워 CDP로 조작. 시작 시 `worker/index.js`를 로컬 http로 감싸고(가짜 D1) `BOARD_URL`만 그 주소로 바꾼 index.html 사본을 임시 폴더에 만들어 연다(원본은 건드리지 않음). 키보드로 6N23+2 입력, ko/en/ja 왕복 전환, 일본어로 웨이브 10초 측정 모드를 끝까지 돌린 뒤 공유 카드 열기·1200×630 PNG 생성·이미지 복사 시도(file://에서는 거부되어 안내 문구)·언어 전환·닫기, 백엔드는 로드 직후 닉네임 게이트부터: 모달 열림·게이트 중 키 입력 무시·Escape로 안 닫힘·2자 미만 거부·미리 점유된 닉네임 409 거부(Chrome이 남기는 409 리소스 오류 로그는 걸러냄)·자유 닉네임으로 시작(localStorage nick+token 48 hex). 측정 모드가 끝나면 자동 등록 문구와 자동으로 열린 결과 창 배너(등급 t2 '上級', 1位/1人)를 확인하고, 두 번째 측정 모드 자동 등록('최고 기록 유지'·결과 창 재오픈) → 다른 보드 빈 상태 → 한마디 작성·표시 → 헤더 버튼으로 닉네임 변경 → ko 전환 후 문구와 가짜 D1의 scores/posts/visits/nicks 행을 검사한다. JS 오류가 있거나 검사가 실패하면 종료 코드 1. 약 40초 걸린다.
-- 실제 키보드·게임패드 지연, DirectInput 장치별 hat 매핑, 화면 폭별 시각 품질은 자동 검증에 없다.
+- 스모크 테스트 끝에 폰 에뮬레이션(390×844, touch, pointer:coarse)으로 터치 오버레이 표시·대기 배지 → 패드에서 f,N,d,df를 굴리고(CDP Input.dispatchTouchEvent) df와 2를 한 번에 보내 초풍 판정 → 가로(844×390)에서 패드·버튼이 오버레이 안에 겹침 없이 들어가고 힌트가 그 위에 보이는지 → 데스크톱으로 되돌리면 숨김을 확인한다.
+- 실제 키보드·게임패드·터치 지연, DirectInput 장치별 hat 매핑, 화면 폭별 시각 품질은 자동 검증에 없다.
 - 캔버스 입자·더미 물리는 프레임마다 고정량으로 갱신하므로 주사율에 따라 연출 속도가 달라진다. 판정은 시각 기반이라 영향 없음.
 
 - 소리 회귀 브라우저 검사: `node tests/smoke-sound.js`. 로컬 HTTP로 backend 비활성 사본을 제공, 같은 Chrome의 별도 창 두 개에서 BGM 한 개·끄기/닫기 시 권한 이전·재생 중 효과음 볼륨/끄기를 검증.

@@ -1,4 +1,8 @@
+<!doctype html>
 <!-- 미시마 도장 (Mishima Dojo) © 2026 신성현 (Seonghyeon Shin). All rights reserved. Not open source: see LICENSE in the repository. Copying, modifying or re-hosting is not permitted. -->
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>미시마 도장 | 철권 초풍·웨이브 대시 연습 (Mishima Dojo EWGF Trainer)</title>
 <meta name="description" content="철권 미시마류 초풍(EWGF)·웨이브 대시(6N23) 입력을 브라우저에서 프레임 단위로 판정하는 무료 연습 도구. 키보드·게임패드 지원, 판정 폭 0.5f/0.7f/0.9f, 타이밍 히스토그램과 측정 모드. Free Tekken EWGF trainer & wave dash practice tool with frame-accurate input judging.">
 <meta name="robots" content="index,follow">
@@ -74,15 +78,32 @@
   .hud-center{position:absolute;left:0;right:0;top:34%;text-align:center;font-family:var(--display);font-size:64px;line-height:1;color:var(--gold);text-shadow:0 3px 0 #000,0 0 22px rgba(245,197,66,.5)}
   .hud-hint{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--muted);text-shadow:0 1px 0 #000}
 
+  /* touch controls: shown only when html.touch-ui is set (applyTouchUI: coarse pointer + touch points, or the setting forced on) */
+  html.touch-ui .stage{aspect-ratio:4/5;max-height:72vh}
+  @media (orientation:landscape){ html.touch-ui .stage{aspect-ratio:16/9} html.touch-ui .hud-hint{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px} }   /* rotated phone: under the 72vh cap a 4/5 stage would shrink to ~220px wide and the pad would cover the fighter; the floor strip only fits one hint line */
+  html.touch-ui .hud-hint{bottom:calc(46% + 3px);font-size:10.5px;padding:0 10px}   /* the mode hint moves onto the floor strip just above the overlay */
+  .touch{display:none;position:absolute;left:0;right:0;bottom:0;height:46%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;container-type:size}   /* size container: pad/buttons are capped by the overlay height (cqh) so they never rise above it */
+  html.touch-ui .touch{display:block}
+  .touch-note{position:absolute;left:0;right:0;top:0;margin:0;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);text-shadow:0 1px 0 #000;pointer-events:none}
+  .tpad{position:absolute;left:14px;bottom:14px;width:min(46vw,200px);width:min(46vw,200px,100cqh - 34px);aspect-ratio:1;border-radius:50%;background:rgba(20,26,35,.55);border:1px solid var(--line2)}
+  .tpad-ring{position:absolute;inset:39%;border-radius:50%;border:1px dashed var(--line2);pointer-events:none}
+  .tpad-knob{position:absolute;left:50%;top:50%;width:38%;height:38%;border-radius:50%;background:rgba(76,201,255,.22);border:2px solid var(--accent);transform:translate(-50%,-50%);pointer-events:none;box-sizing:border-box}
+  .tpad.on .tpad-knob{background:rgba(76,201,255,.45)}
+  .tpad-dir{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink);text-shadow:0 1px 0 #000;pointer-events:none}
+  .tbtns{position:absolute;right:14px;bottom:14px;display:grid;grid-template-columns:repeat(2,clamp(56px,17vw,64px));grid-template-columns:repeat(2,min(clamp(56px,17vw,64px),50cqh - 22px));gap:10px}
+  .tbtns button{aspect-ratio:1;border-radius:50%;border:1px solid var(--line2);font-family:var(--mono);font-size:22px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;padding:0;touch-action:none;-webkit-tap-highlight-color:transparent}
+  .tbtns button small{font-size:9px;letter-spacing:1px;opacity:.7}
+  .tbtns button.on{filter:brightness(1.6)}
+
   /* input history */
   .inputs{margin-top:10px;display:flex;gap:4px;overflow:hidden;min-height:44px;align-items:flex-end}
   .chip{display:flex;flex-direction:column;align-items:center;min-width:34px;gap:2px;flex:0 0 auto}
   .chip .g{width:34px;height:30px;border-radius:4px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:15px;background:var(--panel2);border:1px solid var(--line);color:var(--ink2)}
   .chip .g.dir{color:var(--ink)}
-  .chip .g.b1{background:#2a3d6b;border-color:#3f5ea3;color:#c9dbff}
-  .chip .g.b2{background:#1f4f3a;border-color:#2f8460;color:#bfffdc}
-  .chip .g.b3{background:#513a6b;border-color:#7d58a8;color:#e6d2ff}
-  .chip .g.b4{background:#6b2f33;border-color:#a8474e;color:#ffd0d3}
+  .chip .g.b1,.tbtns .b1{background:#2a3d6b;border-color:#3f5ea3;color:#c9dbff}
+  .chip .g.b2,.tbtns .b2{background:#1f4f3a;border-color:#2f8460;color:#bfffdc}
+  .chip .g.b3,.tbtns .b3{background:#513a6b;border-color:#7d58a8;color:#e6d2ff}
+  .chip .g.b4,.tbtns .b4{background:#6b2f33;border-color:#a8474e;color:#ffd0d3}
   .chip .g.n{color:var(--faint)}
   .chip .f{font-family:var(--mono);font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
   .chip.new .g{box-shadow:0 0 0 1px var(--accent)}
@@ -288,6 +309,11 @@
           <div class="hud-hint" id="hudHint"></div>
           <button class="hud-gear" id="setOpen" type="button" data-i18n-aria="set.title" aria-label="입력 · 판정 설정" title="⚙"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.7 7.7 0 0 0-1.7-1L15 3h-4l-.4 2.7a7.7 7.7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.7 7.7 0 0 0 1.7 1L11 21h4l.4-2.7a7.7 7.7 0 0 0 1.7-1l2.5 1 2-3.5L19.4 13zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></button>
         </div>
+        <div class="touch" id="touch" data-i18n-aria="touch.aria" aria-label="터치 컨트롤">
+          <p class="touch-note" data-i18n="touch.note">터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)</p>
+          <div class="tpad" id="tpad" data-i18n-aria="touch.padAria" aria-label="방향 패드 — 손가락을 굴려 입력"><div class="tpad-ring"></div><div class="tpad-knob" id="tknob"></div><span class="tpad-dir" id="tdir"></span></div>
+          <div class="tbtns" id="tbtns"><button type="button" class="b1" data-btn="1">1<small>LP</small></button><button type="button" class="b2" data-btn="2">2<small>RP</small></button><button type="button" class="b3" data-btn="3">3<small>LK</small></button><button type="button" class="b4" data-btn="4">4<small>RK</small></button></div>
+        </div>
       </div>
       <div class="inputs" id="inputs" data-i18n-aria="inputs.aria" aria-label="입력 기록"></div>
       <div class="trial">
@@ -335,6 +361,8 @@
             <div class="segc" id="sideSel"><button data-side="1" aria-pressed="true" data-i18n="set.side1">1P (→ 가 앞)</button><button data-side="-1" aria-pressed="false" data-i18n="set.side2">2P (← 가 앞)</button></div></div>
           <div class="row"><label class="t" data-i18n="set.fx">연출 (흔들림·플래시)</label>
             <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" data-i18n="set.touch">터치 컨트롤</label>
+            <div class="segc" id="touchSel"><button data-touch="auto" aria-pressed="true" data-i18n="set.touchAuto">자동 (터치 기기)</button><button data-touch="on" aria-pressed="false" data-i18n="set.on">켜기</button><button data-touch="off" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div class="row"><label class="t" data-i18n="set.sound">소리</label>
             <div class="segc" id="soundSel"><button data-sound="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-sound="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div class="row"><label class="t" for="bgmVol" data-i18n="set.bgmVol">배경음 볼륨</label>
@@ -457,7 +485,7 @@ const detectLang = () => { const l = (typeof navigator!=='undefined' && navigato
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, sound:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}, nick:'', nickToken:'', visitDay:''};
+let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}, nick:'', nickToken:'', visitDay:''};
 const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function validKey(slot, code){
   const arrows = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
@@ -470,6 +498,7 @@ try{
     if(s.v>=4 && WINDOWS.includes(s.window)) store.window=s.window;
     if([1,-1].includes(s.side)) store.side=s.side;
     if([0,1].includes(s.fx)) store.fx=s.fx;
+    if(['auto','on','off'].includes(s.touch)) store.touch=s.touch;
     if([0,1].includes(s.sound)) store.sound=s.sound;
     if(Number.isInteger(s.bgmVol) && s.bgmVol>=0 && s.bgmVol<=100) store.bgmVol=s.bgmVol;
     if(Number.isInteger(s.sfxVol) && s.sfxVol>=0 && s.sfxVol<=100) store.sfxVol=s.sfxVol;
@@ -497,7 +526,7 @@ ko:{
   'app.title':'미시마 도장',
   'app.tagline':'미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정',
   'modes.aria':'연습 모드', 'stage.aria':'연습 스테이지', 'stage.canvasAria':'SD 캐릭터 연출 화면', 'inputs.aria':'입력 기록', 'coach.aria':'코치 패널', 'stats.aria':'이번 세션 기록', 'records.aria':'기록',
-  'src.wait':'⌨ 키보드 대기', 'src.kb':'⌨ 키보드', 'src.pad':'🎮 게임패드',
+  'src.wait':'⌨ 키보드 대기', 'src.waitTouch':'👆 터치 대기', 'src.kb':'⌨ 키보드', 'src.pad':'🎮 게임패드', 'src.touch':'👆 터치',
   'mode.free.name':'자유 연습', 'mode.free.desc':'제한 없이 웨이브와 초풍을 섞어 연습합니다. 모든 입력이 기록됩니다.',
   'mode.wave10.name':'웨이브 10초', 'mode.wave10.desc':'10초 동안 최대한 많은 크라우치 대시. 캔슬 6이 빠지면 연속이 끊깁니다. 대시/초와 최고 연속 횟수를 기록합니다.',
   'mode.ewgf20.name':'초풍 20회', 'mode.ewgf20.desc':'초풍을 20번 시도해 성공률과 평균 버튼 오프셋을 기록합니다.',
@@ -518,6 +547,7 @@ ko:{
   'set.window':'초풍 판정 폭', 'set.win8':'저스트 0.5f', 'set.win12':'보통 0.7f', 'set.win15':'관대 0.9f',
   'set.side':'캐릭터 방향', 'set.side1':'1P (→ 가 앞)', 'set.side2':'2P (← 가 앞)',
   'set.fx':'연출 (흔들림·플래시)', 'set.on':'켜기', 'set.off':'끄기',
+  'set.touch':'터치 컨트롤', 'set.touchAuto':'자동 (터치 기기)', 'touch.note':'터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)', 'touch.aria':'터치 컨트롤', 'touch.padAria':'방향 패드 — 손가락을 굴려 입력',
   'set.keys':'키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)', 'set.keyListen':'키 입력…',
   'set.keyConflict':'이미 사용 중이거나 방향키와 충돌하는 키입니다. 다른 키를 누르세요. Esc로 취소합니다.',
   'set.pad':'게임패드', 'set.padNone':'연결 안 됨 · 패드 아무 버튼이나 누르면 감지', 'set.padOn':'연결됨 · ',
@@ -628,7 +658,7 @@ en:{
   'app.title':'Mishima Dojo',
   'app.tagline':'Mishima-style input trainer · Judges 6N23 6 N 6N23 … wave dashes and 6N23+2 EWGF frame by frame',
   'modes.aria':'Practice mode', 'stage.aria':'Practice stage', 'stage.canvasAria':'SD character stage', 'inputs.aria':'Input history', 'coach.aria':'Coach panel', 'stats.aria':'Session stats', 'records.aria':'Records',
-  'src.wait':'⌨ Keyboard ready', 'src.kb':'⌨ Keyboard', 'src.pad':'🎮 Gamepad',
+  'src.wait':'⌨ Keyboard ready', 'src.waitTouch':'👆 Touch ready', 'src.kb':'⌨ Keyboard', 'src.pad':'🎮 Gamepad', 'src.touch':'👆 Touch',
   'mode.free.name':'Free practice', 'mode.free.desc':'Mix wave dashes and EWGFs freely. Every input is recorded.',
   'mode.wave10.name':'Wave 10s', 'mode.wave10.desc':'As many crouch dashes as you can in 10 seconds. A missing cancel 6 breaks the chain. Records dashes/s and best chain.',
   'mode.ewgf20.name':'EWGF ×20', 'mode.ewgf20.desc':'20 EWGF attempts. Records success rate and average button offset.',
@@ -649,6 +679,7 @@ en:{
   'set.window':'EWGF window', 'set.win8':'Just 0.5f', 'set.win12':'Normal 0.7f', 'set.win15':'Lenient 0.9f',
   'set.side':'Facing', 'set.side1':'1P (→ is forward)', 'set.side2':'2P (← is forward)',
   'set.fx':'Effects (shake · flash)', 'set.on':'On', 'set.off':'Off',
+  'set.touch':'Touch controls', 'set.touchAuto':'Auto (touch devices)', 'touch.note':'Touch is less precise than a keyboard (good for spotting trends)', 'touch.aria':'Touch controls', 'touch.padAria':'Direction pad — roll your thumb to input',
   'set.keys':'Key bindings — click a slot, then press a key (arrow keys ↑↓←→ always work)', 'set.keyListen':'press key…',
   'set.keyConflict':'That key is already in use or conflicts with the arrow keys. Press another key. Esc cancels.',
   'set.pad':'Gamepad', 'set.padNone':'Not connected · press any pad button to detect', 'set.padOn':'Connected · ',
@@ -759,7 +790,7 @@ ja:{
   'app.title':'三島道場',
   'app.tagline':'三島流入力トレーナー · 6N23 6 N 6N23 … のウェーブと 6N23+2 の最風をフレーム単位で判定',
   'modes.aria':'練習モード', 'stage.aria':'練習ステージ', 'stage.canvasAria':'SDキャラクター演出画面', 'inputs.aria':'入力履歴', 'coach.aria':'コーチパネル', 'stats.aria':'セッション記録', 'records.aria':'記録',
-  'src.wait':'⌨ キーボード待機', 'src.kb':'⌨ キーボード', 'src.pad':'🎮 ゲームパッド',
+  'src.wait':'⌨ キーボード待機', 'src.waitTouch':'👆 タッチ待機', 'src.kb':'⌨ キーボード', 'src.pad':'🎮 ゲームパッド', 'src.touch':'👆 タッチ',
   'mode.free.name':'自由練習', 'mode.free.desc':'制限なしでウェーブと最風を混ぜて練習します。すべての入力が記録されます。',
   'mode.wave10.name':'ウェーブ10秒', 'mode.wave10.desc':'10秒間にできるだけ多くの風神ステップ。キャンセル6が抜けると連続が途切れます。ダッシュ/秒と最高連続回数を記録します。',
   'mode.ewgf20.name':'最風20回', 'mode.ewgf20.desc':'最風を20回試行し、成功率と平均ボタンオフセットを記録します。',
@@ -780,6 +811,7 @@ ja:{
   'set.window':'最風判定幅', 'set.win8':'ジャスト 0.5f', 'set.win12':'普通 0.7f', 'set.win15':'甘め 0.9f',
   'set.side':'キャラの向き', 'set.side1':'1P (→が前)', 'set.side2':'2P (←が前)',
   'set.fx':'演出 (揺れ・フラッシュ)', 'set.on':'オン', 'set.off':'オフ',
+  'set.touch':'タッチ操作', 'set.touchAuto':'自動 (タッチ端末)', 'touch.note':'タッチ入力はキーボードより判定精度が低めです (傾向の把握向け)', 'touch.aria':'タッチ操作', 'touch.padAria':'方向パッド — 指を転がして入力',
   'set.keys':'キー設定 — 枠を押してから使いたいキーを入力 (矢印キー↑↓←→は常に使用可)', 'set.keyListen':'キー入力…',
   'set.keyConflict':'すでに使用中か矢印キーと衝突するキーです。別のキーを押してください。Escでキャンセル。',
   'set.pad':'ゲームパッド', 'set.padNone':'未接続 · パッドのボタンを押すと検出', 'set.padOn':'接続済み · ',
@@ -974,13 +1006,14 @@ const ui = { result:{cls:'',kind:'READY',title:['ready.title'],sub:['ready.sub']
 /* ---------- input layer ---------- */
 const held = new Set();               // keyboard codes
 let padDir = {x:0,y:0}, padBtn = [false,false,false,false,false];
+let touchDir = {x:0,y:0};              // on-screen pad (touch controls); merged like padDir
 let kbDir = {x:0,y:0};
 let curDir = 'n';
 let lastInputT = performance.now();
 const history = [];                    // {t, dir|btn}
 const srcBadge = $('srcBadge');
 let lastSrc = '';
-function setSrc(src){ lastSrc=src; srcBadge.textContent = T(src==='pad'?'src.pad':'src.kb'); srcBadge.classList.add('on'); }
+function setSrc(src){ lastSrc=src; srcBadge.textContent = T(src==='pad'?'src.pad':src==='touch'?'src.touch':'src.kb'); srcBadge.classList.add('on'); }
 
 function dirName(x,y){
   const fx = x*store.side;             // +1 forward
@@ -989,7 +1022,7 @@ function dirName(x,y){
   return fx>0?'f':fx<0?'b':'n';
 }
 function recomputeDir(t, src){
-  const x = clamp(kbDir.x + padDir.x, -1, 1), y = clamp(kbDir.y + padDir.y, -1, 1);
+  const x = clamp(kbDir.x + padDir.x + touchDir.x, -1, 1), y = clamp(kbDir.y + padDir.y + touchDir.y, -1, 1);
   const d = dirName(x,y);
   if(d!==curDir){ curDir = d; onDir(d, t); }
   if(src && src!==lastSrc) setSrc(src);
@@ -1030,7 +1063,7 @@ addEventListener('keyup', e => {
   kbVector(); recomputeDir(e.timeStamp||performance.now(),'kb');
 });
 function resetInput(){
-  held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); curDir='n';
+  held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); touchDir={x:0,y:0}; curDir='n'; touchRelease();
   clearCommand(); resetCombo(); resetTaps(); updateHud();
 }
 addEventListener('blur', () => { resetInput(); endTrial(true); bgmSync(); });
@@ -1041,7 +1074,7 @@ function renderPadStatus(){ $('padStatus').textContent = ui.padId==null ? T('set
 addEventListener('gamepadconnected', e => { padIndex = e.gamepad.index; ui.padId = e.gamepad.id.slice(0,40); renderPadStatus(); });
 function releasePad(){
   padIndex=null; padDir={x:0,y:0}; padBtn.fill(false); clearCommand();
-  curDir=dirName(kbDir.x,kbDir.y); updateHud();
+  recomputeDir(performance.now()); updateHud();   // keyboard/touch directions still held stay in effect
   ui.padId=null; renderPadStatus();
 }
 addEventListener('gamepaddisconnected', e => { if(e.gamepad.index===padIndex) releasePad(); });
@@ -1073,6 +1106,41 @@ function pollPad(){
   if(padBtn.some(Boolean) && lastSrc!=='pad') setSrc('pad');
 }
 setInterval(pollPad, 4);
+
+/* ---------- touch controls (phones/tablets). Presentation only: the pad feeds recomputeDir like a gamepad and the buttons call onButton, so judging is identical. ---------- */
+const TOUCH_DEAD = 0.22;                                  // inside this fraction of the pad radius the stick is neutral
+const touchMQ = typeof matchMedia==='function' ? matchMedia('(pointer:coarse)') : null;
+let touchOn = false;                                      // html.touch-ui is on (also lifts the stage floor so the fighter sits above the overlay)
+const touchAuto = () => !!(touchMQ && touchMQ.matches && typeof navigator!=='undefined' && navigator.maxTouchPoints>0);
+function applyTouchUI(){
+  touchOn = store.touch==='on' || (store.touch==='auto' && touchAuto());
+  const root = document.documentElement; if(root && root.classList) root.classList.toggle('touch-ui', touchOn);
+  if(!touchOn && (touchDir.x||touchDir.y)){ touchDir={x:0,y:0}; recomputeDir(performance.now()); }
+  if(!lastSrc) srcBadge.textContent = T(touchOn ? 'src.waitTouch' : 'src.wait');
+  touchRelease(); resize();
+}
+if(touchMQ && touchMQ.addEventListener) touchMQ.addEventListener('change', () => { if(store.touch==='auto') applyTouchUI(); });
+function touchVec(x, y, t){                               // x,y: pad-relative, -1..1, +y up. Returns the resulting direction (tests).
+  let nx=0, ny=0;
+  if(Math.hypot(x,y)>=TOUCH_DEAD){ const s = Math.round(Math.atan2(y,x)/(Math.PI/4))*(Math.PI/4); nx=Math.round(Math.cos(s)); ny=Math.round(Math.sin(s)); } // 8 sectors of 45°, edges at 22.5°
+  if(nx!==touchDir.x || ny!==touchDir.y){ touchDir={x:nx,y:ny}; recomputeDir(t,'touch'); }
+  return curDir;
+}
+function touchPress(n, t){ if(modalOpen()) return; unlockAudio(); onButton(n,t); if(lastSrc!=='touch') setSrc('touch'); }
+const tpad = $('tpad'), tknob = $('tknob'), tdir = $('tdir'), tbtns = $('tbtns');
+let tpadId = null;                                        // pointer that owns the pad (the first finger; buttons use their own pointers)
+function touchKnob(x, y){ const R = (tpad.clientWidth||0)/2; tknob.style.transform = `translate(calc(-50% + ${(x*R*0.62).toFixed(1)}px), calc(-50% + ${(-y*R*0.62).toFixed(1)}px))`; tdir.textContent = curDir==='n' ? '' : glyphFor(curDir); tpad.classList.toggle('on', tpadId!==null); }
+function touchRelease(){ tpadId=null; touchKnob(0,0); tbtns.querySelectorAll('button').forEach(b => b.classList.remove('on')); }
+function tpadVec(e){ const r = tpad.getBoundingClientRect(); const R = r.width/2 || 1; let x = (e.clientX-(r.left+R))/R, y = -(e.clientY-(r.top+R))/R; const m = Math.hypot(x,y); if(m>1){ x/=m; y/=m; } return [x,y]; } // clamped to the unit circle: a captured finger may leave the pad, the knob must not
+const evT = e => e.timeStamp || performance.now();      // same clock as keydown; a pointermove can be delivered a frame late, its own timestamp is when it happened
+tpad.addEventListener('pointerdown', e => { if(tpadId!==null || modalOpen()) return; e.preventDefault(); tpadId=e.pointerId; try{ tpad.setPointerCapture(e.pointerId); }catch(x){} unlockAudio(); const [x,y]=tpadVec(e); touchVec(x,y,evT(e)); touchKnob(x,y); });
+tpad.addEventListener('pointermove', e => { if(e.pointerId!==tpadId || modalOpen()) return; const [x,y]=tpadVec(e); touchVec(x,y,evT(e)); touchKnob(x,y); });
+const tpadEnd = e => { if(e.pointerId!==tpadId) return; tpadId=null; touchVec(0,0,evT(e)); touchKnob(0,0); };
+tpad.addEventListener('pointerup', tpadEnd); tpad.addEventListener('pointercancel', tpadEnd);
+const tbtnOf = e => e.target && e.target.closest ? e.target.closest('[data-btn]') : null;
+tbtns.addEventListener('pointerdown', e => { const b = tbtnOf(e); if(!b) return; e.preventDefault(); b.classList.add('on'); touchPress(+b.dataset.btn, evT(e)); });
+['pointerup','pointercancel'].forEach(ev => tbtns.addEventListener(ev, e => { const b = tbtnOf(e); if(b) b.classList.remove('on'); }));
+$('touch').addEventListener('contextmenu', e => e.preventDefault()); // long-press menu would steal the finger
 
 /* ---------- history strip ---------- */
 const GLYPH = {n:'★',f:'→',b:'←',d:'↓',u:'↑',df:'↘',db:'↙',uf:'↗',ub:'↖'};
@@ -1596,6 +1664,7 @@ function segSel(id, attr, cb){
   el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr])===String(store[attr==='win'?'window':attr])?'true':'false'));
 }
 segSel('winSel','win', v => { store.window=+v; save(); renderHist(); });
+segSel('touchSel','touch', v => { store.touch=v; save(); applyTouchUI(); });
 segSel('sideSel','side', v => { endTrial(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); });
 segSel('fxSel','fx', v => { store.fx=+v; save(); });
 segSel('langSel','lang', v => { setLang(v); });
@@ -1652,7 +1721,7 @@ function setShareMsg(m){ ui.shareMsg = m; $('shareMsg').textContent = msg(m); }
 function openShare(){
   shareSrc = shareSource(); if(!shareSrc) return Promise.resolve();
   setShareMsg(''); renderShareRank();
-  return renderShare().then(() => { const d = $('shareDlg'); if(!d.open) d.showModal(); });
+  return renderShare().then(() => { const d = $('shareDlg'); if(!d.open){ resetInput(); d.showModal(); } }); // like setOpen/openDonate: a finger still on the pad must not keep driving onDir behind the card
 }
 $('dShare').addEventListener('click', openShare);
 $('shareClose').addEventListener('click', () => $('shareDlg').close());
@@ -1889,7 +1958,7 @@ function applyStatic(){
   document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = T(el.dataset.i18nHtml); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', T(el.dataset.i18nAria)); });
   document.querySelectorAll('#langSel button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang===store.lang?'true':'false'));
-  if(!lastSrc) srcBadge.textContent = T('src.wait'); else setSrc(lastSrc);
+  if(!lastSrc) srcBadge.textContent = T(touchOn ? 'src.waitTouch' : 'src.wait'); else setSrc(lastSrc);
 }
 function renderAll(){
   applyStatic(); renderMode(); renderPadStatus(); renderKeys();
@@ -1905,7 +1974,7 @@ function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); render
 const canvas = $('stage'), ctx = canvas.getContext('2d');
 let W=800, H=360, dpr=1;
 function resize(){ const r = $('stageBox').getBoundingClientRect(); dpr = Math.min(2, devicePixelRatio||1); W = Math.max(320, r.width); H = Math.max(160, r.height); canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); renderHistory(); }
-addEventListener('resize', resize); resize();
+addEventListener('resize', resize); resize(); applyTouchUI();
 
 const world = { charX:120, camX:0, dummyX:460, dummy:{y:0,vx:0,vy:0,rot:0,hit:0,alive:true,respawn:0} };
 const anim = { kind:'idle', t0:0, from:0, to:0, moveT0:0, moveFrom:0, moveTo:0 };
@@ -2221,7 +2290,7 @@ function frame(now){
   if(!d.alive && now>d.respawn){ d.alive=true; d.rot=0; d.y=0; world.dummyX = world.charX + spawnDist()*store.side; }
   if(d.alive && !d.hit && (ahead<-40 || ahead>W*1.2)){ world.dummyX = world.charX + spawnDist()*store.side; }
 
-  const gy = H*0.80;
+  const gy = touchOn ? H*0.46 : H*0.80;   // touch overlay covers the lower 46%; the mode hint sits on the floor strip between the feet and the overlay
   ctx.save();
   if(shake>0.3){ ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake); shake*=0.82; } else shake=0;
   // background

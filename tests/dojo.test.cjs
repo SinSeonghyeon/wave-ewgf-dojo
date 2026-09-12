@@ -21,7 +21,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -505,4 +505,70 @@ test('donate: three buttons open a chooser; KakaoPay first in ko, Ko-fi first el
   a.get('donateBack').click();assert.equal(a.get('donateChoose').hidden,false);
   assert.ok(fs.existsSync(require('node:path').join(__dirname,'..','donate-kakao.png')),'QR image exists');
   assert.equal((html.match(/<script/g)||[]).length,1,'still a single inline script');
+});
+
+test('touch pad: dead zone is neutral, 45° sectors map to 8 directions, and a rolled f,N,d,df + 2 judges as EWGF through the normal path',()=>{
+  const a=boot();
+  assert.equal(a.touchVec(0.1,0.15,1000),'n');            // inside the dead zone
+  assert.equal(a.touchVec(1,0,1000),'f');
+  assert.equal(a.touchVec(0,0,1020),'n');
+  assert.equal(a.touchVec(0.3,-0.9,1040),'d');            // 18° off straight down stays d (sector edge is 22.5°)
+  assert.equal(a.touchVec(0.7,-0.7,1060),'df');
+  a.touchPress(2,1064);
+  assert.equal(a.session.attempts.length,1);
+  assert.equal(a.session.attempts[0].kind,'ewgf');
+  assert.equal(a.session.attempts[0].off,4);
+  assert.equal(a.get('srcBadge').textContent,a.T('src.touch'));
+  assert.equal(a.touchVec(-1,0,1100),'b');
+  assert.equal(a.touchVec(0.5,0.5,1120),'uf');
+  assert.equal(a.touchVec(-0.4,-0.9,1140),'db');
+  const p2=boot({v:4,side:-1});                            // 2P: screen right is back
+  assert.equal(p2.touchVec(1,0,1000),'b');
+});
+
+test('touch input pauses behind modals and is cleared by blur; the setting survives reload only with valid values',()=>{
+  const a=boot();
+  a.touchVec(1,0,1000);a.touchVec(0,0,1020);a.touchVec(0,-1,1040);a.touchVec(0.7,-0.7,1060);
+  a.get('setDlg').showModal(); a.touchPress(2,1064);
+  assert.equal(a.session.attempts.length,0);              // button ignored while settings are open
+  a.get('setDlg').open=false;
+  a.touchVec(1,0,2000); a.events.blur();                  // blur resets every source, including the on-screen pad
+  assert.equal(a.cd.state,0);
+  assert.equal(a.touchVec(1,0,3000),'f'); assert.equal(a.cd.state,1);
+  assert.equal(boot().store.touch,'auto');
+  assert.equal(boot({v:4,touch:'on'}).store.touch,'on');
+  assert.equal(boot({v:4,touch:'off'}).store.touch,'off');
+  assert.equal(boot({v:4,touch:'yes'}).store.touch,'auto');
+  assert.doesNotThrow(()=>{const b=boot({v:4,touch:'on'}); b.applyTouchUI();});
+  assert.match(html,/<meta name="viewport" content="width=device-width/);
+  assert.match(html,/^<!doctype html>\s*(<!--[\s\S]*?-->\s*)?<html lang="ko">/i);
+});
+
+test('touch UI: idle badge says touch, the pad label follows 2P facing, and reset clears the label before the finger lifts',()=>{
+  const on=boot({v:4,touch:'on',lang:'ko'});
+  assert.equal(on.get('srcBadge').textContent,'👆 터치 대기');
+  on.setLang('en');assert.equal(on.get('srcBadge').textContent,'👆 Touch ready');
+  assert.equal(boot({v:4,lang:'en'}).get('srcBadge').textContent,'⌨ Keyboard ready');
+  const p2=boot({v:4,side:-1});                            // 2P: a thumb pushed to screen right is back, and the pad arrow must point right like the chip strip
+  const rect=()=>({left:0,top:0,width:200,height:200}), ev=(id,x,y,t)=>({pointerId:id,clientX:100+x*100,clientY:100-y*100,timeStamp:t,preventDefault(){}}); // pad-relative x,y in -1..1, +y up
+  p2.get('tpad').getBoundingClientRect=rect;
+  p2.get('tpad').pointerdown(ev(1,1,0,1000));
+  assert.equal(p2.get('tdir').textContent,'→');
+  assert.equal(p2.session.attempts.length,0);
+  p2.get('tpad').pointermove(ev(1,0,1,1020));             // up
+  assert.equal(p2.get('tdir').textContent,'↑');
+  p2.get('tpad').pointermove(ev(1,5,0,1040));             // far outside the pad: clamped, still back, knob within the pad radius
+  assert.equal(p2.get('tdir').textContent,'→');
+  assert.match(p2.get('tknob').style.transform,/\+ 248\.0px\)/);  // 400·0.62 (clientWidth 800 → R 400), not 5×
+  p2.events.blur();                                         // app switch while the thumb is down
+  assert.equal(p2.get('tdir').textContent,'');
+  assert.equal(p2.cd.state,0);
+  p2.get('tpad').pointerup(ev(1,5,0,1060));                // the eventual lift is ignored (pad no longer owned) and changes nothing
+  assert.equal(p2.get('tdir').textContent,'');
+  const a=boot();                                          // a modal opened while the thumb is down: moves stop feeding onDir until the finger lifts
+  a.get('tpad').getBoundingClientRect=rect;
+  a.get('tpad').pointerdown(ev(1,1,0,1000));assert.equal(a.cd.state,1);
+  a.get('setDlg').showModal();
+  a.get('tpad').pointermove(ev(1,0,-1,1020));
+  assert.equal(a.session.attempts.length,0);assert.equal(a.cd.state,1);
 });
