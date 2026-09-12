@@ -1,6 +1,6 @@
 // Mishima Dojo backend — Cloudflare Worker + D1. Weekly leaderboard, visit counter, message board.
 // Routes:  POST /nick {nick} → {ok,nick,token} | 409 {error:'taken'}   (nicknames are unique, case-insensitive; the token proves ownership)
-//          GET  /top?board=wave10[&nick=x] → {week,start,end,board,total,rows[≤10],me}
+//          GET  /top?board=wave10[&nick=x] → {week,start,end,board,total,rows[≤10],me,cut10}   (cut10: score at the top-10% boundary, null on an empty board)
 //          POST /submit {board,nick,token,score,tie,detail,win,lang} → {ok,id,rank,improved} + the /top shape   (403 {error:'auth'} on a bad token)
 //                (one row per nick per board per week: a worse result leaves the stored best untouched, improved=false)
 //          GET  /visits → {day,today,total}   ·   POST /visits → counts one visit for today (KST) and returns the same
@@ -106,6 +106,8 @@ async function top(db, board, week, nick) {
   const {results} = await db.prepare(`SELECT ${ROW} FROM scores WHERE week=? AND board=? ORDER BY score DESC, tie DESC, id ASC LIMIT ${TOP}`).bind(week, board).all();
   const total = await db.prepare('SELECT COUNT(*) AS n FROM scores WHERE week=? AND board=?').bind(week, board).first('n');
   const rows = rankRows(results.map(parseRow));
+  // Score you need to sit in the top 10% (the app shades the wave chart with it). Boards under ten players count as ten, like the app's grades: 1st place's score.
+  const cut10 = total ? await db.prepare('SELECT score FROM scores WHERE week=? AND board=? ORDER BY score DESC, tie DESC, id ASC LIMIT 1 OFFSET ?').bind(week, board, Math.ceil(Math.max(total, 10) / 10) - 1).first('score') : null;
   let me = null;
   if (nick) {
     const mine = await db.prepare(`SELECT ${ROW} FROM scores WHERE week=? AND board=? AND nick=?`).bind(week, board, nick).first();
@@ -116,7 +118,7 @@ async function top(db, board, week, nick) {
         .bind(week, board, me.score, me.score, me.tie).first('n') || 0);
     }
   }
-  return {week, ...weekBounds(week), board, total: total || 0, rows, me};
+  return {week, ...weekBounds(week), board, total: total || 0, rows, me, cut10: cut10 ?? null};
 }
 
 async function visits(db, now, hit) {

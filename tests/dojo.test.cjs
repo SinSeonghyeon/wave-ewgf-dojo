@@ -21,7 +21,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -260,7 +260,8 @@ test('leaderboard entry is built only from a finished trial, one metric pair per
 test('trial end submits only with a claimed nickname (token); a failed submit shows retry; result card opens; tiers by top-%',async()=>{
   const t=boot();
   assert.equal(t.pctTop(1,1),100);assert.equal(t.pctTop(1,200),1);assert.equal(t.pctTop(3,42),8);assert.equal(t.pctTop(0,0),1);
-  assert.deepEqual([[1,1000],[5,100],[10,100],[30,100],[50,100],[70,100],[71,100],[1,1],[2,2],[5,5],[10,10]].map(([r,n])=>t.tierOf(r,n)),[0,1,2,3,4,5,6,2,3,4,6],'tiny boards are scored as ten players');
+  assert.deepEqual([[1,1000],[2,100],[10,100],[11,100],[20,100],[21,100],[50,100],[51,100],[70,100],[71,100],[1,1],[1,5],[2,10],[5,10],[7,10],[8,10]].map(([r,n])=>t.tierOf(r,n)),[0,1,1,2,2,3,3,4,4,5,1,1,2,3,4,5],'SS 1% · S 10% · A 20% · B 50% · C 70% · D; tiny boards are scored as ten players');
+  assert.deepEqual([0,1,2,3,4,5].map(i=>t.T('tier.'+i+'.title')),['SS','S','A','B','C','D']);
   const run=a=>{a.setMode('wave10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();dash(a,4100);a.time(14100);a.endTrial();};
   const noToken=boot({v:4,lang:'ko',window:12,nick:'tester'}); run(noToken); await new Promise(r=>setImmediate(r));
   assert.equal(noToken.trial.result.submit,undefined,'a nickname without its token is not ours to submit with');
@@ -280,7 +281,14 @@ test('trial end submits only with a claimed nickname (token); a failed submit sh
   // share card model carries the weekly rank line and tier title when the submit succeeded
   const card=boot({v:4,lang:'ko',window:12}); run(card); card.trial.result.submit={state:'done',rank:3,total:42,improved:true};
   const m=card.buildCard(card.shareSource());
-  assert.equal(m.rankText,'주간 3위 / 42명 · 상위 8% · 상급');assert.match(m.tweet,/주간 3위 \/ 42명 · 상위 8% · 상급\n/);
+  assert.equal(m.rankText,'주간 3위 / 42명 · 상위 8% · S');assert.match(m.tweet,/주간 3위 \/ 42명 · 상위 8% · S\n/);
+  // the banner comment is per trial mode (tier.N.<mode>): the same grade reads differently in wave10 and rush30, and every mode has all six in every language
+  for(const l of ['ko','en','ja']){card.setLang(l);for(const mode of card.BOARDS)for(let i=0;i<6;i++)assert.notEqual(card.T('tier.'+i+'.'+mode),'tier.'+i+'.'+mode,l+' '+mode+' '+i);}
+  card.setLang('ko');const banner=card.get('shareTierMsg');
+  await card.openShare().catch(()=>{}); // the banner is filled synchronously; the canvas draw rejects in this harness (no 2d context)
+  assert.equal(card.get('shareTier').textContent,'S');assert.equal(card.get('shareRank').className,'share-rank t1');assert.equal(banner.textContent,card.T('tier.1.wave10'));
+  card.trial.result.submit={state:'done',rank:40,total:42,improved:true};await card.openShare().catch(()=>{});
+  assert.equal(card.get('shareTier').textContent,'D');assert.equal(banner.textContent,'사람이... 맞으시죠? 6N23 6 N, 다시 갑시다.');
   card.trial.result.submit={state:'busy'};assert.equal(card.buildCard(card.shareSource()).rankText,'');
 });
 
@@ -293,7 +301,7 @@ function backend(){
   const answer=(path,method,data,status)=>{const c=find(path,method);if(!c)throw new Error('no pending '+method+' '+path);c.done=true;c.resolve(data,status);return c;};
   return {fetch,calls,find,answer,flush:()=>new Promise(r=>setImmediate(r))};
 }
-const topRes=(nick,rank=1,total=1)=>({week:'2026-09-07',start:0,end:1,board:'wave10',total,rows:[{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}],me:{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}});
+const topRes=(nick,rank=1,total=1)=>({week:'2026-09-07',start:0,end:Date.now()+7*86400000,board:'wave10',total,rows:[{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}],me:{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}});
 test('backend races: a late submit after a rename or a tab switch does not overwrite the board; a 403 mid-card waits; visits count once',async()=>{
   const tok='ab'.repeat(24), run=a=>{a.setMode('wave10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();dash(a,4100);a.time(14100);a.endTrial();};
   // rename while the submit is in flight: the submit's board snapshot belongs to the old nickname and is discarded
@@ -700,4 +708,56 @@ test('touch UI: idle badge says touch, the pad label follows 2P facing, and rese
   a.get('setDlg').showModal();
   a.get('tpad').pointermove(ev(1,0,-1,1020));
   assert.equal(a.session.attempts.length,0);assert.equal(a.cd.state,1);
+});
+
+test('wave chart top band and coach tempo follow the weekly wave10 top-10% cut (cut10), falling back to 5 dashes/s',()=>{
+  const a=boot({v:4,lang:'ko',window:12}), chart=a.get('waveChart'), coach=a.get('coachMsg');
+  const chain=t=>{dash(a,t);for(const d of [t+100,t+300]){a.onDir('f',d);a.onDir('n',d+20);dash(a,d+40);}}; // start 6 every 200ms = 5.0 dashes/s
+  assert.equal(a.waveTop(),null);a.renderWave();assert.match(chart.innerHTML,/상급 \(5 이상\)/,'no board yet: fixed label');
+  assert.doesNotMatch(chart.innerHTML,/>10</,'default axis tops out at 8');
+  chain(1000);assert.ok(coach.innerHTML.startsWith('<strong>상위권 속도</strong>'),coach.innerHTML);
+  a.board.data.wave10={...topRes('x'),cut10:8.5};assert.equal(a.waveTop(),8.5);a.renderWave();
+  assert.match(chart.innerHTML,/상위 10% \(8\.5 이상\)/);assert.match(chart.innerHTML,/>10</,'axis grows so the band stays on the chart');
+  a.clearCommand();chain(3000);assert.ok(coach.innerHTML.startsWith('빠른 편입니다.'),'5.0 dashes/s is below an 8.5 cut: '+coach.innerHTML);
+  a.board.data.wave10={...topRes('x'),cut10:4.5};a.clearCommand();chain(5000);assert.ok(coach.innerHTML.startsWith('<strong>상위권 속도</strong>'),'5.0 dashes/s clears a 4.5 cut: '+coach.innerHTML);a.board.data.wave10={...topRes('x'),cut10:6.2};
+  assert.equal(a.buildCard(a.shareSource()).chart.top,6.2,'the share card shades the same band');
+  a.setLang('en');a.renderWave();assert.match(chart.innerHTML,/Top 10% \(6\.2\+\)/);
+  for(const bad of [{cut10:null},{cut10:0},{cut10:'7'},{}]){a.board.data.wave10={...topRes('x'),...bad,cut10:bad.cut10};assert.equal(a.waveTop(),null,JSON.stringify(bad));}
+});
+
+
+test('weekly wave cut expires at Monday midnight KST and periodic refresh retries without changing tabs',async()=>{
+  const end=Date.parse('2026-09-13T15:00:00Z');let wall=end-1;
+  const b=backend(),a=boot({v:4,lang:'ko'},b.fetch,{Date:class extends Date{static now(){return wall;}}});
+  const old={...topRes('x'),end,cut10:8.5};
+  b.answer('/top?board=wave10','GET',old);await b.flush();
+  const refresh=[...a.timers.values()].find(fn=>String(fn).includes('waveRefresh()'));
+  assert.ok(refresh);a.board.tab='rush30';
+  dash(a);for(const t of [1100,1300]){a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}
+  assert.equal(a.waveTop(),8.5);wall=end;
+  assert.equal(a.waveTop(),null,'the exact end boundary is expired');
+  assert.equal(a.buildCard(a.shareSource()).chart.top,null,'share card immediately selects the default band');
+  refresh();assert.match(a.get('waveChart').innerHTML,/상급 \(5 이상\)/);
+  const count=b.calls.filter(c=>c.url.includes('/top?board=wave10')).length;
+  refresh();assert.equal(b.calls.filter(c=>c.url.includes('/top?board=wave10')).length,count,'only one background request in flight');
+  b.answer('/top?board=wave10','GET',{},500);await b.flush();assert.equal(a.waveTop(),null);
+  refresh();b.answer('/top?board=wave10','GET',old);await b.flush();assert.equal(a.waveTop(),null,'a late response from last week stays expired');
+  refresh();b.answer('/top?board=wave10','GET',{...old,end:end+7*86400000,cut10:6.2});await b.flush();
+  assert.equal(a.waveTop(),6.2);assert.equal(a.board.tab,'rush30');
+  assert.match(a.get('waveChart').innerHTML,/상위 10% \(6\.2 이상\)/);
+  assert.equal(a.buildCard(a.shareSource()).chart.top,6.2);
+  refresh();assert.equal(b.find('/top?board=wave10'),undefined,'current data needs no refetch');
+});
+
+test('background wave refresh preserves newer board data and ignores nickname changes',async()=>{
+  for(const change of ['data','nick']){
+    const b=backend(),a=boot({v:4,lang:'ko'},b.fetch);
+    b.answer('/top?board=wave10','GET',{...topRes('x'),end:1,cut10:8.5});await b.flush();
+    const refresh=[...a.timers.values()].find(fn=>String(fn).includes('waveRefresh()'));
+    refresh();
+    if(change==='data')a.board.data.wave10={...topRes('x'),cut10:7};
+    else a.store.nick='new';
+    b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:6});await b.flush();
+    assert.equal(a.waveTop(),change==='data'?7:null);
+  }
 });

@@ -9,7 +9,7 @@
 - 이름: 미시마 도장 (Mishima Dojo / 三島道場). 철권 미시마류 웨이브 대시·초풍 입력을 브라우저에서 프레임 단위로 판정하는 연습 도구. 비공식 팬 제작.
 - 코드: 루트 `index.html` 단일 파일(HTML+CSS+JS). 빌드 없음, 외부 라이브러리 없음.
 - 배포: GitHub Pages, main 브랜치 루트. https://sinseonghyeon.github.io/wave-ewgf-dojo/ (저장소 이름은 `wave-ewgf-dojo`로 유지. Pages 주소가 바뀌므로 사용자 결정 없이 바꾸지 않는다.)
-- 주소 모음: 저장소 https://github.com/SinSeonghyeon/wave-ewgf-dojo · 백엔드 Worker https://mishima-dojo-board.mishima-dojo.workers.dev · 후원 Ko-fi https://ko-fi.com/misimadojo (en/ja) · 카카오페이 송금 링크 https://qr.kakaopay.com/Ej8EBCpJu (ko, 휴대폰 전용) — 코드의 `BOARD_URL`/`DONATE`와 같아야 한다.
+- 주소 모음: 저장소 https://github.com/SinSeonghyeon/wave-ewgf-dojo · 백엔드 Worker https://mishima-dojo-board.mishima-dojo.workers.dev · 후원 Ko-fi https://ko-fi.com/misimadojo (en/ja) · 카카오페이 송금 링크 https://qr.kakaopay.com/Ej8EBCpJu (ko, 휴대폰 전용) · 문의 이메일 tlstjdgus3@gmail.com (푸터 mailto·README·LICENSE) — 코드의 `BOARD_URL`/`DONATE`와 같아야 한다.
 - 테스트: `node --test tests/dojo.test.cjs tests/board.test.cjs` (Node 22.13+, 의존성 없음. 가짜 D1이 `node:sqlite`를 쓴다) · `node tests/smoke-chrome.js` (로컬 Chrome/Edge 헤드리스, CDP).
 - 개발 도구: `tools/` (커밋 대상). `tools/cdp.js`는 헤드리스 브라우저 공용 모듈, `tools/make-og.js`는 `og.png` 재생성. 앱 자체는 여전히 `index.html` 하나다.
 - 백엔드: `worker/` (Cloudflare Worker + D1: 주간 순위·방문자 수·한마디 게시판). 배포는 `npx wrangler deploy`(`worker/README.md`). 앱은 `fetch`로만 호출하며 `index.html`의 `BOARD_URL`이 비어 있으면 백엔드 UI 전체가 숨겨진다.
@@ -38,6 +38,7 @@
 11. 터치 컨트롤(2026-09-12): 원형 슬라이드 패드 + 1 2 / 3 4 버튼을 스테이지 안 오버레이로, `pointer: coarse` 터치 기기에서만 자동 표시(설정에서 강제 가능). 입력은 키보드·패드와 같은 `recomputeDir`/`onButton` 경로를 타며 판정을 바꾸지 않는다. 터치 기록도 같은 주간 순위 보드에 표시 없이 올린다. 정밀도가 낮다는 문구를 오버레이와 README에 둔다.
 12. 통발(f,f+2)·나락(6N23+4)(2026-09-13): 초풍 판정과 분리된 `strike` 경로다. `attempt`가 아니므로 초풍 성공률·히스토그램·연속 초풍·`session.tries/hits`에 잡히지 않는다. 나락은 저스트가 없어 3(d/f)만 들어가면 인정한다. 둘 다 저스트가 아니므로 라벨에 "!"나 연속 횟수를 붙이지 않는다(초풍과 구분).
 13. 더미 격파 30초(rush30, 2026-09-13): 4번째 측정 모드이자 주간 순위 4번째 보드. 상/중/하단 더미가 무작위로 나오고 상단=초풍, 중단=통발, 하단=나락으로 맞으면 5점(저스트를 놓친 풍신권이 상단에 닿으면 2점), 크라우치 대시는 어디서든 연속 수만큼(최대 3점). 틀린 기술은 헛침(0점, 더미 유지). 격파(초풍·통발·나락)해도 웨이브 콤보(cd.chain)는 끊기지 않는다(2026-09-13 사용자 요청, `endCommand`가 rush에서 chain 유지). 700ms 공백에만 endChain으로 초기화된다. 워커 `BOARDS`에 rush30을 넣었고 **재배포는 사용자 작업**이다.
+14. 결과 창 등급(2026-09-13): 측정 모드가 끝나면 주간 순위 상위 %로 SS(≤1%)·S(≤10%)·A(≤20%)·B(≤50%)·C(≤70%)·D(그 외) 등급을 매긴다(`TIERS`/`tierOf`). 참가자 10명 미만은 10명으로 계산한다(혼자 1위 = S). 등급 문자는 세 언어 공통, 코멘트는 측정 모드마다 다르다(`tier.N.<mode>`, 톤은 SS "사람이 아니군요!?" / D는 자조 개그). 웨이브 속도 차트의 상위 띠·코치 "상위권 속도"는 고정 5 대시/초가 아니라 이번 주 웨이브 10초 순위 상위 10% 경계 점수(워커 `/top`·`/submit`의 `cut10`, 10명 미만은 1위 점수)를 쓰고, 워커 응답이 없으면 5로 폴백한다. **워커 재배포는 사용자 작업**.
 
 ## 작업 원칙
 

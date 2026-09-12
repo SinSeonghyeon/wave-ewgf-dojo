@@ -5,7 +5,7 @@
 | 경로 | 용도 |
 |---|---|
 | `POST /nick` | 닉네임 등록 `{nick}` → `{ok,nick,token}`. 대소문자·전각을 무시하고 유일. 이미 있으면 409 `taken`. 토큰은 브라우저가 보관하고 아래 등록·게시에 붙인다 |
-| `GET /top?board=wave10[&nick=]` | 상위 10 + 참가 수 + (nick이 있으면) 내 행과 순위 `me` |
+| `GET /top?board=wave10[&nick=]` | 상위 10 + 참가 수 + (nick이 있으면) 내 행과 순위 `me` + `cut10`(상위 10% 경계 점수. 10명 미만은 10명으로 계산해 1위 점수, 빈 보드는 null. 앱은 wave10의 값으로 웨이브 차트 상위 띠를 그린다) |
 | `POST /submit` | 기록 등록(`token` 필수, 틀리면 403 `auth`). 닉네임당 보드마다 주간 1행: 더 좋으면 교체, 아니면 유지(`improved:false`) |
 | `GET /visits` · `POST /visits` | 오늘(KST)·누적 방문 수. POST는 오늘에 1을 더한다(앱이 브라우저당 하루 1회만 보냄) |
 | `GET /posts` · `POST /posts` | 한마디 최신 50개 · 작성(`{nick,token,text}`, 200자, IP당 1분 3개) |

@@ -115,6 +115,11 @@ test('top list is capped at 10 while total and my rank keep counting below the l
   assert.equal(last.me.nick, 'slow'); assert.equal(last.me.rank, 15); assert.equal(last.rows.some(r => r.nick === 'slow'), false, 'below the top list');
   const mid = await (await w.handle(req('/top?board=wave10&nick=' + encodeURIComponent('  p3 ')), env, NOW)).json();
   assert.equal(mid.me.rank, 12, 'nick is normalised before lookup');
+  assert.equal(last.cut10, 1.3, 'top-10% boundary of 16 players is 2nd place (ceil(16/10)=2)');
+  assert.equal(mid.cut10, 1.3);
+  const empty = await (await w.handle(req('/top?board=ewgf20'), env, NOW)).json(); assert.equal(empty.cut10, null, 'empty board has no boundary');
+  const few = {DB: fakeD1()}; const m2 = owned(w, few); for (const s of [4.5, 6.2, 5.1]) await m2.submit({nick: 'n' + s, score: s, tie: 1});
+  assert.equal((await (await w.handle(req('/top?board=wave10'), few, NOW)).json()).cut10, 6.2, 'under ten players the boundary is 1st place, like the app grades');
 });
 
 test('visits: POST counts one visit for the KST day, GET only reads, total sums all days', async () => {

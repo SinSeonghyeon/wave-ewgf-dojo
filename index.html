@@ -165,7 +165,8 @@
   .share-rank .tier-title{font-family:var(--display);font-size:30px;line-height:1.05;color:var(--tier);animation:tierPop .55s cubic-bezier(.2,1.4,.4,1) both}
   .share-rank .tier-line{font-family:var(--mono);font-size:13px;color:var(--ink2);margin-top:6px}
   .share-rank .tier-msg{margin:6px 0 0;font-size:15px;line-height:1.5;color:var(--ink)}
-  .share-rank.t6{--tier:var(--faint)} .share-rank.t5{--tier:var(--muted)} .share-rank.t4{--tier:var(--ink2)} .share-rank.t3{--tier:var(--seg2)}
+  /* grades: t0 SS · t1 S · t2 A · t3 B · t4 C · t5 D */
+  .share-rank.t5{--tier:var(--faint)} .share-rank.t4{--tier:var(--ink2)} .share-rank.t3{--tier:var(--seg2)}
   .share-rank.t2{--tier:var(--accent)} .share-rank.t2 .tier-title{text-shadow:0 0 14px rgba(76,201,255,.5)}
   .share-rank.t1{--tier:var(--gold)} .share-rank.t1 .tier-title{text-shadow:0 0 16px rgba(245,197,66,.55)}
   .share-rank.t0{--tier:var(--gold);background:linear-gradient(100deg,var(--panel2),rgba(245,197,66,.12),var(--panel2));background-size:200% 100%;animation:tierShine 2.4s linear infinite}
@@ -449,7 +450,7 @@
     </div>
     <div class="card chart" id="waveCard">
       <h2 data-i18n="wave.title">웨이브 속도 추이</h2>
-      <p class="sub" data-i18n="wave.sub">크라우치 대시 한 번당 속도 (대시/초) · 최근 40회, 5 이상이면 상급</p>
+      <p class="sub" data-i18n="wave.sub">크라우치 대시 한 번당 속도 (대시/초) · 최근 40회 · 음영 = 이번 주 웨이브 10초 순위 상위 10%</p>
       <div id="waveChart"></div>
       <div class="tip" id="waveTip"></div>
     </div>
@@ -468,6 +469,7 @@
   <footer>
     <p data-i18n="footer">표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.</p>
     <p class="copy" data-i18n="footer.copy">© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.</p>
+    <p class="copy"><span data-i18n="footer.contact">문의</span>: <a href="mailto:tlstjdgus3@gmail.com">tlstjdgus3@gmail.com</a></p>
     <p class="donate" id="donate" hidden><span data-i18n="donate.note">여러분의 소중한 후원이 굶고 있는 불쌍한 철찌의 한 끼 밥이 됩니다.</span> <button class="btn ghost donate-btn" id="donateBtn" type="button" data-i18n="donate.btn">🍚 후원하기 🍚</button></p>
   </footer>
 </div>
@@ -561,8 +563,8 @@ ko:{
   'hist.title':'초풍 버튼 타이밍 분포', 'hist.sub':'d/f 입력 시점을 0으로, 2(RP) 버튼이 눌린 프레임 차이 · 최근 60회',
   'hist.lOk':'초풍 (판정 안)', 'hist.lEarly':'빠름 (d+2)', 'hist.lLate':'늦음 (풍신권)', 'hist.aria':'초풍 버튼 타이밍 히스토그램',
   'hist.empty':'초풍을 시도하면 분포가 쌓입니다', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}회 · ${k}`, 'hist.kOk':'초풍', 'hist.kEarly':'빠름', 'hist.kLate':'늦음',
-  'wave.title':'웨이브 속도 추이', 'wave.sub':'크라우치 대시 한 번당 속도 (대시/초) · 최근 40회, 5 이상이면 상급', 'wave.aria':'웨이브 속도 추이',
-  'wave.top':'상급 (5 이상)', 'wave.empty':'크라우치 대시를 2회 이상 연속으로 넣으면 그려집니다', 'wave.old':'오래된 대시', 'wave.recent':'최근',
+  'wave.title':'웨이브 속도 추이', 'wave.sub':'크라우치 대시 한 번당 속도 (대시/초) · 최근 40회 · 음영 = 이번 주 웨이브 10초 순위 상위 10%', 'wave.aria':'웨이브 속도 추이',
+  'wave.top':v=>'상위 10% ('+v+' 이상)', 'wave.topFixed':'상급 (5 이상)', 'wave.empty':'크라우치 대시를 2회 이상 연속으로 넣으면 그려집니다', 'wave.old':'오래된 대시', 'wave.recent':'최근',
   'wave.tip':(dps,ms,f)=>`${dps} 대시/초 · 사이클 ${ms}ms (${f}f)`,
   'best.title':'모드별 최고 기록', 'best.sub':'이 브라우저에 저장됩니다', 'best.none':'아직 기록 없음', 'best.last':'최근: ',
   'rec.dps':d=>d+' 대시/초', 'rec.waveSub':(n,c)=>n+'회 · 최고 연속 '+c, 'rec.ewgfSub':(ok,tg,m)=>ok+'/'+tg+' · 평균 '+m,
@@ -601,7 +603,7 @@ ko:{
   'seg.a.d':'↓ 에서 ↓→ 로 넘어가는 게 느립니다. ↓ 를 찍고 <strong>바로 → 를 더해</strong> 미세요.',
   'seg.a.df':'↓→ 를 오래 잡고 있습니다. ↓→ 직후 <strong>↓ 만 떼서</strong> 곧바로 캔슬 6 을 넣으세요.',
   'seg.a.c':'캔슬 6 에서 다음 시작 6 까지 텀이 깁니다. 6 을 <strong>떼자마자 다시 6</strong> 을 톡 치세요.',
-  'tempo.5':'<strong>상급 속도</strong>입니다. ', 'tempo.4':'빠른 편입니다. ', 'tempo.3':'안정적입니다. ', 'tempo.0':'아직 느립니다. ',
+  'tempo.5':'<strong>상위권 속도</strong>입니다. ', 'tempo.4':'빠른 편입니다. ', 'tempo.3':'안정적입니다. ', 'tempo.0':'아직 느립니다. ',
   'wave.worst':(name,ms)=>'가장 긴 구간은 <strong>'+name+'</strong> ('+ms+'ms). ',
   'wave.even':'구간이 고르게 짧습니다. 이 리듬을 유지하며 <strong>연속 횟수</strong>를 늘려 보세요.',
   'trend.head':(n,hit,mean,sd)=>'최근 '+n+'회: 초풍 '+hit+'회 · 평균 '+mean+' · 편차 '+sd+'f. ',
@@ -648,13 +650,14 @@ ko:{
   'nick.submit':'시작', 'nick.change':n=>'닉네임 · '+n, 'nick.checking':'확인 중…', 'nick.taken':'이미 사용 중인 닉네임입니다. 다른 이름을 정하세요.',
   'nick.fail':'닉네임을 등록하지 못했습니다. 잠시 후 다시 시도하세요.', 'nick.tooFast':'너무 빠릅니다. 잠시 후 다시 시도하세요.', 'nick.expired':'닉네임 확인에 실패했습니다. 닉네임을 다시 정해 주세요.',
   'nick.set':'닉네임 정하기', 'nick.needed':'닉네임을 정하면 순위에 등록됩니다.', 'nick.later':'나중에 · 순위 없이 연습',
-  'tier.0.title':'이 주의 최강', 'tier.0.msg':'이 주의 정점. 상대는 스타트 버튼을 찾고 있습니다.',
-  'tier.1.title':'고수', 'tier.1.msg':'프로 무대 준비되셨습니까? 방송을 켜세요.',
-  'tier.2.title':'상급', 'tier.2.msg':'눈으로 쫓을 수 없습니다. 상대 화면엔 잔상만 남습니다.',
-  'tier.3.title':'중상', 'tier.3.msg':'웨이브 좀 타시네요? 이제 상대가 백대시를 시작합니다.',
-  'tier.4.title':'중급', 'tier.4.msg':'손이 풀리기 시작했습니다. 반은 넘었습니다.',
-  'tier.5.title':'수련 중', 'tier.5.msg':'초풍이 나올 듯 말 듯. 오늘 한 판 더 갑시다.',
-  'tier.6.title':'입문', 'tier.6.msg':'분발하세요. 아직 멀었습니다. 6N23 6 N, 다시.',
+  // Grade banner in the result card: tier.N.title is the letter grade (same in every language), tier.N.<mode> the comment for that trial.
+  'tier.0.title':'SS', 'tier.1.title':'S', 'tier.2.title':'A', 'tier.3.title':'B', 'tier.4.title':'C', 'tier.5.title':'D',
+  'tier.0.wave10':'사람이 아니군요!? 화면에 잔상만 남습니다.', 'tier.0.ewgf20':'사람이 아니군요!? 스무 번이 전부 저스트.', 'tier.0.combo10':'사람이 아니군요!? 웨이브에서 초풍까지 한 호흡.', 'tier.0.rush30':'사람이 아니군요!? 더미가 서 있을 틈이 없습니다.',
+  'tier.1.wave10':'훌륭합니다! 이 속도를 따라올 사람이 없어요!', 'tier.1.ewgf20':'훌륭합니다! 손이 프레임을 알고 있어요!', 'tier.1.combo10':'훌륭합니다! 달리면서 쏘는데 전부 저스트!', 'tier.1.rush30':'훌륭합니다! 상·중·하단 가리지 않고 격파!',
+  'tier.2.wave10':'상급 웨이브. 상대가 백대시부터 준비합니다.', 'tier.2.ewgf20':'상급 초풍. 실전에서 믿고 쓸 수 있습니다.', 'tier.2.combo10':'상급. 웨이브 뒤 초풍이 흔들리지 않습니다.', 'tier.2.rush30':'상급 격파. 헛침만 줄이면 정점입니다.',
+  'tier.3.wave10':'웨이브 좀 타시네요? 반은 넘었습니다.', 'tier.3.ewgf20':'절반 이상 저스트. 이제 편차만 줄이면 됩니다.', 'tier.3.combo10':'웨이브는 되는데 마지막 3+2가 반반. 거의 다 왔습니다.', 'tier.3.rush30':'격파 반, 헛침 반. 더미 높이를 먼저 보세요.',
+  'tier.4.wave10':'손이 풀리는 중. 캔슬 6을 조금만 더 빨리.', 'tier.4.ewgf20':'초풍이 나올 듯 말 듯. 3과 2를 동시에.', 'tier.4.combo10':'웨이브 타다 초풍 타이밍을 놓칩니다. 마지막 대시만 침착하게.', 'tier.4.rush30':'손이 풀리는 중. 초풍·통발·나락 중 하나가 늦습니다.',
+  'tier.5.wave10':'사람이... 맞으시죠? 6N23 6 N, 다시 갑시다.', 'tier.5.ewgf20':'사람이... 맞으시죠? 풍신권도 기술입니다. 다시.', 'tier.5.combo10':'사람이... 맞으시죠? 웨이브 3회 뒤 초풍, 다시.', 'tier.5.rush30':'사람이... 맞으시죠? 더미는 도망가지 않습니다. 다시.',
   'board.note':'상위 10명 · 닉네임당 주간 최고 기록 1건 · 매주 월요일 0시(KST) 초기화 · 닉네임과 기록만 저장됩니다',
   'visits':(d,t)=>'오늘 방문 '+d+' · 누적 '+t, 'posts.title':'한마디', 'posts.sub':'건의·질문·잡담 무엇이든 · 최신 50개 · 1분마다 새로 고침',
   'posts.ph':'하고 싶은 말 (200자)', 'posts.send':'남기기', 'posts.sending':'보내는 중…', 'posts.empty':'아직 글이 없습니다. 첫 글을 남겨 보세요.',
@@ -670,7 +673,7 @@ ko:{
   'og.keywords':'EWGF trainer · wave dash practice · 무료 · 키보드 / 게임패드',
   'og.footer':'판정 폭 0.5f · 0.7f · 0.9f · 타이밍 히스토그램 · 측정 모드 · 공유 카드',
   'footer':'표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.',
-  'footer.copy':'© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.',
+  'footer.copy':'© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.', 'footer.contact':'문의',
 },
 en:{
   'app.title':'Mishima Dojo',
@@ -705,8 +708,8 @@ en:{
   'hist.title':'EWGF button timing', 'hist.sub':'Frame difference of the 2 (RP) press relative to the d/f input at 0 · last 60',
   'hist.lOk':'EWGF (in window)', 'hist.lEarly':'Early (d+2)', 'hist.lLate':'Late (WGF)', 'hist.aria':'EWGF button timing histogram',
   'hist.empty':'Attempt an EWGF and the distribution builds up here', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}× · ${k}`, 'hist.kOk':'EWGF', 'hist.kEarly':'early', 'hist.kLate':'late',
-  'wave.title':'Wave speed trend', 'wave.sub':'Speed per crouch dash (dashes/s) · last 40, 5+ is advanced', 'wave.aria':'Wave speed trend',
-  'wave.top':'Advanced (5+)', 'wave.empty':'Chain 2 or more crouch dashes to draw the chart', 'wave.old':'older', 'wave.recent':'recent',
+  'wave.title':'Wave speed trend', 'wave.sub':'Speed per crouch dash (dashes/s) · last 40 · shaded = top 10% of this week\'s Wave 10s ranking', 'wave.aria':'Wave speed trend',
+  'wave.top':v=>'Top 10% ('+v+'+)', 'wave.topFixed':'Advanced (5+)', 'wave.empty':'Chain 2 or more crouch dashes to draw the chart', 'wave.old':'older', 'wave.recent':'recent',
   'wave.tip':(dps,ms,f)=>`${dps} dashes/s · cycle ${ms}ms (${f}f)`,
   'best.title':'Best records by mode', 'best.sub':'Saved in this browser', 'best.none':'No record yet', 'best.last':'Last: ',
   'rec.dps':d=>d+' dashes/s', 'rec.waveSub':(n,c)=>n+' dashes · best chain '+c, 'rec.ewgfSub':(ok,tg,m)=>ok+'/'+tg+' · avg '+m,
@@ -745,7 +748,7 @@ en:{
   'seg.a.d':'The move from ↓ to ↓→ is slow. Press ↓ and <strong>add → right away</strong>.',
   'seg.a.df':'You hold ↓→ too long. Right after ↓→, <strong>release only ↓</strong> and put in the cancel 6 immediately.',
   'seg.a.c':'The gap from cancel 6 to the next start 6 is long. <strong>Tap 6 again</strong> the moment you release it.',
-  'tempo.5':'<strong>Advanced speed</strong>. ', 'tempo.4':'Fast. ', 'tempo.3':'Steady. ', 'tempo.0':'Still slow. ',
+  'tempo.5':'<strong>Top-tier speed</strong>. ', 'tempo.4':'Fast. ', 'tempo.3':'Steady. ', 'tempo.0':'Still slow. ',
   'wave.worst':(name,ms)=>'Longest segment: <strong>'+name+'</strong> ('+ms+'ms). ',
   'wave.even':'Segments are evenly short. Keep this rhythm and extend the <strong>chain length</strong>.',
   'trend.head':(n,hit,mean,sd)=>'Last '+n+': '+hit+' EWGF · avg '+mean+' · spread '+sd+'f. ',
@@ -792,13 +795,13 @@ en:{
   'nick.submit':'Start', 'nick.change':n=>'Nickname · '+n, 'nick.checking':'Checking…', 'nick.taken':'That nickname is taken. Pick another.',
   'nick.fail':'Could not register the nickname. Try again later.', 'nick.tooFast':'Too fast. Try again in a moment.', 'nick.expired':'Nickname check failed. Please pick a nickname again.',
   'nick.set':'Pick a nickname', 'nick.needed':'Pick a nickname to enter the ranking.', 'nick.later':'Later · practise without ranking',
-  'tier.0.title':'Apex', 'tier.0.msg':'Top of the week. Your opponent is looking for the start button.',
-  'tier.1.title':'Master', 'tier.1.msg':'Ready for the pro stage? Turn the stream on.',
-  'tier.2.title':'Expert', 'tier.2.msg':'The eye cannot follow. Only afterimages on their screen.',
-  'tier.3.title':'Skilled', 'tier.3.msg':'Riding the wave now. Opponents start backdashing.',
-  'tier.4.title':'Rising', 'tier.4.msg':'Hands are waking up. Past the halfway mark.',
-  'tier.5.title':'Training', 'tier.5.msg':'The EWGF is almost there. One more set today.',
-  'tier.6.title':'Beginner', 'tier.6.msg':'Keep at it. Long way to go. 6N23 6 N, again.',
+  'tier.0.title':'SS', 'tier.1.title':'S', 'tier.2.title':'A', 'tier.3.title':'B', 'tier.4.title':'C', 'tier.5.title':'D',
+  'tier.0.wave10':'Are you even human!? Only afterimages on the screen.', 'tier.0.ewgf20':'Are you even human!? Twenty for twenty, all just-frame.', 'tier.0.combo10':'Are you even human!? Wave to EWGF in a single breath.', 'tier.0.rush30':'Are you even human!? The dummies never get to stand.',
+  'tier.1.wave10':'Superb! Nobody can keep up with this speed!', 'tier.1.ewgf20':'Superb! Your hands know the frame!', 'tier.1.combo10':'Superb! Firing on the run and every one is just-frame!', 'tier.1.rush30':'Superb! High, mid or low, everything goes down!',
+  'tier.2.wave10':'Advanced wave. Opponents start with a backdash.', 'tier.2.ewgf20':'Advanced EWGF. Safe to rely on in a real match.', 'tier.2.combo10':'Advanced. The EWGF after the wave does not wobble.', 'tier.2.rush30':'Advanced hunting. Cut the whiffs and the top is yours.',
+  'tier.3.wave10':'Riding the wave now. Past the halfway mark.', 'tier.3.ewgf20':'More than half just-frame. Now shrink the spread.', 'tier.3.combo10':'The wave is there, the last 3+2 is a coin flip. Almost.', 'tier.3.rush30':'Half kills, half whiffs. Check the dummy height first.',
+  'tier.4.wave10':'Hands are waking up. Cancel 6 a touch sooner.', 'tier.4.ewgf20':'The EWGF is almost there. 3 and 2 together.', 'tier.4.combo10':'The wave steals the EWGF timing. Keep the last dash calm.', 'tier.4.rush30':'Hands are waking up. One of EWGF, f,f+2 or hellsweep is late.',
+  'tier.5.wave10':'You are... human, right? 6N23 6 N, once more.', 'tier.5.ewgf20':'You are... human, right? A WGF is still a move. Again.', 'tier.5.combo10':'You are... human, right? Three waves, then EWGF. Again.', 'tier.5.rush30':'You are... human, right? The dummies are not running away. Again.',
   'board.note':'Top 10 · one weekly best per nickname · resets every Monday 00:00 KST · only your nickname and result are stored',
   'visits':(d,t)=>'Today '+d+' · total '+t+' visits', 'posts.title':'Shoutbox', 'posts.sub':'Requests, questions, anything · latest 50 · refreshes every minute',
   'posts.ph':'Say something (200 chars)', 'posts.send':'Post', 'posts.sending':'Sending…', 'posts.empty':'No posts yet. Be the first.',
@@ -814,7 +817,7 @@ en:{
   'og.keywords':'EWGF trainer · wave dash practice · free · keyboard / gamepad',
   'og.footer':'Windows 0.5f · 0.7f · 0.9f · timing histogram · trials · share cards',
   'footer':'Notation: 6 = forward (f), N = neutral, 2 = down (d), 3 = down-forward (d/f), button 2 = right punch (RP). Wave = 6N23 6 N 6N23 6 N … (the 6 after 3 cancels the recovery). 1 frame = 16.67ms. Unofficial fan-made practice tool.',
-  'footer.copy':'© 2026 Seonghyeon Shin. All rights reserved. No copying, modification or redistribution of the source, artwork or audio.',
+  'footer.copy':'© 2026 Seonghyeon Shin. All rights reserved. No copying, modification or redistribution of the source, artwork or audio.', 'footer.contact':'Contact',
 },
 ja:{
   'app.title':'三島道場',
@@ -849,8 +852,8 @@ ja:{
   'hist.title':'最風ボタンタイミング分布', 'hist.sub':'3(d/f)入力時点を0とした2(RP)ボタン押下のフレーム差 · 直近60回',
   'hist.lOk':'最風 (判定内)', 'hist.lEarly':'早い (2+2)', 'hist.lLate':'遅い (風神拳)', 'hist.aria':'最風ボタンタイミングのヒストグラム',
   'hist.empty':'最風を試行すると分布が溜まります', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}回 · ${k}`, 'hist.kOk':'最風', 'hist.kEarly':'早い', 'hist.kLate':'遅い',
-  'wave.title':'ウェーブ速度推移', 'wave.sub':'風神ステップ1回あたりの速度 (ダッシュ/秒) · 直近40回、5以上で上級', 'wave.aria':'ウェーブ速度推移',
-  'wave.top':'上級 (5以上)', 'wave.empty':'風神ステップを2回以上連続で入れると描画されます', 'wave.old':'古い', 'wave.recent':'最近',
+  'wave.title':'ウェーブ速度推移', 'wave.sub':'風神ステップ1回あたりの速度 (ダッシュ/秒) · 直近40回 · 網掛け = 今週のウェーブ10秒ランキング上位10%', 'wave.aria':'ウェーブ速度推移',
+  'wave.top':v=>'上位10% ('+v+'以上)', 'wave.topFixed':'上級 (5以上)', 'wave.empty':'風神ステップを2回以上連続で入れると描画されます', 'wave.old':'古い', 'wave.recent':'最近',
   'wave.tip':(dps,ms,f)=>`${dps} ダッシュ/秒 · サイクル ${ms}ms (${f}f)`,
   'best.title':'モード別最高記録', 'best.sub':'このブラウザに保存されます', 'best.none':'記録なし', 'best.last':'最近: ',
   'rec.dps':d=>d+' ダッシュ/秒', 'rec.waveSub':(n,c)=>n+'回 · 最高連続 '+c, 'rec.ewgfSub':(ok,tg,m)=>ok+'/'+tg+' · 平均 '+m,
@@ -889,7 +892,7 @@ ja:{
   'seg.a.d':'↓から↓→への移行が遅いです。↓を入れたら<strong>すぐ→を足して</strong>倒してください。',
   'seg.a.df':'↓→を長く押しすぎています。↓→の直後に<strong>↓だけ離して</strong>すぐキャンセル6を入れてください。',
   'seg.a.c':'キャンセル6から次の始動6までの間が長いです。6を<strong>離した瞬間にまた6</strong>を軽く押してください。',
-  'tempo.5':'<strong>上級の速度</strong>です。', 'tempo.4':'速い方です。', 'tempo.3':'安定しています。', 'tempo.0':'まだ遅いです。',
+  'tempo.5':'<strong>上位の速度</strong>です。', 'tempo.4':'速い方です。', 'tempo.3':'安定しています。', 'tempo.0':'まだ遅いです。',
   'wave.worst':(name,ms)=>'一番長い区間は<strong>'+name+'</strong> ('+ms+'ms)。',
   'wave.even':'区間が均等に短いです。このリズムを保ちながら<strong>連続回数</strong>を伸ばしましょう。',
   'trend.head':(n,hit,mean,sd)=>'直近'+n+'回: 最風'+hit+'回 · 平均 '+mean+' · ばらつき '+sd+'f。',
@@ -936,13 +939,13 @@ ja:{
   'nick.submit':'開始', 'nick.change':n=>'ニックネーム · '+n, 'nick.checking':'確認中…', 'nick.taken':'そのニックネームは使用中です。別の名前にしてください。',
   'nick.fail':'ニックネームを登録できませんでした。しばらくしてからもう一度お試しください。', 'nick.tooFast':'速すぎます。少し待ってからもう一度お試しください。', 'nick.expired':'ニックネームの確認に失敗しました。もう一度決めてください。',
   'nick.set':'ニックネームを決める', 'nick.needed':'ニックネームを決めるとランキングに登録されます。', 'nick.later':'あとで · ランキングなしで練習',
-  'tier.0.title':'今週の頂点', 'tier.0.msg':'今週の頂点。相手はスタートボタンを探しています。',
-  'tier.1.title':'達人', 'tier.1.msg':'プロの舞台、準備はいいですか？配信をつけましょう。',
-  'tier.2.title':'上級', 'tier.2.msg':'目で追えません。相手の画面には残像だけ。',
-  'tier.3.title':'中上級', 'tier.3.msg':'ウェーブ乗れてますね？相手がバックダッシュを始めます。',
-  'tier.4.title':'中級', 'tier.4.msg':'手が温まってきました。半分は越えました。',
-  'tier.5.title':'修行中', 'tier.5.msg':'最風が出そうで出ない。今日もう一本。',
-  'tier.6.title':'入門', 'tier.6.msg':'精進あるのみ。まだまだこれから。6N23 6 N、もう一度。',
+  'tier.0.title':'SS', 'tier.1.title':'S', 'tier.2.title':'A', 'tier.3.title':'B', 'tier.4.title':'C', 'tier.5.title':'D',
+  'tier.0.wave10':'人間じゃないですね!? 画面には残像だけ。', 'tier.0.ewgf20':'人間じゃないですね!? 20回すべてジャスト。', 'tier.0.combo10':'人間じゃないですね!? ウェーブから最風まで一息。', 'tier.0.rush30':'人間じゃないですね!? ダミーが立つ暇もありません。',
+  'tier.1.wave10':'見事です！この速さについてこられる人はいません！', 'tier.1.ewgf20':'見事です！手がフレームを覚えています！', 'tier.1.combo10':'見事です！走りながら撃って全部ジャスト！', 'tier.1.rush30':'見事です！上中下すべて撃破！',
+  'tier.2.wave10':'上級ウェーブ。相手はバックダッシュから始めます。', 'tier.2.ewgf20':'上級の最風。実戦で信頼できます。', 'tier.2.combo10':'上級。ウェーブ後の最風がぶれません。', 'tier.2.rush30':'上級の撃破。空振りを減らせば頂点です。',
+  'tier.3.wave10':'ウェーブ乗れてますね？半分は越えました。', 'tier.3.ewgf20':'半分以上ジャスト。あとはばらつきを減らすだけ。', 'tier.3.combo10':'ウェーブは出るのに最後の3+2が五分五分。あと少し。', 'tier.3.rush30':'撃破半分、空振り半分。まずダミーの高さを見て。',
+  'tier.4.wave10':'手が温まってきました。キャンセル6をもう少し早く。', 'tier.4.ewgf20':'最風が出そうで出ない。3と2を同時に。', 'tier.4.combo10':'ウェーブ中に最風のタイミングを逃します。最後のダッシュだけ落ち着いて。', 'tier.4.rush30':'手が温まってきました。最風・f,f+2・奈落のどれかが遅い。',
+  'tier.5.wave10':'人間…ですよね？6N23 6 N、もう一度。', 'tier.5.ewgf20':'人間…ですよね？風神拳も技です。もう一度。', 'tier.5.combo10':'人間…ですよね？ウェーブ3回のあと最風、もう一度。', 'tier.5.rush30':'人間…ですよね？ダミーは逃げません。もう一度。',
   'board.note':'上位10人 · ニックネームごとに週間ベスト1件 · 毎週月曜0時(KST)にリセット · 保存されるのはニックネームと記録だけです',
   'visits':(d,t)=>'今日の訪問 '+d+' · 累計 '+t, 'posts.title':'ひとこと', 'posts.sub':'要望・質問・雑談なんでも · 最新50件 · 1分ごとに更新',
   'posts.ph':'言いたいこと (200文字)', 'posts.send':'投稿', 'posts.sending':'送信中…', 'posts.empty':'まだ投稿がありません。最初の一言をどうぞ。',
@@ -958,7 +961,7 @@ ja:{
   'og.keywords':'EWGF trainer · wave dash practice · 無料 · キーボード / ゲームパッド',
   'og.footer':'判定幅 0.5f · 0.7f · 0.9f · タイミング分布 · 測定モード · 共有カード',
   'footer':'表記: 6 = 前, N = ニュートラル, 2 = 下, 3 = 斜め下前, ボタン2 = 右パンチ(RP)。ウェーブ = 6N23 6 N 6N23 6 N … (3の後の6が硬直キャンセル)。1フレーム = 16.67ms基準。非公式ファン製作の練習ツールです。',
-  'footer.copy':'© 2026 Seonghyeon Shin. All rights reserved. ソース・画像・音声の複製、改変、再配布を禁止します。',
+  'footer.copy':'© 2026 Seonghyeon Shin. All rights reserved. ソース・画像・音声の複製、改変、再配布を禁止します。', 'footer.contact':'お問い合わせ',
 },
 };
 const T = (key, ...args) => {
@@ -1418,7 +1421,7 @@ function coachWaveLive(cyc){
   const segs = SEGKEYS.map((k,i)=>[k, vals[i]]).filter(s=>s[1]!=null).sort((a,b)=>b[1]-a[1]);
   const worst = segs[0];
   const dps = cyc.cycle?1000/cyc.cycle:0;
-  const tempoKey = dps>=5?'tempo.5':dps>=4?'tempo.4':dps>=3?'tempo.3':'tempo.0';
+  const tempoKey = dps>=(waveTop()??WAVE_TOP_DEFAULT)?'tempo.5':dps>=4?'tempo.4':dps>=3?'tempo.3':'tempo.0'; // top band = this week's wave10 top-10% speed (5 until the board answers)
   if(worst && worst[1]>90) setCoach(() => T(tempoKey) + T('wave.worst', T('seg.n.'+worst[0]), Math.round(worst[1])) + T('seg.a.'+worst[0]));
   else setCoach(() => T(tempoKey) + T('wave.even'));
 }
@@ -1639,13 +1642,14 @@ function renderHist(){
 function renderWave(){
   const W=520, H=190, padL=28, padR=12, padT=12, padB=24;
   const pts = session.cycles.slice(-40);
-  const innerW = W-padL-padR, innerH=H-padT-padB, yMax=8;
+  const cut = waveTop(), top = cut ?? WAVE_TOP_DEFAULT, yMax = waveYMax(top);
+  const innerW = W-padL-padR, innerH=H-padT-padB;
   const X = i => padL + (pts.length>1 ? i/(pts.length-1)*innerW : innerW/2);
   const Y = v => padT + innerH - clamp(v,0,yMax)/yMax*innerH;
   let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHTML(T('wave.aria'))}">`;
-  s += `<rect x="${padL}" y="${Y(yMax)}" width="${innerW}" height="${Y(5)-Y(yMax)}" fill="var(--accent-soft)"/>`;
-  [2,4,6,8].forEach(v => { s += `<line x1="${padL}" x2="${W-padR}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${padL-6}" y="${Y(v)+3.5}" font-size="10" fill="var(--faint)" text-anchor="end" font-family="JetBrains Mono,monospace">${v}</text>`; });
-  s += `<text x="${padL+4}" y="${Y(8)+11}" font-size="10" fill="var(--accent)" font-family="var(--body)">${escapeHTML(T('wave.top'))}</text>`;
+  s += `<rect x="${padL}" y="${Y(yMax)}" width="${innerW}" height="${Y(top)-Y(yMax)}" fill="var(--accent-soft)"/>`;
+  waveGrid(yMax).forEach(v => { s += `<line x1="${padL}" x2="${W-padR}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${padL-6}" y="${Y(v)+3.5}" font-size="10" fill="var(--faint)" text-anchor="end" font-family="JetBrains Mono,monospace">${v}</text>`; });
+  s += `<text x="${padL+4}" y="${Y(yMax)+11}" font-size="10" fill="var(--accent)" font-family="var(--body)">${escapeHTML(waveTopText(cut))}</text>`;
   if(pts.length>=2){
     const d = pts.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.dps).toFixed(1)).join(' ');
     s += `<path d="${d} L${X(pts.length-1)} ${Y(0)} L${X(0)} ${Y(0)} Z" fill="var(--accent)" opacity=".10"/>`;
@@ -1686,14 +1690,14 @@ function buildCard(src){
     const r = src.rec, dps = (+r.score).toFixed(1), chain = r.chain||0;
     hero = {value:dps, label:T('card.dps')};
     metrics = [metric('card.dashes', r.dashes), metric('card.chain', chain), metric('card.tries', attempts.length)];
-    chart = {type:'wave', pts:cycles.slice(-40).map(c=>c.dps)};
+    chart = {type:'wave', pts:cycles.slice(-40).map(c=>c.dps), top:waveTop()};
     summary = T('rec.dps',dps)+' · '+T('rec.waveSub', r.dashes, chain);
     sub = T('trial.waveEnd', r.dashes, dps);
   } else if(src.kind==='trial' && m==='rush30'){
     const r = src.rec;
     hero = {value:String(r.score), label:T('card.pts')};
     metrics = [metric('card.kills', r.kills), metric('card.whiffs', r.whiffs), metric('card.dashPts', r.dashPts), metric('card.tries', attempts.length)];
-    chart = cycles.length>=2 ? {type:'wave', pts:cycles.slice(-40).map(c=>c.dps)} : null;
+    chart = cycles.length>=2 ? {type:'wave', pts:cycles.slice(-40).map(c=>c.dps), top:waveTop()} : null;
     summary = T('rec.pts', r.score)+' · '+T('rec.rushSub', r.kills, r.whiffs, r.dashPts);
     sub = T('trial.rushEnd', r.score, r.kills);
   } else if(src.kind==='trial'){
@@ -1713,7 +1717,7 @@ function buildCard(src){
       : [metric('card.dashes', s.dashes), metric('card.chain', s.bestChain), metric('card.tries', s.tries), metric('card.mean', mean)];
     const withOff = attempts.filter(a=>a.off!=null).slice(-60);
     chart = withOff.length ? {type:'hist', bins:histBins(withOff, win), window:win}
-          : cycles.length>=2 ? {type:'wave', pts:cycles.slice(-40).map(c=>c.dps)} : null;
+          : cycles.length>=2 ? {type:'wave', pts:cycles.slice(-40).map(c=>c.dps), top:waveTop()} : null;
     summary = rate!=null ? rate+' · '+T('rec.ewgfSub', s.hits, s.tries, mean) : T('rec.dps',dps)+' · '+T('rec.waveSub', s.dashes, s.bestChain);
     sub = T('card.session');
   }
@@ -1852,10 +1856,33 @@ const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per 
 const board = { tab:'wave10', data:{}, msg:'', seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise)
 const live = { visits:null, posts:null, postsMsg:'', posting:false, visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false };
 // nickLater: the gate offers "practise without ranking" after the server itself failed · nickLost: a 403 arrived while the result card was up
-const TIERS = [1, 5, 10, 30, 50, 70]; // upper bounds of "top N%" for tier 0..5; anything above is tier 6
-// Tier for the result comment. Tiny boards count as ten players so 1st of 1 lands in tier 2, not "beginner" at top 100%.
-function tierOf(rank, total){ const p = pctTop(rank, Math.max(total, 10)); const i = TIERS.findIndex(t => p<=t); return i<0 ? 6 : i; }
+const TIERS = [1, 10, 20, 50, 70]; // upper bounds of "top N%" for grades SS S A B C (tier 0..4); anything above is D (tier 5). Titles: tier.N.title, comments: tier.N.<mode>
+// Grade for the result banner. Tiny boards count as ten players so 1st of 1 lands on S (top 10%), not SS — and 1st of 1 is never "D" at top 100%.
+function tierOf(rank, total){ const p = pctTop(rank, Math.max(total, 10)); const i = TIERS.findIndex(t => p<=t); return i<0 ? 5 : i; }
 const pctTop = (rank, total) => Math.max(1, Math.ceil(rank / Math.max(1,total) * 100)); // "top N%" — 1st of 1 is top 100%
+// Wave chart top band: this week's wave10 top-10% score (cut10 from /top or /submit), null until the board answers → WAVE_TOP_DEFAULT.
+const WAVE_TOP_DEFAULT = 5;
+const waveCurrent = d => !!d && Number.isFinite(d.end) && Date.now()<d.end;
+const waveTop = () => { const d = board.data.wave10; return waveCurrent(d) && Number.isFinite(d.cut10) && d.cut10>0 ? d.cut10 : null; };
+let waveRefreshing = false;
+async function waveRefresh(){
+  const cached = board.data.wave10;
+  if(!BOARD_URL || waveCurrent(cached) || waveRefreshing) return;
+  waveRefreshing = true;
+  renderWave(); // remove last week's band while the new request is pending (or fails)
+  const nick = store.nick, token = store.nickToken;
+  try{
+    const d = await boardFetch('/top?board=wave10'+(hasNick() ? '&nick='+encodeURIComponent(nick) : ''));
+    // A manual load, submission or nickname change takes precedence over this background request.
+    if(nick===store.nick && token===store.nickToken && board.data.wave10===cached && waveCurrent(d)){
+      board.data.wave10 = d; renderWave(); renderBoard();
+    }
+  }catch(e){} // keep the fallback and retry on the next periodic refresh
+  finally{ waveRefreshing = false; }
+}
+const waveTopText = cut => cut==null ? T('wave.topFixed') : T('wave.top', cut.toFixed(1));
+const waveYMax = top => Math.max(8, Math.ceil(top)+1); // keep the band on the chart when the cut climbs past 8 dashes/s
+const waveGrid = yMax => { const g = []; for(let v=2; v<=yMax; v+=2) g.push(v); return g; };
 const KST_DAY = () => new Date(Date.now() + 9*3600e3).toISOString().slice(0,10); // same key as the worker's dayKey
 function boardEntry(r, m){ // pure: finished trial result → submission payload (null in free practice / no result). Unit-tested.
   if(!r || !r.rec || !MODES[m] || !MODES[m].start) return null;
@@ -1947,7 +1974,7 @@ async function boardLoad(){
   let d = null;
   try{ d = await boardFetch('/top?board='+t+(hasNick() ? '&nick='+encodeURIComponent(store.nick) : '')); } catch(e){} // an unclaimed name may belong to someone else
   if(seq!==board.seq) return; // superseded by a newer load or a submit: drop this response entirely
-  if(d){ board.data[t] = d; setBoardMsg(''); } else setBoardMsg(['board.loadFail']);
+  if(d){ board.data[t] = d; setBoardMsg(''); if(t==='wave10') renderWave(); } else setBoardMsg(['board.loadFail']); // wave10 carries cut10: the chart's top band follows it
   renderBoard();
 }
 // Post-trial status in the trial bar (and the banner in the result card): auto-submitted, retry on failure.
@@ -1965,7 +1992,7 @@ function renderShareRank(){
   el.className = 'share-rank' + (done ? ' t'+t : '');
   $('shareTier').textContent = done ? T('tier.'+t+'.title') : '';
   $('shareRankLine').textContent = submitText(s);
-  $('shareTierMsg').textContent = done ? T('tier.'+t+'.msg') : '';
+  $('shareTierMsg').textContent = done ? T('tier.'+t+'.'+mode) : ''; // trial.result belongs to the current mode (setMode clears it)
 }
 async function boardSubmit(){
   const r = trial.result, e = boardEntry(r, mode); if(!BOARD_URL || !e || !hasNick() || (r.submit && r.submit.state!=='fail')) return renderTrialRank();
@@ -1975,7 +2002,7 @@ async function boardSubmit(){
     const res = await boardFetch('/submit', {method:'POST', body:JSON.stringify({...e, nick, token:store.nickToken})});
     r.submit = {state:'done', rank:res.rank, total:res.total, improved:res.improved};
     if(nick===store.nick){ // the response describes this nickname's board; after a rename it is stale
-      board.data[e.board] = res;
+      board.data[e.board] = res; if(e.board==='wave10') renderWave();
       if(board.tab===tab0){ board.seq++; board.tab = e.board; setBoardMsg(''); } // show the trial's board, unless the user moved to another tab meanwhile (seq: loads for the old tab are dropped)
       renderBoard();
     }
@@ -2032,7 +2059,7 @@ function backendInit(){
   if(!BOARD_URL) return;
   boardLoad(); postsLoad(); visitsLoad(); renderNick();
   if(!hasNick()){ openNick(); if(store.nick) claimNick(store.nick); } // first visit → gate; a nickname saved before tokens existed is claimed as-is
-  setInterval(() => { if(document.hidden) return; postsLoad(); visitsLoad(); }, 60000); // background tabs stay quiet
+  setInterval(() => { if(document.hidden) return; waveRefresh(); postsLoad(); visitsLoad(); }, 60000); // background tabs stay quiet
 }
 
 /* ---------- language ---------- */
@@ -2408,10 +2435,10 @@ function drawCard(g, model){
     bins.forEach((b,i) => { if(b.f%3===0) g.fillText((b.f>0?'+':'')+b.f+'f', ix+i*bw+bw/2, iy+ih+20); });
   } else if(chart && chart.type==='wave'){
     fitFont(g, T('card.wave'), cw-40, 15, body, 700); g.fillText(T('card.wave'), cx+20, cy+32);
-    const pts = chart.pts, yMax=8, X = i => ix + (pts.length>1 ? i/(pts.length-1)*iw : iw/2), Y = v => iy+ih-clamp(v,0,yMax)/yMax*ih;
-    g.fillStyle=P.winFill; g.fillRect(ix, Y(yMax), iw, Y(5)-Y(yMax));
+    const pts = chart.pts, top = chart.top ?? WAVE_TOP_DEFAULT, yMax = waveYMax(top), X = i => ix + (pts.length>1 ? i/(pts.length-1)*iw : iw/2), Y = v => iy+ih-clamp(v,0,yMax)/yMax*ih;
+    g.fillStyle=P.winFill; g.fillRect(ix, Y(yMax), iw, Y(top)-Y(yMax));
     g.strokeStyle=P.chartLine; g.lineWidth=1; g.fillStyle=P.faint; g.font=`500 12px ${mono}`; g.textAlign='right';
-    [2,4,6,8].forEach(v => { g.beginPath(); g.moveTo(ix,Y(v)); g.lineTo(ix+iw,Y(v)); g.stroke(); g.fillText(String(v), ix-4, Y(v)+4); });
+    waveGrid(yMax).forEach(v => { g.beginPath(); g.moveTo(ix,Y(v)); g.lineTo(ix+iw,Y(v)); g.stroke(); g.fillText(String(v), ix-4, Y(v)+4); });
     if(pts.length>=2){
       g.beginPath(); pts.forEach((v,i)=>{ i?g.lineTo(X(i),Y(v)):g.moveTo(X(i),Y(v)); }); g.lineTo(X(pts.length-1),Y(0)); g.lineTo(X(0),Y(0)); g.closePath(); g.fillStyle='rgba(76,201,255,.12)'; g.fill();
       g.beginPath(); pts.forEach((v,i)=>{ i?g.lineTo(X(i),Y(v)):g.moveTo(X(i),Y(v)); }); g.strokeStyle=P.binEwgf; g.lineWidth=3; g.lineJoin='round'; g.stroke();
