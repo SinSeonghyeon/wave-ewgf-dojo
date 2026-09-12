@@ -43,6 +43,9 @@ test('validate normalises the nickname and rejects out-of-range or malformed ent
   for (const [k, v] of Object.entries(bad)) assert.equal(validate(v).error, k.split(' ')[0], k);
   assert.equal(validate(entry({board: 'ewgf20', score: 85, tie: -2.5, detail: {hits: 17, target: 20, mean: -2.5}})).error, undefined);
   assert.equal(validate(entry({board: 'combo10', score: 70, tie: 5.5, detail: {hits: 7, target: 10, mean: 1, dps: 5.5}})).error, undefined);
+  assert.equal(validate(entry({board: 'rush30', score: 87, tie: 9, detail: {kills: 9, whiffs: 4, dashPts: 42}})).error, undefined);
+  assert.equal(validate(entry({board: 'rush30', score: 87, tie: 9, detail: {kills: 9, whiffs: 4}})).error, 'detail.dashPts');
+  assert.equal(validate(entry({board: 'rush30', score: 2001, tie: 9, detail: {kills: 9, whiffs: 4, dashPts: 42}})).error, 'score');
   assert.equal(cleanText('  a \n b  ', 200), 'a b'); assert.equal(cleanText('', 200), undefined); assert.equal(cleanText('x'.repeat(201), 200), undefined);
   assert.equal(cleanText('한'.repeat(200), 200).length, 200, 'limit counts code points'); assert.equal(cleanText(5, 200), undefined);
 });

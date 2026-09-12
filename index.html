@@ -73,6 +73,8 @@
   .hud-chain span{font-family:var(--display);font-size:42px;line-height:1;color:var(--ink);text-shadow:0 2px 0 #000,0 0 14px rgba(76,201,255,.35);font-variant-numeric:tabular-nums}
   .hud-chain small{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--muted)}
   .hud-chain.hot span{color:var(--accent)}
+  .hud-score{position:absolute;left:14px;top:58px;font-family:var(--display);font-size:22px;line-height:1;color:var(--gold);text-shadow:0 2px 0 #000,0 0 12px rgba(245,197,66,.35);font-variant-numeric:tabular-nums}
+  .hud-score:empty{display:none}
   .hud-timer{position:absolute;left:0;right:0;top:10px;text-align:center;font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink);text-shadow:0 2px 0 #000;font-variant-numeric:tabular-nums}
   .hud-timer.warn{color:var(--warn)}
   .hud-center{position:absolute;left:0;right:0;top:34%;text-align:center;font-family:var(--display);font-size:64px;line-height:1;color:var(--gold);text-shadow:0 3px 0 #000,0 0 22px rgba(245,197,66,.5)}
@@ -245,7 +247,7 @@
   td.m{font-family:var(--mono);font-size:12px}
   td.ok{color:var(--accent)} td.wg{color:var(--warn)} td.no{color:var(--red)}
   .tbl{overflow-x:auto}
-  .bests{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .bests{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
   @media (max-width:520px){.bests{grid-template-columns:1fr}}
   .best{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
   .best .k{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:1px}
@@ -288,6 +290,7 @@
       <button role="tab" data-mode="wave10" aria-selected="false" data-i18n="mode.wave10.name">웨이브 10초</button>
       <button role="tab" data-mode="ewgf20" aria-selected="false" data-i18n="mode.ewgf20.name">초풍 20회</button>
       <button role="tab" data-mode="combo10" aria-selected="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button>
+      <button role="tab" data-mode="rush30" aria-selected="false" data-i18n="mode.rush30.name">더미 격파 30초</button>
     </nav>
     <div class="top-right">
       <div class="lang" id="langSel" role="group" aria-label="Language"><button data-lang="ko" aria-pressed="true">한국어</button><button data-lang="en" aria-pressed="false">EN</button><button data-lang="ja" aria-pressed="false">日本語</button></div>
@@ -304,6 +307,7 @@
         <canvas id="stage" data-i18n-aria="stage.canvasAria" aria-label="SD 캐릭터 연출 화면"></canvas>
         <div class="hud">
           <div class="hud-chain" id="hudChain"><span id="hudChainN">0</span><small>WAVE</small></div>
+          <div class="hud-score" id="hudScore"></div>
           <div class="hud-timer" id="hudTimer"></div>
           <div class="hud-center" id="hudCenter"></div>
           <div class="hud-hint" id="hudHint"></div>
@@ -422,7 +426,7 @@
     <div class="card board-card" id="boardCard" hidden>
       <h2 data-i18n="board.title">주간 순위</h2>
       <p class="sub" data-i18n="board.note">상위 10명 · 닉네임당 주간 최고 기록 1건 · 매주 월요일 0시(KST) 초기화 · 닉네임과 기록만 저장됩니다</p>
-      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button></div>
+      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button><button data-board="rush30" aria-pressed="false" data-i18n="mode.rush30.name">더미 격파 30초</button></div>
       <div class="board-week" id="boardWeek"></div>
       <div class="board-me" id="boardMe"></div>
       <div class="tbl board-list" id="boardList"></div>
@@ -478,6 +482,8 @@ const fmtF = ms => (ms>=0?'+':'−') + Math.abs(ms/FRAME).toFixed(1) + 'f';
 const fmtMs = ms => (ms>=0?'+':'−') + Math.abs(Math.round(ms)) + 'ms';
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const WALK_F = 90, WALK_B = 70, TAP_MS = 250; // walk speed px/s (forward/back), f,N,f double-tap dash window. Visual only; judging never reads these.
+const FF_MS = 250;      // judging: f,f+2 (통발) accepts the 2 up to this long after the second f (state 1/2 with cd.dashT===cd.tF)
+const RUSH_PTS = {kill:5, wgf:2, dashMax:3}; // 더미 격파: correct hit 5, non-just WGF on the high dummy 2, each crouch dash min(chain,3)
 
 /* ---------- persistent settings ---------- */
 const STORE = 'wave-ewgf-dojo-v1';
@@ -485,7 +491,7 @@ const detectLang = () => { const l = (typeof navigator!=='undefined' && navigato
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}, nick:'', nickToken:'', visitDay:''};
+let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[],rush30:[]}, nick:'', nickToken:'', visitDay:''};
 const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function validKey(slot, code){
   const arrows = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
@@ -608,6 +614,18 @@ ko:{
   'trial.waveEnd':(n,dps)=>'10초 종료 · '+n+'회 ('+dps+' 대시/초)', 'trial.end':(ok,tg,r)=>'종료 · 성공 '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' 대시',
   'pop.ewgf':'초풍!', 'pop.wgf':'풍신권',
   'pop.streak':n=>n+'초'+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'대초!', 'a.dashEwgf.title':'대초!', 'res.dash_ewgf':'대초', 'a.streak.sub':n=>' · '+n+'연속',
+  /* 통발 · 나락 · 더미 격파 (2026-09-13) */
+  'mode.rush30.name':'더미 격파 30초', 'mode.rush30.desc':'30초 동안 상단·중단·하단 더미가 무작위로 나옵니다. 상단=초풍, 중단=통발(66+2), 하단=나락(6N23+4)으로 격파하면 5점(저스트를 놓친 풍신권은 2점), 크라우치 대시마다 연속 수만큼(최대 3점) 점수.',
+  'hint.rush30':'상단=초풍 6N23+2 · 중단=통발 66+2 · 하단=나락 6N23+4 · 웨이브로 접근하면 연속 수만큼 점수 (GO 때 연속은 1부터)',
+  'trial.rushPts':(s,k)=>s+'점 · 격파 '+k, 'trial.rushEnd':(s,k)=>'30초 종료 · '+s+'점 (격파 '+k+')',
+  'rec.pts':s=>s+'점', 'rec.rushSub':(k,w,d)=>'격파 '+k+' · 헛침 '+w+' · 웨이브 '+d+'점',
+  'a.tongbal.title':'통발', 'a.tongbal.sub':'66+2 · 중단', 'a.tongbal.coach':'통발은 <strong>f, f+2</strong>. 두 번째 6을 누른 채(또는 뗀 직후) 2. 중단 더미 전용.',
+  'a.hellsweep.title':'나락', 'a.hellsweep.sub':'6N23+4 · 하단', 'a.hellsweep.coach':'나락은 <strong>f, N, d, d/f+4</strong>. 저스트는 없으니 3을 누른 뒤 여유 있게 4. 하단 더미 전용.',
+  'a.hellsweepEarly.title':'4가 3보다 먼저', 'a.hellsweepEarly.sub':'3 전에 4를 눌렀습니다', 'a.hellsweepEarly.coach':'나락은 3(d/f)이 들어간 뒤에 4. 초풍과 달리 서두를 필요가 없습니다.',
+  'res.tongbal':'통발', 'res.hellsweep':'나락', 'res.hellsweepEarly':'나락 실패 (4 먼저)', 'log.tStrike':'기술',
+  'pop.tongbal':'통발', 'pop.hellsweep':'나락', 'pop.whiff':'헛침',
+  'dummy.high':'상단', 'dummy.mid':'중단', 'dummy.low':'하단',
+  'card.pts':'점수', 'card.kills':'격파', 'card.whiffs':'헛침', 'card.dashPts':'웨이브 점수',
   'set.sound':'소리', 'set.bgmVol':'배경음 볼륨', 'set.sfxVol':'효과음 볼륨', 'set.soundNote':'배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).',
   'share.card':'공유 카드', 'share.session':'세션 카드', 'share.title':'결과 공유 카드', 'share.canvasAria':'결과 공유 카드 미리보기',
   'share.copy':'이미지 복사', 'share.download':'PNG 저장', 'share.tweet':'X(트위터)에 공유', 'share.close':'닫기',
@@ -740,6 +758,18 @@ en:{
   'trial.waveEnd':(n,dps)=>'10s over · '+n+' dashes ('+dps+' dashes/s)', 'trial.end':(ok,tg,r)=>'Done · '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' dashes',
   'pop.ewgf':'EWGF!', 'pop.wgf':'WGF',
   'pop.streak':n=>'EWGF ×'+n+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'Dash EWGF!', 'a.dashEwgf.title':'Dash EWGF!', 'res.dash_ewgf':'Dash EWGF', 'a.streak.sub':n=>' · streak '+n,
+  /* f,f+2 · hell sweep · dummy rush (2026-09-13) */
+  'mode.rush30.name':'Dummy Rush 30s', 'mode.rush30.desc':'High, mid and low dummies appear at random for 30 seconds. High = EWGF, mid = f,f+2, low = hell sweep (f,N,d,df+4): 5 points each (a non-just WGF scores 2), plus 1–3 points per crouch dash by chain length.',
+  'hint.rush30':'High = EWGF 6N23+2 · Mid = f,f+2 · Low = hell sweep 6N23+4 · wave in for points per chain (chain restarts at GO)',
+  'trial.rushPts':(s,k)=>s+' pts · '+k+' destroyed', 'trial.rushEnd':(s,k)=>'30s over · '+s+' pts ('+k+' destroyed)',
+  'rec.pts':s=>s+' pts', 'rec.rushSub':(k,w,d)=>k+' destroyed · '+w+' whiffs · wave '+d+' pts',
+  'a.tongbal.title':'f,f+2', 'a.tongbal.sub':'f,f+2 · mid', 'a.tongbal.coach':'f,f+2: press 2 while holding the second f (or right after releasing it). Destroys the mid dummy.',
+  'a.hellsweep.title':'Hell Sweep', 'a.hellsweep.sub':'f,N,d,df+4 · low', 'a.hellsweep.coach':'Hell sweep is <strong>f, N, d, d/f+4</strong>. No just frame — press 4 comfortably after d/f. Destroys the low dummy.',
+  'a.hellsweepEarly.title':'4 before d/f', 'a.hellsweepEarly.sub':'4 was pressed before the d/f', 'a.hellsweepEarly.coach':'Hell sweep needs the 4 after d/f goes in. Unlike EWGF there is no rush.',
+  'res.tongbal':'f,f+2', 'res.hellsweep':'Hell sweep', 'res.hellsweepEarly':'Sweep failed (4 first)', 'log.tStrike':'Move',
+  'pop.tongbal':'f,f+2', 'pop.hellsweep':'SWEEP', 'pop.whiff':'whiff',
+  'dummy.high':'HIGH', 'dummy.mid':'MID', 'dummy.low':'LOW',
+  'card.pts':'Points', 'card.kills':'Destroyed', 'card.whiffs':'Whiffs', 'card.dashPts':'Wave points',
   'set.sound':'Sound', 'set.bgmVol':'BGM volume', 'set.sfxVol':'SFX volume', 'set.soundNote':'BGM starts after your first key press or click (browser autoplay policy).',
   'share.card':'Share card', 'share.session':'Session card', 'share.title':'Result share card', 'share.canvasAria':'Result share card preview',
   'share.copy':'Copy image', 'share.download':'Save PNG', 'share.tweet':'Share on X (Twitter)', 'share.close':'Close',
@@ -872,6 +902,18 @@ ja:{
   'trial.waveEnd':(n,dps)=>'10秒終了 · '+n+'回 ('+dps+' ダッシュ/秒)', 'trial.end':(ok,tg,r)=>'終了 · 成功 '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' ステップ',
   'pop.ewgf':'最風!', 'pop.wgf':'風神拳',
   'pop.streak':n=>'最風×'+n+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'ダッシュ最風!', 'a.dashEwgf.title':'ダッシュ最風!', 'res.dash_ewgf':'ダッシュ最風', 'a.streak.sub':n=>' · '+n+'連続',
+  /* 66+2 · 奈落 · ダミー撃破 (2026-09-13) */
+  'mode.rush30.name':'ダミー撃破30秒', 'mode.rush30.desc':'30秒間、上段・中段・下段のダミーがランダムに現れます。上段=最風、中段=66+2、下段=奈落(6N23+4)で撃破すると5点(ジャスト外れの風神拳は2点)、風神ステップごとに連続数ぶん(最大3点)加点。',
+  'hint.rush30':'上段=最風 6N23+2 · 中段=66+2 · 下段=奈落 6N23+4 · ウェーブで近づくと連続数ぶん加点 (GO時に連続は1から)',
+  'trial.rushPts':(s,k)=>s+'点 · 撃破 '+k, 'trial.rushEnd':(s,k)=>'30秒終了 · '+s+'点 (撃破 '+k+')',
+  'rec.pts':s=>s+'点', 'rec.rushSub':(k,w,d)=>'撃破 '+k+' · 空振り '+w+' · ウェーブ '+d+'点',
+  'a.tongbal.title':'66+2', 'a.tongbal.sub':'66+2 · 中段', 'a.tongbal.coach':'66+2は2回目の6を押したまま(または離した直後に)2。中段ダミー専用。',
+  'a.hellsweep.title':'奈落', 'a.hellsweep.sub':'6N23+4 · 下段', 'a.hellsweep.coach':'奈落は<strong>6、N、2、3+4</strong>。ジャストはないので3を入れてから余裕をもって4。下段ダミー専用。',
+  'a.hellsweepEarly.title':'4が3より先', 'a.hellsweepEarly.sub':'3の前に4を押しました', 'a.hellsweepEarly.coach':'奈落は3(↓→)が入ってから4。最風と違って急ぐ必要はありません。',
+  'res.tongbal':'66+2', 'res.hellsweep':'奈落', 'res.hellsweepEarly':'奈落失敗 (4が先)', 'log.tStrike':'技',
+  'pop.tongbal':'66+2', 'pop.hellsweep':'奈落', 'pop.whiff':'空振り',
+  'dummy.high':'上段', 'dummy.mid':'中段', 'dummy.low':'下段',
+  'card.pts':'得点', 'card.kills':'撃破', 'card.whiffs':'空振り', 'card.dashPts':'ウェーブ得点',
   'set.sound':'サウンド', 'set.bgmVol':'BGM音量', 'set.sfxVol':'効果音音量', 'set.soundNote':'BGMは最初のキー入力かクリックの後に始まります (ブラウザの自動再生制限)。',
   'share.card':'共有カード', 'share.session':'セッションカード', 'share.title':'結果共有カード', 'share.canvasAria':'結果共有カードのプレビュー',
   'share.copy':'画像をコピー', 'share.download':'PNG保存', 'share.tweet':'X(Twitter)で共有', 'share.close':'閉じる',
@@ -985,7 +1027,7 @@ addEventListener('pageshow', bgmSync);
 /* ---------- session state ---------- */
 const session = { dashes:0, bestChain:0, bestDps:0, tries:0, hits:0, offsetSum:0, offsetCount:0, cycles:[], attempts:[], log:[] };
 /* states: 0 idle · 1 시작 6 · 2 중립 · 3 d · 4 d/f(대시 중) · 5 캔슬 6 · 6 캔슬 후 중립 · 7 d/f 뗀 뒤 캔슬 대기 */
-const cd = { state:0, tF:0, tN:0, tD:0, tDF:0, tC:0, tRel:0, lastDF:-1e9, cancelled:true, chain:0, chainCycles:[], pending:null, dashT:-1e9 }; // dashT: time of the f,N,f dash that started this command (dashT===tF → 대초)
+const cd = { state:0, tF:0, tN:0, tD:0, tDF:0, tC:0, tRel:0, lastDF:-1e9, cancelled:true, chain:0, chainCycles:[], pending:null, dashT:-1e9, dashWave:false }; // dashT: time of the f,N,f dash that started this command (dashT===tF → 통발 eligible; 대초 label only when !dashWave). pending: {t, btn} button pressed while d is still held
 const combo = { n:0, t:-1e9 }; // consecutive EWGF successes: reset by any other attempt/fault, by 3s without one, and by resetInput/setMode/trial GO
 function resetCombo(){ combo.n=0; combo.t=-1e9; }
 const taps = { dir:null, t:-1e9, neutral:false }; // f,N,f / b,N,b double-tap detector (dash visuals only; never touches judging)
@@ -1168,14 +1210,16 @@ function renderHistory(){
 /* ---------- crouch dash state machine ---------- */
 function resetCD(){ cd.state=0; }
 function clearCommand(){
-  Object.assign(cd,{state:0,tF:0,tN:0,tD:0,tDF:0,tC:0,tRel:0,lastDF:-1e9,cancelled:true,chain:0,chainCycles:[],pending:null,dashT:-1e9});
+  Object.assign(cd,{state:0,tF:0,tN:0,tD:0,tDF:0,tC:0,tRel:0,lastDF:-1e9,cancelled:true,chain:0,chainCycles:[],pending:null,dashT:-1e9,dashWave:false});
 }
+// rush30: reset the command after a finisher (초풍·통발·나락) but keep the wave chain, so a kill does not drop the dash-point streak (a 700ms pause still ends it via endChain). cancelled=true so the next crouch dash links.
+function endCommand(){ if(trial.running && mode==='rush30'){ Object.assign(cd,{state:0,tF:0,tN:0,tD:0,tDF:0,tC:0,tRel:0,cancelled:true,pending:null,dashT:-1e9,dashWave:false}); } else clearCommand(); }
 function onDir(dir, t){
   trialTick(t); tick(t); // 판정 기한은 화면 주사율과 무관하게 입력 시각에 검사한다.
   pushHistory({t, dir});
-  // dash / backdash visuals from a double tap. Runs before the switch so the second f still becomes the start 6 (cd.tF===t → 대초 label).
-  if(dir==='f' && cd.state===6){ taps.dir='f'; taps.t=t; taps.neutral=false; } // the wave's cancel 6 → N → start 6 is the same raw f,N,f but is not a dash
-  else { const dbl = tapDetect(dir, t); if(dbl==='f'){ cd.dashT=t; fx.dash(); } else if(dbl==='b') fx.backdash(); }
+  // dash / backdash from a double tap. Runs before the switch so the second f still becomes the start 6 (cd.tF===t → f,f+2 eligible, 대초 label).
+  // The wave's cancel 6 → N → start 6 is a dash too (2026-09-12 user decision; the cancel 6 alone is not): shorter visual, no 대초 label (dashWave).
+  { const wave = dir==='f' && cd.state===6; const dbl = tapDetect(dir, t); if(dbl==='f'){ cd.dashT=t; cd.dashWave=wave; fx.dash(wave); } else if(dbl==='b') fx.backdash(); }
   switch(cd.state){
     case 0: if(dir==='f'){ cd.state=1; cd.tF=t; } break;
     case 1:
@@ -1234,6 +1278,7 @@ function completeCD(t){
   if(cyc.cycle){ const dps = 1000/cyc.cycle; session.cycles.push({t, cycle:cyc.cycle, dps}); if(session.cycles.length>200) session.cycles.shift(); }
   if(cd.chain>=3){ const last3 = cd.chainCycles.slice(-3); const span = last3[2].t - last3[0].t; const dps = 2000/span; if(dps>session.bestDps) session.bestDps = dps; }
   if(trial.running && mode==='wave10'){ trial.count++; trial.bestChain = Math.max(trial.bestChain||0, cd.chain); }
+  else if(trial.running && mode==='rush30'){ const p = Math.min(cd.chain, RUSH_PTS.dashMax); trial.score += p; trial.dashPts += p; pop('+'+p, cssVar('--accent','#4CC9FF'), 24, {y:-150}); renderRushHud(); } // wave movement scores by chain length, anywhere (user decision)
   if(cyc.cycle) renderWave();
   fx.crouchDash();
   renderSeg(cyc);
@@ -1267,18 +1312,24 @@ function fault(kind, t){
 function onButton(n, t){
   trialTick(t); tick(t);
   pushHistory({t, btn:n});
+  const off = t - cd.lastDF;
+  if(n===4){ // 나락 f,N,d,df+4: no just frame — any 4 while the crouch dash is active (or up to 250ms into the cancel 6)
+    if(cd.state===4 || cd.state===7 || (cd.state===5 && off<=250)){ strike('hellsweep', t); return; }
+    if(cd.state===3 && !cd.pending) cd.pending = {t, btn:4}; // resolved when df arrives; a pending 2 keeps priority; silent if df never comes (d+4 is another move)
+    return;                                                   // states 0/1/2: ignored, as every non-2 button was
+  }
   if(n!==2){
     if(cd.state>=3 && (mode==='ewgf20'||mode==='combo10')) setCoach(['coach.wrongBtn', n]);
     return;
   }
-  const off = t - cd.lastDF;
   if(cd.state===4 || cd.state===7 || (cd.state===5 && off<=250) || (off>=0 && off<=store.window)){ classify(off, t); return; }
   if(cd.state===3){
-    if(cd.pending){ resolvePending(null,t); attempt('no_cd',null,t); }
-    else cd.pending = {t};
+    if(cd.pending && cd.pending.btn===2){ resolvePending(null,t); attempt('no_cd',null,t); }
+    else cd.pending = {t, btn:2}; // a pending 4 is replaced silently
     return;
   }
   if(cd.state===1||cd.state===2){
+    if(cd.dashT>0 && cd.dashT===cd.tF && t-cd.tF<=FF_MS){ strike('tongbal', t); return; } // 통발 f,f+2 (plain f,N,f dash or the wave restart dash)
     attempt('early_stage', null, t);
     return;
   }
@@ -1286,8 +1337,20 @@ function onButton(n, t){
 }
 function resolvePending(tDF, now){
   const p = cd.pending; cd.pending=null; if(!p) return;
+  if(p.btn===4){ if(tDF!==null) strike(p.t - tDF >= -store.window ? 'hellsweep' : 'hellsweepEarly', p.t); return; }
   if(tDF===null){ attempt('no_df', null, now); return; }
   classify(p.t - tDF, p.t);
+}
+/* ---------- 통발 / 나락: judged strikes that are not EWGF attempts (no effect on tries/hits/histogram/streak) ---------- */
+const STRIKE_KIND = {tongbal:'DEMON PAW', hellsweep:'HELL SWEEP', hellsweepEarly:'MISS'};
+function strike(kind, t){
+  const chainBefore = (t - cd.lastDF < 700) ? cd.chain : 0, ok = kind!=='hellsweepEarly';
+  showResult(ok?'wave':'miss', STRIKE_KIND[kind], ['a.'+kind+'.title'], ['a.'+kind+'.sub']);
+  setCoach(['a.'+kind+'.coach']);
+  addLog(t, 'log.tStrike', ['res.'+kind], '', chainBefore? ['log.mAfterWave', chainBefore]:'', ok?'ok':'no');
+  if(kind==='tongbal') fx.tongbal(); else if(kind==='hellsweep') fx.hellsweep(); else fx.jab();
+  if(ok) rushStrike(kind, t);
+  endCommand(); updateHud();
 }
 function classify(off, t){
   const w = store.window;
@@ -1298,7 +1361,7 @@ function classify(off, t){
 function attempt(kind, off, t){
   const chainBefore = (t - cd.lastDF < 700) ? cd.chain : 0;
   if(kind==='ewgf'){ if(t - combo.t > 3000) combo.n = 0; combo.n++; combo.t = t; } else resetCombo();
-  const a = { t, kind, off, chain: chainBefore, mode, streak: combo.n, dash: kind==='ewgf' && cd.dashT>0 && cd.dashT===cd.tF };
+  const a = { t, kind, off, chain: chainBefore, mode, streak: combo.n, dash: kind==='ewgf' && cd.dashT>0 && cd.dashT===cd.tF && !cd.dashWave };
   session.attempts.push(a); if(session.attempts.length>300) session.attempts.shift();
   session.tries++; if(kind==='ewgf') session.hits++;
   if(off!=null){ session.offsetSum+=off; session.offsetCount++; }
@@ -1311,12 +1374,12 @@ function attempt(kind, off, t){
       sub = () => T('a.ewgf.sub', f, ms) + (chainBefore>1 ? T('a.afterWave', chainBefore) : '') + (a.streak>1 ? T('a.streak.sub', a.streak) : '');
       coach = Math.abs(off)<=Math.min(8, store.window/2) ? ['a.ewgf.perfect'] : (off>0 ? ['a.ewgf.late', f] : ['a.ewgf.early', f]);
       if(mode==='combo10' && !comboOK) { coach = ['a.combo.coach', chainBefore]; title=['a.combo.title']; cls='wgf'; res='combo_short'; rowCls='wg'; }
-      fx.ewgf(a.streak, a.dash); break;
+      fx.ewgf(a.streak, a.dash); rushStrike('ewgf', t); break;
     case 'wgf':
       cls='wgf'; title=['a.wgf.title']; res='wgf'; rowCls='wg';
       sub = ['a.wgf.sub', f, ms];
       coach = off>100 ? ['a.wgf.slow', f] : ['a.wgf.close', f];
-      fx.wgf(); break;
+      fx.wgf(); rushStrike('wgf', t); break;
     case 'early':
       cls='miss'; title=['a.early.title']; res='early'; rowCls='no';
       sub = ['a.early.sub', f, ms];
@@ -1343,7 +1406,7 @@ function attempt(kind, off, t){
   addLog(t, 'log.tEwgf', ['res.'+res], off==null?'':f+' / '+ms, chainBefore? ['log.mAfterWave', chainBefore]:'', rowCls);
   if(trial.running && (mode==='ewgf20'||mode==='combo10')){ trial.count++; if(trial.count>=trial.target) endTrial(); }
   coachTrend(); updateStats(); renderHist(); renderLog();
-  clearCommand(); updateHud();
+  endCommand(); updateHud();
 }
 
 /* ---------- coach text ---------- */
@@ -1441,7 +1504,13 @@ const MODES = {
   wave10: {start:true, dur:10000},
   ewgf20: {start:true, target:20},
   combo10:{start:true, target:10},
+  rush30: {start:true, dur:30000, rush:true}, // 더미 격파: typed dummies, points (see RUSH_PTS)
 };
+function renderRushHud(){ // rush30 only: score on the stage HUD and in the trial bar
+  const on = trial.running && mode==='rush30';
+  $('hudScore').textContent = on ? trial.score+' PTS' : '';
+  if(on) $('dProg').textContent = T('trial.rushPts', trial.score, trial.kills);
+}
 function renderMode(){
   const M = MODES[mode];
   $('dName').textContent=T('mode.'+mode+'.name'); $('dDesc').textContent=T('mode.'+mode+'.desc'); $('dStart').hidden=!M.start;
@@ -1459,13 +1528,15 @@ function setMode(m){
 function startTrial(){
   const M = MODES[mode]; if(!M.start) return;
   endTrial(true); clearShare();
-  trial.running=false; trial.count=0; trial.bestChain=0; trial.target=M.target||0; trial.dur=M.dur||0;
+  trial.running=false; trial.count=0; trial.bestChain=0; trial.target=M.target||0; trial.dur=M.dur||0; trial.score=0; trial.kills=0; trial.whiffs=0; trial.dashPts=0;
   $('dStart').disabled=true;
   let c = 3; $('hudCenter').textContent=c;
-  trial.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(trial.cdTimer); trial.cdTimer=null; $('hudCenter').textContent='GO!'; trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; },500); clearCommand(); resetCombo(); updateHud(); trial.running=true; trial.tStart=performance.now(); } }, 1000);
+  trial.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(trial.cdTimer); trial.cdTimer=null; $('hudCenter').textContent='GO!'; trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; },500); clearCommand(); resetCombo(); updateHud(); trial.running=true; trial.tStart=performance.now(); if(M.rush){ rushSpawn(); renderRushHud(); } } }, 1000);
 }
 function endTrial(cancel){
   const wasRunning = trial.running; trial.running=false; clearInterval(trial.cdTimer); trial.cdTimer=null; clearTimeout(trial.messageTimer); trial.messageTimer=null; clearTimeout(trial.openTimer); trial.openTimer=null; $('dStart').disabled=false; $('hudCenter').textContent='';
+  if(world.dummy.type){ world.dummy.type=null; world.dummy.respawn=0; } // every exit (finish, cancel from blur/settings/donate/nick/setMode/reset) hands the stage back to the plain dummy
+  $('hudScore').textContent='';
   if(cancel || !wasRunning) { $('dProg').textContent=''; return; }
   const since = a => a.t>=trial.tStart;
   let rec, text, at = session.attempts.filter(since);
@@ -1474,6 +1545,11 @@ function endTrial(cancel){
     rec = {date:Date.now(), score:dps, dashes:trial.count, chain, label:T('rec.dps',dps.toFixed(1)), sub:T('rec.waveSub',trial.count,chain)};
     text = T('trial.waveEnd', trial.count, dps.toFixed(1));
     $('hudCenter').textContent = trial.count+' DASH';
+  } else if(mode==='rush30'){
+    const {score, kills, whiffs, dashPts} = trial;
+    rec = {date:Date.now(), score, kills, whiffs, dashPts, label:T('rec.pts',score), sub:T('rec.rushSub',kills,whiffs,dashPts)};
+    text = T('trial.rushEnd', score, kills);
+    $('hudCenter').textContent = score+' PTS';
   } else {
     at = at.slice(-trial.target);
     const ok = at.filter(a => a.kind==='ewgf' && (mode!=='combo10' || a.chain>=3)).length;
@@ -1493,10 +1569,10 @@ function endTrial(cancel){
 }
 function trialTick(now){
   if(!trial.running) return;
-  if(mode==='wave10'){
+  if(trial.dur){ // timed modes (wave10, rush30)
     const left = Math.max(0, trial.dur-(now-trial.tStart));
     const el = $('hudTimer'); el.textContent = (left/1000).toFixed(1); el.classList.toggle('warn', left<3000);
-    $('dProg').textContent = T('trial.dashes', trial.count);
+    if(mode==='rush30') renderRushHud(); else $('dProg').textContent = T('trial.dashes', trial.count);
     if(left<=0) endTrial();
   } else {
     $('dProg').textContent = trial.count+' / '+trial.target;
@@ -1504,6 +1580,7 @@ function trialTick(now){
 }
 function recText(m, r){ // prefer numeric fields so old records re-render in the current language
   if(m==='wave10' && Number.isFinite(r.dashes)) return {label:T('rec.dps',(+r.score).toFixed(1)), sub:T('rec.waveSub',r.dashes,r.chain||0)};
+  if(m==='rush30' && Number.isFinite(r.kills)) return {label:T('rec.pts',r.score), sub:T('rec.rushSub',r.kills,r.whiffs||0,r.dashPts||0)};
   if(Number.isFinite(r.hits) && Number.isFinite(r.target) && Number.isFinite(r.mean)){
     const dps = m==='combo10' && Number.isFinite(r.dps) ? ' · '+T('rec.dps',r.dps.toFixed(1)) : ''; // combo10 ranks by dash/s, so show it
     return {label:r.score+'%', sub:T('rec.ewgfSub',r.hits,r.target,fmtF(r.mean))+dps};
@@ -1612,6 +1689,13 @@ function buildCard(src){
     chart = {type:'wave', pts:cycles.slice(-40).map(c=>c.dps)};
     summary = T('rec.dps',dps)+' · '+T('rec.waveSub', r.dashes, chain);
     sub = T('trial.waveEnd', r.dashes, dps);
+  } else if(src.kind==='trial' && m==='rush30'){
+    const r = src.rec;
+    hero = {value:String(r.score), label:T('card.pts')};
+    metrics = [metric('card.kills', r.kills), metric('card.whiffs', r.whiffs), metric('card.dashPts', r.dashPts), metric('card.tries', attempts.length)];
+    chart = cycles.length>=2 ? {type:'wave', pts:cycles.slice(-40).map(c=>c.dps)} : null;
+    summary = T('rec.pts', r.score)+' · '+T('rec.rushSub', r.kills, r.whiffs, r.dashPts);
+    sub = T('trial.rushEnd', r.score, r.kills);
   } else if(src.kind==='trial'){
     const r = src.rec;
     hero = {value:r.score+'%', label:T('card.rate')};
@@ -1778,6 +1862,7 @@ function boardEntry(r, m){ // pure: finished trial result → submission payload
   const rec = r.rec, e = {board:m, win:r.window, lang:store.lang};
   if(m==='wave10'){ e.score = +rec.score; e.tie = rec.chain||0; e.detail = {dashes:rec.dashes, chain:rec.chain||0}; }
   else if(m==='combo10'){ e.score = rec.score; e.tie = rec.dps||0; e.detail = {hits:rec.hits, target:rec.target, mean:rec.mean, dps:rec.dps||0}; }
+  else if(m==='rush30'){ e.score = rec.score; e.tie = rec.kills||0; e.detail = {kills:rec.kills||0, whiffs:rec.whiffs||0, dashPts:rec.dashPts||0}; }
   else { e.score = rec.score; e.tie = -Math.abs(rec.mean) || 0; e.detail = {hits:rec.hits, target:rec.target, mean:rec.mean}; }
   return e;
 }
@@ -1976,7 +2061,10 @@ let W=800, H=360, dpr=1;
 function resize(){ const r = $('stageBox').getBoundingClientRect(); dpr = Math.min(2, devicePixelRatio||1); W = Math.max(320, r.width); H = Math.max(160, r.height); canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); renderHistory(); }
 addEventListener('resize', resize); resize(); applyTouchUI();
 
-const world = { charX:120, camX:0, dummyX:460, dummy:{y:0,vx:0,vy:0,rot:0,hit:0,alive:true,respawn:0} };
+const world = { charX:120, camX:0, dummyX:460, dummy:{y:0,vx:0,vy:0,rot:0,hit:0,alive:true,respawn:0,type:null} }; // dummy.type: null = plain bag (any hit knocks it) · 'high'|'mid'|'low' = rush30 target that only the matching move destroys
+const HIT_TYPE = {ewgf:'high', wgf:'high', tongbal:'mid', hellsweep:'low'}; // which dummy each move destroys in rush30
+const DUMMY_TYPES = ['high','mid','low'];
+const DUMMY_STOP = 36; // px the fighter keeps in front of a live dummy (walking, and every move in rush30)
 const anim = { kind:'idle', t0:0, from:0, to:0, moveT0:0, moveFrom:0, moveTo:0 };
 const ghosts = [], pops = [], sparks = [], dust = [], bolts = [];
 let flash = 0, shake = 0;
@@ -2001,32 +2089,87 @@ const fx = {
     startAnim('ewgf'); anim.electric=true; moveChar(28, 120); if(store.fx && !reduced){ flash=1; shake=L.shake; }
     pop(n>1 ? T('pop.streak', n) : T(fromDash ? 'pop.dashEwgf' : 'pop.ewgf'), color, L.size, {lvl:clamp(n,1,6), glow:L.glow, rings:reduced?0:L.rings, core:L.core, life:n>=4?1100:900});
     if(!reduced) for(let i=0;i<L.sparks;i++) sparks.push({x:world.charX+30*store.side, y:-118, vx:(Math.random()-0.5)*10, vy:-Math.random()*7-2, t:1, c:Math.random()<.5?'#FFFFFF':color});
-    playSfx('ewgf'); tryHit(true);
+    playSfx('ewgf'); if(!world.dummy.type) tryHit('ewgf'); // typed dummies are judged by rushStrike
   },
-  wgf(){ startAnim('ewgf'); anim.electric=false; moveChar(28, 120); pop(T('pop.wgf'), '#F5A524', 34); tryHit(false); },
+  wgf(){ startAnim('ewgf'); anim.electric=false; moveChar(28, 120); pop(T('pop.wgf'), '#F5A524', 34); if(!world.dummy.type) tryHit('wgf'); },
+  tongbal(){ startAnim('tongbal'); moveChar(48, 110); puff(3, 1); pop(T('pop.tongbal'), cssVar('--gold','#F5C542'), 40); if(!world.dummy.type) tryHit('tongbal'); }, // fast forward snap
+  hellsweep(){ startAnim('hellsweep'); moveChar(22, 110); puff(4, 1); setTimeout(()=>puff(5, 1), 80); pop(T('pop.hellsweep'), cssVar('--red','#E5484D'), 40, {y:-70}); if(!world.dummy.type) tryHit('hellsweep'); }, // fast low sweep: quick forward slide and a second dust burst as the leg comes around
   jab(){ startAnim('jab'); pop('?', '#E5484D', 30); },
   stumble(){ startAnim('stumble'); pop('MISS', '#E5484D', 30); },
-  dash(){ if(anim.kind==='ewgf' && performance.now()-anim.t0<260) return; startAnim('dash'); moveChar(64, 150); puff(3, 1); },
+  dash(short){ if(anim.kind==='ewgf' && performance.now()-anim.t0<260) return; startAnim('dash'); if(short) moveChar(24, 120); else moveChar(64, 150); puff(3, 1); }, // short: the wave restart dash (a full 64px per cycle would double wave travel)
   backdash(){ startAnim('backdash'); moveChar(-56, 150); puff(3, -1); },
 };
-function pop(text,color,size,opts){ pops.push({text,color,size,t0:performance.now(),x:world.charX+30*store.side, ...(opts||{})}); } // opts: lvl, glow, rings, core, life
-function tryHit(electric){
+function pop(text,color,size,opts){ pops.push({text,color,size,t0:performance.now(),x:world.charX+30*store.side, ...(opts||{})}); } // opts: lvl, glow, rings, core, life, x (world px), y (px above the floor, default −118)
+function tryHit(move){ // move: 'ewgf'|'wgf'|'tongbal'|'hellsweep'. Returns true when the dummy is knocked. Plain dummy: any move within reach; typed dummy: only HIT_TYPE[move]
   const d = world.dummy; const dist = (world.dummyX - world.charX)*store.side;
-  if(!d.alive || dist<10 || dist>130) return;
-  setTimeout(()=>{ if(!d.alive) return; d.hit=1; d.vy = electric?-11:-6; d.vx=(electric?3.2:1.8)*store.side; d.rot=0;
+  if(!d.alive || d.hit || dist<10 || dist>130) return false;
+  if(d.type && HIT_TYPE[move]!==d.type) return false;
+  const electric = move==='ewgf';
+  d.hit=1; // consume immediately; the launch animation still waits 110ms
+  d.launchAt = performance.now() + 110;
+  d.respawn = performance.now() + 700; // rush30 timing: the next target comes 700ms after the hit, not after the bag lands
+  d.vy = electric?-11:-6; d.vx=(electric?3.2:1.8)*store.side; d.rot=0;
+  d.electric=electric;
+  return true;
+}
+function updateDummy(now){
+  const d=world.dummy;
+  if(d.type && d.respawn && now>=d.respawn){ rushSpawn(); return; }
+  if(d.hit && now>=d.launchAt){
+    if(d.launchAt){
+      const electric=d.electric;
     for(let i=0;i<(electric?18:9);i++) sparks.push({x:world.dummyX, y:-46, vx:(Math.random()-0.5)*9, vy:-Math.random()*8-1, t:1, c: electric?(Math.random()<.5?'#DFF6FF':'#4CC9FF'):'#FFE9A8'});
-  }, 110);
+      d.launchAt=0;
+    }
+    d.y += d.vy; d.vy += 0.45; world.dummyX += d.vx; d.rot += 0.12*store.side;
+    if(d.y>0){ d.y=0; d.hit=0; d.alive=false; if(!d.type) d.respawn=now+700; }
+  }
+  const spawnDist = () => Math.min(300, W*0.5) + Math.random()*40;
+  if(!d.type && !d.alive && now>d.respawn){ d.alive=true; d.rot=0; d.y=0; world.dummyX = world.charX + spawnDist()*store.side; }
+  const ahead = (world.dummyX - world.charX)*store.side;
+  if(!d.type && d.alive && !d.hit && (ahead<-40 || ahead>W*1.2)) world.dummyX = world.charX + spawnDist()*store.side;
+}
+/* ---------- 더미 격파 (rush30): typed targets and points ---------- */
+function rushSpawn(){ // a fresh typed dummy 140px … min(380, 60% of the stage) ahead; the type is random so the player has to read it
+  const d = world.dummy; d.alive=true; d.hit=0; d.rot=0; d.y=0; d.vx=0; d.vy=0; d.respawn=0;
+  d.type = DUMMY_TYPES[Math.floor(Math.random()*DUMMY_TYPES.length)];
+  world.dummyX = world.charX + (140 + Math.random()*(Math.min(380, W*0.6)-140))*store.side;
+}
+function rushStrike(move, t){ // called after every judged move; only scores while a rush30 trial is running
+  if(!trial.running || mode!=='rush30') return;
+  if(tryHit(move)){
+    const pts = move==='wgf' ? RUSH_PTS.wgf : RUSH_PTS.kill;
+    trial.score += pts; trial.kills++;
+    pop('+'+pts, cssVar(move==='wgf'?'--warn':'--gold', '#F5C542'), 46, {x:world.dummyX, y:-130, glow:14});
+  } else {
+    trial.whiffs++;
+    pop(T('pop.whiff'), cssVar('--muted','#8C98AA'), 26, {y:-150});
+  }
+  renderRushHud();
 }
 
 function drawFighter(g, px, py, p, dir, alpha, tint){
   g.save(); g.globalAlpha=alpha; g.translate(px,py); g.scale(dir,1);
   const crouch=p.crouch||0, lean=(p.lean||0)*Math.PI/180, jump=p.jump||0, spread = 7 + 12*(p.spread||0);
-  g.translate(0,-jump);
+  g.translate(0,-jump+(p.sink||0)); // sink: push the whole stance lower (hell sweep)
   const legL = 24 - 11*crouch;
   g.lineCap='round'; g.lineJoin='round';
+  const tuck = p.tuck||0, step = p.step||0; // step −1..1: stride phase for walk/dash (front foot forward and lifted). 0 keeps the legacy stance pixel-identical.
+  if(p.sweep!=null){
+    // hell sweep: the right leg extends straight and orbits a low, flattened circle around the crotch (the lower body spins one turn); the left leg stays tucked as the pivot
+    const a = p.sweep, Cx = 0, Cy = -6, Rx = 36, Ry = 11;           // flattened orbit keeps the foot skimming the floor
+    const fx0 = Cx + Rx*Math.cos(a), fy0 = Cy + Ry*Math.sin(a), hx = spread*0.3, hy = -legL;
+    if(!tint){ g.strokeStyle='rgba(143,220,255,.30)'; g.lineWidth=3.5; g.beginPath(); // motion arc trailing the sweeping foot
+      for(let i=0;i<=12;i++){ const aa=a - i*0.13, tx=Cx+Rx*Math.cos(aa), ty=Cy+Ry*Math.sin(aa); i?g.lineTo(tx,ty):g.moveTo(tx,ty); } g.stroke(); }
+    g.lineWidth=8; g.strokeStyle = tint||PANTS;
+    g.beginPath(); g.moveTo(-6, 0); g.lineTo(-spread*0.3, hy); g.stroke();          // tucked support leg
+    g.beginPath(); g.moveTo(hx, hy); g.lineTo(fx0, fy0); g.stroke();                 // extended right leg
+    g.fillStyle = tint||'#23272F';
+    g.beginPath(); g.ellipse(-7, 0, 7, 3.5, 0, 0, Math.PI*2); g.fill();              // support foot
+    g.save(); g.translate(fx0, fy0); g.rotate(a); g.beginPath(); g.ellipse(4, 0, 9, 4, 0, 0, Math.PI*2); g.fill(); g.restore(); // sweeping foot, along the leg
+  } else {
   // legs
   g.lineWidth=8; g.strokeStyle = tint||PANTS;
-  const tuck = p.tuck||0, step = p.step||0; // step −1..1: stride phase for walk/dash (front foot forward and lifted). 0 keeps the legacy stance pixel-identical.
   const lx = -spread - step*8, rx = spread + step*8, ly = -tuck*10 - Math.max(0,-step)*4, ry = -tuck*8 - Math.max(0,step)*4;
   g.beginPath(); g.moveTo(lx, ly); g.lineTo(-spread*0.35, -legL); g.stroke();
   g.beginPath(); g.moveTo(rx, ry); g.lineTo(spread*0.3, -legL); g.stroke();
@@ -2034,13 +2177,15 @@ function drawFighter(g, px, py, p, dir, alpha, tint){
   g.fillStyle = tint||'#23272F';
   g.beginPath(); g.ellipse(lx-1, ly, 7, 3.5, 0, 0, Math.PI*2); g.fill();
   g.beginPath(); g.ellipse(rx+2, ry, 7, 3.5, 0, 0, Math.PI*2); g.fill();
+  }
   // hips / torso
   g.translate(0,-legL); g.rotate(lean);
   const T = 22 - 4*crouch;
   // back arm
   const armL = 17;
-  const arm = (sx, a, front) => {
-    const ex = sx + Math.sin(a)*armL, ey = -T+5 + Math.cos(a)*armL;
+  const arm = (sx, a, front, ext) => {
+    const L = armL + (ext||0); // ext: extra reach on a thrown punch (통발)
+    const ex = sx + Math.sin(a)*L, ey = -T+5 + Math.cos(a)*L;
     g.lineWidth=6.5; g.strokeStyle=tint||SKIN2; g.beginPath(); g.moveTo(sx,-T+5); g.lineTo(ex,ey); g.stroke();
     g.fillStyle=tint||GLOVE; g.beginPath(); g.arc(ex,ey,6.5,0,Math.PI*2); g.fill();
     if(!tint){ g.fillStyle='rgba(255,255,255,.25)'; g.beginPath(); g.arc(ex-2,ey-2,2.2,0,Math.PI*2); g.fill(); }
@@ -2080,7 +2225,7 @@ function drawFighter(g, px, py, p, dir, alpha, tint){
     if(p.sweat){ g.fillStyle='#8FDCFF'; g.beginPath(); g.moveTo(-20,hy-6); g.lineTo(-24,hy+4); g.lineTo(-16,hy+4); g.closePath(); g.fill(); }
   }
   // front arm
-  const fist = arm(6, (p.armR==null?30:p.armR)*Math.PI/180, true);
+  const fist = arm(6, (p.armR==null?30:p.armR)*Math.PI/180, true, p.reach||0);
   g.restore();
   return fist;
 }
@@ -2099,6 +2244,17 @@ function poseAt(now){
     case 'stumble': { if(t<420){ const k=Math.sin(t/420*Math.PI); return {crouch:0.15*k, lean:-18*k, armR:120*k, armL:100*k, spread:0.8, sweat:true}; } break; }
     case 'dash': { if(t<220){ const k=t/220; return {crouch:0.2*(1-k), lean:4+18*(1-k), spread:0.6, step:0.9-1.4*k, armR:10, armL:-45}; } break; }
     case 'backdash': { if(t<240){ const k=t/240; return {crouch:0.15, lean:-14*(1-k), spread:0.7, step:-0.9+1.2*k, armR:20, armL:-55}; } break; }
+    case 'tongbal': { // f,f+2: quick forward lunge with a long right straight punch that snaps out fast
+      if(t<70){ const k=t/70; return {crouch:0.28-0.13*k, lean:8+8*k, armR:-10+102*k, armL:-42, spread:0.5+0.1*k, step:0.3+0.5*k, reach:13*k}; } // snap the arm out fast to full reach
+      if(t<230) return {crouch:0.15, lean:17, armR:94, armL:-42, spread:0.62, step:0.82, reach:13};                                     // held at full extension
+      if(t<520){ const k=(t-230)/290; return {crouch:0.15*(1-k), lean:17-13*k, armR:94-60*k, armL:-42+10*k, spread:0.6-0.25*k, step:0.82*(1-k), reach:13*(1-k)}; } // recover
+      break; }
+    case 'hellsweep': { // f,N,d,df+4: fast low spinning sweep (~2x speed) — drop very low, right leg extended, lower body spins one full turn along the ground
+      const drop = 8; // extra sink so the whole stance is lower
+      if(t<40){ const k=t/40; return {crouch:1, lean:40, armR:-34, armL:-62, spread:0.95, sweep:2.6, sink:drop*k}; } // wind up: right leg back-low
+      if(t<280){ const k=(t-40)/240; return {crouch:1, lean:42, armR:-34, armL:-62, spread:0.95, sweep:2.6 - k*Math.PI*2, sink:drop}; } // one full low circle, ground-first
+      if(t<380){ const k=(t-280)/100; return {crouch:1-0.6*k, lean:42*(1-k), armR:-34+50*k, armL:-62+22*k, spread:0.95-0.5*k, sink:drop*(1-k)}; } // rise back up
+      break; }
     case 'walk': { const s = Math.sin(now/150*Math.PI), fwd = anim.walkDir==='f'; // frame() keeps kind==='walk' while f/b is held and clears it otherwise
       return {crouch:0.05, lean:fwd?7:-5, spread:0.35, step:s, jump:Math.abs(s)*2, armR:30+s*8*(fwd?1:-1), armL:-30-s*8}; }
   }
@@ -2111,15 +2267,22 @@ function drawBolt(g, x, y, len, ang, w, color){
   for(let i=0;i<segs;i++){ const a = ang + (Math.random()-0.5)*1.4; cx += Math.cos(a)*len/segs; cy += Math.sin(a)*len/segs; g.lineTo(cx,cy); }
   g.stroke();
 }
+const DUMMY_LOOK = { // rush30 targets: bag position tells the height, colour and label repeat it. [top, height, colour token, fallback, stripe]
+  high:{top:-132, h:44, color:'--accent', fb:'#4CC9FF', stripe:'#2C8FBF'},
+  mid: {top:-96,  h:64, color:'--gold',   fb:'#F5C542', stripe:'#B8902A'},
+  low: {top:-40,  h:36, color:'--red',    fb:'#E5484D', stripe:'#8E2724'},
+};
 function drawDummy(g, sx, gy, d){
   g.save(); g.translate(sx, gy + d.y); g.rotate(d.rot);
+  const L = d.type ? DUMMY_LOOK[d.type] : null;
+  const top = L ? L.top : -96, h = L ? L.h : 64, poleTop = Math.min(-70, top+h-2);
   // stand
-  g.fillStyle='#2A3140'; g.fillRect(-16,-4,32,5); g.fillStyle='#3A4353'; g.fillRect(-4,-70,8,68);
+  g.fillStyle='#2A3140'; g.fillRect(-16,-4,32,5); g.fillStyle='#3A4353'; g.fillRect(-4,poleTop,8,-2-poleTop);
   // bag
-  g.fillStyle='#B0332F'; g.beginPath(); g.roundRect(-14,-96,28,64,7); g.fill();
-  g.fillStyle='#8E2724'; g.fillRect(-14,-66,28,4); g.fillRect(-14,-46,28,4);
-  g.fillStyle='#E8D9C5'; g.font='bold 9px JetBrains Mono, monospace'; g.textAlign='center'; g.fillText('DUMMY',0,-52);
-  if(d.hit){ g.fillStyle='#fff'; g.font='bold 14px Black Han Sans, sans-serif'; g.fillText('><',0,-78); }
+  g.fillStyle = L ? cssVar(L.color, L.fb) : '#B0332F'; g.beginPath(); g.roundRect(-14,top,28,h,7); g.fill();
+  g.fillStyle = L ? L.stripe : '#8E2724'; g.fillRect(-14,top+h*0.45,28,4); if(h>50) g.fillRect(-14,top+h*0.75,28,4);
+  g.fillStyle = L ? '#0B1118' : '#E8D9C5'; g.font=`bold ${L?10:9}px JetBrains Mono, monospace`; g.textAlign='center'; g.fillText(L ? T('dummy.'+d.type) : 'DUMMY', 0, top+h*0.45-3);
+  if(d.hit){ g.fillStyle='#fff'; g.font='bold 14px Black Han Sans, sans-serif'; g.fillText('><',0,top+18); }
   g.restore();
 }
 
@@ -2274,21 +2437,18 @@ function frame(now){
   const dt = Math.min(50, now-(anim.lastT||now)); anim.lastT = now;
   { const dm = world.dummy, dAhead = (world.dummyX - world.charX)*store.side;
     const canWalk = !anim.moveDur && (anim.kind==='idle'||anim.kind==='walk') && (curDir==='f'||curDir==='b');
-    const blocked = curDir==='f' && dm.alive && !dm.hit && dAhead<36;
+    const blocked = curDir==='f' && dm.alive && !dm.hit && dAhead<DUMMY_STOP;
     if(canWalk && !blocked){ world.charX += (curDir==='f'?WALK_F:-WALK_B)*store.side*dt/1000; anim.kind='walk'; anim.walkDir=curDir; }
     else if(anim.kind==='walk') anim.kind='idle'; }
   // movement
   if(anim.moveDur){ const k = Math.min(1,(now-anim.moveT0)/anim.moveDur); world.charX = anim.moveFrom + (anim.moveTo-anim.moveFrom)*(1-Math.pow(1-k,3)); if(k>=1) anim.moveDur=0; if(k<1 && (anim.kind==='cd'||anim.kind==='dash'||anim.kind==='backdash') && Math.random()<0.6) ghosts.push({x:world.charX, t:1, pose:poseAt(now)}); }
+  // dummy management
+  const d = world.dummy;
+  if(d.type && d.alive && !d.hit && (world.dummyX - world.charX)*store.side < DUMMY_STOP) world.charX = world.dummyX - DUMMY_STOP*store.side; // rush30: moves never pass the target
   // camera
   const camTarget = world.charX - (store.side>0 ? 0.32 : 0.68)*W;
   world.camX += (camTarget-world.camX)*0.12;
-  // dummy management
-  const d = world.dummy;
-  const ahead = (world.dummyX - world.charX)*store.side;
-  if(d.hit){ d.y += d.vy; d.vy += 0.45; world.dummyX += d.vx; d.rot += 0.12*store.side; if(d.y>0){ d.y=0; d.hit=0; d.alive=false; d.respawn=now+700; } }
-  const spawnDist = () => Math.min(300, W*0.5) + Math.random()*40;
-  if(!d.alive && now>d.respawn){ d.alive=true; d.rot=0; d.y=0; world.dummyX = world.charX + spawnDist()*store.side; }
-  if(d.alive && !d.hit && (ahead<-40 || ahead>W*1.2)){ world.dummyX = world.charX + spawnDist()*store.side; }
+  updateDummy(now);
 
   const gy = touchOn ? H*0.46 : H*0.80;   // touch overlay covers the lower 46%; the mode hint sits on the floor strip between the feet and the overlay
   ctx.save();
@@ -2348,7 +2508,7 @@ function frame(now){
     const punch = p.lvl && !reduced, eob = k => { k-=1; return 1 + 2.70158*k*k*k + 1.70158*k*k; }; // easeOutBack: overshoot to ~1.3 then settle at 1.2
     const sc = punch ? (t<0.18 ? 0.3+0.9*eob(t/0.18) : 1.2-(t-0.18)*0.2) : (t<0.15? 0.6+t/0.15*0.6 : 1.2-(t-0.15)*0.25);
     const color = p.color.startsWith('var')? '#4CC9FF' : p.color;
-    ctx.save(); ctx.translate(p.x-world.camX, gy-118-t*30); ctx.scale(sc,sc); ctx.globalAlpha = t>0.7? (1-t)/0.3:1;
+    ctx.save(); ctx.translate(p.x-world.camX, gy+(p.y==null?-118:p.y)-t*30); ctx.scale(sc,sc); ctx.globalAlpha = t>0.7? (1-t)/0.3:1;
     for(let r=0;r<(p.rings||0);r++){ const rt = clamp((t-r*0.07)/0.55,0,1); if(rt>0&&rt<1){ ctx.save(); ctx.globalAlpha*=(1-rt)*0.7; ctx.lineWidth=1+4*(1-rt); ctx.strokeStyle=color; ctx.beginPath(); ctx.arc(0,-p.size*0.35, 12+rt*(90+25*r), 0, Math.PI*2); ctx.stroke(); ctx.restore(); } }
     ctx.font=`${p.size}px ${displayFont()}`; ctx.textAlign='center'; ctx.lineWidth=6; ctx.strokeStyle='#04101a';
     if(p.glow){ ctx.shadowColor=color; ctx.shadowBlur=p.glow*(1-t*0.5); }

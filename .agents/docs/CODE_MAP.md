@@ -24,16 +24,17 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
           tick(now): 각 상태 250ms(4는 450ms) 타임아웃 · 체인은 마지막 3 후 700ms 지나면 endChain()
           fault(kind): f_before_d / n_to_df / cancel_as_start
           대시(연출 전용) taps{dir,t,neutral} · tapDetect(dir,t): f,N,f / b,N,b 가 TAP_MS(250) 안이면 fx.dash()/fx.backdash(). onDir의 switch 앞에서 실행하므로 두 번째 f는 그대로 시작 6
-          상태 6(캔슬 후 중립)에서 오는 f는 웨이브의 시작 6이라 감지기에 넣지 않는다(같은 raw f,N,f지만 대시 아님). cd.dashT = 대시 시각, cd.dashT===cd.tF 이면 그 커맨드는 대초
-초풍 판정 onButton(n,t) → classify(off) → attempt(kind, off, t)
-          off = 버튼 시각 − 마지막 3 시각 · |off| ≤ store.window → ewgf · off > window → wgf · off < −window → early
-          상태 3(d 유지)에서 버튼이 먼저 오면 cd.pending, 3이 오면 음수 오프셋으로 판정, 120ms 안에 3이 없으면 no_df
+          상태 6(캔슬 후 중립)에서 오는 f(웨이브의 시작 6)도 대시로 잡는다(2026-09-13). cd.dashT=대시 시각, cd.dashWave=(상태 6에서 온 대시). fx.dash(wave)는 wave면 짧게(24px). 통발 자격은 cd.dashT===cd.tF, 대초 라벨은 그중 !cd.dashWave만
+초풍 판정 onButton(n,t): n===4 → 나락(strike), n===2 → 초풍 판정, 그 외 → wrongBtn 코치
+          초풍: classify(off) → attempt(kind, off, t) · off = 버튼 시각 − 마지막 3 시각 · |off| ≤ store.window → ewgf · off > window → wgf · off < −window → early
+          상태 3(d 유지)에서 버튼이 먼저 오면 cd.pending={t,btn}, 3이 오면 음수 오프셋으로 판정, 120ms 안에 3이 없으면 no_df(btn 2만)
           attempt 종류: ewgf / combo_short(웨이브 초풍 모드에서 웨이브 3회 미만) / wgf / early / no_df / early_stage / no_cd
           attempt 레코드 {t,kind,off,chain,mode,streak,dash}: streak = combo{n,t}(연속 초풍. ewgf가 아니면 0, 마지막 초풍 후 3초 지나면 다시 1부터, resetInput/setMode/측정 GO/fault에서 0)
           dash = 대초(res 'dash_ewgf', 제목 a.dashEwgf.title, r-kind 'DASH ELECTRIC WIND GOD FIST'). 판정·통계·차트·순위는 kind만 보므로 영향 없음
+통발·나락 strike(kind,t) kind: tongbal(f,f+2 중단)/hellsweep(6N23+4 하단, 저스트 없음)/hellsweepEarly(4가 3보다 이름). 끝에 endCommand()(rush30이면 clearCommand 대신 chain 유지, 그 외엔 clearCommand). attempt가 아니라 session.tries/hits·히스토그램·combo에 안 잡힘. 통발=상태 1/2 + cd.dashT===cd.tF + 2가 두 번째 6 후 FF_MS(250) 안. 나락=상태 4/7 또는 캔슬 6 후 250ms의 4, 상태 3은 cd.pending.btn=4로 df 대기(resolvePending: btn 4는 off≥−window면 hellsweep, 이르면 hellsweepEarly, df 안 오면 조용). rushStrike로 더미 격파 점수. 저스트가 아니라 라벨에 "!"·연속 없음
 코치      setCoach(m) · setTrend(m) · coachWaveLive(cyc): 5구간 중 가장 긴 구간 조언 · coachTrend(): 최근 10회 평균·편차
 기록      addLog(t,typeKey,resMsg,num,memoMsg,cls) → session.log[12] · renderLog() 시각은 LOCALE[store.lang]
-          store.records[mode][30]: wave10 {score(dps),dashes,chain} · ewgf20/combo10 {score(%),hits,target,mean}
+          store.records[mode][30]: wave10 {score(dps),dashes,chain} · ewgf20/combo10 {score(%),hits,target,mean} · rush30 {score(점수),kills,whiffs,dashPts}
           label/sub 문자열도 같이 저장(구버전 호환). recText()가 숫자 필드 우선으로 현재 언어로 다시 만든다
 차트      histBins(attempts,window): −6f~+9f 빈(순수) · renderHist(): 히스토그램, 판정 폭 음영 · renderWave(): 최근 40 사이클 대시/초 · SVG 문자열 직접 생성
 공유 카드 buildCard(src): 순수 데이터 → {app,modeName,sub,hero,metrics[],chart{hist|wave|null},windowText,dateText,url,tweet,file} (DOM 없음, 단위 테스트 대상)
@@ -61,13 +62,14 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
           방문자(#visits, 헤더 우상단): visitsLoad()가 KST 날짜(KST_DAY)와 store.visitDay를 비교해 다르면 visitDay를 먼저 저장하고 POST /visits(요청 중 새로고침·두 번째 탭이 다시 세지 않게; 실패하면 그날은 안 세어짐), 같으면 GET. live.visitsBusy로 한 번에 하나만. 문구 visits(today,total)
           한마디(#postsCard): #postForm(#postNickLabel 표시 + 본문 #postText 200자) → postSend(POST /posts; hasNick()이 아니면 게이트를 연다) → 응답 rows로 목록 갱신. 오류 코드 매핑 rate→posts.tooFast, text→posts.textBad, auth→lostNick()
           서버 코드는 worker/ (CODE_MAP 범위 밖, worker/README.md 참조). 응답 shape: /nick {ok,nick,token} | 409 taken · /top {week,start,end,board,total,rows[{id,rank,nick,score,tie,detail,win,created_at}],me|null} · /submit 같은 shape + {ok,id,rank,improved} · /visits {day,today,total} · /posts {rows[{id,nick,text,created_at}]}
-모드      MODES{free,wave10(10초),ewgf20(20회),combo10(10회)} · setMode → renderMode · startTrial(3초 카운트다운) · endTrial(기록 저장) · trialTick
+모드      MODES{free,wave10(10초),ewgf20(20회),combo10(10회),rush30(30초 더미 격파)} · setMode → renderMode · startTrial(3초 카운트다운, rush면 GO에 rushSpawn) · endTrial(기록 저장, rush면 dummy.type=null 복구) · trialTick(trial.dur 있으면 타이머, rush는 renderRushHud) · rush30: trial{score,kills,whiffs,dashPts}, RUSH_PTS{kill:5,wgf:2,dashMax:3}, HIT_TYPE{ewgf:high,wgf:high,tongbal:mid,hellsweep:low}, boardEntry tie=kills
 설정 UI   #setDlg(dialog.share.settings, aside 안에 둠) ← 스테이지 우상단 톱니 버튼 #setOpen(.hud-gear, pointer-events:auto) · #setClose · 열려 있으면 modalOpen()이 게임 입력을 멈춤(키 리맵 listening은 그보다 먼저 처리되어 동작)
           segSel(id,attr,cb): winSel/sideSel/fxSel/touchSel/soundSel/langSel · renderKeys(): 키 리맵(중복·방향키 충돌 거부, Esc 취소) · 볼륨 기본값 100/100
-스테이지  canvas · world/anim/ghosts/pops/sparks/dust/bolts · fx{crouchDash,ewgf(n,fromDash),wgf,jab,stumble,dash,backdash} · pop(text,color,size,opts) 폰트는 displayFont()
+스테이지  canvas · world/anim/ghosts/pops/sparks/dust/bolts · fx{crouchDash,ewgf(n,fromDash),wgf,jab,stumble,dash(short),backdash,tongbal,hellsweep} · pop(text,color,size,opts) 폰트는 displayFont() · opts에 x(월드 px),y(바닥 위 px) 추가 가능(격파 팝은 더미 위)
+          world.dummy.type: null=일반 백(아무 기술이나 반응) · high/mid/low=rush30 표적(HIT_TYPE 일치만 격파). tryHit(move)는 true/false 반환(사거리 10~130px, 날아가는 중이면 false), 명중 즉시 hit=1로 중복 득점을 차단하고 launchAt=지금+110까지 낙하·스파크를 지연한다. updateDummy(now)가 물리·재등장을 처리하며 타입 더미는 낙하 완료와 무관하게 respawn=명중+700 이후 첫 프레임에 교체한다. rushSpawn()=타입·거리 랜덤(140~min(380,W*0.6)px). drawDummy는 DUMMY_LOOK로 타입별 위치·색·라벨(dummy.high/mid/low)
           STREAK[1..6] 연속 초풍 팝 스타일(size/color 토큰/glow/rings/sparks/shake, 6에서 고정) · pop opts {lvl,glow,rings,core,life} → 렌더러가 punch-in(easeOutBack)·shadowBlur·퍼지는 링·흰 코어를 그림. reduced motion이면 크기·색·글로우만
-          frame(): 걷기(curDir f/b 유지 + idle/walk 이고 moveDur 없음, WALK_F/WALK_B px/s, 살아있는 더미 36px 앞에서 정지) → 이동 → 카메라 → 더미 → 배경/바닥 → 먼지 → 잔상(cd/dash/backdash) → 더미 → 캐릭터 → 번개 → 스파크 → 텍스트 팝 → 플래시
-          drawFighter(g,x,y,pose,dir,alpha,tint) pose.step(−1..1: 보폭, 0이면 기존과 픽셀 동일) · poseAt(now): anim.kind('cd','ewgf','jab','stumble','dash','backdash','walk','idle')
+          frame(): 걷기(curDir f/b 유지 + idle/walk 이고 moveDur 없음, WALK_F/WALK_B px/s, 살아있는 더미 DUMMY_STOP(36px) 앞에서 정지) → 이동 → rush 더미 통과 방지 clamp → 카메라 → 더미(타입 있으면 rushSpawn 리스폰, 없으면 기존 앞으로 재배치) → 배경/바닥 → 먼지 → 잔상(cd/dash/backdash) → 더미 → 캐릭터 → 번개 → 스파크 → 텍스트 팝 → 플래시
+          drawFighter(g,x,y,pose,dir,alpha,tint) pose.step(−1..1: 보폭, 0이면 기존과 픽셀 동일)·reach(앞팔 추가 길이, 통발)·sink(스탠스 낮춤, 나락)·sweep(오른 다리 궤도각, null이 아니면 다리 하나를 하체 중심 저평 타원 궤도로 그려 한 바퀴 스윕) · poseAt(now): anim.kind('cd','ewgf','jab','stumble','dash','backdash','tongbal','hellsweep','walk','idle')
 부트      renderAll(); setMode('free'); renderHistory(); updateStats(); requestAnimationFrame(frame)
 ```
 
@@ -107,6 +109,6 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 - `node tests/smoke-chrome.js`: 로컬 Chrome/Edge를 헤드리스로 띄워 CDP로 조작. 시작 시 `worker/index.js`를 로컬 http로 감싸고(가짜 D1) `BOARD_URL`만 그 주소로 바꾼 index.html 사본을 임시 폴더에 만들어 연다(원본은 건드리지 않음). 키보드로 6N23+2 입력, ko/en/ja 왕복 전환, 일본어로 웨이브 10초 측정 모드를 끝까지 돌린 뒤 공유 카드 열기·1200×630 PNG 생성·이미지 복사 시도(file://에서는 거부되어 안내 문구)·언어 전환·닫기, 백엔드는 로드 직후 닉네임 게이트부터: 모달 열림·게이트 중 키 입력 무시·Escape로 안 닫힘·2자 미만 거부·미리 점유된 닉네임 409 거부(Chrome이 남기는 409 리소스 오류 로그는 걸러냄)·자유 닉네임으로 시작(localStorage nick+token 48 hex). 측정 모드가 끝나면 자동 등록 문구와 자동으로 열린 결과 창 배너(등급 t2 '上級', 1位/1人)를 확인하고, 두 번째 측정 모드 자동 등록('최고 기록 유지'·결과 창 재오픈) → 다른 보드 빈 상태 → 한마디 작성·표시 → 헤더 버튼으로 닉네임 변경 → ko 전환 후 문구와 가짜 D1의 scores/posts/visits/nicks 행을 검사한다. JS 오류가 있거나 검사가 실패하면 종료 코드 1. 약 40초 걸린다.
 - 스모크 테스트 끝에 폰 에뮬레이션(390×844, touch, pointer:coarse)으로 터치 오버레이 표시·대기 배지 → 패드에서 f,N,d,df를 굴리고(CDP Input.dispatchTouchEvent) df와 2를 한 번에 보내 초풍 판정 → 가로(844×390)에서 패드·버튼이 오버레이 안에 겹침 없이 들어가고 힌트가 그 위에 보이는지 → 데스크톱으로 되돌리면 숨김을 확인한다.
 - 실제 키보드·게임패드·터치 지연, DirectInput 장치별 hat 매핑, 화면 폭별 시각 품질은 자동 검증에 없다.
-- 캔버스 입자·더미 물리는 프레임마다 고정량으로 갱신하므로 주사율에 따라 연출 속도가 달라진다. 판정은 시각 기반이라 영향 없음.
+- 캔버스 입자·더미 물리는 프레임마다 고정량으로 갱신하므로 주사율에 따라 연출 속도가 달라진다. 판정과 rush30 더미 재등장은 시각 기반이라 영향 없음(재등장은 기한 이후 첫 프레임).
 
 - 소리 회귀 브라우저 검사: `node tests/smoke-sound.js`. 로컬 HTTP로 backend 비활성 사본을 제공, 같은 Chrome의 별도 창 두 개에서 BGM 한 개·끄기/닫기 시 권한 이전·재생 중 효과음 볼륨/끄기를 검증.

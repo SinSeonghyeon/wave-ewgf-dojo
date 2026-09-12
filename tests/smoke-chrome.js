@@ -101,6 +101,18 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   // f,N,f double tap → dash visual in a real browser (no judging change)
   await tap('KeyD',20); await sleep(40); await tap('KeyD',20); await sleep(100);
   out.dash = await evalJs(`document.querySelector('#rTitle').textContent`);
+  // f,f+2 and 6N23+4 in free practice, then a rush30 trial: a crouch dash scores, the HUD shows points, leaving the mode clears it without a record (2026-09-13)
+  await sleep(700); await tap('KeyD',20); await sleep(40); await key('KeyD'); await sleep(30); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await sleep(300);
+  out.moves = {tongbal: await evalJs(`${q('#rTitle')}.textContent`)};
+  await sleep(400); await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(40); await key('KeyK'); await sleep(20); await key('KeyK','keyup'); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(300);
+  out.moves.sweep = await evalJs(`({title:${q('#rTitle')}.textContent, log:${q('#logBody')}.textContent.slice(0,60)})`);
+  await evalJs(`${q('#modes button[data-mode="rush30"]')}.click(); ${q('#dStart')}.click()`); await sleep(3300);
+  await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(40); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(400);
+  out.moves.rush = await evalJs(`({score:${q('#hudScore')}.textContent, prog:${q('#dProg')}.textContent, timer:${q('#hudTimer')}.textContent, hint:${q('#hudHint')}.textContent, modes:document.querySelectorAll('#modes button').length})`);
+  await evalJs(`${q('#modes button[data-mode="free"]')}.click()`); await sleep(200);
+  out.moves.left = await evalJs(`({score:${q('#hudScore')}.textContent, records:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.rush30.length})`);
+  if(!/f,f\+2|통발|66\+2/.test(out.moves.tongbal) || !/Hell Sweep|나락|奈落/.test(out.moves.sweep.title) || !/Move/.test(out.moves.sweep.log) || out.moves.rush.score!=='1 PTS' || !/^1 /.test(out.moves.rush.prog) || !/^\d+\.\d$/.test(out.moves.rush.timer)
+     || !/6N23\+4/.test(out.moves.rush.hint) || out.moves.rush.modes!==5 || out.moves.left.score!=='' || out.moves.left.records!==0) errors.push('f,f+2 / hell sweep / rush30 check failed: '+JSON.stringify(out.moves));
   if(out.sound.off.on!=='0' || out.sound.off.stSound!==0 || out.sound.off.stSfx!==30 || !out.sound.off.disabled || out.sound.on.on!=='1' || out.sound.on.disabled) errors.push('sound settings check failed: '+JSON.stringify(out.sound));
   for(const l of ['en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);
@@ -167,6 +179,7 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   out.ko2 = await evalJs(`({title:${q('#boardCard h2')}.textContent, empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, rank:${q('#dRank')}.textContent, visits:${q('#visits')}.textContent, postsTitle:${q('#postsCard h2')}.textContent, nickBtn:${q('#nickBtn')}.textContent})`);
   out.db = {scores:db.rows.map(r => ({board:r.board, nick:r.nick, score:r.score, tie:r.tie, win:r.win, week:r.week})), posts:db.posts.map(p => [p.nick, p.text]), visits:db.visits, nicks:db.db.prepare('SELECT key,nick FROM nicks ORDER BY key').all().map(r => [r.key, r.nick])};
   const bd = out.board, auto = bd.auto;
+  if(bd.tabs.length!==4 || !/rush30|Dummy Rush/.test(bd.tabs[3]||'')) errors.push('leaderboard tabs check failed: '+JSON.stringify(bd.tabs));
   if(bd.cardHidden || bd.postsHidden || !/rank 1 of 1 · top 100%/.test(bd.rank) || !bd.retryHidden || !/^\d+\/\d+ – \d+\/\d+ \(KST\)/.test(bd.week) || !/1 entries/.test(bd.week) || !/rank 1 of 1 · top 100%/.test(bd.me) || !bd.meRow || bd.rows.length!==1 || bd.rows[0][1]!=='스모크 테스트' || bd.rows[0][0]!=='1' || !/^Today 1 · total 1 visits$/.test(bd.visits)) errors.push('leaderboard check failed: '+JSON.stringify(bd));
   if(!auto || auto.during.rank!=='' || auto.during.open || !/best stands · rank 1 of 1/.test(auto.after.rank) || auto.after.rows!==1 || !auto.after.open || !/best stands/.test(auto.after.line) || auto.after.tier!=='Expert') errors.push('leaderboard auto-submit check failed: '+JSON.stringify(auto));
   if(!bd.ewgfTab.empty || !/No entry from you/.test(bd.ewgfTab.me) || bd.ewgfTab.pressed!=='true') errors.push('leaderboard tab check failed: '+JSON.stringify(bd.ewgfTab));

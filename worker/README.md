@@ -56,7 +56,7 @@ workers.dev 서브도메인이 없으면 deploy가 멈춘다. 대시보드 Worke
 ## 설계
 
 - 주간 키 `week` = 해당 주 월요일 날짜(KST). 월요일 0시 KST에 조회에서 빠지며 지난 기록은 지우지 않는다.
-- 보드 3개: `wave10`(score=대시/초, tie=최고 연속), `ewgf20`(score=성공률, tie=−|평균 오프셋|), `combo10`(score=성공률, tie=측정 중 평균 대시/초).
+- 보드 4개: `wave10`(score=대시/초, tie=최고 연속), `ewgf20`(score=성공률, tie=−|평균 오프셋|), `combo10`(score=성공률, tie=측정 중 평균 대시/초), `rush30`(score=점수, tie=격파 수, detail {kills,whiffs,dashPts}. 2026-09-13 추가 — 배포 전에는 앱의 rush30 등록이 400 `board`로 거부된다).
 - 닉네임: `nicks(key,nick,token)`. key = NFKC 소문자. 계정 대신 토큰(48 hex)으로 소유를 증명한다. 토큰을 잃으면(브라우저 데이터 삭제) 그 닉네임은 다시 못 쓴다 — 해제 API는 일부러 없다. 필요하면 D1에서 직접 `DELETE FROM nicks WHERE key=?`.
 - 닉네임당 보드마다 주간 1행: `INSERT … ON CONFLICT(week,board,nick) DO UPDATE … WHERE 더 좋을 때만`. 순위 = 자기보다 (score, tie)가 높은 기록 수 + 1. 동점은 같은 순위. 응답은 상위 10 + 전체 참가자 수 + 내 행(`me`, 10위 밖이어도 순위 계산).
 - 방문 집계: `visits(day,n)`. 날짜는 KST. 앱이 브라우저당 하루 1회 POST하므로 "사람 수"에 가깝지만 정확한 고유 방문자는 아니다.

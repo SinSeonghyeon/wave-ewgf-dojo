@@ -58,6 +58,11 @@
   - 11. 문서. CODE_MAP 입력 절(`touchDir`, 오버레이, 섹터 표), AGENTS 설계 결정 11(터치는 coarse pointer에서만 표시, 판정 경로 동일, 정밀도 고지), README 조작·한계.
   - 규모: `index.html` 약 250줄(CSS 60·마크업 20·JS 120·i18n 15×3), 테스트 약 80줄, 워커 (a) 선택 시 10줄 + 재배포. 한 세션 분량.
 
+- [x] 4-5. 통발·나락 기술 추가 (2026-09-13). 통발 = f,f+2(오른손, 중단), 나락 = 6N23+4(오른발, 하단). 둘 다 초풍 판정과 분리된 `strike` 경로로 `attempt`가 아니다(성공률·히스토그램·연속 초풍·`session.tries/hits`에 안 잡힘). 통발은 상태 1/2에서 `cd.dashT===cd.tF && 2가 두 번째 6 후 250ms(FF_MS) 안`. 나락은 저스트 없음 — 상태 4/7 또는 캔슬 6 후 250ms의 4, 상태 3이면 `cd.pending={t,btn:4}`로 df를 기다렸다가 판정(2가 pending이면 우선). 저스트가 아니므로 라벨에 "!"·연속 횟수 없음(사용자 결정). 자유 연습에서는 일반 더미가 반응. 문자열·연출(`fx.tongbal/hellsweep`, `poseAt`)·로그 추가.
+- [x] 4-6. 웨이브 재시작 대시 (2026-09-13, 설계 결정 9 변경). `6N23 6 N 6`의 그 시작 6을 대시로 처리(캔슬 6 자체는 아님). 짧은 대시 연출(`fx.dash(true)`, 24px), 대초 라벨은 안 붙음(`cd.dashWave`). 이 대시로도 통발 가능.
+- [x] 4-7. 더미 격파 30초 (rush30) (2026-09-13). 4번째 측정 모드 + 주간 순위 4번째 보드. 상/중/하단 더미(`world.dummy.type`)가 무작위로 나오고 `HIT_TYPE`로 상단=초풍, 중단=통발, 하단=나락일 때만 격파(5점, 저스트 놓친 풍신권이 상단에 닿으면 2점, `RUSH_PTS`). 크라우치 대시는 어디서든 `min(연속,3)`점. 틀린 기술은 헛침(0점, 더미 유지). 격파 후 700ms 뒤 새 타입·거리(140~min(380,W*0.6)px)로 리스폰. rush 중 캐릭터는 더미를 지나치지 못하게 clamp. `endTrial`이 취소·완료 모두에서 `dummy.type=null`로 복구. 기록 `{score,kills,whiffs,dashPts}`, 보드 tie=격파 수. 워커 `BOARDS.rush30` 추가 — **재배포(`cd worker && npx wrangler deploy`)는 사용자 작업**이며, 배포 전에는 rush30 등록이 400 `board`로 거부되어 순위 바에 실패 문구 + 재시도가 뜬다. 테스트: dojo 3개 추가(통발 6시퀀스·나락 pending·rush30 점수/카드/취소), board 1개(rush30 범위·tie). 스모크에 통발·나락·rush30 단계와 보드 탭 4개 검사 추가.
+  - 열린 항목(후속, 사용자 결정 필요): 통발·나락·격파 전용 효과음. 설계 결정 8(효과음은 크라우치 대시·초풍 성공만)이라 새 음원을 넣지 않았다.
+
 ## 2단계. 저마찰 수익 (유입 생기면 바로)
 
 - [ ] 2-1. 쿠팡 파트너스 가입 + "연습 장비" 섹션. 레버·히트박스·패드. "이 도구로 측정한 입력 지연 기준 추천" 맥락으로 배치.
@@ -76,8 +81,14 @@
 
 - [x] 설정·소리 리뷰 수정 (2026-09-12): 설정 진입 시 측정/카운트다운 취소·입력 초기화, 재생 중 효과음 볼륨/끄기 동기화, 여러 창 BGM 중복 방지.
 
+- [x] rush30 리뷰 2건 수정 (2026-09-13): 즉시 소비로 중복 득점 차단, 낙하 완료와 무관한 700ms 재등장.
+
 ## 진행 로그
 
+- 2026-09-13: rush30 명중 즉시 hit를 설정하고 110ms 연출 지연은 launchAt으로 유지. updateDummy가 낙하와 재등장을 관리하며 타입 더미는 700ms 기한을 우선 적용. 통발 60ms 연타의 기록·순위 점수와 네 기술의 30/60/144Hz 재등장 회귀 테스트 추가(단위 61개·브라우저 스모크 통과, JS 오류 0).
+
+- 2026-09-13 (후속, 사용자 요청): (1) 격파해도 웨이브 콤보 유지 — `endCommand()`가 rush30에서 chain·cancelled·lastDF를 유지해 격파 후 대시가 3점으로 이어짐(700ms 공백에만 endChain 초기화). 회귀 테스트 1개. (2) 나락 연출을 오른 다리로 크게 돌리는 저평 스윕으로(깊게 숙임 sink, 다리 쭉 뻗어 하체 한 바퀴 sweep, 궤적). 이후 사용자 요청으로 약 2배 빠르게(전체 ~760ms → ~380ms, fx 슬라이드·먼지도 단축). (3) 통발은 앞팔을 reach로 늘려 빠르게 내지르는 스트레이트로. 테스트 59개 + 스모크 통과.
+- 2026-09-13: 4-5·4-6·4-7 완료(통발·나락 / 웨이브 재시작 대시 / 더미 격파 30초). `onDir`에서 상태 6의 시작 6도 `tapDetect`로 넣어 대시 처리(`cd.dashWave`, 짧은 대시). `onButton`에 통발(상태 1/2 + `cd.dashT===cd.tF` + FF_MS)·나락(상태 4/7/5, 상태 3은 `cd.pending.btn`) 분기와 `strike()` 경로 추가(attempt와 분리). `world.dummy.type`·`HIT_TYPE`·`tryHit(move)` 반환·`rushSpawn`·`rushStrike`·`renderRushHud`, `drawDummy` 타입별 모양, `poseAt` tongbal/hellsweep. `MODES.rush30`·`#modes`·`#boardTabs`·`store.records.rush30`·`endTrial`/`trialTick`/`recText`/`boardEntry`/`buildCard` 분기. 워커 `BOARDS.rush30`(재배포는 사용자). i18n 통발·나락·rush30 키 ko/en/ja. 통발·나락은 저스트가 아니므로 "!"·연속 없음(세션 중 사용자 피드백 반영). 테스트 58개 통과 + 스모크 통과.
 - [x] 후원창 측정 취소 회귀 수정 (2026-09-12): openDonate에서 endTrial(true)·resetInput() 후 창을 열도록 변경. 세 언어·세 측정 모드의 카운트다운/측정 취소 및 후원 버튼 3곳의 입력 초기화 단위 테스트 추가. 브라우저 스모크에 영어 카운트다운·일본어 측정 중 후원창 진입 후 결과/순위 미생성 검사 추가.
 
 - 2026-09-12: 복제 대비(사용자 요청). 루트 `LICENSE`(모든 권리 보유, 한/영), 푸터 저작권 줄(`footer.copy` ko/en/ja), `index.html` 첫 줄 주석, README 라이선스 줄, AGENTS 설계 결정 10. 워커 출처 잠금: `ALLOWED_ORIGINS`(wrangler.toml [vars]) 외 Origin은 CORS 헤더 없음·POST 403 `origin`, DELETE는 토큰만. 워커 테스트 1개 추가, 스모크는 `ALLOWED_ORIGINS:'null'`(file://)로 실행. **워커 재배포(`cd worker && npx wrangler deploy`)는 사용자 작업.**
