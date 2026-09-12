@@ -159,6 +159,8 @@
   dialog.nick{width:min(460px,calc(100vw - 32px))}
   .donate-qr{display:block;width:200px;height:200px;margin:14px auto 4px;padding:8px;box-sizing:content-box;background:#fff;border-radius:8px}
   #donateDlg .nick-form{justify-content:center} #donateDlg .btn{text-decoration:none}
+  #donateDlg .donate-contact{margin:16px 0 0;text-align:center;font-size:12px;color:var(--muted)}
+  .donate-contact a{color:inherit;overflow-wrap:anywhere}
   .nick-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px} .nick-form input{flex:1 1 160px}
   /* result banner in the share dialog: tier title + rank line + comment, colour and motion per tier */
   .share-rank{--tier:var(--muted);border:1px solid var(--line);border-left:4px solid var(--tier);border-radius:6px;background:var(--panel2);padding:12px 16px;margin-bottom:12px}
@@ -215,6 +217,10 @@
   .segc button{background:transparent;border:0;color:var(--ink2);padding:5px 10px;font-size:12.5px}
   .segc button+button{border-left:1px solid var(--line2)}
   .segc button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .hud-side{position:absolute;right:56px;top:10px;height:36px;box-sizing:border-box;pointer-events:auto;background:var(--panel)}
+  .hud-side button{min-width:40px;padding:0 8px;font-family:var(--mono)}
+  .hud-side button:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+  @media (max-width:480px){.hud-timer{top:54px}}
   .range{display:inline-flex;align-items:center;gap:8px}
   .range input[type=range]{-webkit-appearance:none;appearance:none;width:140px;height:4px;border-radius:2px;background:var(--line2);cursor:pointer;margin:0}
   .range input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--accent-deep)}
@@ -312,6 +318,7 @@
           <div class="hud-timer" id="hudTimer"></div>
           <div class="hud-center" id="hudCenter"></div>
           <div class="hud-hint" id="hudHint"></div>
+          <div class="segc hud-side" id="sideSel" role="group" data-i18n-aria="set.side" aria-label="캐릭터 방향"><button type="button" data-side="1" aria-pressed="true" data-i18n="set.side1Short" data-i18n-aria="set.side1" aria-label="1P (→ 가 앞)">1P</button><button type="button" data-side="-1" aria-pressed="false" data-i18n="set.side2Short" data-i18n-aria="set.side2" aria-label="2P (← 가 앞)">2P</button></div>
           <button class="hud-gear" id="setOpen" type="button" data-i18n-aria="set.title" aria-label="입력 · 판정 설정" title="⚙"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.7 7.7 0 0 0-1.7-1L15 3h-4l-.4 2.7a7.7 7.7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.7 7.7 0 0 0 1.7 1L11 21h4l.4-2.7a7.7 7.7 0 0 0 1.7-1l2.5 1 2-3.5L19.4 13zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></button>
         </div>
         <div class="touch" id="touch" data-i18n-aria="touch.aria" aria-label="터치 컨트롤">
@@ -362,8 +369,6 @@
         <div class="set">
           <div class="row"><label class="t" data-i18n="set.window">초풍 판정 폭</label>
             <div class="segc" id="winSel"><button data-win="8" aria-pressed="false" data-i18n="set.win8">저스트 0.5f</button><button data-win="12" aria-pressed="true" data-i18n="set.win12">보통 0.7f</button><button data-win="15" aria-pressed="false" data-i18n="set.win15">관대 0.9f</button></div></div>
-          <div class="row"><label class="t" data-i18n="set.side">캐릭터 방향</label>
-            <div class="segc" id="sideSel"><button data-side="1" aria-pressed="true" data-i18n="set.side1">1P (→ 가 앞)</button><button data-side="-1" aria-pressed="false" data-i18n="set.side2">2P (← 가 앞)</button></div></div>
           <div class="row"><label class="t" data-i18n="set.fx">연출 (흔들림·플래시)</label>
             <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div class="row"><label class="t" data-i18n="set.touch">터치 컨트롤</label>
@@ -421,6 +426,7 @@
       <img class="donate-qr" id="donateQr" width="200" height="200" alt="" data-i18n-aria="donate.qrAlt" aria-label="카카오페이 송금 QR 코드">
       <div class="nick-form"><a class="btn" id="donateOpen" target="_blank" rel="noopener" data-i18n="donate.open">휴대폰에서 카카오페이 열기</a><button class="btn ghost" id="donateBack" type="button" data-i18n="donate.back">뒤로</button></div>
     </div>
+    <p class="donate-contact"><span data-i18n="footer.contact">문의</span>: <a href="mailto:tlstjdgus3@gmail.com">tlstjdgus3@gmail.com</a></p>
   </dialog>
 
   <section class="records" data-i18n-aria="records.aria" aria-label="기록">
@@ -553,7 +559,7 @@ ko:{
   'stat.dps':'최고 웨이브 속도 (대시/초)', 'stat.chain':'최고 연속 대시', 'stat.dash':'총 대시', 'stat.rate':'초풍 성공률', 'stat.try':'초풍 시도', 'stat.mean':'평균 버튼 오프셋',
   'set.title':'입력 · 판정 설정',
   'set.window':'초풍 판정 폭', 'set.win8':'저스트 0.5f', 'set.win12':'보통 0.7f', 'set.win15':'관대 0.9f',
-  'set.side':'캐릭터 방향', 'set.side1':'1P (→ 가 앞)', 'set.side2':'2P (← 가 앞)',
+  'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'캐릭터 방향', 'set.side1':'1P (→ 가 앞)', 'set.side2':'2P (← 가 앞)',
   'set.fx':'연출 (흔들림·플래시)', 'set.on':'켜기', 'set.off':'끄기',
   'set.touch':'터치 컨트롤', 'set.touchAuto':'자동 (터치 기기)', 'touch.note':'터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)', 'touch.aria':'터치 컨트롤', 'touch.padAria':'방향 패드 — 손가락을 굴려 입력',
   'set.keys':'키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)', 'set.keyListen':'키 입력…',
@@ -698,7 +704,7 @@ en:{
   'stat.dps':'Best wave speed (dashes/s)', 'stat.chain':'Best chain', 'stat.dash':'Total dashes', 'stat.rate':'EWGF rate', 'stat.try':'EWGF attempts', 'stat.mean':'Avg button offset',
   'set.title':'Input · judgement settings',
   'set.window':'EWGF window', 'set.win8':'Just 0.5f', 'set.win12':'Normal 0.7f', 'set.win15':'Lenient 0.9f',
-  'set.side':'Facing', 'set.side1':'1P (→ is forward)', 'set.side2':'2P (← is forward)',
+  'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'Facing', 'set.side1':'1P (→ is forward)', 'set.side2':'2P (← is forward)',
   'set.fx':'Effects (shake · flash)', 'set.on':'On', 'set.off':'Off',
   'set.touch':'Touch controls', 'set.touchAuto':'Auto (touch devices)', 'touch.note':'Touch is less precise than a keyboard (good for spotting trends)', 'touch.aria':'Touch controls', 'touch.padAria':'Direction pad — roll your thumb to input',
   'set.keys':'Key bindings — click a slot, then press a key (arrow keys ↑↓←→ always work)', 'set.keyListen':'press key…',
@@ -842,7 +848,7 @@ ja:{
   'stat.dps':'最高ウェーブ速度 (ダッシュ/秒)', 'stat.chain':'最高連続ステップ', 'stat.dash':'総ステップ数', 'stat.rate':'最風成功率', 'stat.try':'最風試行', 'stat.mean':'平均ボタンオフセット',
   'set.title':'入力・判定設定',
   'set.window':'最風判定幅', 'set.win8':'ジャスト 0.5f', 'set.win12':'普通 0.7f', 'set.win15':'甘め 0.9f',
-  'set.side':'キャラの向き', 'set.side1':'1P (→が前)', 'set.side2':'2P (←が前)',
+  'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'キャラの向き', 'set.side1':'1P (→が前)', 'set.side2':'2P (←が前)',
   'set.fx':'演出 (揺れ・フラッシュ)', 'set.on':'オン', 'set.off':'オフ',
   'set.touch':'タッチ操作', 'set.touchAuto':'自動 (タッチ端末)', 'touch.note':'タッチ入力はキーボードより判定精度が低めです (傾向の把握向け)', 'touch.aria':'タッチ操作', 'touch.padAria':'方向パッド — 指を転がして入力',
   'set.keys':'キー設定 — 枠を押してから使いたいキーを入力 (矢印キー↑↓←→は常に使用可)', 'set.keyListen':'キー入力…',
