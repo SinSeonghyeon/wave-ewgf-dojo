@@ -9,6 +9,7 @@
 - 이름: 미시마 도장 (Mishima Dojo / 三島道場). 철권 미시마류 웨이브 대시·초풍 입력을 브라우저에서 프레임 단위로 판정하는 연습 도구. 비공식 팬 제작.
 - 코드: 루트 `index.html` 단일 파일(HTML+CSS+JS). 빌드 없음, 외부 라이브러리 없음.
 - 배포: GitHub Pages, main 브랜치 루트. https://sinseonghyeon.github.io/wave-ewgf-dojo/ (저장소 이름은 `wave-ewgf-dojo`로 유지. Pages 주소가 바뀌므로 사용자 결정 없이 바꾸지 않는다.)
+- 주소 모음: 저장소 https://github.com/SinSeonghyeon/wave-ewgf-dojo · 백엔드 Worker https://mishima-dojo-board.mishima-dojo.workers.dev · 후원 Ko-fi https://ko-fi.com/misimadojo (en/ja) · 카카오페이 송금 링크 https://qr.kakaopay.com/Ej8EBCpJu (ko, 휴대폰 전용) — 코드의 `BOARD_URL`/`DONATE`와 같아야 한다.
 - 테스트: `node --test tests/dojo.test.cjs tests/board.test.cjs` (Node 22.13+, 의존성 없음. 가짜 D1이 `node:sqlite`를 쓴다) · `node tests/smoke-chrome.js` (로컬 Chrome/Edge 헤드리스, CDP).
 - 개발 도구: `tools/` (커밋 대상). `tools/cdp.js`는 헤드리스 브라우저 공용 모듈, `tools/make-og.js`는 `og.png` 재생성. 앱 자체는 여전히 `index.html` 하나다.
 - 백엔드: `worker/` (Cloudflare Worker + D1: 주간 순위·방문자 수·한마디 게시판). 배포는 `npx wrangler deploy`(`worker/README.md`). 앱은 `fetch`로만 호출하며 `index.html`의 `BOARD_URL`이 비어 있으면 백엔드 UI 전체가 숨겨진다.
@@ -18,7 +19,7 @@
 
 - 진행 상황·다음 작업·수익화 계획: `.agents/docs/PLAN.md`. 작업 시작 전 체크박스와 진행 로그를 본다.
 - 코드 구조(상태 머신, i18n, 기록 저장 형식, 검증 절차): `.agents/docs/CODE_MAP.md`. 코드를 고칠 때만 읽는다.
-- 과거 코드 리뷰 결과: `.agents/docs/reviews/`.
+- 과거 코드 리뷰 결과: `.agents/docs/reviews/`. 홍보 글 초안(1-6): `.agents/docs/PROMO.md`.
 - 사람용 소개·조작법: 루트 `README.md`. 에이전트 규칙은 넣지 않는다.
 - 긴 파일은 `rg`로 위치를 좁힌 뒤 필요한 구간만 읽는다. `index.html`은 1,300줄이 넘는다.
 

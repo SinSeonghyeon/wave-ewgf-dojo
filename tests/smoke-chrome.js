@@ -74,13 +74,16 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   // sound settings: the key events above were the unlocking gesture. Toggle off → slider → back on → one more EWGF with sound enabled (play() rejections would surface in errors)
   const soundSnap = () => evalJs(`(() => { const q=s=>document.querySelector(s); const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')); return {on:q('#soundSel button[aria-pressed=\"true\"]').dataset.sound, bgm:q('#bgmVol').value, sfx:q('#sfxVol').value, out:q('#sfxVolOut').textContent, disabled:q('#sfxVol').disabled, stSound:st.sound, stSfx:st.sfxVol}; })()`);
   out.sound = {initial: await soundSnap()};
-  // donate: ko button opens the KakaoPay QR dialog (phone-only link), close works; en button is a plain Ko-fi link
+  // donate: footer button opens the chooser (KakaoPay first in ko), KakaoPay shows the QR view, back/close work; en lists Ko-fi first
   await evalJs(`document.querySelector('#langSel button[data-lang=\"ko\"]').click(); document.querySelector('#donateBtn').click()`); await sleep(150);
-  out.donate = await evalJs(`(() => { const q=s=>document.querySelector(s); return {open:q('#donateDlg').open, qr:q('#donateQr').naturalWidth, href:q('#donateOpen').href}; })()`);
-  await evalJs(`document.querySelector('#donateClose').click()`); await sleep(100);
-  out.donate.closed = !(await evalJs(`document.querySelector('#donateDlg').open`));
-  out.donate.enHref = await evalJs(`(() => { document.querySelector('#langSel button[data-lang=\"en\"]').click(); return document.querySelector('#donateBtn').href; })()`);
-  if(!out.donate.open || !out.donate.closed || !out.donate.qr || !/ko-fi.com/.test(out.donate.enHref)) errors.push('donate check failed: '+JSON.stringify(out.donate));
+  out.donate = await evalJs(`(() => { const q=s=>document.querySelector(s); return {open:q('#donateDlg').open, first:q('#donateOptions [data-opt]').dataset.opt, chooseShown:!q('#donateChoose').hidden}; })()`);
+  await evalJs(`document.querySelector('#donateOptions [data-opt=\"kakao\"]').click()`); await sleep(150);
+  Object.assign(out.donate, await evalJs(`(() => { const q=s=>document.querySelector(s); return {qrShown:!q('#donateKakao').hidden, qr:q('#donateQr').naturalWidth, href:q('#donateOpen').href}; })()`));
+  await evalJs(`document.querySelector('#donateBack').click()`); await sleep(50); out.donate.back = await evalJs(`!document.querySelector('#donateChoose').hidden`);
+  await evalJs(`document.querySelector('#donateClose').click()`); await sleep(100); out.donate.closed = !(await evalJs(`document.querySelector('#donateDlg').open`));
+  out.donate.enFirst = await evalJs(`(() => { document.querySelector('#langSel button[data-lang=\"en\"]').click(); const o=document.querySelector('#donateOptions [data-opt]'); return o.dataset.opt+' '+(o.href||''); })()`);
+  out.donate.buttons = await evalJs(`['donateTop','donateShareBtn','donateBtn'].map(id => { const b=document.getElementById(id); return id+':'+(b?(b.hidden?'hidden':'shown'):'missing'); }).join(',')`);
+  if(!out.donate.open || out.donate.first!=='kakao' || !out.donate.qrShown || !out.donate.qr || !out.donate.back || !out.donate.closed || !String(out.donate.enFirst).startsWith('kofi https://ko-fi.com/') || /missing|hidden/.test(out.donate.buttons)) errors.push('donate check failed: '+JSON.stringify(out.donate));
   // settings dialog: gear on the stage opens it (game input paused), close button closes it
   await evalJs(`document.querySelector('#setOpen').click()`); await sleep(150);
   out.sound.dlgOpen = await evalJs(`document.querySelector('#setDlg').open`);
@@ -102,6 +105,20 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);
     out[l] = await snap();
     out[l].stored = await evalJs(`JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).lang`);
+  }
+  // Opening support during countdown (en) or measurement (ja) must never save/submit a result.
+  out.donate.cancel = [];
+  for(const [lang,delay] of [['en',200],['ja',3300]]){
+    const recordsBefore=await evalJs(`JSON.stringify(JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.wave10)`);
+    await evalJs(`document.querySelector('#langSel button[data-lang="${lang}"]').click(); document.querySelector('#modes button[data-mode="wave10"]').click(); document.querySelector('#dStart').click()`);
+    await sleep(delay);
+    await evalJs(`document.querySelector('#donateTop').click()`);
+    await sleep(14500); // beyond both the original countdown and the measurement deadline
+    const state=await evalJs(`({open:document.querySelector('#donateDlg').open, resultOpen:document.querySelector('#shareDlg').open, startDisabled:document.querySelector('#dStart').disabled, shareHidden:document.querySelector('#dShare').hidden, records:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.wave10.length})`);
+    state.scores=db.rows.length;out.donate.cancel.push({lang,...state});
+    const recordsAfter=await evalJs(`JSON.stringify(JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.wave10)`);
+    if(!state.open || state.resultOpen || state.startDisabled || !state.shareHidden || recordsAfter!==recordsBefore || state.scores) errors.push('donate trial cancellation failed: '+JSON.stringify({lang,...state}));
+    await evalJs(`document.querySelector('#donateClose').click()`);
   }
   // trial flow in ja: wave10 start → wait → end record text
   await evalJs(`document.querySelector('#langSel button[data-lang="ja"]').click()`);

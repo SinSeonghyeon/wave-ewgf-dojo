@@ -48,7 +48,7 @@
 
 - [ ] 2-1. 쿠팡 파트너스 가입 + "연습 장비" 섹션. 레버·히트박스·패드. "이 도구로 측정한 입력 지연 기준 추천" 맥락으로 배치.
 - [ ] 2-2. 해외 유입 생기면 같은 자리에 Amazon Associates 링크 병기 (언어에 따라 전환).
-- [x] 2-3. 후원 버튼 (2026-09-12). 푸터에 언어별 외부 링크 하나(`DONATE_URL`: ko = 카카오페이 송금 링크, en/ja = Ko-fi `ko-fi.com/misimadojo`, PayPal만 연동). 비어 있으면 그 언어에서는 숨김. 스크립트·위젯 없음. 토스아이디(toss.me)는 서비스 종료라 제외. 카카오페이 링크는 휴대폰 전용(PC 브라우저는 404)이라 ko 버튼은 QR(`donate-kakao.png`, 링크 주소만 담은 코드) + 휴대폰용 직접 링크를 보여주는 `#donateDlg`를 연다.
+- [x] 2-3. 후원 버튼 (2026-09-12). 1차: 푸터에 언어별 외부 링크 하나( ko = 카카오페이 송금 링크, en/ja = Ko-fi `ko-fi.com/misimadojo`, PayPal만 연동). 비어 있으면 그 언어에서는 숨김. 스크립트·위젯 없음. 토스아이디(toss.me)는 서비스 종료라 제외. 카카오페이 링크는 휴대폰 전용(PC 브라우저는 404)이라 QR(`donate-kakao.png`, 링크 주소만 담은 코드) + 휴대폰용 직접 링크를 보여준다. 2차(사용자 요청): 버튼을 헤더·결과 창(공유 이미지에는 안 나옴)·푸터 세 곳에 두고, 누르면 카카오페이/Ko-fi 중 고르는 창(`#donateDlg`)이 뜬다. 순서는 ko에서 카카오페이 먼저, en/ja는 Ko-fi 먼저. 두 방법 모두 모든 언어에서 보인다.
 - [ ] 2-4. 배너 광고는 후순위. 붙인다면 카카오 애드핏, 위치는 측정 모드 종료 화면 한 곳만. 연습 중 화면에는 절대 넣지 않는다.
 
 ## 3단계. 유료 제품
@@ -63,6 +63,8 @@
 - [x] 설정·소리 리뷰 수정 (2026-09-12): 설정 진입 시 측정/카운트다운 취소·입력 초기화, 재생 중 효과음 볼륨/끄기 동기화, 여러 창 BGM 중복 방지.
 
 ## 진행 로그
+
+- [x] 후원창 측정 취소 회귀 수정 (2026-09-12): openDonate에서 endTrial(true)·resetInput() 후 창을 열도록 변경. 세 언어·세 측정 모드의 카운트다운/측정 취소 및 후원 버튼 3곳의 입력 초기화 단위 테스트 추가. 브라우저 스모크에 영어 카운트다운·일본어 측정 중 후원창 진입 후 결과/순위 미생성 검사 추가.
 
 - 2026-09-12: 복제 대비(사용자 요청). 루트 `LICENSE`(모든 권리 보유, 한/영), 푸터 저작권 줄(`footer.copy` ko/en/ja), `index.html` 첫 줄 주석, README 라이선스 줄, AGENTS 설계 결정 10. 워커 출처 잠금: `ALLOWED_ORIGINS`(wrangler.toml [vars]) 외 Origin은 CORS 헤더 없음·POST 403 `origin`, DELETE는 토큰만. 워커 테스트 1개 추가, 스모크는 `ALLOWED_ORIGINS:'null'`(file://)로 실행. **워커 재배포(`cd worker && npx wrangler deploy`)는 사용자 작업.**
 
@@ -85,3 +87,4 @@
 - 2026-09-12: 1-8 완료. 사용자 지시로 에이전트가 `wrangler login`(브라우저 승인은 사용자)·D1 생성·스키마 적용·workers.dev 서브도메인 `mishima-dojo` 등록(API)·배포까지 실행. 배포는 Cloudflare 이메일 인증 후에야 통과했다. 백엔드 `worker/`(index.js·schema.sql·wrangler.toml·README.md): Cloudflare Worker + D1, `/top`·`/submit`, 주차 키 = KST 월요일 날짜, 순위 = 더 나은 (score,tie) 수 + 1. 앱: `#dBoard` "주간 순위" 버튼 → `#boardDlg`(보드 탭 3개·주간 범위·등록 폼·상위 20 표·내 행 강조). `boardEntry`(순수, 드릴 결과 → 제출 페이로드)·`boardRowText`(recText 재사용). 문자열 20키 ko/en/ja. `store.nick` 추가. 테스트: `tests/board.test.cjs` 5개(가짜 D1 `tests/fake-d1.js`로 핸들러 직접 호출: 주차 경계, 검증, 동점 순위, 20위 캡, CORS/오류), dojo.test.cjs 1개 추가(총 33). 스모크 테스트는 워커 핸들러를 로컬 http로 감싸 실제 Chrome에서 열기→등록→내 행→다른 보드 빈 상태→ko 전환→닫기까지 확인. `BOARD_URL`은 배포 주소로 채워져 있다(비어 있으면 숨김). 방문 집계(1-7)는 미착수.
 - 2026-09-12: 1-8 코드 리뷰 반영(10건). 앱: 순위 요청 경합 수정(`board.seq`로 최신 로드만 msg/data 반영, 등록 중엔 탭 전환·중복 등록 차단 → 이전엔 느린 회선에서 탭 전환 시 같은 결과가 두 번 등록될 수 있었다), 서버 400 `nick`을 "닉네임 2~12자" 문구로 표시하고 워커와 같은 문자 규칙(`NICK_BAD`·`nickOk`)을 클라이언트·저장소 로더에도 적용, 드릴 카운트다운·진행 중 `#dBoard` 숨김(`renderBoardBtn`), combo10 기록에 `rec.dps` 저장해 순위 표·최고 기록에 동점 기준(대시/초)을 표시, GET에는 content-type을 붙이지 않아 preflight 제거, `BOARDS`(MODES의 start 모드)로 renderBests 순서 파생. 워커: `Object.hasOwn`으로 `constructor` 같은 상속 키 거부, `BOARDS`·`WINDOWS` export, `worker/package.json`(`"type":"module"`, Node 18~20에서 ESM 로드용). 테스트: 앱↔워커 계약 교차 검증 1개 추가(총 34), 상속 키 400 검사, 픽스처 닉네임을 중립 이름으로 교체(설계 결정 3). 스모크 테스트 실패 시에도 임시 폴더 삭제. 문서: 설계 결정 4에 Worker 명시, "채움/Paste" 등 배포 전 문구 정리.
 - 2026-09-12: 1-7·1-9 완료, 1-8 개편(사용자 요청 3건). 순위: 모달·버튼 제거, `.records` 첫 칸에 순위 카드 상시 표시(상위 10 + 내 순위/참가 수/상위 %, 10위 밖이면 표 아래 내 행). 닉네임당 주간 최고 1건(서버 업서트, `UNIQUE(week,board,nick)`), 닉네임 저장 시 드릴 종료 즉시 자동 등록(드릴 바 #dRank에 "등록 완료/최고 기록 유지 · N위/M명 · 상위 P%"), 없으면 드릴 바에서 한 번 입력. 방문자: `/visits`, 브라우저당 KST 하루 1회, 헤더 우상단. 한마디: `/posts` 게시판(200자·최신 50·1분 갱신·IP당 1분 3개·`ADMIN_TOKEN` 삭제). 테스트 인프라: `tests/fake-d1.js`를 node:sqlite + 실제 schema.sql로 교체(Node 22.13+ 필요, 문서 갱신). 테스트 37개 + 스모크(자동 등록·게시·방문 포함) 통과. 에이전트가 스키마 적용·워커 배포·`ADMIN_TOKEN` 등록까지 실행(토큰은 `.sandbox/admin-token.txt`).
+- 2026-09-12: 2-3 후원 2차(사용자 요청). 버튼을 헤더 `#donateTop`·결과 창 `#donateShare`(캔버스 밖이라 공유 이미지에는 안 나옴)·푸터 `#donateBtn` 세 곳에 두고, 누르면 `#donateDlg`에서 카카오페이/Ko-fi를 고른다(`DONATE`·`donateOptions(lang)`: ko는 카카오페이 먼저, en/ja는 Ko-fi 먼저). 카카오페이는 QR 뷰로 전환, Ko-fi는 새 탭. 문자열 `donate.btn/chooseTitle/kakao/kakaoSub/kofi/kofiSub/back` ko/en/ja. 테스트 50개 + 스모크(선택 창·순서·QR·en 순서) 통과. Ko-fi 최소 금액은 코드가 아니라 Ko-fi 설정에서 바꾼다.

@@ -14,14 +14,14 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
       getBoundingClientRect(){return {width:800,height:360};},getContext(){return {setTransform(){}};}};
   }
   const get=id=>{if(!elements.has(id)) elements.set(id,element()); return elements.get(id);};
-  get('setDlg').showModal=function(){this.open=true;};
+  for(const id of ['setDlg','donateDlg']) get(id).showModal=function(){this.open=true;};
   const context=vm.createContext({performance:{now:()=>now},document:{getElementById:get,querySelectorAll:()=>[],hasFocus:()=>true,hidden:false},
     navigator:{getGamepads:()=>pads},localStorage:{getItem:()=>saved===undefined?null:JSON.stringify(saved),setItem(){}},
     matchMedia:()=>({matches:false}),devicePixelRatio:1,requestAnimationFrame(){},
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,DONATE_URL,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -409,6 +409,31 @@ test('settings cancel countdown and running trial without saving or submitting',
     assert.equal(a.trial.openTimer,null);assert.equal(a.get('dStart').disabled,false);
   }
 });
+test('donate cancels countdown and running trials in every language without results or submissions',()=>{
+  for(const lang of ['ko','en','ja']) for(const mode of ['wave10','ewgf20','combo10']) for(const running of [false,true]){
+    const requests=[];
+    const a=boot({nick:'Tester',nickToken:'a'.repeat(48)},async url=>{requests.push(url);throw new Error('offline');});
+    a.setLang(lang);a.setMode(mode);a.startTrial();
+    const id=a.trial.cdTimer;
+    if(running){const count=a.timers.get(id);count();count();count();}
+    a.get('donateTop').click();a.time(30000);a.trialTick(30000);
+    assert.equal(a.get('donateDlg').open,true);assert.equal(a.trial.running,false);
+    assert.equal(a.trial.cdTimer,null);assert.equal(a.timers.has(id),false);
+    assert.equal(a.store.records[mode].length,0);assert.equal(a.trial.result,null);
+    assert.equal(a.trial.openTimer,null);assert.equal(a.get('dStart').disabled,false);
+    assert.equal(requests.filter(url=>url.endsWith('/submit')).length,0);
+  }
+});
+test('every donate entry discards held directions and pending RP without counting a failure',()=>{
+  for(const id of ['donateTop','donateShareBtn','donateBtn']){
+    const a=boot();a.events.keydown({code:'KeyD',timeStamp:1000,preventDefault(){}});
+    a.onDir('n',1020);a.onDir('d',1040);a.onButton(2,1050);
+    assert.ok(a.cd.pending);assert.equal(a.held.size,1);
+    a.get(id).click();a.events.keyup({code:'KeyD',timeStamp:1100});a.tick(2000);
+    assert.equal(a.held.size,0);assert.equal(a.cd.pending,null);assert.equal(a.cd.state,0);
+    assert.equal(a.session.attempts.length,0);
+  }
+});
 test('settings discard held directions and pending RP without counting a failure',()=>{
   const a=boot();a.events.keydown({code:'KeyD',timeStamp:1000,preventDefault(){}});
   a.onDir('n',1020);a.onDir('d',1040);a.onButton(2,1050);
@@ -463,19 +488,21 @@ test('BGM cancels queued requests and interrupted play can resume',async()=>{
   b.store.sound=1;b.bgmSync();assert.equal(b.snd.bgm.paused,false);
 });
 
-test('donate link: shown with the language URL, hidden where no URL is configured, never a script',()=>{
+test('donate: three buttons open a chooser; KakaoPay first in ko, Ko-fi first elsewhere; KakaoPay shows the QR view',()=>{
   const a=boot({v:4,lang:'ko'});
   for(const l of ['ko','en','ja']){
-    a.setLang(l);const url=a.DONATE_URL[l]||'';
-    assert.equal(a.get('donate').hidden,!url,l+' hidden');assert.equal(a.get('donateBtn').href,url,l+' href');
-    if(url) assert.ok(url.startsWith('https://'),l+' https');
+    a.setLang(l);const h=a.get('donateOptions').innerHTML, kakao=h.indexOf('data-opt="kakao"'), kofi=h.indexOf('data-opt="kofi"');
+    assert.ok(kakao>=0&&kofi>=0,l+' both options');assert.equal(kakao<kofi,l==='ko',l+' order');
+    assert.ok(h.includes('href="https://ko-fi.com/'),l+' ko-fi https link');assert.doesNotMatch(h,/donate.[a-zA-Z]+</,l+' no raw keys');
+    for(const id of ['donate','donateShare','donateTop']) assert.equal(a.get(id).hidden,false,l+' '+id+' visible');
   }
-  assert.ok(a.DONATE_URL.ko.startsWith('https://qr.kakaopay.com/'));
-  assert.ok(html.includes('<a class="btn ghost" id="donateBtn" target="_blank" rel="noopener"'));
-  assert.equal((html.match(/<script/g)||[]).length,1,'still a single inline script');
-  // ko link is phone-only: the button opens the QR dialog instead of navigating; en goes straight to Ko-fi
-  a.setLang('ko');let prevented=false;a.get('donateBtn').click({preventDefault(){prevented=true;}});
-  assert.equal(prevented,true,'ko click is intercepted');assert.equal(a.get('donateQr').src,'donate-kakao.png');assert.equal(a.get('donateOpen').href,a.DONATE_URL.ko);
+  for(const id of ['donateTop','donateShareBtn','donateBtn']) assert.ok(html.includes('id="'+id+'" type="button"'),id+' is a button');
+  assert.ok(html.indexOf('id="donateShareBtn"')>html.indexOf('id="shareDlg"')&&html.indexOf('id="donateShareBtn"')<html.indexOf('id="donateDlg"'),'result-dialog button lives inside #shareDlg (not on the canvas)');
+  a.get('donateTop').click();assert.equal(a.get('donateChoose').hidden,false);assert.equal(a.get('donateKakao').hidden,true);
+  let prevented=false;a.get('donateOptions').click({target:{closest:()=>({dataset:{opt:'kakao'}})},preventDefault(){prevented=true;}});
+  assert.equal(prevented,true);assert.equal(a.get('donateKakao').hidden,false);assert.equal(a.get('donateChoose').hidden,true);
+  assert.equal(a.get('donateOpen').href,'https://qr.kakaopay.com/Ej8EBCpJu');assert.equal(a.get('donateQr').src,'donate-kakao.png');
+  a.get('donateBack').click();assert.equal(a.get('donateChoose').hidden,false);
   assert.ok(fs.existsSync(require('node:path').join(__dirname,'..','donate-kakao.png')),'QR image exists');
-  a.setLang('en');prevented=false;a.get('donateBtn').click({preventDefault(){prevented=true;}});assert.equal(prevented,false,'en click navigates');
+  assert.equal((html.match(/<script/g)||[]).length,1,'still a single inline script');
 });

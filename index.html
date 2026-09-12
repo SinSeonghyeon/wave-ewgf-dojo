@@ -233,9 +233,14 @@
   footer{color:var(--faint);font-size:12px;border-top:1px solid var(--line);padding-top:12px}
   footer p{margin:0 0 10px}
   footer .copy{color:var(--faint);font-size:11.5px}
-  footer .donate{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted)}
-  footer .donate .btn{font-size:12.5px;padding:6px 12px;text-decoration:none;color:var(--gold);border-color:var(--gold)}
-  footer .donate .btn:hover{background:rgba(245,197,66,.12)}
+  .donate{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+  .donate-share{margin:12px 0 0}
+  .donate-btn{background:transparent;color:var(--gold);border:1px solid var(--gold);border-radius:4px;padding:6px 12px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .donate-btn:hover{background:rgba(245,197,66,.12)}
+  .donate-options{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px}
+  .donate-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;box-sizing:border-box;background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:10px 14px;color:var(--ink);font-size:14px;font-weight:700;text-align:left;text-decoration:none;cursor:pointer}
+  .donate-opt small{color:var(--muted);font-size:12px;font-weight:400}
+  .donate-opt:hover{border-color:var(--gold)} .donate-opt:first-child{border-color:var(--gold)}
   @media (prefers-reduced-motion:reduce){.key.listen{animation:none}}
   html[lang="ja"]{--display:'Dela Gothic One','Noto Sans JP',system-ui,sans-serif;--body:'Noto Sans JP','Hiragino Sans','Yu Gothic',system-ui,sans-serif}
   html[lang="en"]{--body:'Noto Sans KR',system-ui,-apple-system,'Segoe UI',sans-serif}
@@ -267,6 +272,7 @@
       <div class="lang" id="langSel" role="group" aria-label="Language"><button data-lang="ko" aria-pressed="true">한국어</button><button data-lang="en" aria-pressed="false">EN</button><button data-lang="ja" aria-pressed="false">日本語</button></div>
       <div class="src" id="srcBadge">⌨ 키보드 대기</div>
       <button class="nick-btn" id="nickBtn" hidden></button>
+      <button class="donate-btn" id="donateTop" type="button" hidden data-i18n="donate.btn">☕ 후원하기</button>
       <div class="visits" id="visits"></div>
     </div>
   </header>
@@ -358,6 +364,7 @@
       <button class="btn ghost" id="shareClose" data-i18n="share.close">닫기</button>
     </div>
     <div class="share-msg" id="shareMsg"></div>
+    <p class="donate donate-share" id="donateShare" hidden><span data-i18n="donate.note">도움이 됐다면 커피 한 잔 값으로 응원해 주세요.</span> <button class="btn ghost donate-btn" id="donateShareBtn" type="button" data-i18n="donate.btn">☕ 후원하기</button></p>
     <p class="note" data-i18n="share.discordNote">디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.</p>
   </dialog>
 
@@ -369,10 +376,18 @@
   </dialog>
 
   <dialog class="share nick" id="donateDlg" aria-labelledby="donateTitle">
-    <h2 id="donateTitle" data-i18n="donate.title">카카오페이로 후원</h2>
-    <p class="note" data-i18n="donate.qrNote">카카오페이 송금 링크는 휴대폰에서만 열립니다. PC에서는 카카오톡의 QR 스캔으로 아래 코드를 찍어 주세요. 휴대폰으로 보고 있다면 아래 버튼으로 바로 열립니다.</p>
-    <img class="donate-qr" id="donateQr" width="200" height="200" alt="" data-i18n-aria="donate.qrAlt" aria-label="카카오페이 송금 QR 코드">
-    <div class="nick-form"><a class="btn" id="donateOpen" target="_blank" rel="noopener" data-i18n="donate.open">휴대폰에서 카카오페이 열기</a><button class="btn ghost" id="donateClose" type="button" data-i18n="share.close">닫기</button></div>
+    <div id="donateChoose">
+      <h2 id="donateTitle" data-i18n="donate.chooseTitle">후원 방법 선택</h2>
+      <p class="note" data-i18n="donate.note">도움이 됐다면 커피 한 잔 값으로 응원해 주세요.</p>
+      <div class="donate-options" id="donateOptions"></div>
+      <div class="nick-form"><button class="btn ghost" id="donateClose" type="button" data-i18n="share.close">닫기</button></div>
+    </div>
+    <div id="donateKakao" hidden>
+      <h2 data-i18n="donate.title">카카오페이로 후원</h2>
+      <p class="note" data-i18n="donate.qrNote">카카오페이 송금 링크는 휴대폰에서만 열립니다. PC에서는 카카오톡의 QR 스캔으로 아래 코드를 찍어 주세요. 휴대폰으로 보고 있다면 아래 버튼으로 바로 열립니다.</p>
+      <img class="donate-qr" id="donateQr" width="200" height="200" alt="" data-i18n-aria="donate.qrAlt" aria-label="카카오페이 송금 QR 코드">
+      <div class="nick-form"><a class="btn" id="donateOpen" target="_blank" rel="noopener" data-i18n="donate.open">휴대폰에서 카카오페이 열기</a><button class="btn ghost" id="donateBack" type="button" data-i18n="donate.back">뒤로</button></div>
+    </div>
   </dialog>
 
   <section class="records" data-i18n-aria="records.aria" aria-label="기록">
@@ -421,7 +436,7 @@
   <footer>
     <p data-i18n="footer">표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.</p>
     <p class="copy" data-i18n="footer.copy">© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.</p>
-    <p class="donate" id="donate" hidden><span data-i18n="donate.note">도움이 됐다면 커피 한 잔 값으로 응원해 주세요.</span> <a class="btn ghost" id="donateBtn" target="_blank" rel="noopener" data-i18n="donate.btn">☕ 후원하기 (카카오페이)</a></p>
+    <p class="donate" id="donate" hidden><span data-i18n="donate.note">도움이 됐다면 커피 한 잔 값으로 응원해 주세요.</span> <button class="btn ghost donate-btn" id="donateBtn" type="button" data-i18n="donate.btn">☕ 후원하기</button></p>
   </footer>
 </div>
 
@@ -566,7 +581,8 @@ ko:{
   'set.sound':'소리', 'set.bgmVol':'배경음 볼륨', 'set.sfxVol':'효과음 볼륨', 'set.soundNote':'배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).',
   'share.card':'공유 카드', 'share.session':'세션 카드', 'share.title':'결과 공유 카드', 'share.canvasAria':'결과 공유 카드 미리보기',
   'share.copy':'이미지 복사', 'share.download':'PNG 저장', 'share.tweet':'X(트위터)에 공유', 'share.close':'닫기',
-  'donate.note':'도움이 됐다면 커피 한 잔 값으로 응원해 주세요.', 'donate.btn':'☕ 후원하기 (카카오페이)',
+  'donate.note':'도움이 됐다면 커피 한 잔 값으로 응원해 주세요.', 'donate.btn':'☕ 후원하기',
+  'donate.chooseTitle':'후원 방법 선택', 'donate.kakao':'카카오페이', 'donate.kakaoSub':'휴대폰 카카오톡 송금 · PC에서는 QR', 'donate.kofi':'Ko-fi', 'donate.kofiSub':'카드 · PayPal', 'donate.back':'뒤로',
   'donate.title':'카카오페이로 후원', 'donate.qrNote':'카카오페이 송금 링크는 휴대폰에서만 열립니다. PC에서는 카카오톡의 QR 스캔으로 아래 코드를 찍어 주세요. 휴대폰으로 보고 있다면 아래 버튼으로 바로 열립니다.',
   'donate.qrAlt':'카카오페이 송금 QR 코드', 'donate.open':'휴대폰에서 카카오페이 열기',
   'share.discordNote':'디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.',
@@ -696,7 +712,8 @@ en:{
   'set.sound':'Sound', 'set.bgmVol':'BGM volume', 'set.sfxVol':'SFX volume', 'set.soundNote':'BGM starts after your first key press or click (browser autoplay policy).',
   'share.card':'Share card', 'share.session':'Session card', 'share.title':'Result share card', 'share.canvasAria':'Result share card preview',
   'share.copy':'Copy image', 'share.download':'Save PNG', 'share.tweet':'Share on X (Twitter)', 'share.close':'Close',
-  'donate.note':'If this helped you, a coffee keeps the dojo open.', 'donate.btn':'☕ Support on Ko-fi',
+  'donate.note':'If this helped you, a coffee keeps the dojo open.', 'donate.btn':'☕ Support',
+  'donate.chooseTitle':'Choose how to support', 'donate.kakao':'KakaoPay (Korea)', 'donate.kakaoSub':'KakaoTalk transfer on a phone · QR on PC', 'donate.kofi':'Ko-fi', 'donate.kofiSub':'Card · PayPal', 'donate.back':'Back',
   'donate.title':'Support via KakaoPay', 'donate.qrNote':'The KakaoPay link only opens on a phone. On a PC, scan the code below with the KakaoTalk QR scanner. On a phone, the button below opens it directly.',
   'donate.qrAlt':'KakaoPay transfer QR code', 'donate.open':'Open KakaoPay on your phone',
   'share.discordNote':'Discord: click "Copy image", then paste into the chat with Ctrl+V. If copying is unavailable, save the PNG and attach it.',
@@ -826,7 +843,8 @@ ja:{
   'set.sound':'サウンド', 'set.bgmVol':'BGM音量', 'set.sfxVol':'効果音音量', 'set.soundNote':'BGMは最初のキー入力かクリックの後に始まります (ブラウザの自動再生制限)。',
   'share.card':'共有カード', 'share.session':'セッションカード', 'share.title':'結果共有カード', 'share.canvasAria':'結果共有カードのプレビュー',
   'share.copy':'画像をコピー', 'share.download':'PNG保存', 'share.tweet':'X(Twitter)で共有', 'share.close':'閉じる',
-  'donate.note':'役に立ったらコーヒー一杯分の応援をお願いします。', 'donate.btn':'☕ Ko-fiで支援する',
+  'donate.note':'役に立ったらコーヒー一杯分の応援をお願いします。', 'donate.btn':'☕ 支援する',
+  'donate.chooseTitle':'支援方法を選ぶ', 'donate.kakao':'カカオペイ (韓国)', 'donate.kakaoSub':'スマホのカカオトーク送金 · PCはQR', 'donate.kofi':'Ko-fi', 'donate.kofiSub':'カード · PayPal', 'donate.back':'戻る',
   'donate.title':'カカオペイで支援', 'donate.qrNote':'カカオペイの送金リンクはスマートフォンでのみ開けます。PCではカカオトークのQRスキャンで下のコードを読み取ってください。スマートフォンなら下のボタンでそのまま開きます。',
   'donate.qrAlt':'カカオペイ送金QRコード', 'donate.open':'スマートフォンでカカオペイを開く',
   'share.discordNote':'Discord: 「画像をコピー」後、チャット欄に Ctrl+V で貼り付けてください。コピーできない場合は PNG を保存して添付してください。',
@@ -1658,10 +1676,24 @@ $('shareTweet').addEventListener('click', () => {
 /* ---------- backend: weekly ranking, visit counter, shoutbox (Cloudflare Worker in worker/; see worker/README.md) ---------- */
 const BOARD_URL = 'https://mishima-dojo-board.mishima-dojo.workers.dev'; // Cloudflare Worker in worker/ (no trailing slash). Empty → all backend UI hidden.
 /* ---------- donate (PLAN 2-3): plain external link per language, no scripts. Empty → footer row hidden for that language. ---------- */
-const DONATE_URL = { ko:'https://qr.kakaopay.com/Ej8EBCpJu', en:'https://ko-fi.com/misimadojo', ja:'https://ko-fi.com/misimadojo' }; // ko: KakaoPay transfer link · en/ja: Ko-fi page (PayPal)
-const DONATE_QR = { ko:'donate-kakao.png' }; // languages whose link is phone-only: the button opens #donateDlg with this QR (scan from a PC) plus the direct link (phones). Regenerate if DONATE_URL.ko changes.
-function renderDonate(){ const url = DONATE_URL[store.lang] || '', qr = DONATE_QR[store.lang] || ''; $('donate').hidden = !url; $('donateBtn').href = url; $('donateOpen').href = url; if(qr) $('donateQr').src = qr; }
-$('donateBtn').addEventListener('click', e => { if(!DONATE_QR[store.lang]) return; e.preventDefault(); const d = $('donateDlg'); if(typeof d.showModal==='function' && !d.open) d.showModal(); });
+// Two ways to give; every donate button (#donateTop header, #donateShareBtn result dialog, #donateBtn footer) opens #donateDlg to pick one.
+// KakaoPay transfer links are phone-only (404 on desktop), so that choice shows a static QR (donate-kakao.png, regenerate if the URL
+// changes) plus the direct link for phones. Ko-fi is a plain new-tab link. Order: ko puts KakaoPay first, other languages Ko-fi first.
+const DONATE = { kakao:{url:'https://qr.kakaopay.com/Ej8EBCpJu', qr:'donate-kakao.png'}, kofi:{url:'https://ko-fi.com/misimadojo'} };
+const donateOptions = lang => (lang==='ko' ? ['kakao','kofi'] : ['kofi','kakao']).filter(k => DONATE[k].url); // pure; unit-tested
+function renderDonate(){
+  const opts = donateOptions(store.lang), any = opts.length>0;
+  ['donate','donateShare','donateTop'].forEach(id => { $(id).hidden = !any; });
+  $('donateOptions').innerHTML = opts.map(k => k==='kakao'
+    ? `<button type="button" class="donate-opt" data-opt="kakao"><b>${escapeHTML(T('donate.kakao'))}</b><small>${escapeHTML(T('donate.kakaoSub'))}</small></button>`
+    : `<a class="donate-opt" data-opt="kofi" href="${DONATE.kofi.url}" target="_blank" rel="noopener"><b>${escapeHTML(T('donate.kofi'))}</b><small>${escapeHTML(T('donate.kofiSub'))}</small></a>`).join('');
+  $('donateOpen').href = DONATE.kakao.url; $('donateQr').src = DONATE.kakao.qr;
+}
+function donateView(v){ $('donateChoose').hidden = v==='kakao'; $('donateKakao').hidden = v!=='kakao'; }
+function openDonate(){ donateView('choose'); const d = $('donateDlg'); if(typeof d.showModal==='function' && !d.open){ endTrial(true); resetInput(); d.showModal(); } }
+['donateBtn','donateTop','donateShareBtn'].forEach(id => $(id).addEventListener('click', openDonate));
+$('donateOptions').addEventListener('click', e => { const t = e.target && e.target.closest ? e.target.closest('[data-opt]') : null; if(!t) return; if(t.dataset.opt==='kakao'){ e.preventDefault(); donateView('kakao'); } else $('donateDlg').close(); });
+$('donateBack').addEventListener('click', () => donateView('choose'));
 $('donateClose').addEventListener('click', () => $('donateDlg').close());
 const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per start-mode trial; must match worker/index.js BOARDS and #boardTabs
 const board = { tab:'wave10', data:{}, msg:'', seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise)
