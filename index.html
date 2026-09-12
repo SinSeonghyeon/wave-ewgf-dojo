@@ -1,3 +1,4 @@
+<!-- 미시마 도장 (Mishima Dojo) © 2026 신성현 (Seonghyeon Shin). All rights reserved. Not open source: see LICENSE in the repository. Copying, modifying or re-hosting is not permitted. -->
 <title>미시마 도장 | 철권 초풍·웨이브 대시 연습 (Mishima Dojo EWGF Trainer)</title>
 <meta name="description" content="철권 미시마류 초풍(EWGF)·웨이브 대시(6N23) 입력을 브라우저에서 프레임 단위로 판정하는 무료 연습 도구. 키보드·게임패드 지원, 판정 폭 0.5f/0.7f/0.9f, 타이밍 히스토그램과 측정 모드. Free Tekken EWGF trainer & wave dash practice tool with frame-accurate input judging.">
 <meta name="robots" content="index,follow">
@@ -133,6 +134,8 @@
   .nick-btn:hover{border-style:solid}
   /* first-run nickname gate (modal; Escape is blocked until a nickname exists) */
   dialog.nick{width:min(460px,calc(100vw - 32px))}
+  .donate-qr{display:block;width:200px;height:200px;margin:14px auto 4px;padding:8px;box-sizing:content-box;background:#fff;border-radius:8px}
+  #donateDlg .nick-form{justify-content:center} #donateDlg .btn{text-decoration:none}
   .nick-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px} .nick-form input{flex:1 1 160px}
   /* result banner in the share dialog: tier title + rank line + comment, colour and motion per tier */
   .share-rank{--tier:var(--muted);border:1px solid var(--line);border-left:4px solid var(--tier);border-radius:6px;background:var(--panel2);padding:12px 16px;margin-bottom:12px}
@@ -228,6 +231,11 @@
   .best b{display:block;font-family:var(--display);font-size:24px;color:var(--gold);line-height:1.1;margin-top:2px}
   .best small{color:var(--muted);font-size:11.5px}
   footer{color:var(--faint);font-size:12px;border-top:1px solid var(--line);padding-top:12px}
+  footer p{margin:0 0 10px}
+  footer .copy{color:var(--faint);font-size:11.5px}
+  footer .donate{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted)}
+  footer .donate .btn{font-size:12.5px;padding:6px 12px;text-decoration:none;color:var(--gold);border-color:var(--gold)}
+  footer .donate .btn:hover{background:rgba(245,197,66,.12)}
   @media (prefers-reduced-motion:reduce){.key.listen{animation:none}}
   html[lang="ja"]{--display:'Dela Gothic One','Noto Sans JP',system-ui,sans-serif;--body:'Noto Sans JP','Hiragino Sans','Yu Gothic',system-ui,sans-serif}
   html[lang="en"]{--body:'Noto Sans KR',system-ui,-apple-system,'Segoe UI',sans-serif}
@@ -360,6 +368,13 @@
     <div class="share-msg" id="nickMsg"></div>
   </dialog>
 
+  <dialog class="share nick" id="donateDlg" aria-labelledby="donateTitle">
+    <h2 id="donateTitle" data-i18n="donate.title">카카오페이로 후원</h2>
+    <p class="note" data-i18n="donate.qrNote">카카오페이 송금 링크는 휴대폰에서만 열립니다. PC에서는 카카오톡의 QR 스캔으로 아래 코드를 찍어 주세요. 휴대폰으로 보고 있다면 아래 버튼으로 바로 열립니다.</p>
+    <img class="donate-qr" id="donateQr" width="200" height="200" alt="" data-i18n-aria="donate.qrAlt" aria-label="카카오페이 송금 QR 코드">
+    <div class="nick-form"><a class="btn" id="donateOpen" target="_blank" rel="noopener" data-i18n="donate.open">휴대폰에서 카카오페이 열기</a><button class="btn ghost" id="donateClose" type="button" data-i18n="share.close">닫기</button></div>
+  </dialog>
+
   <section class="records" data-i18n-aria="records.aria" aria-label="기록">
     <div class="card board-card" id="boardCard" hidden>
       <h2 data-i18n="board.title">주간 순위</h2>
@@ -403,7 +418,11 @@
     </div>
   </section>
 
-  <footer data-i18n="footer">표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.</footer>
+  <footer>
+    <p data-i18n="footer">표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.</p>
+    <p class="copy" data-i18n="footer.copy">© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.</p>
+    <p class="donate" id="donate" hidden><span data-i18n="donate.note">도움이 됐다면 커피 한 잔 값으로 응원해 주세요.</span> <a class="btn ghost" id="donateBtn" target="_blank" rel="noopener" data-i18n="donate.btn">☕ 후원하기 (카카오페이)</a></p>
+  </footer>
 </div>
 
 <script>
@@ -547,6 +566,9 @@ ko:{
   'set.sound':'소리', 'set.bgmVol':'배경음 볼륨', 'set.sfxVol':'효과음 볼륨', 'set.soundNote':'배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).',
   'share.card':'공유 카드', 'share.session':'세션 카드', 'share.title':'결과 공유 카드', 'share.canvasAria':'결과 공유 카드 미리보기',
   'share.copy':'이미지 복사', 'share.download':'PNG 저장', 'share.tweet':'X(트위터)에 공유', 'share.close':'닫기',
+  'donate.note':'도움이 됐다면 커피 한 잔 값으로 응원해 주세요.', 'donate.btn':'☕ 후원하기 (카카오페이)',
+  'donate.title':'카카오페이로 후원', 'donate.qrNote':'카카오페이 송금 링크는 휴대폰에서만 열립니다. PC에서는 카카오톡의 QR 스캔으로 아래 코드를 찍어 주세요. 휴대폰으로 보고 있다면 아래 버튼으로 바로 열립니다.',
+  'donate.qrAlt':'카카오페이 송금 QR 코드', 'donate.open':'휴대폰에서 카카오페이 열기',
   'share.discordNote':'디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.',
   'share.copied':'이미지를 클립보드에 복사했습니다.', 'share.copyFail':'이 브라우저는 이미지 복사를 지원하지 않습니다. PNG 저장을 이용하세요.',
   'board.title':'주간 순위', 'board.tabsAria':'순위표 선택', 'board.week':(a,b)=>a+' ~ '+b+' (KST) · 월요일 0시 초기화',
@@ -584,6 +606,7 @@ ko:{
   'og.keywords':'EWGF trainer · wave dash practice · 무료 · 키보드 / 게임패드',
   'og.footer':'판정 폭 0.5f · 0.7f · 0.9f · 타이밍 히스토그램 · 측정 모드 · 공유 카드',
   'footer':'표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.',
+  'footer.copy':'© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.',
 },
 en:{
   'app.title':'Mishima Dojo',
@@ -673,6 +696,9 @@ en:{
   'set.sound':'Sound', 'set.bgmVol':'BGM volume', 'set.sfxVol':'SFX volume', 'set.soundNote':'BGM starts after your first key press or click (browser autoplay policy).',
   'share.card':'Share card', 'share.session':'Session card', 'share.title':'Result share card', 'share.canvasAria':'Result share card preview',
   'share.copy':'Copy image', 'share.download':'Save PNG', 'share.tweet':'Share on X (Twitter)', 'share.close':'Close',
+  'donate.note':'If this helped you, a coffee keeps the dojo open.', 'donate.btn':'☕ Support on Ko-fi',
+  'donate.title':'Support via KakaoPay', 'donate.qrNote':'The KakaoPay link only opens on a phone. On a PC, scan the code below with the KakaoTalk QR scanner. On a phone, the button below opens it directly.',
+  'donate.qrAlt':'KakaoPay transfer QR code', 'donate.open':'Open KakaoPay on your phone',
   'share.discordNote':'Discord: click "Copy image", then paste into the chat with Ctrl+V. If copying is unavailable, save the PNG and attach it.',
   'share.copied':'Image copied to the clipboard.', 'share.copyFail':'This browser cannot copy images. Use Save PNG instead.',
   'board.title':'Weekly ranking', 'board.tabsAria':'Choose a board', 'board.week':(a,b)=>a+' – '+b+' (KST) · resets Monday 00:00',
@@ -710,6 +736,7 @@ en:{
   'og.keywords':'EWGF trainer · wave dash practice · free · keyboard / gamepad',
   'og.footer':'Windows 0.5f · 0.7f · 0.9f · timing histogram · trials · share cards',
   'footer':'Notation: 6 = forward (f), N = neutral, 2 = down (d), 3 = down-forward (d/f), button 2 = right punch (RP). Wave = 6N23 6 N 6N23 6 N … (the 6 after 3 cancels the recovery). 1 frame = 16.67ms. Unofficial fan-made practice tool.',
+  'footer.copy':'© 2026 Seonghyeon Shin. All rights reserved. No copying, modification or redistribution of the source, artwork or audio.',
 },
 ja:{
   'app.title':'三島道場',
@@ -799,6 +826,9 @@ ja:{
   'set.sound':'サウンド', 'set.bgmVol':'BGM音量', 'set.sfxVol':'効果音音量', 'set.soundNote':'BGMは最初のキー入力かクリックの後に始まります (ブラウザの自動再生制限)。',
   'share.card':'共有カード', 'share.session':'セッションカード', 'share.title':'結果共有カード', 'share.canvasAria':'結果共有カードのプレビュー',
   'share.copy':'画像をコピー', 'share.download':'PNG保存', 'share.tweet':'X(Twitter)で共有', 'share.close':'閉じる',
+  'donate.note':'役に立ったらコーヒー一杯分の応援をお願いします。', 'donate.btn':'☕ Ko-fiで支援する',
+  'donate.title':'カカオペイで支援', 'donate.qrNote':'カカオペイの送金リンクはスマートフォンでのみ開けます。PCではカカオトークのQRスキャンで下のコードを読み取ってください。スマートフォンなら下のボタンでそのまま開きます。',
+  'donate.qrAlt':'カカオペイ送金QRコード', 'donate.open':'スマートフォンでカカオペイを開く',
   'share.discordNote':'Discord: 「画像をコピー」後、チャット欄に Ctrl+V で貼り付けてください。コピーできない場合は PNG を保存して添付してください。',
   'share.copied':'画像をクリップボードにコピーしました。', 'share.copyFail':'このブラウザは画像コピーに対応していません。PNG保存をご利用ください。',
   'board.title':'週間ランキング', 'board.tabsAria':'ランキングを選択', 'board.week':(a,b)=>a+' ～ '+b+' (KST) · 月曜0時にリセット',
@@ -836,6 +866,7 @@ ja:{
   'og.keywords':'EWGF trainer · wave dash practice · 無料 · キーボード / ゲームパッド',
   'og.footer':'判定幅 0.5f · 0.7f · 0.9f · タイミング分布 · 測定モード · 共有カード',
   'footer':'表記: 6 = 前, N = ニュートラル, 2 = 下, 3 = 斜め下前, ボタン2 = 右パンチ(RP)。ウェーブ = 6N23 6 N 6N23 6 N … (3の後の6が硬直キャンセル)。1フレーム = 16.67ms基準。非公式ファン製作の練習ツールです。',
+  'footer.copy':'© 2026 Seonghyeon Shin. All rights reserved. ソース・画像・音声の複製、改変、再配布を禁止します。',
 },
 };
 const T = (key, ...args) => {
@@ -952,7 +983,7 @@ function kbVector(){
   kbDir = { x:(rt?1:0)-(lf?1:0), y:(up?1:0)-(dn?1:0) };
 }
 const mappedCodes = () => new Set([...Object.values(store.keys),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
-const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open; // nickname gate / result card / settings: game input is paused (called at pad-poll rate, so no DOM query)
+const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open || $('donateDlg').open; // nickname gate / result card / settings / donate QR: game input is paused (called at pad-poll rate, so no DOM query)
 let listening = null; // key remap slot
 addEventListener('keydown', e => {
   if(listening){
@@ -1626,6 +1657,12 @@ $('shareTweet').addEventListener('click', () => {
 
 /* ---------- backend: weekly ranking, visit counter, shoutbox (Cloudflare Worker in worker/; see worker/README.md) ---------- */
 const BOARD_URL = 'https://mishima-dojo-board.mishima-dojo.workers.dev'; // Cloudflare Worker in worker/ (no trailing slash). Empty → all backend UI hidden.
+/* ---------- donate (PLAN 2-3): plain external link per language, no scripts. Empty → footer row hidden for that language. ---------- */
+const DONATE_URL = { ko:'https://qr.kakaopay.com/Ej8EBCpJu', en:'https://ko-fi.com/misimadojo', ja:'https://ko-fi.com/misimadojo' }; // ko: KakaoPay transfer link · en/ja: Ko-fi page (PayPal)
+const DONATE_QR = { ko:'donate-kakao.png' }; // languages whose link is phone-only: the button opens #donateDlg with this QR (scan from a PC) plus the direct link (phones). Regenerate if DONATE_URL.ko changes.
+function renderDonate(){ const url = DONATE_URL[store.lang] || '', qr = DONATE_QR[store.lang] || ''; $('donate').hidden = !url; $('donateBtn').href = url; $('donateOpen').href = url; if(qr) $('donateQr').src = qr; }
+$('donateBtn').addEventListener('click', e => { if(!DONATE_QR[store.lang]) return; e.preventDefault(); const d = $('donateDlg'); if(typeof d.showModal==='function' && !d.open) d.showModal(); });
+$('donateClose').addEventListener('click', () => $('donateDlg').close());
 const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per start-mode trial; must match worker/index.js BOARDS and #boardTabs
 const board = { tab:'wave10', data:{}, msg:'', seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise)
 const live = { visits:null, posts:null, postsMsg:'', posting:false, visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false };
@@ -1828,7 +1865,7 @@ function renderAll(){
   setCoach(ui.coach); setTrend(ui.trend); renderSeg(ui.seg);
   renderBests(); renderLog(); renderHist(); renderWave();
   $('shareMsg').textContent = msg(ui.shareMsg); if($('shareDlg').open) renderShare();
-  renderBoard(); renderTrialRank(); renderVisits(); renderPosts(); if(BOARD_URL) renderNick();
+  renderBoard(); renderTrialRank(); renderVisits(); renderPosts(); if(BOARD_URL) renderNick(); renderDonate();
   if(trial.running) trialTick(performance.now());
 }
 function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); renderAll(); }

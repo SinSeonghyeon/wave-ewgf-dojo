@@ -21,7 +21,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,DONATE_URL,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -461,4 +461,21 @@ test('BGM cancels queued requests and interrupted play can resume',async()=>{
   const b=boot(undefined,undefined,{Audio:InterruptedAudio});b.unlockAudio();b.store.sound=0;b.bgmSync();
   await new Promise(setImmediate);assert.equal(b.snd.unlocked,true);
   b.store.sound=1;b.bgmSync();assert.equal(b.snd.bgm.paused,false);
+});
+
+test('donate link: shown with the language URL, hidden where no URL is configured, never a script',()=>{
+  const a=boot({v:4,lang:'ko'});
+  for(const l of ['ko','en','ja']){
+    a.setLang(l);const url=a.DONATE_URL[l]||'';
+    assert.equal(a.get('donate').hidden,!url,l+' hidden');assert.equal(a.get('donateBtn').href,url,l+' href');
+    if(url) assert.ok(url.startsWith('https://'),l+' https');
+  }
+  assert.ok(a.DONATE_URL.ko.startsWith('https://qr.kakaopay.com/'));
+  assert.ok(html.includes('<a class="btn ghost" id="donateBtn" target="_blank" rel="noopener"'));
+  assert.equal((html.match(/<script/g)||[]).length,1,'still a single inline script');
+  // ko link is phone-only: the button opens the QR dialog instead of navigating; en goes straight to Ko-fi
+  a.setLang('ko');let prevented=false;a.get('donateBtn').click({preventDefault(){prevented=true;}});
+  assert.equal(prevented,true,'ko click is intercepted');assert.equal(a.get('donateQr').src,'donate-kakao.png');assert.equal(a.get('donateOpen').href,a.DONATE_URL.ko);
+  assert.ok(fs.existsSync(require('node:path').join(__dirname,'..','donate-kakao.png')),'QR image exists');
+  a.setLang('en');prevented=false;a.get('donateBtn').click({preventDefault(){prevented=true;}});assert.equal(prevented,false,'en click navigates');
 });

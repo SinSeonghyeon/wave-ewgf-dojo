@@ -4,6 +4,7 @@
 비공식 팬 제작. 파일 하나(`index.html`)로 동작하며 빌드나 의존 파일이 없다. UI는 한국어·영어·일본어(헤더 토글, 브라우저 언어로 자동 선택).
 
 - 바로 쓰기: https://sinseonghyeon.github.io/wave-ewgf-dojo/
+- 라이선스: **오픈소스가 아닙니다.** © 2026 신성현, All rights reserved. 사이트 이용과 소스 열람은 자유지만 복제·수정·재배포·재호스팅은 금지합니다. 자세한 내용은 [LICENSE](LICENSE).
 - 로컬 실행: `index.html`을 브라우저로 열면 끝. 키보드와 게임패드 모두 인식.
 - 저장소: https://github.com/SinSeonghyeon/wave-ewgf-dojo
 

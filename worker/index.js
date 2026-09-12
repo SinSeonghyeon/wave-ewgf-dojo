@@ -24,12 +24,19 @@ const LANGS = ['ko', 'en', 'ja'];
 // selectors. Without these a nickname made of fillers passes as a distinct blank name. Mirrored by NICK_BAD in index.html.
 const BAD_CHARS = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u;
 const boardSpec = b => typeof b === 'string' && Object.hasOwn(BOARDS, b) ? BOARDS[b] : undefined; // plain lookup would accept 'constructor'
-const CORS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
-  'access-control-allow-headers': 'content-type, authorization',
-  'access-control-max-age': '86400',
+// Origin lock (2026-09-12): only the site's own origin(s) may use this API from a browser. A copied page hosted elsewhere gets no
+// CORS headers on reads and 403 {error:'origin'} on POST, so it has no leaderboard, posts or visit counter. The list comes from
+// env.ALLOWED_ORIGINS (comma-separated, wrangler.toml [vars]); '*' allows any origin (tests). DELETE stays protected by ADMIN_TOKEN only,
+// so the admin can curl it without an Origin header.
+const DEFAULT_ORIGINS = 'https://sinseonghyeon.github.io';
+const originList = env => String(env && env.ALLOWED_ORIGINS || DEFAULT_ORIGINS).split(',').map(s => s.trim()).filter(Boolean);
+export const originOk = (request, env) => { const list = originList(env); if (list.includes('*')) return true; const o = request.headers.get('origin'); return !!o && list.includes(o); };
+const corsHeaders = (request, env) => {
+  const h = {'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS', 'access-control-allow-headers': 'content-type, authorization', 'access-control-max-age': '86400', 'vary': 'origin'};
+  if (originOk(request, env)) h['access-control-allow-origin'] = request.headers.get('origin') || '*';
+  return h;
 };
+const withCors = (res, request, env) => { for (const [k, v] of Object.entries(corsHeaders(request, env))) res.headers.set(k, v); return res; };
 
 const kstDay = ms => Math.floor((ms + KST) / DAY);       // KST days since epoch
 const isoDay = day => new Date(day * DAY).toISOString().slice(0, 10);
@@ -83,7 +90,7 @@ export function validate(body) {
   return {value: {board: body.board, nick, score, tie, win: body.win, lang: LANGS.includes(body.lang) ? body.lang : 'ko', detail}};
 }
 
-const json = (obj, status = 200) => new Response(JSON.stringify(obj), {status, headers: {'content-type': 'application/json; charset=utf-8', ...CORS}});
+const json = (obj, status = 200) => new Response(JSON.stringify(obj), {status, headers: {'content-type': 'application/json; charset=utf-8'}}); // CORS headers are added once in handle()
 function safeParse(s) { try { return JSON.parse(s) || {}; } catch (e) { return {}; } }
 const parseRow = r => ({...r, detail: safeParse(r.detail)});
 const rankRows = rows => rows.map((r, i) => {
@@ -130,9 +137,11 @@ async function readJson(request) {
   try { return {body: JSON.parse(text)}; } catch (e) { return {status: 400, error: 'json'}; }
 }
 
-export async function handle(request, env, now = Date.now()) {
+export async function handle(request, env, now = Date.now()) { return withCors(await route(request, env, now), request, env); }
+async function route(request, env, now) {
   const url = new URL(request.url), path = url.pathname.replace(/\/+$/, '') || '/', method = request.method;
-  if (method === 'OPTIONS') return new Response(null, {status: 204, headers: CORS});
+  if (method === 'OPTIONS') return new Response(null, {status: originOk(request, env) ? 204 : 403});
+  if (method === 'POST' && !originOk(request, env)) return json({error: 'origin'}, 403);
   if (path === '/' && method === 'GET') return json({ok: true, service: 'mishima-dojo-board', week: weekKey(now)});
 
   if (path === '/top' && method === 'GET') {
@@ -192,6 +201,6 @@ export async function handle(request, env, now = Date.now()) {
 export default {
   async fetch(request, env) {
     try { return await handle(request, env); }
-    catch (e) { return json({error: 'server', message: String(e && e.message || e)}, 500); }
+    catch (e) { return withCors(json({error: 'server', message: String(e && e.message || e)}, 500), request, env); }
   },
 };

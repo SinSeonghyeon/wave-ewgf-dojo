@@ -18,7 +18,7 @@ async function serveWorker(db){
     try{
       const chunks = []; for await (const c of req) chunks.push(c);
       const body = ['GET','HEAD','OPTIONS'].includes(req.method) ? undefined : Buffer.concat(chunks);
-      const out = await worker.default.fetch(new Request('http://127.0.0.1'+req.url, {method:req.method, headers:req.headers, body}), {DB:db});
+      const out = await worker.default.fetch(new Request('http://127.0.0.1'+req.url, {method:req.method, headers:req.headers, body}), {DB:db, ALLOWED_ORIGINS:'null'}); // file:// pages send Origin: null
       res.writeHead(out.status, Object.fromEntries(out.headers)); res.end(Buffer.from(await out.arrayBuffer()));
     }catch(e){ res.writeHead(500); res.end(String(e)); }
   });
@@ -31,13 +31,13 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   const db = fakeD1();
   const {srv, url:boardUrl} = await serveWorker(db);
   { const w = await import(pathToFileURL(path.join(__dirname,'../worker/index.js')).href); // '점유됨' already belongs to someone else
-    const r = await w.handle(new Request('http://x/nick', {method:'POST', body:JSON.stringify({nick:'점유됨'})}), {DB:db}); if(r.status!==200) throw new Error('seed nick failed'); }
+    const r = await w.handle(new Request('http://x/nick', {method:'POST', body:JSON.stringify({nick:'점유됨'})}), {DB:db, ALLOWED_ORIGINS:'*'}); if(r.status!==200) throw new Error('seed nick failed'); }
   // Point a scratch copy of the app at the local worker (BOARD_URL is a const in the shipped file; the copy is never committed).
   const src = fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   if(!/const BOARD_URL = '[^']*';/.test(src)) throw new Error('BOARD_URL constant not found in index.html');
   dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html');
   fs.writeFileSync(page, src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`));
-  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
+  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','donate-kakao.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
   const b = await launch({port:9333, profile:'dojo-smoke-profile'});
   const {send, evalJs, errors} = b;
   await b.navigate(fileUrl(page));
@@ -74,6 +74,13 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   // sound settings: the key events above were the unlocking gesture. Toggle off → slider → back on → one more EWGF with sound enabled (play() rejections would surface in errors)
   const soundSnap = () => evalJs(`(() => { const q=s=>document.querySelector(s); const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')); return {on:q('#soundSel button[aria-pressed=\"true\"]').dataset.sound, bgm:q('#bgmVol').value, sfx:q('#sfxVol').value, out:q('#sfxVolOut').textContent, disabled:q('#sfxVol').disabled, stSound:st.sound, stSfx:st.sfxVol}; })()`);
   out.sound = {initial: await soundSnap()};
+  // donate: ko button opens the KakaoPay QR dialog (phone-only link), close works; en button is a plain Ko-fi link
+  await evalJs(`document.querySelector('#langSel button[data-lang=\"ko\"]').click(); document.querySelector('#donateBtn').click()`); await sleep(150);
+  out.donate = await evalJs(`(() => { const q=s=>document.querySelector(s); return {open:q('#donateDlg').open, qr:q('#donateQr').naturalWidth, href:q('#donateOpen').href}; })()`);
+  await evalJs(`document.querySelector('#donateClose').click()`); await sleep(100);
+  out.donate.closed = !(await evalJs(`document.querySelector('#donateDlg').open`));
+  out.donate.enHref = await evalJs(`(() => { document.querySelector('#langSel button[data-lang=\"en\"]').click(); return document.querySelector('#donateBtn').href; })()`);
+  if(!out.donate.open || !out.donate.closed || !out.donate.qr || !/ko-fi.com/.test(out.donate.enHref)) errors.push('donate check failed: '+JSON.stringify(out.donate));
   // settings dialog: gear on the stage opens it (game input paused), close button closes it
   await evalJs(`document.querySelector('#setOpen').click()`); await sleep(150);
   out.sound.dlgOpen = await evalJs(`document.querySelector('#setDlg').open`);

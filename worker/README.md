@@ -17,6 +17,7 @@
 - 계정: 사용자 소유 Cloudflare 계정. D1 `mishima-dojo-board`(APAC, id는 `wrangler.toml`에 기입됨), workers.dev 서브도메인 `mishima-dojo`.
 - 아래 "처음 한 번"은 이미 끝났다. 다른 PC에서 배포하려면 `npx wrangler login`만 다시 하면 된다.
 - 비밀 `ADMIN_TOKEN`(게시글 삭제용)은 `npx wrangler secret put ADMIN_TOKEN`으로 넣는다. 값은 저장소에 두지 않는다(로컬 `.sandbox/admin-token.txt`, gitignore).
+- 출처 잠금(2026-09-12): `wrangler.toml`의 `[vars] ALLOWED_ORIGINS`(쉼표 구분)에 있는 브라우저 출처만 API를 쓸 수 있다. 다른 출처는 응답에 CORS 헤더가 없고(브라우저가 읽지 못함) POST는 403 `origin`. 사이트를 복사해 다른 곳에 올려도 순위·한마디·방문 집계가 붙지 않는다. 도메인을 연결하면 여기에 추가하고 다시 배포. `DELETE`는 `ADMIN_TOKEN`만 검사하므로 curl로 그대로 쓸 수 있다. 테스트는 `ALLOWED_ORIGINS='*'` 또는 `'null'`(file:// 페이지)로 연다.
 
 ## 이후 코드 수정 시
 

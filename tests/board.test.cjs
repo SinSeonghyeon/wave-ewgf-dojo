@@ -6,7 +6,8 @@ const path = require('node:path');
 const fakeD1 = require('./fake-d1');
 const worker = () => import(pathToFileURL(path.join(__dirname, '../worker/index.js')).href);
 const NOW = Date.UTC(2026, 8, 12, 3, 0);           // Sat 2026-09-12 12:00 KST
-const req = (p, init) => new Request('https://board.test' + p, init);
+const ORIGIN = 'https://sinseonghyeon.github.io';  // the site's origin (worker default allow-list); every test request carries it unless overridden
+const req = (p, init = {}) => new Request('https://board.test' + p, {...init, headers: {origin: ORIGIN, ...(init.headers || {})}});
 const post = (p, body, now = NOW, headers = {}) => async (w, env) => w.handle(req(p, {method: 'POST', headers, body: typeof body === 'string' ? body : JSON.stringify(body)}), env, now);
 const submit = (body, now) => post('/submit', body, now);
 const entry = (over = {}) => ({board: 'wave10', nick: 'alpha', score: 4.2, tie: 12, win: 12, lang: 'ko', detail: {dashes: 42, chain: 12}, ...over});
@@ -158,7 +159,7 @@ test('posts: newest first, capped at 50, validated, rate-limited per IP when the
 test('http surface: CORS preflight, health, 400/404/413 and 500 without leaking a stack', async () => {
   const w = await worker(); const env = {DB: fakeD1()};
   const pre = await w.handle(req('/submit', {method: 'OPTIONS'}), env, NOW);
-  assert.equal(pre.status, 204); assert.equal(pre.headers.get('access-control-allow-origin'), '*');
+  assert.equal(pre.status, 204); assert.equal(pre.headers.get('access-control-allow-origin'), ORIGIN, 'echoes the allowed origin, never *');
   assert.match(pre.headers.get('access-control-allow-headers'), /content-type/); assert.match(pre.headers.get('access-control-allow-methods'), /DELETE/);
   const health = await w.handle(req('/'), env, NOW); assert.equal(health.status, 200); assert.equal((await health.json()).week, '2026-09-07');
   assert.equal((await w.handle(req('/top'), env, NOW)).status, 400);
@@ -176,7 +177,37 @@ test('http surface: CORS preflight, health, 400/404/413 and 500 without leaking 
   assert.equal((await post('/posts', 'x'.repeat(2001))(w, env)).status, 413);
   assert.equal((await submit(entry())(w, env)).status, 403, 'valid shape but no token');
   assert.equal(env.DB.rows.length, 0, 'rejected submissions are never stored'); assert.equal(env.DB.posts.length, 0);
-  for (const res of [pre, health, badJson]) assert.equal(res.headers.get('access-control-allow-origin'), '*');
+  for (const res of [pre, health, badJson]) assert.equal(res.headers.get('access-control-allow-origin'), ORIGIN);
   const boom = await w.default.fetch(req('/top?board=wave10'), {DB: {prepare() { throw new Error('db down'); }}});
   assert.equal(boom.status, 500); const j = await boom.json(); assert.equal(j.error, 'server'); assert.equal(j.message, 'db down'); assert.equal(j.stack, undefined);
+});
+
+test('origin lock: only allowed origins get CORS headers and may POST; * opens it for tests; DELETE stays token-only', async () => {
+  const w = await worker(); const env = {DB: fakeD1()};
+  const foreign = {origin: 'https://evil.example'};
+  // allowed origin: echoed back (never *), vary: origin, preflight 204
+  let r = await w.handle(req('/top?board=wave10'), env, NOW);
+  assert.equal(r.status, 200); assert.equal(r.headers.get('access-control-allow-origin'), ORIGIN); assert.equal(r.headers.get('vary'), 'origin');
+  assert.equal((await w.handle(req('/top', {method: 'OPTIONS'}), env, NOW)).status, 204);
+  // foreign origin: reads answer but without the allow header (browser blocks), writes and preflight are refused
+  r = await w.handle(req('/top?board=wave10', {headers: foreign}), env, NOW);
+  assert.equal(r.status, 200); assert.equal(r.headers.get('access-control-allow-origin'), null);
+  assert.equal((await w.handle(req('/top', {method: 'OPTIONS', headers: foreign}), env, NOW)).status, 403);
+  r = await post('/nick', {nick: 'copycat'}, NOW, foreign)(w, env); assert.equal(r.status, 403); assert.equal((await r.json()).error, 'origin');
+  r = await post('/visits', {}, NOW, foreign)(w, env); assert.equal(r.status, 403);
+  // no Origin header at all (curl): POST refused, GET fine
+  r = await w.handle(new Request('https://board.test/nick', {method: 'POST', body: JSON.stringify({nick: 'curl'})}), env, NOW); assert.equal(r.status, 403);
+  assert.equal((await w.handle(new Request('https://board.test/visits'), env, NOW)).status, 200);
+  // env.ALLOWED_ORIGINS: extra origin, or * for everything
+  const custom = {DB: env.DB, ALLOWED_ORIGINS: ORIGIN + ', https://mishima-dojo.example'};
+  r = await post('/nick', {nick: 'domain'}, NOW, {origin: 'https://mishima-dojo.example'})(w, custom); assert.equal(r.status, 200);
+  assert.equal((await post('/nick', {nick: 'copycat'}, NOW, foreign)(w, custom)).status, 403);
+  const open = {DB: env.DB, ALLOWED_ORIGINS: '*'};
+  r = await post('/nick', {nick: 'copycat'}, NOW, foreign)(w, open); assert.equal(r.status, 200); assert.equal(r.headers.get('access-control-allow-origin'), 'https://evil.example');
+  // admin DELETE needs no origin, only the token
+  const admin = {DB: env.DB, ADMIN_TOKEN: 's3cret'};
+  r = await w.handle(new Request('https://board.test/posts/1', {method: 'DELETE', headers: {authorization: 'Bearer s3cret'}}), admin, NOW); assert.notEqual(r.status, 403);
+  // 500 path also carries CORS so the app can read the error
+  const broken = {DB: {prepare() { throw new Error('boom'); }}};
+  r = await w.default.fetch(req('/top?board=wave10'), broken); assert.equal(r.status, 500); assert.equal(r.headers.get('access-control-allow-origin'), ORIGIN);
 });
