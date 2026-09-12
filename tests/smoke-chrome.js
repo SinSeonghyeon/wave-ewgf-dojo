@@ -37,6 +37,7 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   if(!/const BOARD_URL = '[^']*';/.test(src)) throw new Error('BOARD_URL constant not found in index.html');
   dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html');
   fs.writeFileSync(page, src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`));
+  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
   const b = await launch({port:9333, profile:'dojo-smoke-profile'});
   const {send, evalJs, errors} = b;
   await b.navigate(fileUrl(page));
@@ -45,7 +46,7 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
     const q=s=>document.querySelector(s); const css=getComputedStyle(document.documentElement);
     return {lang:document.documentElement.lang, title:document.title, h1:q('h1').textContent, tag:q('.brand p').textContent,
       modes:[...document.querySelectorAll('#modes button')].map(b=>b.textContent), hint:q('#hudHint').textContent, dName:q('#dName').textContent,
-      rTitle:q('#rTitle').textContent, coach:q('#coachMsg').textContent.slice(0,40), more:q('#setSummary').getAttribute('data-more'),
+      rTitle:q('#rTitle').textContent, coach:q('#coachMsg').textContent.slice(0,40), setGear:!!q('#setOpen'), setOpen:q('#setDlg').open,
       pad:q('#padStatus').textContent, empty:q('#logBody').textContent, seg:[...q('#segBar').children].map(e=>e.textContent),
       display:css.getPropertyValue('--display').trim(), bests:q('#bests').textContent.slice(0,80), footer:q('footer').textContent.slice(0,40),
       histEmpty:q('#hist svg text:last-of-type')?.textContent, waveTop:q('#waveChart svg text')?.textContent, keyBtn:q('#keys .key b')?.textContent,
@@ -70,6 +71,26 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   // simulate a few inputs via keyboard events to populate result/coach/log, then switch languages
   await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(5); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(300);
   out.afterInput = await snap();
+  // sound settings: the key events above were the unlocking gesture. Toggle off → slider → back on → one more EWGF with sound enabled (play() rejections would surface in errors)
+  const soundSnap = () => evalJs(`(() => { const q=s=>document.querySelector(s); const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')); return {on:q('#soundSel button[aria-pressed=\"true\"]').dataset.sound, bgm:q('#bgmVol').value, sfx:q('#sfxVol').value, out:q('#sfxVolOut').textContent, disabled:q('#sfxVol').disabled, stSound:st.sound, stSfx:st.sfxVol}; })()`);
+  out.sound = {initial: await soundSnap()};
+  // settings dialog: gear on the stage opens it (game input paused), close button closes it
+  await evalJs(`document.querySelector('#setOpen').click()`); await sleep(150);
+  out.sound.dlgOpen = await evalJs(`document.querySelector('#setDlg').open`);
+  await tap('KeyD',20); await sleep(100); out.sound.pausedWhileOpen = await evalJs(`document.querySelector('#rTitle').textContent`);
+  await evalJs(`document.querySelector('#setClose').click()`); await sleep(100);
+  out.sound.dlgClosed = !(await evalJs(`document.querySelector('#setDlg').open`));
+  if(!out.sound.dlgOpen || !out.sound.dlgClosed) errors.push('settings dialog check failed: '+JSON.stringify(out.sound));
+  await evalJs(`document.querySelector('#soundSel button[data-sound=\"0\"]').click()`); await sleep(100);
+  await evalJs(`const s=document.querySelector('#sfxVol'); s.value=30; s.dispatchEvent(new Event('input')); s.dispatchEvent(new Event('change'))`); await sleep(100);
+  out.sound.off = await soundSnap();
+  await evalJs(`document.querySelector('#soundSel button[data-sound=\"1\"]').click()`); await sleep(100);
+  await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(5); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(400);
+  out.sound.on = await soundSnap();
+  // f,N,f double tap → dash visual in a real browser (no judging change)
+  await tap('KeyD',20); await sleep(40); await tap('KeyD',20); await sleep(100);
+  out.dash = await evalJs(`document.querySelector('#rTitle').textContent`);
+  if(out.sound.off.on!=='0' || out.sound.off.stSound!==0 || out.sound.off.stSfx!==30 || !out.sound.off.disabled || out.sound.on.on!=='1' || out.sound.on.disabled) errors.push('sound settings check failed: '+JSON.stringify(out.sound));
   for(const l of ['en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);
     out[l] = await snap();

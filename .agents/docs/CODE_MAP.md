@@ -5,7 +5,12 @@
 ## 스크립트 구성 (위에서 아래 순서)
 
 ```
-설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,keys,records} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save()
+설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,sound,bgmVol,sfxVol,keys,records,nick,…} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save()
+소리      SND{bgm,wave,ewgf} 파일명 · snd{ok(typeof Audio),unlocked,bgm,pool,idx,lock,release} · 부트 때는 아무것도 만들지 않음(테스트 vm·og 생성이 미디어를 안 건드림)
+          unlockAudio(): 첫 keydown/pointerdown/패드 버튼에서 1회 → 효과음 풀(이름당 Audio 3개, 라운드로빈) 생성 + bgmSync()
+          bgmSync(): sound && bgmVol>0 && unlocked && !hidden이면 Web Locks(mishima-dojo-bgm) 획득 후 bgm 지연 생성·volume·play(). 같은 브라우저·사이트에서 한 창만 재생. 숨김/끄기/pagehide 시 대기 취소·pause·권한 반환, pageshow/visibilitychange/focus/blur에서 동기화. Web Locks 미지원은 hasFocus 조건으로 대체. NotAllowedError만 unlocked=false로 다음 제스처에 재시도(AbortError는 무시)
+          sfxSync(): 모든 기존 효과음 보이스에 볼륨 적용, 끄기/0%는 pause·재생 위치 초기화. 설정 진입은 endTrial(true)·resetInput() 후 showModal로 측정·입력 잔여 상태 정리
+          playSfx(name): fx.crouchDash → 'wave', fx.ewgf → 'ewgf'. 설정 #soundSel(segSel) · #bgmVol/#sfxVol range(input → store·save, sfx change → 미리듣기) · renderSound()는 부트·변경 시
 i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[key,...args]|클로저 → 텍스트 · displayFont()
           ui{result,coach,trend,seg,padId}: 마지막 표시 내용을 키/클로저로 보관 → setLang → renderAll()
           정적 마크업은 data-i18n / data-i18n-html / data-i18n-aria 속성으로 applyStatic()이 채운다
@@ -17,10 +22,14 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
           4 → 7 (3을 뗐는데 6이 아직) → 120ms 안에 6이 오면 캔슬 인정
           tick(now): 각 상태 250ms(4는 450ms) 타임아웃 · 체인은 마지막 3 후 700ms 지나면 endChain()
           fault(kind): f_before_d / n_to_df / cancel_as_start
+          대시(연출 전용) taps{dir,t,neutral} · tapDetect(dir,t): f,N,f / b,N,b 가 TAP_MS(250) 안이면 fx.dash()/fx.backdash(). onDir의 switch 앞에서 실행하므로 두 번째 f는 그대로 시작 6
+          상태 6(캔슬 후 중립)에서 오는 f는 웨이브의 시작 6이라 감지기에 넣지 않는다(같은 raw f,N,f지만 대시 아님). cd.dashT = 대시 시각, cd.dashT===cd.tF 이면 그 커맨드는 대초
 초풍 판정 onButton(n,t) → classify(off) → attempt(kind, off, t)
           off = 버튼 시각 − 마지막 3 시각 · |off| ≤ store.window → ewgf · off > window → wgf · off < −window → early
           상태 3(d 유지)에서 버튼이 먼저 오면 cd.pending, 3이 오면 음수 오프셋으로 판정, 120ms 안에 3이 없으면 no_df
           attempt 종류: ewgf / combo_short(웨이브 초풍 모드에서 웨이브 3회 미만) / wgf / early / no_df / early_stage / no_cd
+          attempt 레코드 {t,kind,off,chain,mode,streak,dash}: streak = combo{n,t}(연속 초풍. ewgf가 아니면 0, 마지막 초풍 후 3초 지나면 다시 1부터, resetInput/setMode/측정 GO/fault에서 0)
+          dash = 대초(res 'dash_ewgf', 제목 a.dashEwgf.title, r-kind 'DASH ELECTRIC WIND GOD FIST'). 판정·통계·차트·순위는 kind만 보므로 영향 없음
 코치      setCoach(m) · setTrend(m) · coachWaveLive(cyc): 5구간 중 가장 긴 구간 조언 · coachTrend(): 최근 10회 평균·편차
 기록      addLog(t,typeKey,resMsg,num,memoMsg,cls) → session.log[12] · renderLog() 시각은 LOCALE[store.lang]
           store.records[mode][30]: wave10 {score(dps),dashes,chain} · ewgf20/combo10 {score(%),hits,target,mean}
@@ -35,7 +44,7 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
 OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagline[2], keywords, note=app.tagline, chips[{cmd,tag}](og.chipWave/og.chipEwgf), modeName은 chips에서 파생, 예시 히스토그램은 WINDOW_DEFAULT 기준). drawCard는 model.tagline이 있으면 hero·지표 타일 대신 태그라인+칩을 그림
           앱 안에서는 호출하지 않음. tools/make-og.js가 index.html 사본의 IIFE 끝에 globalThis.__og 훅을 붙여 헤드리스 Chrome에서 그린 뒤 루트 og.png로 저장. 공유 카드는 기본 스타일 그대로(나무 스타일로 바꾸려면 buildCard 반환값에 style:'wood' 한 줄)
           문서 제목은 applyStatic()에서 T('app.docTitle')(검색용, 앱 이름과 분리). <head>의 정적 title/og:title은 크롤러용으로 HTML에 직접 둠
-백엔드    BOARD_URL(Worker 주소, 빈 문자열이면 backendInit()이 #boardCard·#postsCard를 숨기고 모든 fetch를 건너뜀) · board{tab,data[board]={week,start,end,total,rows,me},msg,seq}(seq: 가장 최근 boardLoad만 msg/data를 건드림) · live{visits,posts,postsMsg,posting,visitsBusy,nickBusy,nickMsg,nickLater,nickLost} · BOARDS = MODES 중 start 모드 목록(순위 탭·renderBests 순서) · nickOk/NICK_BAD/cleanNick/nickKey/hasNick()(워커와 같은 규칙. NICK_BAD는 유니코드 속성 클래스: 제어·서식(제로폭/양방향)·사용자 영역·미할당·행 구분자 + 한글 채움 문자·이체자 선택자. 워커 BAD_CHARS와 반드시 같게) · pctTop(rank,total)=상위 % (ceil, 최소 1) · tierOf(rank,total)=코멘트 등급 0~6(TIERS=[1,5,10,30,50,70] 상위 % 상한. 참가 10명 미만이면 10명으로 계산해 1/1이 '입문'이 되지 않게) · modalOpen(): #nickDlg/#shareDlg가 열려 있으면 키보드·패드 입력 무시(패드 폴링 주기로 불리므로 DOM 검색 없음)
+백엔드    BOARD_URL(Worker 주소, 빈 문자열이면 backendInit()이 #boardCard·#postsCard를 숨기고 모든 fetch를 건너뜀) · board{tab,data[board]={week,start,end,total,rows,me},msg,seq}(seq: 가장 최근 boardLoad만 msg/data를 건드림) · live{visits,posts,postsMsg,posting,visitsBusy,nickBusy,nickMsg,nickLater,nickLost} · BOARDS = MODES 중 start 모드 목록(순위 탭·renderBests 순서) · nickOk/NICK_BAD/cleanNick/nickKey/hasNick()(워커와 같은 규칙. NICK_BAD는 유니코드 속성 클래스: 제어·서식(제로폭/양방향)·사용자 영역·미할당·행 구분자 + 한글 채움 문자·이체자 선택자. 워커 BAD_CHARS와 반드시 같게) · pctTop(rank,total)=상위 % (ceil, 최소 1) · tierOf(rank,total)=코멘트 등급 0~6(TIERS=[1,5,10,30,50,70] 상위 % 상한. 참가 10명 미만이면 10명으로 계산해 1/1이 '입문'이 되지 않게) · modalOpen(): #nickDlg/#shareDlg/#setDlg가 열려 있으면 키보드·패드 입력 무시(패드 폴링 주기로 불리므로 DOM 검색 없음)
           닉네임 게이트: store.nick + store.nickToken(48 hex; 닉 없는 토큰은 로더가 버림). backendInit()에서 hasNick()이 아니면 #nickDlg를 showModal → claimNick(POST /nick) 성공 시 nick·token 저장 후 boardLoad + boardSubmit(닉 없이 끝난 측정 결과가 있으면 그때 등록). 토큰 없는 옛 닉네임은 그대로 자동 claim. cancel 이벤트를 막아 Escape를 거부하지만 브라우저는 사용자 활성화가 없으면 무시하므로 게이트는 닫힐 수 있다 → close 이벤트에서 renderNick/renderTrialRank로 상태를 맞추고, 헤더 #nickBtn은 항상 보이며 닉 없으면 nick.set("닉네임 정하기"), 있으면 nick.change. 측정 모드 바 #dRank는 닉 없이 끝난 결과에 nick.needed를 표시. claim이 서버 쪽 이유(taken·nick 외: 네트워크·5xx·429)로 실패하면 live.nickLater로 #nickLater("나중에 · 순위 없이 연습") 버튼이 나타나 게이트를 닫을 수 있다(서버가 죽어도 연습은 가능). openNick()은 진행 중인 측정 모드(running/cdTimer)을 endTrial(true)로 취소한다(모달은 입력만 멈추고 시계는 멈추지 않으므로). 서버가 403 auth를 주면 lostNick()이 비우고, 결과 창이 열려 있거나 열리는 중(trial.openTimer)이면 live.nickLost만 켜 두었다가 #shareDlg close 때 게이트를 연다(모달 겹침 방지). 폼에서 내 닉의 대소문자/전각만 바꾼 경우(nickKey 동일)는 claim 없이 닫는다(서버는 409를 줄 것이므로). 한마디 폼은 #postNickLabel로 표시만
           boardFetch(path, init): fetch + JSON, 실패는 Error(message=서버 error 코드 또는 'http N'). AbortSignal.timeout(10초)로 멈춘 요청이 busy 플래그(게이트·등록·게시)를 영원히 붙들지 않게 한다
           backendInit(): boardLoad·postsLoad·visitsLoad + 60초 setInterval(document.hidden이면 건너뜀; 순위표는 주기 갱신 안 함)
@@ -47,10 +56,12 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
           한마디(#postsCard): #postForm(#postNickLabel 표시 + 본문 #postText 200자) → postSend(POST /posts; hasNick()이 아니면 게이트를 연다) → 응답 rows로 목록 갱신. 오류 코드 매핑 rate→posts.tooFast, text→posts.textBad, auth→lostNick()
           서버 코드는 worker/ (CODE_MAP 범위 밖, worker/README.md 참조). 응답 shape: /nick {ok,nick,token} | 409 taken · /top {week,start,end,board,total,rows[{id,rank,nick,score,tie,detail,win,created_at}],me|null} · /submit 같은 shape + {ok,id,rank,improved} · /visits {day,today,total} · /posts {rows[{id,nick,text,created_at}]}
 모드      MODES{free,wave10(10초),ewgf20(20회),combo10(10회)} · setMode → renderMode · startTrial(3초 카운트다운) · endTrial(기록 저장) · trialTick
-설정 UI   segSel(id,attr,cb): winSel/sideSel/fxSel/langSel · renderKeys(): 키 리맵(중복·방향키 충돌 거부, Esc 취소)
-스테이지  canvas · world/anim/ghosts/pops/sparks/dust/bolts · fx{crouchDash,ewgf,wgf,jab,stumble} · pop(text) 폰트는 displayFont()
-          frame(): 카메라 → 더미 → 배경/바닥 → 먼지 → 잔상 → 더미 → 캐릭터 → 번개 → 스파크 → 텍스트 팝 → 플래시
-          drawFighter(g,x,y,pose,dir,alpha,tint) · poseAt(now): anim.kind('cd','ewgf','jab','stumble','idle')
+설정 UI   #setDlg(dialog.share.settings, aside 안에 둠) ← 스테이지 우상단 톱니 버튼 #setOpen(.hud-gear, pointer-events:auto) · #setClose · 열려 있으면 modalOpen()이 게임 입력을 멈춤(키 리맵 listening은 그보다 먼저 처리되어 동작)
+          segSel(id,attr,cb): winSel/sideSel/fxSel/soundSel/langSel · renderKeys(): 키 리맵(중복·방향키 충돌 거부, Esc 취소) · 볼륨 기본값 100/100
+스테이지  canvas · world/anim/ghosts/pops/sparks/dust/bolts · fx{crouchDash,ewgf(n,fromDash),wgf,jab,stumble,dash,backdash} · pop(text,color,size,opts) 폰트는 displayFont()
+          STREAK[1..6] 연속 초풍 팝 스타일(size/color 토큰/glow/rings/sparks/shake, 6에서 고정) · pop opts {lvl,glow,rings,core,life} → 렌더러가 punch-in(easeOutBack)·shadowBlur·퍼지는 링·흰 코어를 그림. reduced motion이면 크기·색·글로우만
+          frame(): 걷기(curDir f/b 유지 + idle/walk 이고 moveDur 없음, WALK_F/WALK_B px/s, 살아있는 더미 36px 앞에서 정지) → 이동 → 카메라 → 더미 → 배경/바닥 → 먼지 → 잔상(cd/dash/backdash) → 더미 → 캐릭터 → 번개 → 스파크 → 텍스트 팝 → 플래시
+          drawFighter(g,x,y,pose,dir,alpha,tint) pose.step(−1..1: 보폭, 0이면 기존과 픽셀 동일) · poseAt(now): anim.kind('cd','ewgf','jab','stumble','dash','backdash','walk','idle')
 부트      renderAll(); setMode('free'); renderHistory(); updateStats(); requestAnimationFrame(frame)
 ```
 
@@ -68,6 +79,8 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 | 풍신권 | WGF / Wind God Fist | 風神拳 |
 | 크라우치 대시 | crouch dash | 風神ステップ |
 | 웨이브 | wave (dash) | ウェーブ |
+| 대초 (대시 초풍) | Dash EWGF | ダッシュ最風 |
+| N초 (연속 초풍) | EWGF ×N | 最風×N |
 | 캔슬 6 / 시작 6 | cancel 6 / start 6 | キャンセル6 / 始動6 |
 | 방향 | f, N, d, d/f | 텐키 6/N/2/3 |
 
@@ -79,7 +92,7 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 - `tools/cdp.js`: 헤드리스 Chrome/Edge 실행·CDP 연결·evalJs·오류 수집을 한 곳에 둔 공용 모듈. `tests/smoke-chrome.js`와 `tools/make-og.js`가 씀(포트 9333/9334, 프로필 분리로 동시 실행 가능). 브라우저 자동화가 필요한 스크립트는 여기서 `launch()`를 가져다 쓴다.
 - `worker/`: 백엔드(Cloudflare Worker + D1: 주간 순위·방문자 수·한마디). `index.js`(ESM, `weekKey`·`weekBounds`·`dayKey`·`validate`·`cleanText`·`nickKey`·`handle`·`BOARDS`·`WINDOWS` export + default fetch), `schema.sql`(scores + UNIQUE(week,board,nick), nicks(key=NFKC 소문자 유니크, token), visits, posts. 멱등), `package.json`(`"type":"module"`만), `wrangler.toml`(D1 + 레이트 리밋 바인딩 `POST_LIMIT` 3회/분·`NICK_LIMIT` 10회/분), `README.md`(배포·관리자 삭제·설계). 비밀 `ADMIN_TOKEN`(wrangler secret)은 DELETE /posts/:id 전용. 앱과 계약이 바뀌면 `index.html`의 boardEntry/renderBoard와 `tests/board.test.cjs`, dojo.test.cjs의 계약 교차 검증을 함께 고친다.
 - `tests/fake-d1.js`: node:sqlite 인메모리에 `worker/schema.sql`을 그대로 적용한 가짜 D1(Node 22.13+). 단위 테스트와 스모크 테스트가 공유. dojo.test.cjs의 `boot(saved, fetch)`는 두 번째 인자로 fetch 스텁을 받아 백엔드 경합(등록 중 닉 변경·탭 전환, 403, 방문 집계)을 검사한다.
-- `bgm.mp3`, `웨이브사운드.mp3`, `초풍사운드.mp3`: 저장소에 있으나 아직 재생 코드 없음. 사용자가 자체 제작이라고 확인(2026-09-11). 소리 피드백 기능(PLAN 4단계)에서 사용.
+- `bgm.mp3`(3.7MB, 루프), `sfx-wave.mp3`(크라우치 대시), `sfx-ewgf.mp3`(초풍 성공): 자체 제작(사용자 확인 2026-09-11). 2026-09-12에 영문 파일명으로 개명하고 재생 코드 연결. 스모크 테스트는 스크래치 페이지 옆에 세 파일을 복사한다(없으면 리소스 오류로 실패).
 
 ## 검증
 
@@ -88,3 +101,5 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 - `node tests/smoke-chrome.js`: 로컬 Chrome/Edge를 헤드리스로 띄워 CDP로 조작. 시작 시 `worker/index.js`를 로컬 http로 감싸고(가짜 D1) `BOARD_URL`만 그 주소로 바꾼 index.html 사본을 임시 폴더에 만들어 연다(원본은 건드리지 않음). 키보드로 6N23+2 입력, ko/en/ja 왕복 전환, 일본어로 웨이브 10초 측정 모드를 끝까지 돌린 뒤 공유 카드 열기·1200×630 PNG 생성·이미지 복사 시도(file://에서는 거부되어 안내 문구)·언어 전환·닫기, 백엔드는 로드 직후 닉네임 게이트부터: 모달 열림·게이트 중 키 입력 무시·Escape로 안 닫힘·2자 미만 거부·미리 점유된 닉네임 409 거부(Chrome이 남기는 409 리소스 오류 로그는 걸러냄)·자유 닉네임으로 시작(localStorage nick+token 48 hex). 측정 모드가 끝나면 자동 등록 문구와 자동으로 열린 결과 창 배너(등급 t2 '上級', 1位/1人)를 확인하고, 두 번째 측정 모드 자동 등록('최고 기록 유지'·결과 창 재오픈) → 다른 보드 빈 상태 → 한마디 작성·표시 → 헤더 버튼으로 닉네임 변경 → ko 전환 후 문구와 가짜 D1의 scores/posts/visits/nicks 행을 검사한다. JS 오류가 있거나 검사가 실패하면 종료 코드 1. 약 40초 걸린다.
 - 실제 키보드·게임패드 지연, DirectInput 장치별 hat 매핑, 화면 폭별 시각 품질은 자동 검증에 없다.
 - 캔버스 입자·더미 물리는 프레임마다 고정량으로 갱신하므로 주사율에 따라 연출 속도가 달라진다. 판정은 시각 기반이라 영향 없음.
+
+- 소리 회귀 브라우저 검사: `node tests/smoke-sound.js`. 로컬 HTTP로 backend 비활성 사본을 제공, 같은 Chrome의 별도 창 두 개에서 BGM 한 개·끄기/닫기 시 권한 이전·재생 중 효과음 볼륨/끄기를 검증.

@@ -68,7 +68,7 @@
   .hud-chain span{font-family:var(--display);font-size:42px;line-height:1;color:var(--ink);text-shadow:0 2px 0 #000,0 0 14px rgba(76,201,255,.35);font-variant-numeric:tabular-nums}
   .hud-chain small{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--muted)}
   .hud-chain.hot span{color:var(--accent)}
-  .hud-timer{position:absolute;right:14px;top:10px;font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink);text-shadow:0 2px 0 #000;font-variant-numeric:tabular-nums}
+  .hud-timer{position:absolute;left:0;right:0;top:10px;text-align:center;font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink);text-shadow:0 2px 0 #000;font-variant-numeric:tabular-nums}
   .hud-timer.warn{color:var(--warn)}
   .hud-center{position:absolute;left:0;right:0;top:34%;text-align:center;font-family:var(--display);font-size:64px;line-height:1;color:var(--gold);text-shadow:0 3px 0 #000,0 0 22px rgba(245,197,66,.5)}
   .hud-hint{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--muted);text-shadow:0 1px 0 #000}
@@ -175,10 +175,12 @@
   .stat b{display:block;font-family:var(--mono);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
   .stat span{font-size:11px;color:var(--muted);letter-spacing:.3px}
   .stat.acc b{color:var(--accent)} .stat.gold b{color:var(--gold)}
-  details.settings{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:0 14px}
-  details.settings summary{cursor:pointer;padding:10px 0;font-weight:500;color:var(--ink2);list-style:none;display:flex;justify-content:space-between}
-  details.settings summary::after{content:attr(data-more);font-size:11px;color:var(--muted);font-family:var(--mono)}
-  details.settings[open] summary::after{content:attr(data-less)}
+  dialog.settings{width:min(560px,calc(100vw - 32px))}
+  .set-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+  .set-head h2{margin:0}
+  .hud-gear{position:absolute;right:12px;top:10px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:auto;
+    background:rgba(20,26,35,.75);border:1px solid var(--line2);color:var(--ink2);padding:0;backdrop-filter:blur(2px);transition:color .15s,border-color .15s,transform .2s}
+  .hud-gear:hover,.hud-gear:focus-visible{color:var(--accent);border-color:var(--accent);transform:rotate(30deg);outline:none}
   .set{display:flex;flex-direction:column;gap:10px;padding-bottom:14px}
   .set .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
   .set label.t{color:var(--muted);font-size:12.5px}
@@ -186,6 +188,13 @@
   .segc button{background:transparent;border:0;color:var(--ink2);padding:5px 10px;font-size:12.5px}
   .segc button+button{border-left:1px solid var(--line2)}
   .segc button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .range{display:inline-flex;align-items:center;gap:8px}
+  .range input[type=range]{-webkit-appearance:none;appearance:none;width:140px;height:4px;border-radius:2px;background:var(--line2);cursor:pointer;margin:0}
+  .range input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--accent-deep)}
+  .range input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+  .range input[type=range]::-moz-range-track{height:4px;background:var(--line2);border-radius:2px}
+  .range input[type=range]:disabled{opacity:.4;cursor:default}
+  .range output{font-family:var(--mono);font-size:12px;color:var(--ink2);min-width:3.4em;text-align:right;font-variant-numeric:tabular-nums}
   .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .key{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:6px 4px;text-align:center;color:var(--ink2)}
   .key small{display:block;font-size:10.5px;color:var(--muted);font-family:var(--mono)}
@@ -263,6 +272,7 @@
           <div class="hud-timer" id="hudTimer"></div>
           <div class="hud-center" id="hudCenter"></div>
           <div class="hud-hint" id="hudHint"></div>
+          <button class="hud-gear" id="setOpen" type="button" data-i18n-aria="set.title" aria-label="입력 · 판정 설정" title="⚙"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.7 7.7 0 0 0-1.7-1L15 3h-4l-.4 2.7a7.7 7.7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.7 7.7 0 0 0 1.7 1L11 21h4l.4-2.7a7.7 7.7 0 0 0 1.7-1l2.5 1 2-3.5L19.4 13zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></button>
         </div>
       </div>
       <div class="inputs" id="inputs" data-i18n-aria="inputs.aria" aria-label="입력 기록"></div>
@@ -302,8 +312,8 @@
         <div class="stat"><b id="stTry">0</b><span data-i18n="stat.try">초풍 시도</span></div>
         <div class="stat"><b id="stMean">–</b><span data-i18n="stat.mean">평균 버튼 오프셋</span></div>
       </div>
-      <details class="settings">
-        <summary id="setSummary" data-i18n="set.title" data-more="펼치기" data-less="접기">입력 · 판정 설정</summary>
+      <dialog class="share settings" id="setDlg" aria-labelledby="setTitle">
+        <div class="set-head"><h2 id="setTitle" data-i18n="set.title">입력 · 판정 설정</h2><button class="btn ghost" id="setClose" type="button" data-i18n="share.close">닫기</button></div>
         <div class="set">
           <div class="row"><label class="t" data-i18n="set.window">초풍 판정 폭</label>
             <div class="segc" id="winSel"><button data-win="8" aria-pressed="false" data-i18n="set.win8">저스트 0.5f</button><button data-win="12" aria-pressed="true" data-i18n="set.win12">보통 0.7f</button><button data-win="15" aria-pressed="false" data-i18n="set.win15">관대 0.9f</button></div></div>
@@ -311,6 +321,13 @@
             <div class="segc" id="sideSel"><button data-side="1" aria-pressed="true" data-i18n="set.side1">1P (→ 가 앞)</button><button data-side="-1" aria-pressed="false" data-i18n="set.side2">2P (← 가 앞)</button></div></div>
           <div class="row"><label class="t" data-i18n="set.fx">연출 (흔들림·플래시)</label>
             <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" data-i18n="set.sound">소리</label>
+            <div class="segc" id="soundSel"><button data-sound="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-sound="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" for="bgmVol" data-i18n="set.bgmVol">배경음 볼륨</label>
+            <div class="range"><input type="range" id="bgmVol" min="0" max="100" step="5" value="100"><output id="bgmVolOut">100%</output></div></div>
+          <div class="row"><label class="t" for="sfxVol" data-i18n="set.sfxVol">효과음 볼륨</label>
+            <div class="range"><input type="range" id="sfxVol" min="0" max="100" step="5" value="100"><output id="sfxVolOut">100%</output></div></div>
+          <p class="note" data-i18n="set.soundNote">배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).</p>
           <div>
             <label class="t" data-i18n="set.keys">키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
             <div class="keys" id="keys"></div>
@@ -318,7 +335,7 @@
           <div class="row"><label class="t" data-i18n="set.pad">게임패드</label><span class="note" id="padStatus"></span></div>
           <p class="note" data-i18n-html="set.padNote"></p>
         </div>
-      </details>
+      </dialog>
     </aside>
   </main>
 
@@ -398,6 +415,7 @@ const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const fmtF = ms => (ms>=0?'+':'−') + Math.abs(ms/FRAME).toFixed(1) + 'f';
 const fmtMs = ms => (ms>=0?'+':'−') + Math.abs(Math.round(ms)) + 'ms';
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const WALK_F = 90, WALK_B = 70, TAP_MS = 250; // walk speed px/s (forward/back), f,N,f double-tap dash window. Visual only; judging never reads these.
 
 /* ---------- persistent settings ---------- */
 const STORE = 'wave-ewgf-dojo-v1';
@@ -405,7 +423,7 @@ const detectLang = () => { const l = (typeof navigator!=='undefined' && navigato
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}, nick:'', nickToken:'', visitDay:''};
+let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, sound:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[]}, nick:'', nickToken:'', visitDay:''};
 const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function validKey(slot, code){
   const arrows = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
@@ -418,6 +436,9 @@ try{
     if(s.v>=4 && WINDOWS.includes(s.window)) store.window=s.window;
     if([1,-1].includes(s.side)) store.side=s.side;
     if([0,1].includes(s.fx)) store.fx=s.fx;
+    if([0,1].includes(s.sound)) store.sound=s.sound;
+    if(Number.isInteger(s.bgmVol) && s.bgmVol>=0 && s.bgmVol<=100) store.bgmVol=s.bgmVol;
+    if(Number.isInteger(s.sfxVol) && s.sfxVol>=0 && s.sfxVol<=100) store.sfxVol=s.sfxVol;
     if(typeof s.nick==='string' && nickOk(s.nick)) store.nick=s.nick;
     if(store.nick && typeof s.nickToken==='string' && /^[0-9a-f]{48}$/.test(s.nickToken)) store.nickToken=s.nickToken; // proves the nickname is ours (POST /nick); a token without a nickname is dropped
     if(typeof s.visitDay==='string' && /^\d{4}-\d\d-\d\d$/.test(s.visitDay)) store.visitDay=s.visitDay; // last KST day this browser was counted
@@ -459,7 +480,7 @@ ko:{
   'seg.title':'마지막 대시 구간 (ms)', 'seg.names':['6','N','2','3','캔슬6'],
   'seg.l1':'시작 6 유지', 'seg.l2':'중립', 'seg.l3':'2 유지', 'seg.l4':'3 유지 → 캔슬 6', 'seg.l5':'캔슬 6 → 다음 시작 6',
   'stat.dps':'최고 웨이브 속도 (대시/초)', 'stat.chain':'최고 연속 대시', 'stat.dash':'총 대시', 'stat.rate':'초풍 성공률', 'stat.try':'초풍 시도', 'stat.mean':'평균 버튼 오프셋',
-  'set.title':'입력 · 판정 설정', 'set.more':'펼치기', 'set.less':'접기',
+  'set.title':'입력 · 판정 설정',
   'set.window':'초풍 판정 폭', 'set.win8':'저스트 0.5f', 'set.win12':'보통 0.7f', 'set.win15':'관대 0.9f',
   'set.side':'캐릭터 방향', 'set.side1':'1P (→ 가 앞)', 'set.side2':'2P (← 가 앞)',
   'set.fx':'연출 (흔들림·플래시)', 'set.on':'켜기', 'set.off':'끄기',
@@ -522,6 +543,8 @@ ko:{
   'chain.fix':' — 여기를 줄이면 속도가 바로 올라갑니다.', 'chain.ok':' — 균형이 좋습니다.',
   'trial.waveEnd':(n,dps)=>'10초 종료 · '+n+'회 ('+dps+' 대시/초)', 'trial.end':(ok,tg,r)=>'종료 · 성공 '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' 대시',
   'pop.ewgf':'초풍!', 'pop.wgf':'풍신권',
+  'pop.streak':n=>n+'초'+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'대초!', 'a.dashEwgf.title':'대초!', 'res.dash_ewgf':'대초', 'a.streak.sub':n=>' · '+n+'연속',
+  'set.sound':'소리', 'set.bgmVol':'배경음 볼륨', 'set.sfxVol':'효과음 볼륨', 'set.soundNote':'배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).',
   'share.card':'공유 카드', 'share.session':'세션 카드', 'share.title':'결과 공유 카드', 'share.canvasAria':'결과 공유 카드 미리보기',
   'share.copy':'이미지 복사', 'share.download':'PNG 저장', 'share.tweet':'X(트위터)에 공유', 'share.close':'닫기',
   'share.discordNote':'디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.',
@@ -583,7 +606,7 @@ en:{
   'seg.title':'Last dash segments (ms)', 'seg.names':['6','N','2','3','cancel 6'],
   'seg.l1':'Start 6 held', 'seg.l2':'Neutral', 'seg.l3':'2 held', 'seg.l4':'3 held → cancel 6', 'seg.l5':'Cancel 6 → next start 6',
   'stat.dps':'Best wave speed (dashes/s)', 'stat.chain':'Best chain', 'stat.dash':'Total dashes', 'stat.rate':'EWGF rate', 'stat.try':'EWGF attempts', 'stat.mean':'Avg button offset',
-  'set.title':'Input · judgement settings', 'set.more':'expand', 'set.less':'collapse',
+  'set.title':'Input · judgement settings',
   'set.window':'EWGF window', 'set.win8':'Just 0.5f', 'set.win12':'Normal 0.7f', 'set.win15':'Lenient 0.9f',
   'set.side':'Facing', 'set.side1':'1P (→ is forward)', 'set.side2':'2P (← is forward)',
   'set.fx':'Effects (shake · flash)', 'set.on':'On', 'set.off':'Off',
@@ -646,6 +669,8 @@ en:{
   'chain.fix':' — shorten this and speed goes up immediately.', 'chain.ok':' — well balanced.',
   'trial.waveEnd':(n,dps)=>'10s over · '+n+' dashes ('+dps+' dashes/s)', 'trial.end':(ok,tg,r)=>'Done · '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' dashes',
   'pop.ewgf':'EWGF!', 'pop.wgf':'WGF',
+  'pop.streak':n=>'EWGF ×'+n+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'Dash EWGF!', 'a.dashEwgf.title':'Dash EWGF!', 'res.dash_ewgf':'Dash EWGF', 'a.streak.sub':n=>' · streak '+n,
+  'set.sound':'Sound', 'set.bgmVol':'BGM volume', 'set.sfxVol':'SFX volume', 'set.soundNote':'BGM starts after your first key press or click (browser autoplay policy).',
   'share.card':'Share card', 'share.session':'Session card', 'share.title':'Result share card', 'share.canvasAria':'Result share card preview',
   'share.copy':'Copy image', 'share.download':'Save PNG', 'share.tweet':'Share on X (Twitter)', 'share.close':'Close',
   'share.discordNote':'Discord: click "Copy image", then paste into the chat with Ctrl+V. If copying is unavailable, save the PNG and attach it.',
@@ -707,7 +732,7 @@ ja:{
   'seg.title':'最後のステップ区間 (ms)', 'seg.names':['6','N','2','3','ｷｬﾝｾﾙ6'],
   'seg.l1':'始動6保持', 'seg.l2':'ニュートラル', 'seg.l3':'2保持', 'seg.l4':'3保持 → キャンセル6', 'seg.l5':'キャンセル6 → 次の始動6',
   'stat.dps':'最高ウェーブ速度 (ダッシュ/秒)', 'stat.chain':'最高連続ステップ', 'stat.dash':'総ステップ数', 'stat.rate':'最風成功率', 'stat.try':'最風試行', 'stat.mean':'平均ボタンオフセット',
-  'set.title':'入力・判定設定', 'set.more':'開く', 'set.less':'閉じる',
+  'set.title':'入力・判定設定',
   'set.window':'最風判定幅', 'set.win8':'ジャスト 0.5f', 'set.win12':'普通 0.7f', 'set.win15':'甘め 0.9f',
   'set.side':'キャラの向き', 'set.side1':'1P (→が前)', 'set.side2':'2P (←が前)',
   'set.fx':'演出 (揺れ・フラッシュ)', 'set.on':'オン', 'set.off':'オフ',
@@ -770,6 +795,8 @@ ja:{
   'chain.fix':' — ここを縮めれば速度がすぐ上がります。', 'chain.ok':' — バランスが良いです。',
   'trial.waveEnd':(n,dps)=>'10秒終了 · '+n+'回 ('+dps+' ダッシュ/秒)', 'trial.end':(ok,tg,r)=>'終了 · 成功 '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' ステップ',
   'pop.ewgf':'最風!', 'pop.wgf':'風神拳',
+  'pop.streak':n=>'最風×'+n+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'ダッシュ最風!', 'a.dashEwgf.title':'ダッシュ最風!', 'res.dash_ewgf':'ダッシュ最風', 'a.streak.sub':n=>' · '+n+'連続',
+  'set.sound':'サウンド', 'set.bgmVol':'BGM音量', 'set.sfxVol':'効果音音量', 'set.soundNote':'BGMは最初のキー入力かクリックの後に始まります (ブラウザの自動再生制限)。',
   'share.card':'共有カード', 'share.session':'セッションカード', 'share.title':'結果共有カード', 'share.canvasAria':'結果共有カードのプレビュー',
   'share.copy':'画像をコピー', 'share.download':'PNG保存', 'share.tweet':'X(Twitter)で共有', 'share.close':'閉じる',
   'share.discordNote':'Discord: 「画像をコピー」後、チャット欄に Ctrl+V で貼り付けてください。コピーできない場合は PNG を保存して添付してください。',
@@ -820,10 +847,76 @@ const T = (key, ...args) => {
 const msg = v => typeof v==='function' ? v() : Array.isArray(v) ? T(...v) : (v==null?'':v);
 const displayFont = () => store.lang==='ja' ? '"Dela Gothic One", "Noto Sans JP", sans-serif' : '"Black Han Sans", "Noto Sans KR", sans-serif';
 
+/* ---------- sound (own recordings). Nothing is created until the first user gesture, so the unit-test vm and og generation never touch media. ---------- */
+const SND = { bgm:'bgm.mp3', wave:'sfx-wave.mp3', ewgf:'sfx-ewgf.mp3' };
+const snd = { ok: typeof Audio!=='undefined', unlocked:false, bgm:null, pool:{}, idx:{}, lock:null, release:null };
+function mkAudio(src, loop){ const a = new Audio(); a.preload='auto'; a.loop=!!loop; a.src=src; return a; }
+function sfxPool(name){ return snd.pool[name] || (snd.pool[name] = [0,1,2].map(() => mkAudio(SND[name], false))); } // 3 voices so a fast wave can overlap
+function playSfx(name){
+  if(!snd.ok || !store.sound || !snd.unlocked || store.sfxVol<=0) return;
+  const p = sfxPool(name), i = snd.idx[name] = ((snd.idx[name]||0)+1) % p.length, a = p[i];
+  a.volume = store.sfxVol/100; try{ a.currentTime = 0; }catch(e){}
+  const r = a.play(); if(r && r.catch) r.catch(()=>{});
+}
+function sfxSync(){
+  for(const voices of Object.values(snd.pool)) for(const a of voices){
+    a.volume = store.sound ? store.sfxVol/100 : 0;
+    if(!store.sound || store.sfxVol<=0){ a.pause(); try{ a.currentTime=0; }catch(e){} }
+  }
+}
+function bgmSync(){ // Web Lock keeps visible windows of this origin from playing together.
+  if(!snd.ok) return;
+  const locks = navigator.locks;
+  const want = !!store.sound && store.bgmVol>0 && snd.unlocked && !document.hidden && (!!locks || document.hasFocus());
+  if(!want){
+    if(snd.bgm) snd.bgm.pause();
+    if(snd.lock){ snd.lock.abort(); snd.lock=null; }
+    if(snd.release){ const release=snd.release; snd.release=null; release(); }
+    return;
+  }
+  if(locks && !snd.release){
+    if(!snd.lock){
+      const request = snd.lock = new AbortController();
+      locks.request('mishima-dojo-bgm', {signal:request.signal}, () => {
+        if(snd.lock!==request) return;
+        return new Promise(resolve => { snd.release=resolve; bgmSync(); });
+      }).catch(() => {}).finally(() => { if(snd.lock===request) snd.lock=null; });
+    }
+    return;
+  }
+  if(want){
+    if(!snd.bgm) snd.bgm = mkAudio(SND.bgm, true);
+    snd.bgm.volume = store.bgmVol/100;
+    if(snd.bgm.paused){ const r = snd.bgm.play(); if(r && r.catch) r.catch(e => { if(e.name==='NotAllowedError'){ snd.unlocked=false; bgmSync(); } }); } // interruption by pause is not an autoplay refusal
+  } else if(snd.bgm && !snd.bgm.paused) snd.bgm.pause();
+}
+function unlockAudio(){ if(!snd.ok || snd.unlocked) return; snd.unlocked=true; ['wave','ewgf'].forEach(sfxPool); bgmSync(); }
+addEventListener('pointerdown', unlockAudio);
+addEventListener('visibilitychange', bgmSync);
+addEventListener('focus', bgmSync);
+addEventListener('pagehide', () => {
+  if(snd.bgm) snd.bgm.pause();
+  if(snd.lock){ snd.lock.abort(); snd.lock=null; }
+  if(snd.release){ const release=snd.release; snd.release=null; release(); }
+});
+addEventListener('pageshow', bgmSync);
+
 /* ---------- session state ---------- */
 const session = { dashes:0, bestChain:0, bestDps:0, tries:0, hits:0, offsetSum:0, offsetCount:0, cycles:[], attempts:[], log:[] };
 /* states: 0 idle · 1 시작 6 · 2 중립 · 3 d · 4 d/f(대시 중) · 5 캔슬 6 · 6 캔슬 후 중립 · 7 d/f 뗀 뒤 캔슬 대기 */
-const cd = { state:0, tF:0, tN:0, tD:0, tDF:0, tC:0, tRel:0, lastDF:-1e9, cancelled:true, chain:0, chainCycles:[], pending:null };
+const cd = { state:0, tF:0, tN:0, tD:0, tDF:0, tC:0, tRel:0, lastDF:-1e9, cancelled:true, chain:0, chainCycles:[], pending:null, dashT:-1e9 }; // dashT: time of the f,N,f dash that started this command (dashT===tF → 대초)
+const combo = { n:0, t:-1e9 }; // consecutive EWGF successes: reset by any other attempt/fault, by 3s without one, and by resetInput/setMode/trial GO
+function resetCombo(){ combo.n=0; combo.t=-1e9; }
+const taps = { dir:null, t:-1e9, neutral:false }; // f,N,f / b,N,b double-tap detector (dash visuals only; never touches judging)
+function resetTaps(){ taps.dir=null; taps.neutral=false; }
+function tapDetect(dir, t){ // returns 'f' | 'b' on a completed double tap, else null
+  if(dir==='f' || dir==='b'){
+    if(taps.dir===dir && taps.neutral && t-taps.t<=TAP_MS){ resetTaps(); return dir; }
+    taps.dir=dir; taps.t=t; taps.neutral=false; return null;
+  }
+  if(dir==='n'){ if(taps.dir) taps.neutral=true; return null; }
+  resetTaps(); return null; // d / d/f / d/b / u* break the pair
+}
 let mode = 'free';
 const trial = { running:false, tStart:0, dur:0, count:0, target:0, cdTimer:null, messageTimer:null, openTimer:null };
 /* last rendered texts, kept as re-evaluable messages so a language switch can redraw them */
@@ -859,7 +952,7 @@ function kbVector(){
   kbDir = { x:(rt?1:0)-(lf?1:0), y:(up?1:0)-(dn?1:0) };
 }
 const mappedCodes = () => new Set([...Object.values(store.keys),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
-const modalOpen = () => $('nickDlg').open || $('shareDlg').open; // nickname gate / result card: game input is paused (called at pad-poll rate, so no DOM query)
+const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open; // nickname gate / result card / settings: game input is paused (called at pad-poll rate, so no DOM query)
 let listening = null; // key remap slot
 addEventListener('keydown', e => {
   if(listening){
@@ -873,7 +966,7 @@ addEventListener('keydown', e => {
   if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if(modalOpen()) return;
   if(!mappedCodes().has(e.code)) return;
-  e.preventDefault();
+  e.preventDefault(); unlockAudio();
   if(e.repeat || held.has(e.code)) return;
   held.add(e.code);
   const t = e.timeStamp || performance.now();
@@ -889,9 +982,9 @@ addEventListener('keyup', e => {
 });
 function resetInput(){
   held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); curDir='n';
-  clearCommand(); updateHud();
+  clearCommand(); resetCombo(); resetTaps(); updateHud();
 }
-addEventListener('blur', () => { resetInput(); endTrial(true); });
+addEventListener('blur', () => { resetInput(); endTrial(true); bgmSync(); });
 
 /* gamepad */
 let padIndex = null;
@@ -927,7 +1020,7 @@ function pollPad(){
   if(nx!==padDir.x || ny!==padDir.y){ padDir={x:nx,y:ny}; changed=true; }
   const map = [2,3,0,1]; // 1=X/□ 2=Y/△ 3=A/✕ 4=B/○
   if(changed) recomputeDir(t,'pad'); // 같은 샘플의 방향을 먼저 반영해야 d/f+2를 판정할 수 있다.
-  map.forEach((bi,i) => { const p = on(bi); if(p && !padBtn[i]) onButton(i+1,t); padBtn[i]=p; });
+  map.forEach((bi,i) => { const p = on(bi); if(p && !padBtn[i]){ unlockAudio(); onButton(i+1,t); } padBtn[i]=p; }); // a pad press may not count as a browser gesture; play() rejection is handled in bgmSync
   if(padBtn.some(Boolean) && lastSrc!=='pad') setSrc('pad');
 }
 setInterval(pollPad, 4);
@@ -958,11 +1051,14 @@ function renderHistory(){
 /* ---------- crouch dash state machine ---------- */
 function resetCD(){ cd.state=0; }
 function clearCommand(){
-  Object.assign(cd,{state:0,tF:0,tN:0,tD:0,tDF:0,tC:0,tRel:0,lastDF:-1e9,cancelled:true,chain:0,chainCycles:[],pending:null});
+  Object.assign(cd,{state:0,tF:0,tN:0,tD:0,tDF:0,tC:0,tRel:0,lastDF:-1e9,cancelled:true,chain:0,chainCycles:[],pending:null,dashT:-1e9});
 }
 function onDir(dir, t){
   trialTick(t); tick(t); // 판정 기한은 화면 주사율과 무관하게 입력 시각에 검사한다.
   pushHistory({t, dir});
+  // dash / backdash visuals from a double tap. Runs before the switch so the second f still becomes the start 6 (cd.tF===t → 대초 label).
+  if(dir==='f' && cd.state===6){ taps.dir='f'; taps.t=t; taps.neutral=false; } // the wave's cancel 6 → N → start 6 is the same raw f,N,f but is not a dash
+  else { const dbl = tapDetect(dir, t); if(dbl==='f'){ cd.dashT=t; fx.dash(); } else if(dbl==='b') fx.backdash(); }
   switch(cd.state){
     case 0: if(dir==='f'){ cd.state=1; cd.tF=t; } break;
     case 1:
@@ -1043,7 +1139,7 @@ function completeCD(t){
 }
 function fault(kind, t){
   if(!['f_before_d','n_to_df','cancel_as_start'].includes(kind)) return;
-  clearCommand(); updateHud();
+  clearCommand(); resetCombo(); updateHud();
   showResult('miss', 'MISS', ['fault.'+kind+'.title'], '');
   setCoach(['fault.'+kind+'.coach']);
   fx.stumble();
@@ -1084,7 +1180,8 @@ function classify(off, t){
 }
 function attempt(kind, off, t){
   const chainBefore = (t - cd.lastDF < 700) ? cd.chain : 0;
-  const a = { t, kind, off, chain: chainBefore, mode };
+  if(kind==='ewgf'){ if(t - combo.t > 3000) combo.n = 0; combo.n++; combo.t = t; } else resetCombo();
+  const a = { t, kind, off, chain: chainBefore, mode, streak: combo.n, dash: kind==='ewgf' && cd.dashT>0 && cd.dashT===cd.tF };
   session.attempts.push(a); if(session.attempts.length>300) session.attempts.shift();
   session.tries++; if(kind==='ewgf') session.hits++;
   if(off!=null){ session.offsetSum+=off; session.offsetCount++; }
@@ -1093,11 +1190,11 @@ function attempt(kind, off, t){
   let title, sub, cls, coach, res, rowCls;
   switch(kind){
     case 'ewgf':
-      cls='ewgf'; title=['a.ewgf.title']; res='ewgf'; rowCls='ok';
-      sub = () => T('a.ewgf.sub', f, ms) + (chainBefore>1 ? T('a.afterWave', chainBefore) : '');
+      cls='ewgf'; title=[a.dash?'a.dashEwgf.title':'a.ewgf.title']; res=a.dash?'dash_ewgf':'ewgf'; rowCls='ok';
+      sub = () => T('a.ewgf.sub', f, ms) + (chainBefore>1 ? T('a.afterWave', chainBefore) : '') + (a.streak>1 ? T('a.streak.sub', a.streak) : '');
       coach = Math.abs(off)<=Math.min(8, store.window/2) ? ['a.ewgf.perfect'] : (off>0 ? ['a.ewgf.late', f] : ['a.ewgf.early', f]);
       if(mode==='combo10' && !comboOK) { coach = ['a.combo.coach', chainBefore]; title=['a.combo.title']; cls='wgf'; res='combo_short'; rowCls='wg'; }
-      fx.ewgf(); break;
+      fx.ewgf(a.streak, a.dash); break;
     case 'wgf':
       cls='wgf'; title=['a.wgf.title']; res='wgf'; rowCls='wg';
       sub = ['a.wgf.sub', f, ms];
@@ -1124,7 +1221,7 @@ function attempt(kind, off, t){
       coach = ['a.no_cd.coach'];
       fx.jab();
   }
-  showResult(cls, kind==='ewgf'?'ELECTRIC WIND GOD FIST':kind==='wgf'?'WIND GOD FIST':'MISS', title, sub);
+  showResult(cls, kind==='ewgf'?(a.dash?'DASH ELECTRIC WIND GOD FIST':'ELECTRIC WIND GOD FIST'):kind==='wgf'?'WIND GOD FIST':'MISS', title, sub);
   setCoach(coach);
   addLog(t, 'log.tEwgf', ['res.'+res], off==null?'':f+' / '+ms, chainBefore? ['log.mAfterWave', chainBefore]:'', rowCls);
   if(trial.running && (mode==='ewgf20'||mode==='combo10')){ trial.count++; if(trial.count>=trial.target) endTrial(); }
@@ -1237,7 +1334,7 @@ function renderMode(){
 }
 function clearShare(){ trial.result=null; $('dShare').hidden = !!MODES[mode].start; renderTrialRank(); }
 function setMode(m){
-  endTrial(true); clearCommand(); updateHud(); mode = m; trial.result=null;
+  endTrial(true); clearCommand(); resetCombo(); updateHud(); mode = m; trial.result=null;
   document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-selected', b.dataset.mode===m?'true':'false'));
   $('dProg').textContent=''; $('hudTimer').textContent='';
   renderMode();
@@ -1248,7 +1345,7 @@ function startTrial(){
   trial.running=false; trial.count=0; trial.bestChain=0; trial.target=M.target||0; trial.dur=M.dur||0;
   $('dStart').disabled=true;
   let c = 3; $('hudCenter').textContent=c;
-  trial.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(trial.cdTimer); trial.cdTimer=null; $('hudCenter').textContent='GO!'; trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; },500); clearCommand(); updateHud(); trial.running=true; trial.tStart=performance.now(); } }, 1000);
+  trial.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(trial.cdTimer); trial.cdTimer=null; $('hudCenter').textContent='GO!'; trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; },500); clearCommand(); resetCombo(); updateHud(); trial.running=true; trial.tStart=performance.now(); } }, 1000);
 }
 function endTrial(cancel){
   const wasRunning = trial.running; trial.running=false; clearInterval(trial.cdTimer); trial.cdTimer=null; clearTimeout(trial.messageTimer); trial.messageTimer=null; clearTimeout(trial.openTimer); trial.openTimer=null; $('dStart').disabled=false; $('hudCenter').textContent='';
@@ -1453,6 +1550,19 @@ segSel('winSel','win', v => { store.window=+v; save(); renderHist(); });
 segSel('sideSel','side', v => { endTrial(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); });
 segSel('fxSel','fx', v => { store.fx=+v; save(); });
 segSel('langSel','lang', v => { setLang(v); });
+$('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDlg'); if(!d.open){ endTrial(true); resetInput(); d.showModal(); } });
+$('setClose').addEventListener('click', () => { listening=null; renderKeys(); $('setDlg').close(); });
+segSel('soundSel','sound', v => { store.sound=+v; save(); unlockAudio(); bgmSync(); sfxSync(); renderSound(); });
+function renderSound(){ // slider values + % readouts; language-independent, so it only runs at boot and on change
+  $('bgmVol').value = store.bgmVol; $('bgmVolOut').textContent = store.bgmVol+'%';
+  $('sfxVol').value = store.sfxVol; $('sfxVolOut').textContent = store.sfxVol+'%';
+  $('bgmVol').disabled = $('sfxVol').disabled = !store.sound;
+}
+const volOf = id => clamp(Math.round(+$(id).value)||0, 0, 100);
+$('bgmVol').addEventListener('input', () => { store.bgmVol = volOf('bgmVol'); save(); renderSound(); bgmSync(); });
+$('sfxVol').addEventListener('input', () => { store.sfxVol = volOf('sfxVol'); save(); sfxSync(); renderSound(); });
+$('sfxVol').addEventListener('change', () => playSfx('wave')); // preview at the new level
+renderSound();
 const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK'};
 const pretty = c => c.replace(/^Key|^Digit|^Numpad/, m=>m==='Numpad'?'Num':'').replace('Arrow','');
 function renderKeys(){
@@ -1709,8 +1819,6 @@ function applyStatic(){
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = T(el.dataset.i18nHtml); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', T(el.dataset.i18nAria)); });
-  const sm = $('setSummary'); sm.dataset.more = T('set.more'); sm.dataset.less = T('set.less');
-  if(typeof sm.setAttribute==='function'){ sm.setAttribute('data-more', T('set.more')); sm.setAttribute('data-less', T('set.less')); }
   document.querySelectorAll('#langSel button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang===store.lang?'true':'false'));
   if(!lastSrc) srcBadge.textContent = T('src.wait'); else setSrc(lastSrc);
 }
@@ -1738,14 +1846,32 @@ const SKIN='#F2C9A0', SKIN2='#D9A87C', HAIR='#141821', PANTS='#EDE7DD', PANTS2='
 
 function startAnim(kind){ anim.kind=kind; anim.t0=performance.now(); }
 function moveChar(dx, ms){ anim.moveT0=performance.now(); anim.moveFrom=world.charX; anim.moveTo=world.charX+dx*store.side; anim.moveDur=ms; }
+// EWGF streak pop styles by consecutive count; level 6 is the cap (numbers keep counting, look stays). color = [css token, fallback]
+const STREAK = [null,
+  {size:58,  color:['--accent','#4CC9FF'], glow:0,  rings:0, sparks:0,  shake:8},
+  {size:64,  color:['--accent','#4CC9FF'], glow:12, rings:0, sparks:0,  shake:8},
+  {size:72,  color:['--seg1','#A8E4FF'],   glow:16, rings:1, sparks:0,  shake:10},
+  {size:82,  color:['--gold','#F5C542'],   glow:20, rings:1, sparks:8,  shake:12},
+  {size:92,  color:['--warn','#F5A524'],   glow:24, rings:2, sparks:14, shake:14},
+  {size:100, color:['--red','#E5484D'],    glow:30, rings:3, sparks:22, shake:16, core:'#FFFFFF'}];
+const streakStyle = n => STREAK[clamp(n,1,6)];
+const puff = (n, dirSign) => { for(let i=0;i<n;i++) dust.push({x:world.charX, y:0, vx:(-1-Math.random()*1.5)*store.side*dirSign, vy:-0.6-Math.random()*1.2, r:3+Math.random()*4, t:1}); };
 const fx = {
-  crouchDash(){ startAnim('cd'); moveChar(46, 130); for(let i=0;i<4;i++) dust.push({x:world.charX, y:0, vx:(-1-Math.random()*1.5)*store.side, vy:-0.6-Math.random()*1.2, r:3+Math.random()*4, t:1}); },
-  ewgf(){ startAnim('ewgf'); anim.electric=true; moveChar(28, 120); if(store.fx && !reduced){ flash=1; shake=8; } pop(T('pop.ewgf'), 'var(--accent)', 58); tryHit(true); },
+  crouchDash(){ startAnim('cd'); moveChar(46, 130); puff(4, 1); playSfx('wave'); },
+  ewgf(n=1, fromDash){
+    const L = streakStyle(n), color = cssVar(L.color[0], L.color[1]);
+    startAnim('ewgf'); anim.electric=true; moveChar(28, 120); if(store.fx && !reduced){ flash=1; shake=L.shake; }
+    pop(n>1 ? T('pop.streak', n) : T(fromDash ? 'pop.dashEwgf' : 'pop.ewgf'), color, L.size, {lvl:clamp(n,1,6), glow:L.glow, rings:reduced?0:L.rings, core:L.core, life:n>=4?1100:900});
+    if(!reduced) for(let i=0;i<L.sparks;i++) sparks.push({x:world.charX+30*store.side, y:-118, vx:(Math.random()-0.5)*10, vy:-Math.random()*7-2, t:1, c:Math.random()<.5?'#FFFFFF':color});
+    playSfx('ewgf'); tryHit(true);
+  },
   wgf(){ startAnim('ewgf'); anim.electric=false; moveChar(28, 120); pop(T('pop.wgf'), '#F5A524', 34); tryHit(false); },
   jab(){ startAnim('jab'); pop('?', '#E5484D', 30); },
   stumble(){ startAnim('stumble'); pop('MISS', '#E5484D', 30); },
+  dash(){ if(anim.kind==='ewgf' && performance.now()-anim.t0<260) return; startAnim('dash'); moveChar(64, 150); puff(3, 1); },
+  backdash(){ startAnim('backdash'); moveChar(-56, 150); puff(3, -1); },
 };
-function pop(text,color,size){ pops.push({text,color,size,t0:performance.now(),x:world.charX+30*store.side}); }
+function pop(text,color,size,opts){ pops.push({text,color,size,t0:performance.now(),x:world.charX+30*store.side, ...(opts||{})}); } // opts: lvl, glow, rings, core, life
 function tryHit(electric){
   const d = world.dummy; const dist = (world.dummyX - world.charX)*store.side;
   if(!d.alive || dist<10 || dist>130) return;
@@ -1762,13 +1888,14 @@ function drawFighter(g, px, py, p, dir, alpha, tint){
   g.lineCap='round'; g.lineJoin='round';
   // legs
   g.lineWidth=8; g.strokeStyle = tint||PANTS;
-  const tuck = p.tuck||0;
-  g.beginPath(); g.moveTo(-spread, -tuck*10); g.lineTo(-spread*0.35, -legL); g.stroke();
-  g.beginPath(); g.moveTo(spread, -tuck*8); g.lineTo(spread*0.3, -legL); g.stroke();
+  const tuck = p.tuck||0, step = p.step||0; // step −1..1: stride phase for walk/dash (front foot forward and lifted). 0 keeps the legacy stance pixel-identical.
+  const lx = -spread - step*8, rx = spread + step*8, ly = -tuck*10 - Math.max(0,-step)*4, ry = -tuck*8 - Math.max(0,step)*4;
+  g.beginPath(); g.moveTo(lx, ly); g.lineTo(-spread*0.35, -legL); g.stroke();
+  g.beginPath(); g.moveTo(rx, ry); g.lineTo(spread*0.3, -legL); g.stroke();
   // shoes
   g.fillStyle = tint||'#23272F';
-  g.beginPath(); g.ellipse(-spread-1, -tuck*10, 7, 3.5, 0, 0, Math.PI*2); g.fill();
-  g.beginPath(); g.ellipse(spread+2, -tuck*8, 7, 3.5, 0, 0, Math.PI*2); g.fill();
+  g.beginPath(); g.ellipse(lx-1, ly, 7, 3.5, 0, 0, Math.PI*2); g.fill();
+  g.beginPath(); g.ellipse(rx+2, ry, 7, 3.5, 0, 0, Math.PI*2); g.fill();
   // hips / torso
   g.translate(0,-legL); g.rotate(lean);
   const T = 22 - 4*crouch;
@@ -1832,6 +1959,10 @@ function poseAt(now){
       break; }
     case 'jab': { if(t<200){ const k = Math.sin(Math.min(1,t/200)*Math.PI); return {crouch:0.5, lean:12, armR:90*k+10, armL:-20, spread:0.4, sweat:true}; } break; }
     case 'stumble': { if(t<420){ const k=Math.sin(t/420*Math.PI); return {crouch:0.15*k, lean:-18*k, armR:120*k, armL:100*k, spread:0.8, sweat:true}; } break; }
+    case 'dash': { if(t<220){ const k=t/220; return {crouch:0.2*(1-k), lean:4+18*(1-k), spread:0.6, step:0.9-1.4*k, armR:10, armL:-45}; } break; }
+    case 'backdash': { if(t<240){ const k=t/240; return {crouch:0.15, lean:-14*(1-k), spread:0.7, step:-0.9+1.2*k, armR:20, armL:-55}; } break; }
+    case 'walk': { const s = Math.sin(now/150*Math.PI), fwd = anim.walkDir==='f'; // frame() keeps kind==='walk' while f/b is held and clears it otherwise
+      return {crouch:0.05, lean:fwd?7:-5, spread:0.35, step:s, jump:Math.abs(s)*2, armR:30+s*8*(fwd?1:-1), armL:-30-s*8}; }
   }
   if(anim.kind!=='idle') anim.kind='idle';
   return {crouch:0, lean:4+Math.sin(now/420)*2, jump:Math.abs(Math.sin(now/420))*2.5, armR:35+Math.sin(now/420)*4, armL:-30, spread:0.25};
@@ -2001,8 +2132,15 @@ function drawCard(g, model){
 }
 function frame(now){
   tick(now); trialTick(now);
+  // walking (visual only): hold f/b while nothing else is animating. Blocked just in front of a live dummy; backing away lets the dummy respawn off-screen.
+  const dt = Math.min(50, now-(anim.lastT||now)); anim.lastT = now;
+  { const dm = world.dummy, dAhead = (world.dummyX - world.charX)*store.side;
+    const canWalk = !anim.moveDur && (anim.kind==='idle'||anim.kind==='walk') && (curDir==='f'||curDir==='b');
+    const blocked = curDir==='f' && dm.alive && !dm.hit && dAhead<36;
+    if(canWalk && !blocked){ world.charX += (curDir==='f'?WALK_F:-WALK_B)*store.side*dt/1000; anim.kind='walk'; anim.walkDir=curDir; }
+    else if(anim.kind==='walk') anim.kind='idle'; }
   // movement
-  if(anim.moveDur){ const k = Math.min(1,(now-anim.moveT0)/anim.moveDur); world.charX = anim.moveFrom + (anim.moveTo-anim.moveFrom)*(1-Math.pow(1-k,3)); if(k>=1) anim.moveDur=0; if(k<1 && anim.kind==='cd' && Math.random()<0.6) ghosts.push({x:world.charX, t:1, pose:poseAt(now)}); }
+  if(anim.moveDur){ const k = Math.min(1,(now-anim.moveT0)/anim.moveDur); world.charX = anim.moveFrom + (anim.moveTo-anim.moveFrom)*(1-Math.pow(1-k,3)); if(k>=1) anim.moveDur=0; if(k<1 && (anim.kind==='cd'||anim.kind==='dash'||anim.kind==='backdash') && Math.random()<0.6) ghosts.push({x:world.charX, t:1, pose:poseAt(now)}); }
   // camera
   const camTarget = world.charX - (store.side>0 ? 0.32 : 0.68)*W;
   world.camX += (camTarget-world.camX)*0.12;
@@ -2068,7 +2206,17 @@ function frame(now){
   // sparks
   for(let i=sparks.length-1;i>=0;i--){ const p=sparks[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.35; p.t-=0.035; if(p.t<=0){sparks.splice(i,1);continue;} ctx.fillStyle=p.c; ctx.globalAlpha=p.t; ctx.fillRect(p.x-world.camX-2, gy+p.y-2, 4, 4); ctx.globalAlpha=1; }
   // text pops
-  for(let i=pops.length-1;i>=0;i--){ const p=pops[i]; const t=(now-p.t0)/900; if(t>=1){pops.splice(i,1);continue;} const sc = t<0.15? 0.6+t/0.15*0.6 : 1.2-(t-0.15)*0.25; ctx.save(); ctx.translate(p.x-world.camX, gy-118-t*30); ctx.scale(sc,sc); ctx.globalAlpha = t>0.7? (1-t)/0.3:1; ctx.font=`${p.size}px ${displayFont()}`; ctx.textAlign='center'; ctx.lineWidth=6; ctx.strokeStyle='#04101a'; ctx.strokeText(p.text,0,0); ctx.fillStyle = p.color.startsWith('var')? '#4CC9FF' : p.color; ctx.fillText(p.text,0,0); ctx.restore(); }
+  for(let i=pops.length-1;i>=0;i--){ const p=pops[i]; const t=(now-p.t0)/(p.life||900); if(t>=1){pops.splice(i,1);continue;}
+    const punch = p.lvl && !reduced, eob = k => { k-=1; return 1 + 2.70158*k*k*k + 1.70158*k*k; }; // easeOutBack: overshoot to ~1.3 then settle at 1.2
+    const sc = punch ? (t<0.18 ? 0.3+0.9*eob(t/0.18) : 1.2-(t-0.18)*0.2) : (t<0.15? 0.6+t/0.15*0.6 : 1.2-(t-0.15)*0.25);
+    const color = p.color.startsWith('var')? '#4CC9FF' : p.color;
+    ctx.save(); ctx.translate(p.x-world.camX, gy-118-t*30); ctx.scale(sc,sc); ctx.globalAlpha = t>0.7? (1-t)/0.3:1;
+    for(let r=0;r<(p.rings||0);r++){ const rt = clamp((t-r*0.07)/0.55,0,1); if(rt>0&&rt<1){ ctx.save(); ctx.globalAlpha*=(1-rt)*0.7; ctx.lineWidth=1+4*(1-rt); ctx.strokeStyle=color; ctx.beginPath(); ctx.arc(0,-p.size*0.35, 12+rt*(90+25*r), 0, Math.PI*2); ctx.stroke(); ctx.restore(); } }
+    ctx.font=`${p.size}px ${displayFont()}`; ctx.textAlign='center'; ctx.lineWidth=6; ctx.strokeStyle='#04101a';
+    if(p.glow){ ctx.shadowColor=color; ctx.shadowBlur=p.glow*(1-t*0.5); }
+    ctx.strokeText(p.text,0,0); ctx.shadowBlur=0; ctx.fillStyle=color; ctx.fillText(p.text,0,0);
+    if(p.core){ ctx.globalAlpha*=0.55; ctx.fillStyle=p.core; ctx.font=`${p.size*0.92}px ${displayFont()}`; ctx.fillText(p.text,0,0); }
+    ctx.restore(); }
   ctx.restore();
   if(flash>0.02){ ctx.fillStyle=`rgba(180,235,255,${flash*0.55})`; ctx.fillRect(0,0,W,H); flash*=0.85; } else flash=0;
   requestAnimationFrame(frame);

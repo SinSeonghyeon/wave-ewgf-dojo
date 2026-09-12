@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const html = fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
-function boot(saved,fetch){ // fetch: optional stub for the backend calls (default: none, every call fails inside its try/catch)
+function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls (default: none, every call fails inside its try/catch)
   let now=1000, pads=[];
   const elements=new Map(), events={}, timers=new Map(); let next=1;
   function element(){
@@ -14,13 +14,14 @@ function boot(saved,fetch){ // fetch: optional stub for the backend calls (defau
       getBoundingClientRect(){return {width:800,height:360};},getContext(){return {setTransform(){}};}};
   }
   const get=id=>{if(!elements.has(id)) elements.set(id,element()); return elements.get(id);};
+  get('setDlg').showModal=function(){this.open=true;};
   const context=vm.createContext({performance:{now:()=>now},document:{getElementById:get,querySelectorAll:()=>[],hasFocus:()=>true,hidden:false},
     navigator:{getGamepads:()=>pads},localStorage:{getItem:()=>saved===undefined?null:JSON.stringify(saved),setItem(){}},
     matchMedia:()=>({matches:false}),devicePixelRatio:1,requestAnimationFrame(){},
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
-    setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{})});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick};})();');
+    setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -343,4 +344,121 @@ test('app and worker agree on the leaderboard contract (boards, windows, detail 
     const v=w.validate({...e,nick:'smoke'});assert.equal(v.error,undefined,m+': '+JSON.stringify(e));
     assert.deepEqual(Object.keys(v.value.detail),Object.keys(e.detail),m+' detail fields');assert.equal(v.value.win,15);
   }
+});
+
+/* ---- sound / streak popup / movement (2026-09-12) ---- */
+test('sound settings: defaults, invalid saves fall back, valid saves survive, sliders write the store',()=>{
+  const a=boot();assert.equal(a.store.sound,1);assert.equal(a.store.bgmVol,100);assert.equal(a.store.sfxVol,100);assert.equal(a.snd.ok,false);
+  const b=boot({v:4,sound:2,bgmVol:'50',sfxVol:150});assert.equal(b.store.sound,1);assert.equal(b.store.bgmVol,100);assert.equal(b.store.sfxVol,100);
+  const c=boot({v:4,sound:0,bgmVol:0,sfxVol:35});assert.equal(c.store.sound,0);assert.equal(c.store.bgmVol,0);assert.equal(c.store.sfxVol,35);
+  assert.equal(c.get('sfxVol').disabled,true);assert.equal(c.get('sfxVolOut').textContent,'35%');
+  a.get('sfxVol').value='35';a.get('sfxVol').input();assert.equal(a.store.sfxVol,35);assert.equal(a.get('sfxVolOut').textContent,'35%');
+  a.get('bgmVol').value='abc';a.get('bgmVol').input();assert.equal(a.store.bgmVol,0);
+  // fx paths that call playSfx must be harmless without Audio
+  a.fx.crouchDash();a.fx.ewgf(5);a.fx.ewgf(1,true);a.fx.dash();a.fx.backdash();
+  assert.deepEqual(Object.keys(html.match(/const SND = \{([^}]*)\}/)[1].split(',').reduce((o,kv)=>{o[kv.split(':')[0].trim()]=1;return o;},{})),['bgm','wave','ewgf']);
+  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3']) assert.ok(fs.existsSync(require('node:path').join(__dirname,'..',f)),f+' exists');
+});
+test('EWGF streak counts consecutive successes, resets on failure, fault, 3s gap, mode/reset/blur, and caps the look at level 6',()=>{
+  const a=boot();
+  const hit=t=>{dash(a,t);a.onButton(2,t+60);};
+  hit(1000);assert.equal(a.combo.n,1);assert.equal(a.pops.at(-1).text,'EWGF!');assert.equal(a.pops.at(-1).lvl,1);assert.equal(a.session.attempts.at(-1).streak,1);
+  hit(2000);hit(3000);assert.equal(a.combo.n,3);assert.equal(a.pops.at(-1).text,'EWGF ×3');assert.equal(a.pops.at(-1).lvl,3);
+  assert.match(a.get('rOff').textContent,/streak 3/);
+  hit(6100);assert.equal(a.combo.n,1,'more than 3s since the last EWGF starts over');
+  hit(7000);hit(8000);hit(9000);assert.equal(a.pops.at(-1).text,'EWGF ×4!');hit(10000);assert.equal(a.pops.at(-1).text,'EWGF ×5!!');assert.equal(a.pops.at(-1).lvl,5);
+  hit(11000);hit(12000);assert.equal(a.combo.n,7);assert.equal(a.pops.at(-1).text,'EWGF ×7!!');assert.equal(a.pops.at(-1).lvl,6,'look frozen at 6');
+  dash(a,13000);a.onButton(2,13100);assert.equal(a.session.attempts.at(-1).kind,'wgf');assert.equal(a.combo.n,0,'a late WGF breaks the streak');
+  hit(14000);a.onDir('f',15000);a.onDir('df',15010);assert.equal(a.combo.n,0,'a fault breaks the streak');
+  hit(16000);a.setMode('ewgf20');assert.equal(a.combo.n,0);a.setMode('free');
+  hit(17000);a.get('dReset').click();assert.equal(a.combo.n,0);
+  hit(18000);a.events.blur();assert.equal(a.combo.n,0);
+  a.setLang('ko');hit(19000);hit(20000);hit(21000);assert.equal(a.pops.at(-1).text,'3초');hit(22000);assert.equal(a.pops.at(-1).text,'4초!');hit(23000);assert.equal(a.pops.at(-1).text,'5초!!');
+});
+test('f,N,f is a dash but the wave cancel 6 → N → start 6 is not; slow or broken pairs do nothing',()=>{
+  let a=boot();a.onDir('f',1000);a.onDir('n',1020);a.onDir('f',1040);
+  assert.equal(a.anim.kind,'dash');assert.ok(a.anim.moveTo>a.anim.moveFrom);assert.equal(a.cd.dashT,1040);assert.equal(a.cd.state,1,'second f is still the start 6');
+  a=boot();dash(a);a.onDir('f',1100);a.onDir('n',1120);a.onDir('f',1140);
+  assert.equal(a.anim.kind,'cd','wave restart is not a dash');assert.ok(a.cd.dashT<0);a.onDir('n',1160);a.onDir('d',1180);a.onDir('df',1200);assert.equal(a.cd.chain,2,'judging unchanged');
+  a=boot();a.onDir('f',1000);a.onDir('n',1020);a.onDir('f',1300);assert.notEqual(a.anim.kind,'dash','too slow');
+  a=boot();a.onDir('f',1000);a.onDir('n',1020);a.onDir('d',1030);a.onDir('n',1040);a.onDir('f',1050);assert.notEqual(a.anim.kind,'dash','d breaks the pair');
+  a=boot();a.onDir('f',1000);a.onDir('n',1020);a.onDir('b',1040);a.onDir('n',1060);a.onDir('b',1080);
+  assert.equal(a.anim.kind,'backdash');assert.ok(a.anim.moveTo<a.anim.moveFrom);assert.equal(a.cd.state,0);
+  a=boot({v:4,side:-1});a.onDir('b',1000);a.onDir('n',1020);a.onDir('b',1040);assert.equal(a.anim.kind,'backdash');assert.ok(a.anim.moveTo>a.anim.moveFrom,'2P side mirrors');
+});
+test('dash EWGF (f,f,N,d,df+2) is judged as a normal EWGF and labeled Dash EWGF',()=>{
+  const a=boot();a.onDir('f',1000);a.onDir('n',1020);a.onDir('f',1040);a.onDir('n',1060);a.onDir('d',1080);a.onDir('df',1100);a.onButton(2,1100);
+  const at=a.session.attempts[0];assert.equal(at.kind,'ewgf');assert.equal(at.off,0);assert.equal(at.dash,true);
+  assert.equal(a.get('rTitle').textContent,'Dash EWGF!');assert.equal(a.get('rKind').textContent,'DASH ELECTRIC WIND GOD FIST');assert.equal(a.pops.at(-1).text,'Dash EWGF!');
+  assert.ok(a.get('logBody').innerHTML.includes('Dash EWGF'));
+  a.onDir('f',2000);a.onDir('n',2020);a.onDir('f',2040);a.onDir('n',2060);a.onDir('d',2080);a.onDir('df',2100);a.onButton(2,2100);
+  assert.equal(a.session.attempts[1].dash,true);assert.equal(a.pops.at(-1).text,'EWGF ×2','second in a row shows the streak');
+  dash(a,3000);a.onButton(2,3060);assert.equal(a.session.attempts[2].dash,false);assert.equal(a.get('rTitle').textContent,'EWGF!');
+});
+
+
+test('settings cancel countdown and running trial without saving or submitting',()=>{
+  for(const running of [false,true]){
+    const a=boot();a.setMode('wave10');a.startTrial();
+    const id=a.trial.cdTimer;
+    if(running){const count=a.timers.get(id);count();count();count();}
+    a.get('setOpen').click();a.trialTick(30000);
+    assert.equal(a.get('setDlg').open,true);assert.equal(a.trial.running,false);
+    assert.equal(a.trial.cdTimer,null);assert.equal(a.timers.has(id),false);
+    assert.equal(a.store.records.wave10.length,0);assert.equal(a.trial.result,null);
+    assert.equal(a.trial.openTimer,null);assert.equal(a.get('dStart').disabled,false);
+  }
+});
+test('settings discard held directions and pending RP without counting a failure',()=>{
+  const a=boot();a.events.keydown({code:'KeyD',timeStamp:1000,preventDefault(){}});
+  a.onDir('n',1020);a.onDir('d',1040);a.onButton(2,1050);
+  assert.ok(a.cd.pending);assert.equal(a.held.size,1);
+  a.get('setOpen').click();a.events.keyup({code:'KeyD',timeStamp:1100});a.tick(2000);
+  assert.equal(a.held.size,0);assert.equal(a.cd.pending,null);assert.equal(a.cd.state,0);
+  assert.equal(a.session.attempts.length,0);
+});
+class AudioStub {
+  constructor(){this.paused=true;this.volume=1;this.currentTime=0;}
+  play(){this.paused=false;return Promise.resolve();}
+  pause(){this.paused=true;}
+}
+test('active SFX follow volume immediately and mute stops every voice',()=>{
+  const a=boot(undefined,undefined,{Audio:AudioStub});a.unlockAudio();
+  a.playSfx('wave');a.playSfx('ewgf');
+  a.get('sfxVol').value='25';a.get('sfxVol').input();
+  for(const voices of Object.values(a.snd.pool)) for(const voice of voices) assert.equal(voice.volume,.25);
+  a.store.sound=0;a.sfxSync();
+  for(const voices of Object.values(a.snd.pool)) for(const voice of voices){assert.equal(voice.paused,true);assert.equal(voice.volume,0);}
+  a.store.sound=1;a.playSfx('ewgf');a.get('sfxVol').value='0';a.get('sfxVol').input();
+  for(const voices of Object.values(a.snd.pool)) for(const voice of voices) assert.equal(voice.paused,true);
+});
+test('BGM lock prevents two windows playing and hands over when hidden or closed',async()=>{
+  let busy=false;const queue=[];
+  function drain(){
+    if(busy)return;
+    const r=queue.shift();if(!r)return;
+    if(r.signal.aborted){r.resolve();drain();return;}
+    busy=true;Promise.resolve(r.fn()).finally(()=>{busy=false;r.resolve();drain();});
+  }
+  const locks={request(name,{signal},fn){return new Promise(resolve=>{queue.push({signal,fn,resolve});drain();});}};
+  const a=boot(undefined,undefined,{Audio:AudioStub,AbortController,navigator:{locks}});
+  const b=boot(undefined,undefined,{Audio:AudioStub,AbortController,navigator:{locks}});
+  a.unlockAudio();b.unlockAudio();
+  assert.equal(a.snd.bgm.paused,false);assert.equal(b.snd.bgm,null);
+  a.events.pagehide();await new Promise(setImmediate);
+  assert.equal(a.snd.bgm.paused,true);assert.equal(b.snd.bgm.paused,false);
+  a.events.pageshow();assert.equal(a.snd.bgm.paused,true);
+  b.store.sound=0;b.bgmSync();await new Promise(setImmediate);
+  assert.equal(b.snd.bgm.paused,true);assert.equal(a.snd.bgm.paused,false);
+  a.events.pagehide();b.events.pagehide();
+});
+test('BGM cancels queued requests and interrupted play can resume',async()=>{
+  let grant,signal;
+  const a=boot(undefined,undefined,{Audio:AudioStub,AbortController,navigator:{locks:{request(n,o,fn){signal=o.signal;grant=fn;return Promise.resolve();}}}});
+  a.unlockAudio();a.store.sound=0;a.bgmSync();assert.equal(signal.aborted,true);
+  await grant();assert.equal(a.snd.bgm,null);
+  class InterruptedAudio extends AudioStub {play(){this.paused=false;return Promise.reject({name:'AbortError'});}}
+  const b=boot(undefined,undefined,{Audio:InterruptedAudio});b.unlockAudio();b.store.sound=0;b.bgmSync();
+  await new Promise(setImmediate);assert.equal(b.snd.unlocked,true);
+  b.store.sound=1;b.bgmSync();assert.equal(b.snd.bgm.paused,false);
 });
