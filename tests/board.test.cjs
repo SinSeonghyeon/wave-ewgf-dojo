@@ -164,6 +164,59 @@ test('posts: newest first, capped at 50, validated, rate-limited per IP when the
   assert.equal((await w.handle(req('/posts/abc', {method: 'DELETE', headers: {authorization: 'Bearer s3cret'}}), admin, NOW)).status, 404);
 });
 
+test('shadow ban: banned nicks vanish from the list, total and cut10 for others but see the board unchanged themselves; admin deletes a score', async () => {
+  const w = await worker(); const env = {DB: fakeD1(), ADMIN_TOKEN: 's3cret'}; const me = owned(w, env);
+  const adminReq = (p, init = {}) => w.handle(new Request('https://board.test' + p, {...init, headers: {authorization: 'Bearer s3cret', ...(init.headers || {})}}), env, NOW); // no Origin, like curl
+  for (const [nick, score] of [['macro', 9.5], ['alpha', 5], ['bravo', 4.5], ['charlie', 4]]) await me.submit({nick, score, tie: 1});
+  // admin routes need the token: no token or a wrong one is 403 even from the site origin; without ADMIN_TOKEN configured nothing works
+  assert.equal((await w.handle(req('/ban'), env, NOW)).status, 403);
+  assert.equal((await w.handle(req('/ban', {method: 'POST', headers: {authorization: 'Bearer nope'}, body: '{"nick":"macro"}'}), env, NOW)).status, 403);
+  assert.equal((await w.handle(req('/ban'), {DB: env.DB}, NOW)).status, 403);
+  assert.equal((await adminReq('/ban', {method: 'POST', body: '{"nick":"x"}'})).status, 400, 'nick rule applies');
+  // ban by a differently-cased spelling: stored under the registered spelling so the filter matches scores.nick
+  let r = await (await adminReq('/ban', {method: 'POST', body: JSON.stringify({nick: 'MACRO'})})).json();
+  assert.deepEqual(r, {ok: true, nick: 'macro', registered: true});
+  assert.deepEqual(env.DB.bans.map(b => [b.key, b.nick]), [['macro', 'macro']]);
+  r = await (await adminReq('/ban', {method: 'POST', body: JSON.stringify({nick: 'macro'})})).json(); assert.equal(r.ok, true, 'banning twice is fine');
+  assert.deepEqual((await (await adminReq('/ban')).json()).rows.map(b => b.nick), ['macro']);
+  // everyone else: the list, total and cut10 skip the banned row, and their ranks move up
+  const top = await (await w.handle(req('/top?board=wave10&nick=alpha'), env, NOW)).json();
+  assert.deepEqual(top.rows.map(x => [x.rank, x.nick]), [[1, 'alpha'], [2, 'bravo'], [3, 'charlie']]);
+  assert.equal(top.total, 3); assert.equal(top.cut10, 5); assert.equal(top.me.rank, 1);
+  // the banned player: the board looks exactly as it would unbanned (own row listed, counted in total and cut10), and new results are still accepted
+  const own = await (await w.handle(req('/top?board=wave10&nick=macro'), env, NOW)).json();
+  assert.deepEqual(own.rows.map(x => [x.rank, x.nick]), [[1, 'macro'], [2, 'alpha'], [3, 'bravo'], [4, 'charlie']]);
+  assert.equal(own.me.nick, 'macro'); assert.equal(own.me.rank, 1); assert.equal(own.total, 4); assert.equal(own.cut10, 9.5);
+  const sub = await (await me.submit({nick: 'macro', score: 9.9, tie: 2}, NOW + 1000)).json();
+  assert.equal(sub.ok, true); assert.equal(sub.improved, true); assert.equal(sub.rank, 1); assert.equal(sub.me.score, 9.9); assert.equal(sub.rows[0].nick, 'macro'); assert.equal(sub.total, 4);
+  const low = await (await me.submit({nick: 'macro', score: 4.2, tie: 0}, NOW + 2000)).json(); assert.equal(low.improved, false, 'best-of-week rule still applies to the hidden row');
+  assert.equal((await (await w.handle(req('/top?board=wave10'), env, NOW)).json()).total, 3, 'everyone else still gets the filtered board');
+  // GET /scores shows the whole week with ids, the ban mark and the public rank; any date addresses its week, garbage is a 400
+  const all = await (await adminReq('/scores?board=wave10')).json();
+  assert.equal(all.week, '2026-09-07'); assert.deepEqual(all.rows.map(x => [x.nick, x.banned, x.rank]), [['macro', 1, undefined], ['alpha', 0, 1], ['bravo', 0, 2], ['charlie', 0, 3]]);
+  assert.deepEqual(await (await adminReq('/scores?board=wave10&week=2026-09-10')).json(), all, 'a Thursday names the same week');
+  assert.equal((await (await adminReq('/scores?board=wave10&week=2026-09-14')).json()).rows.length, 0, 'next Monday is the next week');
+  for (const bad of ['2026-9-7', '2026-13-01', 'abc']) assert.equal((await adminReq('/scores?board=wave10&week=' + bad)).status, 400, bad);
+  assert.equal((await adminReq('/scores?board=nope')).status, 400);
+  assert.deepEqual(await (await adminReq('/scores/' + all.rows[3].id, {method: 'DELETE'})).json(), {ok: true, deleted: 1});
+  assert.deepEqual(await (await adminReq('/scores/' + all.rows[3].id, {method: 'DELETE'})).json(), {ok: true, deleted: 0});
+  assert.equal((await adminReq('/scores/abc', {method: 'DELETE'})).status, 404);
+  // unban restores the stored rows as they are
+  assert.deepEqual(await (await adminReq('/ban?nick=Macro', {method: 'DELETE'})).json(), {ok: true, deleted: 1});
+  const back = await (await w.handle(req('/top?board=wave10'), env, NOW)).json();
+  assert.deepEqual(back.rows.map(x => [x.rank, x.nick, x.score]), [[1, 'macro', 9.9], [2, 'alpha', 5], [3, 'bravo', 4.5]]); assert.equal(back.total, 3); assert.equal(back.cut10, 9.9);
+  assert.deepEqual(await (await adminReq('/ban?nick=Macro', {method: 'DELETE'})).json(), {ok: true, deleted: 0});
+  // an unregistered nick is banned under the given spelling; whoever later claims that key (any case) is hidden too, since the filter joins nicks by key
+  r = await (await adminReq('/ban', {method: 'POST', body: JSON.stringify({nick: 'Ghost'})})).json(); assert.deepEqual(r, {ok: true, nick: 'Ghost', registered: false});
+  const ghost = await (await me.submit({nick: 'ghost', score: 8, tie: 1}, NOW + 3000)).json();
+  assert.equal(ghost.rank, 2); assert.equal(ghost.total, 4, 'ghost sees the unbanned board');
+  const others = await (await w.handle(req('/top?board=wave10&nick=alpha'), env, NOW)).json();
+  assert.deepEqual(others.rows.map(x => x.nick), ['macro', 'alpha', 'bravo']); assert.equal(others.total, 3); assert.equal(others.me.rank, 2);
+  assert.deepEqual((await (await adminReq('/scores?board=wave10')).json()).rows.map(x => [x.nick, x.banned]), [['macro', 0], ['ghost', 1], ['alpha', 0], ['bravo', 0]]);
+  // unknown admin path: 404 after the token check, and the token alone never opens player routes
+  assert.equal((await adminReq('/ban', {method: 'PUT'})).status, 404);
+});
+
 test('http surface: CORS preflight, health, 400/404/413 and 500 without leaking a stack', async () => {
   const w = await worker(); const env = {DB: fakeD1()};
   const pre = await w.handle(req('/submit', {method: 'OPTIONS'}), env, NOW);

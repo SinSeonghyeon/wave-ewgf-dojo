@@ -24,6 +24,15 @@ CREATE TABLE IF NOT EXISTS nicks (
   created_at INTEGER NOT NULL
 );
 
+-- Shadow-banned nicknames (2026-09-13): their scores stay stored and keep being accepted (the banned browser sees the board as if
+-- it were not banned), but /top skips them for everyone else. The filter hides scores.nick equal to `nick` here or to the registered
+-- spelling of `key` in nicks. Admin-only routes POST/DELETE/GET /ban manage this table; DELETE /ban restores the rows.
+CREATE TABLE IF NOT EXISTS bans (
+  key        TEXT PRIMARY KEY,              -- NFKC-lowercased nick, same key as nicks.key
+  nick       TEXT    NOT NULL,              -- registered spelling when the key is claimed, else the spelling the admin gave (legacy rows match exactly)
+  created_at INTEGER NOT NULL
+);
+
 -- Visit counter: one row per KST day, n = visits counted that day (the app counts each browser once per day).
 CREATE TABLE IF NOT EXISTS visits (
   day TEXT PRIMARY KEY,                    -- 'YYYY-MM-DD' (KST)

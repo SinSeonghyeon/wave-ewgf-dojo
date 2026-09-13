@@ -5,10 +5,18 @@
 //                (one row per nick per board per week: a worse result leaves the stored best untouched, improved=false)
 //          GET  /visits → {day,today,total}   ·   POST /visits → counts one visit for today (KST) and returns the same
 //          GET  /posts → {rows[≤50]}   ·   POST /posts {nick,token,text} → {ok,id,rows}   ·   DELETE /posts/:id (Bearer ADMIN_TOKEN)
+//          Admin (Bearer ADMIN_TOKEN, no Origin needed):  DELETE /scores/:id → {ok,deleted}   ·   GET /ban → {rows}   ·   POST /ban {nick} → {ok,nick,registered}
+//                DELETE /ban?nick=x → {ok,deleted}   ·   GET /scores?board=x[&week=YYYY-MM-DD] → {week,board,rows} (every row of that week, banned marked, with ids and public ranks;
+//                any date addresses its KST week)
 //          GET  / → health   ·   OPTIONS * → CORS preflight
-// No accounts, no anti-cheat by decision (2026-09-12): a nickname is claimed once (POST /nick) and the browser keeps the returned
+// No accounts and no automatic anti-cheat (2026-09-12): a nickname is claimed once (POST /nick) and the browser keeps the returned
 // token; scores and posts must carry it. POST /posts and /nick are rate-limited per IP through the optional POST_LIMIT / NICK_LIMIT
 // rate-limit bindings (wrangler.toml); nothing about the visitor is stored.
+// Shadow ban (2026-09-13, user decision): the admin lists a nickname in `bans`. Its scores stay stored and keep being accepted. A request
+// that names that nick (/top?nick=, /submit) gets the board exactly as it would look unbanned — own row in the list, counted in total and
+// cut10 — so the player cannot tell; every other request skips the banned rows in the list, total, cut10 and rank counts. The per-nick
+// lookup is public like the rest of /top, so anyone who names a banned nick sees its rows: the ban hides players from the board, not from
+// a direct query. Unbanning (DELETE /ban) restores the rows for everyone; DELETE /scores/:id removes one row for good.
 // Pure helpers (weekKey, weekBounds, dayKey, validate, cleanText, nickKey, handle) and the contract (BOARDS, WINDOWS) are exported for node tests.
 
 const KST = 9 * 3600e3, DAY = 86400e3, WEEK = 7 * DAY, TOP = 10, POSTS = 50, TEXT_MAX = 200;
@@ -27,8 +35,8 @@ const BAD_CHARS = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164
 const boardSpec = b => typeof b === 'string' && Object.hasOwn(BOARDS, b) ? BOARDS[b] : undefined; // plain lookup would accept 'constructor'
 // Origin lock (2026-09-12): only the site's own origin(s) may use this API from a browser. A copied page hosted elsewhere gets no
 // CORS headers on reads and 403 {error:'origin'} on POST, so it has no leaderboard, posts or visit counter. The list comes from
-// env.ALLOWED_ORIGINS (comma-separated, wrangler.toml [vars]); '*' allows any origin (tests). DELETE stays protected by ADMIN_TOKEN only,
-// so the admin can curl it without an Origin header.
+// env.ALLOWED_ORIGINS (comma-separated, wrangler.toml [vars]); '*' allows any origin (tests). The admin routes (admin() below) are
+// protected by ADMIN_TOKEN only and skip this gate, so the admin can curl them without an Origin header.
 const DEFAULT_ORIGINS = 'https://mishimaryu.com, https://www.mishimaryu.com, https://sinseonghyeon.github.io'; // custom domain (2026-09-13) + the GitHub Pages origin it redirects from
 const originList = env => String(env && env.ALLOWED_ORIGINS || DEFAULT_ORIGINS).split(',').map(s => s.trim()).filter(Boolean);
 export const originOk = (request, env) => { const list = originList(env); if (list.includes('*')) return true; const o = request.headers.get('origin'); return !!o && list.includes(o); };
@@ -74,6 +82,12 @@ async function limited(env, binding, key) { // Cloudflare rate-limit binding; ab
   return !success;
 }
 const ip = request => request.headers.get('cf-connecting-ip') || '';
+const isAdmin = (request, env) => !!env.ADMIN_TOKEN && (request.headers.get('authorization') || '') === 'Bearer ' + env.ADMIN_TOKEN;
+// Banned spellings: what `bans` stores plus, when that key is registered, the registered spelling (/submit stores rows under it). So a
+// nick banned before anyone claimed it stays hidden after someone claims it in another case. Unregistered legacy rows match by exact spelling.
+const BANNED = 'SELECT nick FROM bans UNION SELECT n.nick FROM nicks n JOIN bans b ON b.key=n.key';
+const VISIBLE = `nick NOT IN (${BANNED})`; // rows of banned nicks exist but never reach other players
+const SCOPE = 'FROM scores WHERE week=? AND board=?', BY_RANK = 'ORDER BY score DESC, tie DESC, id ASC';
 
 export function validate(body) {
   if (!body || typeof body !== 'object') return {error: 'body'};
@@ -101,21 +115,22 @@ const rankRows = rows => rows.map((r, i) => {
 });
 const ROW = 'id,nick,score,tie,detail,win,created_at';
 
-// Top list plus, when `nick` is given, that nick's own row with its rank even when it sits below the top list.
+// Top list plus, when `nick` is given, that nick's own row with its rank even when it sits below the top list. The requester's own rows
+// pass the ban filter (`OR nick=?`), so a banned player gets the board they would see unbanned; see the header comment.
 async function top(db, board, week, nick) {
-  const {results} = await db.prepare(`SELECT ${ROW} FROM scores WHERE week=? AND board=? ORDER BY score DESC, tie DESC, id ASC LIMIT ${TOP}`).bind(week, board).all();
-  const total = await db.prepare('SELECT COUNT(*) AS n FROM scores WHERE week=? AND board=?').bind(week, board).first('n');
+  const where = `${SCOPE} AND (${VISIBLE} OR nick=?)`, args = [week, board, nick || ''];
+  const {results} = await db.prepare(`SELECT ${ROW} ${where} ${BY_RANK} LIMIT ${TOP}`).bind(...args).all();
+  const total = await db.prepare(`SELECT COUNT(*) AS n ${where}`).bind(...args).first('n');
   const rows = rankRows(results.map(parseRow));
   // Score you need to sit in the top 10% (the app shades the wave chart with it). Boards under ten players count as ten, like the app's grades: 1st place's score.
-  const cut10 = total ? await db.prepare('SELECT score FROM scores WHERE week=? AND board=? ORDER BY score DESC, tie DESC, id ASC LIMIT 1 OFFSET ?').bind(week, board, Math.ceil(Math.max(total, 10) / 10) - 1).first('score') : null;
+  const cut10 = total ? await db.prepare(`SELECT score ${where} ${BY_RANK} LIMIT 1 OFFSET ?`).bind(...args, Math.ceil(Math.max(total, 10) / 10) - 1).first('score') : null;
   let me = null;
   if (nick) {
-    const mine = await db.prepare(`SELECT ${ROW} FROM scores WHERE week=? AND board=? AND nick=?`).bind(week, board, nick).first();
+    const mine = await db.prepare(`SELECT ${ROW} ${SCOPE} AND nick=?`).bind(week, board, nick).first();
     if (mine) {
       me = parseRow(mine);
       const listed = rows.find(r => r.id === me.id);
-      me.rank = listed ? listed.rank : 1 + (await db.prepare('SELECT COUNT(*) AS n FROM scores WHERE week=? AND board=? AND (score>? OR (score=? AND tie>?))')
-        .bind(week, board, me.score, me.score, me.tie).first('n') || 0);
+      me.rank = listed ? listed.rank : 1 + (await db.prepare(`SELECT COUNT(*) AS n ${where} AND (score>? OR (score=? AND tie>?))`).bind(...args, me.score, me.score, me.tie).first('n') || 0);
     }
   }
   return {week, ...weekBounds(week), board, total: total || 0, rows, me, cut10: cut10 ?? null};
@@ -144,6 +159,7 @@ export async function handle(request, env, now = Date.now()) { return withCors(a
 async function route(request, env, now) {
   const url = new URL(request.url), path = url.pathname.replace(/\/+$/, '') || '/', method = request.method;
   if (method === 'OPTIONS') return new Response(null, {status: originOk(request, env) ? 204 : 403});
+  const mod = await admin(request, env, url, path, method, now); if (mod) return mod; // token-only routes, before the origin gate (curl sends no Origin)
   if (method === 'POST' && !originOk(request, env)) return json({error: 'origin'}, 403);
   if (path === '/' && method === 'GET') return json({ok: true, service: 'mishima-dojo-board', week: weekKey(now)});
 
@@ -191,12 +207,38 @@ async function route(request, env, now) {
     const ins = await env.DB.prepare('INSERT INTO posts (nick,text,created_at) VALUES (?,?,?)').bind(nick, text, now).run();
     return json({ok: true, id: ins.meta.last_row_id, ...await posts(env.DB)});
   }
-  const del = method === 'DELETE' && path.match(/^\/posts\/(\d{1,12})$/);
-  if (del) {
-    const auth = request.headers.get('authorization') || '';
-    if (!env.ADMIN_TOKEN || auth !== 'Bearer ' + env.ADMIN_TOKEN) return json({error: 'auth'}, 403);
-    const r = await env.DB.prepare('DELETE FROM posts WHERE id=?').bind(+del[1]).run();
+  return json({error: 'not_found'}, 404);
+}
+
+// Moderation routes, ADMIN_TOKEN only (see the header comment): undefined when `path` is none of them, 403 without the token.
+async function admin(request, env, url, path, method, now) {
+  const del = method === 'DELETE' && path.match(/^\/(scores|posts)\/(\d{1,12})$/); // the table name comes from this whitelist, never from the client
+  if (path !== '/ban' && path !== '/scores' && !del) return undefined;
+  if (!isAdmin(request, env)) return json({error: 'auth'}, 403);
+  const db = env.DB;
+  if (del) return json({ok: true, deleted: (await db.prepare(`DELETE FROM ${del[1]} WHERE id=?`).bind(+del[2]).run()).meta.changes || 0});
+  if (path === '/ban' && method === 'GET') return json({rows: (await db.prepare('SELECT key,nick,created_at FROM bans ORDER BY created_at DESC').all()).results});
+  if (path === '/ban' && method === 'POST') { // stored under the registered spelling when the key is claimed (the list shows it as players do); the filter also joins nicks by key
+    const {body, status, error} = await readJson(request); if (error) return json({error}, status);
+    const n = cleanNick(body && body.nick); if (!n) return json({error: 'nick'}, 400);
+    const reg = await db.prepare('SELECT nick FROM nicks WHERE key=?').bind(nickKey(n)).first('nick');
+    const nick = reg || n;
+    await db.prepare('INSERT OR REPLACE INTO bans (key,nick,created_at) VALUES (?,?,?)').bind(nickKey(nick), nick, now).run();
+    return json({ok: true, nick, registered: !!reg});
+  }
+  if (path === '/ban' && method === 'DELETE') {
+    const n = cleanNick(url.searchParams.get('nick')); if (!n) return json({error: 'nick'}, 400);
+    const r = await db.prepare('DELETE FROM bans WHERE key=?').bind(nickKey(n)).run();
     return json({ok: true, deleted: r.meta.changes || 0});
+  }
+  if (path === '/scores' && method === 'GET') { // the whole week of one board with ids, ban marks and public ranks, so the admin can pick rows to delete
+    const board = url.searchParams.get('board'); if (!boardSpec(board)) return json({error: 'board'}, 400);
+    const q = url.searchParams.get('week'), t = q ? Date.parse(q + 'T00:00:00+09:00') : now; // any date names its KST week; garbage is a 400, not silently this week
+    if (q && !(/^\d{4}-\d{2}-\d{2}$/.test(q) && Number.isFinite(t))) return json({error: 'week'}, 400);
+    const week = weekKey(t);
+    const {results} = await db.prepare(`SELECT ${ROW}, nick IN (${BANNED}) AS banned ${SCOPE} ${BY_RANK}`).bind(week, board).all();
+    const rows = results.map(parseRow); rankRows(rows.filter(r => !r.banned)); // the rank players see; banned rows get none
+    return json({week, board, rows});
   }
   return json({error: 'not_found'}, 404);
 }

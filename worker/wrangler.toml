@@ -26,4 +26,4 @@ name = "NICK_LIMIT"
 namespace_id = "1002"
 simple = { limit = 10, period = 60 }
 
-# Secrets (not in this file): ADMIN_TOKEN for DELETE /posts/:id → npx wrangler secret put ADMIN_TOKEN
+# Secrets (not in this file): ADMIN_TOKEN unlocks every admin route (delete posts/scores, shadow bans, whole-week score listing) → npx wrangler secret put ADMIN_TOKEN
