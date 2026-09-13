@@ -26,13 +26,20 @@ async function launch({port, profile, windowSize='1280,900'}){
     const page = list && list.find(t=>t.type==='page');
     if(!page) throw new Error('no page target on port '+port);
     const ws = new WebSocket(page.webSocketDebuggerUrl);
-    await new Promise((res, rej) => { ws.onopen=res; ws.onerror=rej; });
+    await new Promise((res, rej) => {
+      const timer=setTimeout(()=>{ws.close();rej(new Error('CDP WebSocket connection timed out'));},10000);
+      ws.onopen=()=>{clearTimeout(timer);res();};ws.onerror=e=>{clearTimeout(timer);rej(e);};
+    });
     let id=0; const pending=new Map(); const errors=[];
     ws.onmessage = ev => { const m=JSON.parse(ev.data); if(m.id&&pending.has(m.id)){ pending.get(m.id)(m); pending.delete(m.id); }
       if(m.method==='Runtime.exceptionThrown') errors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);
       if(m.method==='Log.entryAdded' && m.params.entry.level==='error') errors.push(m.params.entry.text);
       if(m.method==='Runtime.consoleAPICalled' && m.params.type==='error') errors.push(m.params.args.map(a=>a.value).join(' ')); };
-    const send = (method, params={}) => new Promise(r=>{ const i=++id; pending.set(i,r); ws.send(JSON.stringify({id:i,method,params})); });
+    const send = (method, params={}) => new Promise((resolve,reject)=>{
+      const i=++id, timer=setTimeout(()=>{pending.delete(i);reject(new Error('CDP timeout: '+method+(params.expression ? ' '+params.expression.slice(0,160) : '')));},15000);
+      pending.set(i,m=>{clearTimeout(timer);if(m.error) reject(new Error(method+': '+m.error.message));else resolve(m);});
+      ws.send(JSON.stringify({id:i,method,params}));
+    });
     const evalJs = async expr => { const r = await send('Runtime.evaluate',{expression:expr,returnByValue:true,awaitPromise:true}); if(r.result.exceptionDetails) throw new Error(r.result.exceptionDetails.exception?.description||'eval error'); return r.result.result.value; };
     const navigate = async (url, settle=1500) => { await send('Page.navigate',{url}); await sleep(settle); };
     const close = () => { try{ ws.close(); }catch(e){} kill(); };

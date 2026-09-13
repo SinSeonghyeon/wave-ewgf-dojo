@@ -26,10 +26,12 @@ async function serveWorker(db){
   return {srv, url:'http://127.0.0.1:'+srv.address().port};
 }
 
-let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:true}); }catch(e){} };
+let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:true}); }catch(e){} };
 (async () => {
+  console.log('Smoke: preparing local backend and browser');
   const db = fakeD1();
   const {srv, url:boardUrl} = await serveWorker(db);
+  server = srv;
   { const w = await import(pathToFileURL(path.join(__dirname,'../worker/index.js')).href); // '점유됨' already belongs to someone else
     const r = await w.handle(new Request('http://x/nick', {method:'POST', body:JSON.stringify({nick:'점유됨'})}), {DB:db, ALLOWED_ORIGINS:'*'}); if(r.status!==200) throw new Error('seed nick failed'); }
   // Point a scratch copy of the app at the local worker (BOARD_URL is a const in the shipped file; the copy is never committed).
@@ -40,6 +42,8 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','donate-kakao.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
   try{ fs.rmSync(path.join(os.tmpdir(),'dojo-smoke-profile'),{recursive:true,force:true}); }catch(e){} // fresh localStorage every run (a navigation at the end of the run flushes it to disk)
   const b = await launch({port:9333, profile:'dojo-smoke-profile'});
+  browser = b;
+  console.log('Smoke: browser connected');
   const {send, evalJs, errors} = b;
   await b.navigate(fileUrl(page));
   const out = {};
@@ -92,6 +96,40 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   await evalJs(`document.querySelector('#setClose').click()`); await sleep(100);
   out.sound.dlgClosed = !(await evalJs(`document.querySelector('#setDlg').open`));
   if(!out.sound.dlgOpen || !out.sound.dlgClosed) errors.push('settings dialog check failed: '+JSON.stringify(out.sound));
+  // wardrobe + achievements (4-9): the stage button opens the dialog (input paused), the donate click above unlocked the rice bowl → wearable, the preview changes, the achievement tab lists 25 rows, the jackpot overlay exists (the EWGF above may land as a WGF under headless key timing, so the top is not relied on)
+  console.log('Smoke: wardrobe and reward presentation');
+  await evalJs(`document.querySelector('#fitOpen').click()`); await sleep(250);
+  out.fit = await evalJs(`(() => { const q=s=>document.querySelector(s); const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1'));
+    return {open:q('#fitDlg').open, wear:!q('#fitWear').hidden, achHidden:q('#fitAch').hidden, chips:document.querySelectorAll('#fitSlots .fit-chip').length, locked:document.querySelectorAll('#fitSlots .fit-chip.locked').length,
+      bowl:q('#fitSlots [data-id="bowl_head"]').className, before:q('#fitPreview').toDataURL().length, life:st.life, ach:Object.keys(st.ach), daily:q('#fitDaily').textContent}; })()`);
+  await tap('KeyD',20); await sleep(100); out.fit.inputsWhileOpen = await evalJs(`document.querySelector('#rTitle').textContent`);
+  await evalJs(`document.querySelector('#fitSlots [data-id="bowl_head"]').click()`); await sleep(100);
+  out.fit.after = await evalJs(`(() => { const q=s=>document.querySelector(s); return {pressed:q('#fitSlots [data-id="bowl_head"]').getAttribute('aria-pressed'), preview:q('#fitPreview').toDataURL().length, stored:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).fit.head}; })()`);
+  await evalJs(`document.querySelector('#fitTabs [data-view="ach"]').click()`); await sleep(100);
+  out.fit.tab = await evalJs(`(() => { const q=s=>document.querySelector(s); return {wearHidden:q('#fitWear').hidden, achShown:!q('#fitAch').hidden, wearDisplay:getComputedStyle(q('#fitWear')).display, rows:document.querySelectorAll('#fitAch .ach-row').length, done:document.querySelectorAll('#fitAch .ach-row.done').length, count:q('#fitAch .ach-count').textContent}; })()`);
+  await evalJs(`document.querySelector('#fitClose').click()`); await sleep(100);
+  out.fit.closed = !(await evalJs(`document.querySelector('#fitDlg').open`));
+  out.fit.jackpot = await evalJs(`(() => { const j=document.querySelector('#jackpot'); return {exists:!!j, display:getComputedStyle(j).display, title:document.querySelector('#jpTitle').textContent, item:document.querySelector('#jpItem').textContent, box:!!document.querySelector('#jpBox'), white:!!document.querySelector('#jackpot .jp-white')}; })()`);
+  // the reveals queued behind the dialogs play now: egg → white → card over a dimmed stage; the card stays until 확인, and the next queued reveal follows
+  for(let i=0;i<30;i++){ if((await evalJs(`document.querySelector('#jackpot').dataset.phase`))==='reveal') break; await sleep(100); }
+  out.fit.reveal = await evalJs(`(() => { const j=document.querySelector('#jackpot'), ok=document.querySelector('#jpOk'); return {phase:j.dataset.phase, dim:getComputedStyle(j).backgroundColor, okEvents:getComputedStyle(ok).pointerEvents, okText:ok.textContent, focused:document.activeElement===ok, petals:document.querySelector('#jpFall').width>0}; })()`);
+  await sleep(600); out.fit.stays = await evalJs(`document.querySelector('#jackpot').dataset.phase`);
+  out.fit.translated = await evalJs(`(() => { document.querySelector('#langSel button[data-lang="ko"]').click(); return {title:document.querySelector('#jpTitle').textContent,item:document.querySelector('#jpItem').textContent}; })()`);
+  if(!/[가-힣]/.test(out.fit.translated.title) || !/[가-힣]/.test(out.fit.translated.item)) errors.push('active reward translation failed');
+  await evalJs(`document.querySelector('#langSel button[data-lang="en"]').click(); document.querySelector('#modes button[data-mode="wave10"]').click(); document.querySelector('#dStart').click()`);
+  await sleep(3300);
+  out.fit.held = await evalJs(`document.querySelector('#jackpot').hidden`);
+  if(!out.fit.held) errors.push('active reward overlaps measurement');
+  await evalJs(`document.querySelector('#modes button[data-mode="free"]').click()`);
+  await sleep(2300);
+  if(await evalJs(`document.querySelector('#jackpot').dataset.phase!=='reveal'`)) errors.push('deferred reward did not resume');
+  for(let i=0;i<4;i++){ await evalJs(`document.querySelector('#jpOk').click()`); await sleep(1000); const ph = await evalJs(`document.querySelector('#jackpot').dataset.phase`); if(i===0) out.fit.afterOk = ph; if(ph!=='reveal'){ for(let k=0;k<30 && (await evalJs(`!document.querySelector('#jackpot').hidden`));k++){ if((await evalJs(`document.querySelector('#jackpot').dataset.phase`))==='reveal') break; await sleep(100); } } if(await evalJs(`document.querySelector('#jackpot').hidden`)) break; }
+  out.fit.drained = await evalJs(`document.querySelector('#jackpot').hidden`);
+  if(!out.fit.open || !out.fit.wear || !out.fit.achHidden || out.fit.chips!==43 || out.fit.locked<20 || out.fit.life.tries<1 || out.fit.life.donate<1 || out.fit.life.days!==1 || !out.fit.ach.includes('bowl_head') || !out.fit.ach.some(id=>id.startsWith('daily_')) || /locked/.test(out.fit.bowl)
+     || !/1 \/ 12/.test(out.fit.daily) || out.fit.inputsWhileOpen!==out.sound.pausedWhileOpen || out.fit.after.pressed!=='true' || out.fit.after.stored!=='bowl_head' || out.fit.after.preview===out.fit.before
+     || !out.fit.tab.wearHidden || !out.fit.tab.achShown || out.fit.tab.wearDisplay!=='none' || out.fit.tab.rows!==25 || out.fit.tab.done<1 || !/1 \/ 25|2 \/ 25/.test(out.fit.tab.count) || !out.fit.closed
+     || !out.fit.jackpot.exists || !out.fit.jackpot.box || !out.fit.jackpot.white || !out.fit.jackpot.item
+     || out.fit.reveal.phase!=='reveal' || !out.fit.reveal.dim.startsWith('rgba(4, 8, 14') || out.fit.reveal.okEvents!=='auto' || !/^(확인|OK)$/.test(out.fit.reveal.okText) || !out.fit.reveal.focused || !out.fit.reveal.petals || out.fit.stays!=='reveal' || out.fit.afterOk==='reveal' || !out.fit.drained) errors.push('wardrobe check failed: '+JSON.stringify(out.fit));
   await evalJs(`document.querySelector('#soundSel button[data-sound=\"0\"]').click()`); await sleep(100);
   await evalJs(`const s=document.querySelector('#sfxVol'); s.value=30; s.dispatchEvent(new Event('input')); s.dispatchEvent(new Event('change'))`); await sleep(100);
   out.sound.off = await soundSnap();
@@ -120,6 +158,7 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
     out[l].stored = await evalJs(`JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).lang`);
   }
   // Opening support during countdown (en) or measurement (ja) must never save/submit a result.
+  console.log('Smoke: trials, support cancellation and result cards');
   out.donate.cancel = [];
   for(const [lang,delay] of [['en',200],['ja',3300]]){
     const recordsBefore=await evalJs(`JSON.stringify(JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.wave10)`);
@@ -229,4 +268,4 @@ let dir; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recursive:true,force:
   b.close(); srv.close(); rmTmp();
   if(errors.length){ console.error('JS ERRORS:', errors); process.exit(1); }
   process.exit(0);
-})().catch(e => { console.error('FAIL', e); rmTmp(); process.exit(1); });
+})().catch(e => { console.error('FAIL', e); if(browser) browser.close(); if(server) server.close(); rmTmp(); process.exit(1); });

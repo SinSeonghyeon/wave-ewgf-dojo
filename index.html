@@ -271,6 +271,67 @@
   .donate-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;box-sizing:border-box;background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:10px 14px;color:var(--ink);font-size:14px;font-weight:700;text-align:left;text-decoration:none;cursor:pointer}
   .donate-opt small{color:var(--muted);font-size:12px;font-weight:400}
   .donate-opt:hover{border-color:var(--gold)} .donate-opt:first-child{border-color:var(--gold)}
+  /* wardrobe (#fitDlg): stage button under the gear, outfit/achievement tabs, chips per slot */
+  .hud-fit{top:52px}
+  .hud-fit:hover,.hud-fit:focus-visible{transform:scale(1.08)}
+  dialog.fit{width:min(760px,calc(100vw - 32px))}
+  dialog.fit .set-head{flex-wrap:wrap}
+  dialog.fit .segc{margin-left:auto}
+  .fit-daily{font-family:var(--mono);font-size:12px;color:var(--gold);min-height:1.3em;margin:0 0 10px}
+  .fit-wear{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;padding-bottom:10px}
+  .fit-wear[hidden],.fit-ach[hidden]{display:none}
+  @media (max-width:640px){.fit-wear{grid-template-columns:1fr}}
+  .fit-preview{display:flex;flex-direction:column;gap:8px;align-items:center}
+  dialog.fit canvas{width:200px;height:220px;border:1px solid var(--line);border-radius:6px;background:var(--bg2)}
+  .fit-slots{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .fit-slot .t{color:var(--muted);font-size:12px;margin-bottom:4px}
+  .fit-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .fit-chip{background:var(--panel2);border:1px solid var(--line2);border-radius:4px;color:var(--ink2);padding:5px 9px;font-size:12.5px}
+  .fit-chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+  .fit-chip.locked{opacity:.5;cursor:not-allowed}
+  .fit-chip.daily{border-style:dashed}
+  .fit-ach{display:flex;flex-direction:column;gap:12px;max-height:62vh;overflow-y:auto;padding-bottom:6px}
+  .ach-count{font-family:var(--mono);font-size:12.5px;color:var(--accent)}
+  .ach-group h3{margin:0 0 6px;font-family:var(--display);font-weight:400;font-size:16px;color:var(--ink)}
+  .ach-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:7px 10px;border:1px solid var(--line);border-left:4px solid var(--faint);border-radius:4px;background:var(--panel2);margin-bottom:6px}
+  .ach-row.done{border-left-color:var(--gold)}
+  .ach-row b{font-size:13.5px} .ach-row.done b{color:var(--gold)}
+  .ach-row .d{grid-column:1;color:var(--muted);font-size:12px}
+  .ach-row .i{grid-column:1;font-size:12px;color:var(--accent)}
+  .ach-row .p{grid-column:2;grid-row:1/4;align-self:center;font-family:var(--mono);font-size:12.5px;color:var(--ink2);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .ach-row.done .p{color:var(--gold)}
+  /* jackpot reveal (#jackpot, inside .hud so input keeps flowing): "?" box hatches → dim + rays + the character in the new item + petals (#jpFall canvas) + 확인 button */
+  .jackpot{position:absolute;inset:0;display:grid;place-items:center;align-content:center;overflow:hidden;opacity:0;transition:opacity .25s;background:rgba(4,8,14,.66)}
+  .jp-ok{pointer-events:auto;margin-top:5px;padding:5px 28px;min-width:120px}
+  .jackpot[hidden]{display:none}
+  .jackpot[data-phase="egg"],.jackpot[data-phase="white"],.jackpot[data-phase="reveal"]{opacity:1}
+  .jp-white{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .18s ease-in}
+  .jackpot[data-phase="white"] .jp-white{opacity:1}
+  .jackpot[data-phase="reveal"] .jp-white{opacity:0;transition:opacity .8s ease-out}
+  .jp-box{display:none;width:124px;height:124px;place-items:center;font-family:var(--display);font-size:78px;line-height:1;color:#1a1f2b;background:#F4F1EA;border:3px solid var(--gold);border-radius:18px;box-shadow:0 0 34px rgba(245,197,66,.45),inset 0 -14px 24px rgba(0,0,0,.12)}
+  .jackpot[data-phase="egg"] .jp-box,.jackpot[data-phase="white"] .jp-box{display:grid}
+  .jackpot[data-phase="egg"] .jp-box{animation:jpHatch 1.8s ease-in both}
+  @keyframes jpHatch{0%{transform:translate(0.0px,0.0px) rotate(0.0deg)}6%{transform:translate(0.8px,-0.3px) rotate(0.6deg)}13%{transform:translate(-1.5px,-0.6px) rotate(-1.1deg)}19%{transform:translate(2.3px,-0.9px) rotate(1.7deg)}25%{transform:translate(-3.0px,-1.2px) rotate(-2.3deg)}31%{transform:translate(3.8px,-1.5px) rotate(2.8deg)}38%{transform:translate(-4.5px,-1.8px) rotate(-3.4deg)}44%{transform:translate(5.3px,-2.1px) rotate(3.9deg)}50%{transform:translate(-6.0px,-2.4px) rotate(-4.5deg)}56%{transform:translate(6.8px,-2.7px) rotate(5.1deg)}63%{transform:translate(-7.5px,-3.0px) rotate(-5.6deg)}69%{transform:translate(8.3px,-3.3px) rotate(6.2deg)}75%{transform:translate(-9.0px,-3.6px) rotate(-6.8deg)}81%{transform:translate(9.8px,-3.9px) rotate(7.3deg)}88%{transform:translate(-10.5px,-4.2px) rotate(-7.9deg)}94%{transform:translate(11.3px,-4.5px) rotate(8.4deg)}100%{transform:translate(-12.0px,-4.8px) rotate(-9.0deg)}}
+  .jp-card{display:none}
+  .jackpot[data-phase="reveal"] .jp-card,.jackpot[data-phase="out"] .jp-card{display:flex;animation:jpIn .6s ease-out both}
+  @keyframes jpIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+  .jackpot[data-phase="out"]{opacity:0;transition:opacity .7s}
+  .jp-fall{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .jp-rays{position:absolute;left:50%;top:50%;width:160vmax;height:160vmax;transform:translate(-50%,-50%);opacity:0;transition:opacity .4s;
+    background:repeating-conic-gradient(rgba(245,197,66,.20) 0 10deg,rgba(245,197,66,0) 10deg 30deg);animation:jpSpin 7s linear infinite}
+  .jackpot[data-phase="reveal"] .jp-rays{opacity:1}
+  @keyframes jpSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+  .jp-card{position:relative;flex-direction:column;align-items:center;gap:2px;padding:6px 22px 8px;max-width:92%;border:2px solid var(--gold);border-radius:10px;background:rgba(8,12,18,.86);box-shadow:0 0 30px rgba(245,197,66,.35),inset 0 0 24px rgba(245,197,66,.12)}
+  .jp-title{font-family:var(--display);font-size:clamp(20px,4.5vw,30px);line-height:1.05;color:var(--gold);text-shadow:0 0 18px rgba(245,197,66,.8),0 2px 0 #000}
+  .jackpot[data-phase="reveal"] .jp-title{animation:tierPop .55s cubic-bezier(.2,1.4,.4,1) both,tierGlow 1.2s ease-in-out .6s infinite alternate}
+  .jp-canvas,.jp-ach,.jp-item,.jp-hint{display:none}
+  .jackpot[data-phase="reveal"] .jp-canvas,.jackpot[data-phase="out"] .jp-canvas{display:block;width:112px;height:112px}
+  .jackpot[data-phase="reveal"] .jp-ach,.jackpot[data-phase="reveal"] .jp-item,.jackpot[data-phase="reveal"] .jp-hint,.jackpot[data-phase="out"] .jp-ach,.jackpot[data-phase="out"] .jp-item,.jackpot[data-phase="out"] .jp-hint{display:block}
+  .jackpot[data-phase="out"] .jp-ok{pointer-events:none}
+  .jp-ach{font-size:14px;color:var(--ink);text-shadow:0 1px 0 #000;text-align:center}
+  .jp-item{font-family:var(--display);font-size:22px;line-height:1.1;color:var(--accent);text-shadow:0 0 12px rgba(76,201,255,.6),0 2px 0 #000;text-align:center}
+  .jp-hint{margin-top:3px;text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--gold);text-shadow:0 1px 0 #000}
+  @media (prefers-reduced-motion:reduce){.jp-rays,.jp-title,.jp-card,.jp-box{animation:none!important}}
   @media (prefers-reduced-motion:reduce){.key.listen{animation:none}}
   html[lang="ja"]{--display:'Dela Gothic One','Noto Sans JP',system-ui,sans-serif;--body:'Noto Sans JP','Hiragino Sans','Yu Gothic',system-ui,sans-serif}
   html[lang="en"]{--body:'Noto Sans KR',system-ui,-apple-system,'Segoe UI',sans-serif}
@@ -320,6 +381,8 @@
           <div class="hud-hint" id="hudHint"></div>
           <div class="segc hud-side" id="sideSel" role="group" data-i18n-aria="set.side" aria-label="캐릭터 방향"><button type="button" data-side="1" aria-pressed="true" data-i18n="set.side1Short" data-i18n-aria="set.side1" aria-label="1P (→ 가 앞)">1P</button><button type="button" data-side="-1" aria-pressed="false" data-i18n="set.side2Short" data-i18n-aria="set.side2" aria-label="2P (← 가 앞)">2P</button></div>
           <button class="hud-gear" id="setOpen" type="button" data-i18n-aria="set.title" aria-label="입력 · 판정 설정" title="⚙"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.7 7.7 0 0 0-1.7-1L15 3h-4l-.4 2.7a7.7 7.7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.7 7.7 0 0 0 1.7 1L11 21h4l.4-2.7a7.7 7.7 0 0 0 1.7-1l2.5 1 2-3.5L19.4 13zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></button>
+          <button class="hud-gear hud-fit" id="fitOpen" type="button" data-i18n-aria="fit.hud" aria-label="옷장 · 업적" title="👕"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M15.5 3 20 5.6l1.6 5.2-3.2 1.1-1-2.3V21H6.6V9.6l-1 2.3-3.2-1.1L4 5.6 8.5 3c.6 1.6 1.9 2.5 3.5 2.5s2.9-.9 3.5-2.5z"/></svg></button>
+          <div class="jackpot" id="jackpot" hidden><div class="jp-rays"></div><canvas class="jp-fall" id="jpFall" aria-hidden="true"></canvas><div class="jp-box" id="jpBox" aria-hidden="true">?</div><div class="jp-card"><div class="jp-title" id="jpTitle"></div><canvas class="jp-canvas" id="jpCanvas" width="200" height="200" aria-hidden="true"></canvas><div class="jp-ach" id="jpAch"></div><div class="jp-item" id="jpItem"></div><button class="btn jp-ok" id="jpOk" type="button" data-i18n="fit.ok">확인</button><div class="jp-hint" id="jpHint"></div></div><div class="jp-white"></div></div>
         </div>
         <div class="touch" id="touch" data-i18n-aria="touch.aria" aria-label="터치 컨트롤">
           <p class="touch-note" data-i18n="touch.note">터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)</p>
@@ -386,6 +449,8 @@
           </div>
           <div class="row"><label class="t" data-i18n="set.pad">게임패드</label><span class="note" id="padStatus"></span></div>
           <p class="note" data-i18n-html="set.padNote"></p>
+          <div class="row"><label class="t" data-i18n="set.reset">기록·업적 초기화</label><button class="btn ghost" id="dataReset" type="button" data-i18n="set.resetBtn">초기화…</button></div>
+          <p class="note" data-i18n="set.resetNote">모드별 최고 기록, 누적 통계, 업적, 복장을 지웁니다. 닉네임과 설정은 남습니다.</p>
         </div>
       </dialog>
     </aside>
@@ -427,6 +492,18 @@
       <div class="nick-form"><a class="btn" id="donateOpen" target="_blank" rel="noopener" data-i18n="donate.open">휴대폰에서 카카오페이 열기</a><button class="btn ghost" id="donateBack" type="button" data-i18n="donate.back">뒤로</button></div>
     </div>
     <p class="donate-contact"><span data-i18n="footer.contact">문의</span>: <a href="mailto:tlstjdgus3@gmail.com">tlstjdgus3@gmail.com</a></p>
+  </dialog>
+
+  <dialog class="share fit" id="fitDlg" aria-labelledby="fitTitle">
+    <div class="set-head"><h2 id="fitTitle" data-i18n="fit.title">옷장</h2>
+      <div class="segc" id="fitTabs" role="group"><button type="button" data-view="fit" aria-pressed="true" data-i18n="fit.tabFit">옷장</button><button type="button" data-view="ach" aria-pressed="false" data-i18n="fit.tabAch">업적</button></div>
+      <button class="btn ghost" id="fitClose" type="button" data-i18n="share.close">닫기</button></div>
+    <p class="fit-daily" id="fitDaily"></p>
+    <div class="fit-wear" id="fitWear">
+      <div class="fit-preview"><canvas id="fitPreview" width="200" height="220" data-i18n-aria="fit.canvasAria" aria-label="코스튬 미리보기"></canvas><button class="btn ghost" id="fitReset" type="button" data-i18n="fit.reset">기본 복장</button></div>
+      <div class="fit-slots" id="fitSlots"></div>
+    </div>
+    <div class="fit-ach" id="fitAch" hidden></div>
   </dialog>
 
   <section class="records" data-i18n-aria="records.aria" aria-label="기록">
@@ -493,13 +570,118 @@ const WALK_F = 90, WALK_B = 70, TAP_MS = 250; // walk speed px/s (forward/back),
 const FF_MS = 250;      // judging: f,f+2 (통발) accepts the 2 up to this long after the second f (state 1/2 with cd.dashT===cd.tF)
 const RUSH_PTS = {kill:5, wgf:2, dashMax:3}; // 더미 격파: correct hit 5, non-just WGF on the high dummy 2, each crouch dash min(chain,3)
 
+/* ---------- 옷장 (wardrobe): costume items per slot + achievements that unlock them ---------- */
+// Design decision 14: homage sets with original names only (no official character names/art), six slots, one item per achievement,
+// twelve daily-gift items, all local. Items are pure draw hooks in the fighter's torso-local space (see drawFighter); `base` = the legacy look, pixel-identical.
+const SLOTS = ['head','top','arms','legs','shoes','skin'];
+const SETS = ['red','thunder','master','devil']; // achievement sets in display/difficulty order; 'daily' = attendance pool; no set = special (bowl_head)
+const P2 = Math.PI*2;
+const ell = (g,x,y,rx,ry,c) => { g.fillStyle=c; g.beginPath(); g.ellipse(x,y,rx,ry,0,0,P2); g.fill(); };
+const poly = (g,pts,c) => { g.fillStyle=c; g.beginPath(); pts.forEach((p,i) => i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1])); g.closePath(); g.fill(); };
+const line = (g,pts,c,w) => { g.strokeStyle=c; g.lineWidth=w; g.beginPath(); pts.forEach((p,i) => i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1])); g.stroke(); };
+const glove = c => (g,x,y) => { g.fillStyle=c; g.beginPath(); g.arc(x,y,6.5,0,P2); g.fill(); g.fillStyle='rgba(255,255,255,.25)'; g.beginPath(); g.arc(x-2,y-2,2.2,0,P2); g.fill(); };
+const shoe = (c,sole) => (g,x,y) => { ell(g,x,y,7,3.5,c); if(sole) line(g,[[x-6,y+2.5],[x+6,y+2.5]],sole,1.5); };
+const bootFoot = (c,sole) => (g,x,y) => { g.fillStyle=c; g.fillRect(x-3,y-8,7,7); ell(g,x,y,7.5,3.5,c); line(g,[[x-6,y+2.5],[x+7,y+2.5]],sole,1.6); };
+const wrist = (g,x,y,a,r,c,w) => { g.strokeStyle=c; g.lineWidth=w; g.beginPath(); g.arc(x-Math.sin(a)*7, y-Math.cos(a)*7, r, 0, P2); g.stroke(); }; // a band 7px back along the forearm (arm direction = (sin a, cos a))
+function hairBase(g, hy, col){ // the legacy spiky swept-back hair + sideburn (also the ghost silhouette)
+  g.fillStyle = col;
+  g.beginPath(); g.arc(0,hy-1,19.5,Math.PI*1.02,Math.PI*1.98); g.lineTo(-19.5,hy-1); g.fill();
+  g.beginPath();
+  g.moveTo(-19,hy-2); g.lineTo(-30,hy-12); g.lineTo(-17,hy-14); g.lineTo(-27,hy-26); g.lineTo(-11,hy-20);
+  g.lineTo(-12,hy-36); g.lineTo(-1,hy-22); g.lineTo(4,hy-38); g.lineTo(9,hy-21); g.lineTo(18,hy-31); g.lineTo(15,hy-14); g.lineTo(21,hy-8); g.closePath(); g.fill();
+  g.fillRect(-19,hy-2,5,12);
+}
+// hooks (all skipped for tinted ghosts): head.draw(g,hy,item,C) replaces the hair · top.back(g,T,C) behind the body · top.front(g,T,C) over the torso ·
+// arms.hand(g,x,y,angle,C) replaces the glove · legs.deco(g,[[footX,footY,hipX,hipY]×2]) over the legs · shoes.foot(g,x,y) replaces the shoe · skin.marks(g,T,hy,bare) tattoos/scars
+const ITEMS = {
+head:{
+  base:{hair:'#141821', draw:(g,hy,I)=>hairBase(g,hy,I.hair)},
+  red_head:{set:'red', hair:'#D8521E', draw:(g,hy,I)=>{ hairBase(g,hy,I.hair); poly(g,[[-19,hy-7],[-41,hy-2],[-37,hy+2],[-19,hy-3]],'#C8232C'); poly(g,[[-19,hy-5],[-38,hy+9],[-33,hy+10],[-19,hy-2]],'#C8232C'); g.fillStyle='#C8232C'; g.fillRect(-19,hy-8,38,5); }}, // headband with two tails
+  thunder_head:{set:'thunder', hair:'#141821', draw:(g,hy,I,C)=>{ poly(g,[[-17,hy+6],[-29,hy+25],[-4,hy+21]],'#15171F'); g.fillStyle='#1C1F2A'; g.beginPath(); g.arc(0,hy-1,23,Math.PI*0.82,Math.PI*2.08); g.lineTo(-20,hy+14); g.closePath(); g.fill();
+    g.strokeStyle='#2E3342'; g.lineWidth=2; g.beginPath(); g.arc(0,hy-1,21,Math.PI*0.95,Math.PI*2.02); g.stroke(); g.fillStyle=C.skin; g.beginPath(); g.ellipse(2,hy+2,15,15.5,0,0,P2); g.fill(); poly(g,[[-8,hy-15],[-2,hy-7],[4,hy-14],[9,hy-8],[12,hy-15]],I.hair); }}, // hood up: cowl around an open face, bangs peeking out
+  master_head:{set:'master', hair:'#DDE0E6', brow:'#DDE0E6', draw:(g,hy,I)=>{ poly(g,[[-16,hy-8],[-37,hy-27],[-31,hy-4],[-17,hy+4]],I.hair); poly(g,[[16,hy-8],[37,hy-27],[31,hy-4],[17,hy+4]],I.hair); g.fillStyle=I.hair; g.fillRect(-19,hy-2,5,12); g.fillRect(14,hy-2,5,12); }}, // bald crown, white wings swept up on both sides
+  devil_head:{set:'devil', hair:'#141821', glow:'#FF3B3B', draw:(g,hy,I)=>{ hairBase(g,hy,I.hair); const horn = (x0,x1,tip,s) => { g.fillStyle='#2B2533'; g.beginPath(); g.moveTo(x0,hy-16); g.quadraticCurveTo((x0+x1)/2,hy-30,x1,tip); g.quadraticCurveTo((x0+x1)/2+3*s,hy-22,x0+7*s,hy-14); g.closePath(); g.fill(); }; horn(-10,-22,hy-44,-1); horn(8,20,hy-46,1); }},
+  bowl_head:{hair:'#141821', draw:(g,hy,I)=>{ hairBase(g,hy,I.hair); g.fillStyle='#F4F1EA'; g.beginPath(); g.arc(0,hy-14,22,Math.PI,P2); g.closePath(); g.fill(); line(g,[[-22,hy-14],[22,hy-14]],'#B9B3A6',2.5); line(g,[[-19,hy-24],[19,hy-24]],'#2F6FD9',2.5); [[-9,hy-30],[0,hy-33],[9,hy-30]].forEach(([x,y]) => ell(g,x,y,2.6,1.7,'#FFFFFF')); }}, // upturned rice bowl (donate 🍚)
+  daily_head_blue:{set:'daily', hair:'#2E6FD9', draw:(g,hy,I)=>hairBase(g,hy,I.hair)},
+  daily_head_gold:{set:'daily', hair:'#E8C14A', draw:(g,hy,I)=>hairBase(g,hy,I.hair)},
+},
+top:{ // color null = bare chest (torso in skin colour); sleeve colours the upper arms
+  base:{belt:'#2B2F3A'},
+  red_top:{set:'red', color:'#F2F0EA', line:'#D5D2CA', belt:'#C8232C', front:(g,T)=>line(g,[[-9,-T+2],[0,-T+11],[9,-T+2]],'#C8232C',3)},
+  thunder_top:{set:'thunder', color:'#1E2028', line:'#2E313D', belt:'#2B2F3A', sleeve:'#1E2028', front:(g,T)=>{ line(g,[[0,-T+4],[0,-2]],'#E5484D',1.6); line(g,[[-11,-T+3],[-4,-T+8]],'#3A3E4C',2); line(g,[[11,-T+3],[4,-T+8]],'#3A3E4C',2); }},
+  master_top:{set:'master', belt:'#2B2F3A', front:(g,T,C)=>{ line(g,[[-9,-T+9],[-4,-T+13],[0,-T+10]],C.skin2,1.6); line(g,[[0,-T+10],[4,-T+13],[9,-T+9]],C.skin2,1.6); line(g,[[-5,-T+16],[5,-T+16]],C.skin2,1.2); line(g,[[-5,-T+20],[5,-T+20]],C.skin2,1.2); }}, // bare, with pecs and abs
+  devil_top:{set:'devil', belt:'#3A2A4A', back:(g,T)=>{ const wing = (s,k) => { g.save(); g.translate(-6,-T+6); g.scale(s*k,k); poly(g,[[0,0],[34,-32],[48,-14],[40,-2],[56,10],[36,10],[28,24],[10,8]],'#1A1220'); line(g,[[0,0],[34,-32]],'#5B2A8C',2); line(g,[[6,4],[40,-2]],'#5B2A8C',1.5); line(g,[[8,8],[36,10]],'#5B2A8C',1.5); g.restore(); }; wing(-1,1); wing(1,0.55); }}, // bat wings: big one back, small one front
+  daily_top_tank:{set:'daily', color:'#22252E', line:'#343845', belt:'#2B2F3A', front:(g,T,C)=>{ line(g,[[-9,-T+2],[-6,-T+9]],C.skin,3); line(g,[[9,-T+2],[6,-T+9]],C.skin,3); }},
+  daily_top_gi:{set:'daily', color:'#F2F0EA', line:'#D5D2CA', belt:'#2B2F3A', front:(g,T)=>line(g,[[-9,-T+2],[0,-T+11],[9,-T+2]],'#3A3F4B',3)},
+},
+arms:{
+  base:{hand:glove('#D1352F')},
+  red_arms:{set:'red', hand:(g,x,y,a,C)=>{ g.fillStyle=C.skin; g.beginPath(); g.arc(x,y,5.5,0,P2); g.fill(); wrist(g,x,y,a,4.2,'#F2F0EA',3); }}, // bare fist, white wrist wrap
+  thunder_arms:{set:'thunder', hand:(g,x,y,a)=>{ g.fillStyle='#2A1B1B'; g.beginPath(); g.arc(x,y,6.5,0,P2); g.fill(); wrist(g,x,y,a,5,'#E5484D',2.5); }},
+  master_arms:{set:'master', hand:(g,x,y,a)=>{ g.fillStyle='#E9E2D2'; g.beginPath(); g.arc(x,y,6,0,P2); g.fill(); const nx=Math.cos(a), ny=-Math.sin(a), dx=Math.sin(a), dy=Math.cos(a); line(g,[[x-nx*5,y-ny*5],[x+nx*5,y+ny*5]],'#C9BFA8',1.2); line(g,[[x-nx*5-dx*3,y-ny*5-dy*3],[x+nx*5-dx*3,y+ny*5-dy*3]],'#C9BFA8',1.2); }}, // bandaged fist
+  devil_arms:{set:'devil', hand:(g,x,y,a)=>{ g.fillStyle='#2A1E33'; g.beginPath(); g.arc(x,y,6.5,0,P2); g.fill(); const dx=Math.sin(a), dy=Math.cos(a), nx=Math.cos(a), ny=-Math.sin(a); for(const k of [-4,0,4]) poly(g,[[x+nx*k+dx*4,y+ny*k+dy*4],[x+nx*(k-1.5)+dx*6,y+ny*(k-1.5)+dy*6],[x+nx*k+dx*13,y+ny*k+dy*13]],'#D9D2E6'); }}, // three claws past the fist
+  daily_arms_blue:{set:'daily', hand:glove('#2F6FD9')},
+  daily_arms_black:{set:'daily', hand:glove('#23262E')},
+},
+legs:{
+  base:{pants:'#EDE7DD'},
+  red_legs:{set:'red', pants:'#F2F0EA', deco:(g,L)=>L.forEach(([x0,y0,x1,y1]) => line(g,[[x0,y0],[x1,y1]],'#2F5FD9',1.8))}, // blue stripe down each leg
+  thunder_legs:{set:'thunder', pants:'#1B1D24', deco:(g,L)=>L.forEach(([x0,y0,x1,y1]) => { const dx=x1-x0, dy=y1-y0; poly(g,[[x0-3,y0-1],[x0+dx*0.25-1,y0+dy*0.25],[x0+dx*0.5,y0+dy*0.5],[x0+dx*0.25+3,y0+dy*0.25],[x0+3,y0-1]],'#F08A24'); poly(g,[[x0-1.5,y0-1],[x0+dx*0.3,y0+dy*0.3],[x0+1.5,y0-1]],'#FFD166'); })}, // flames licking up from the ankles
+  master_legs:{set:'master', pants:'#F4F1E8', width:10}, // wide gi pants
+  devil_legs:{set:'devil', pants:'#15161C', deco:(g,L)=>{ const [x0,y0,x1,y1]=L[1]; g.save(); g.setLineDash([2,3]); line(g,[[x0+2,y0-2],[x1+2,y1-2]],'#9AA0AE',1.5); g.restore(); }}, // chain on the front leg
+  daily_legs_black:{set:'daily', pants:'#23262E'},
+  daily_legs_navy:{set:'daily', pants:'#243A6B'},
+},
+shoes:{ // color = the sweeping foot in the hell-sweep pose; foot(g,x,y) draws a planted foot
+  base:{color:'#23272F', foot:shoe('#23272F')},
+  red_shoes:{set:'red', color:'#F2F0EA', foot:(g,x,y)=>{ ell(g,x,y,7,3.5,'#F2F0EA'); line(g,[[x-3,y-2],[x+1,y-2]],'#C8232C',2); }},
+  thunder_shoes:{set:'thunder', color:'#2C2126', foot:bootFoot('#2C2126','#4A3A40')},
+  master_shoes:{set:'master', color:'#C9A96E', foot:(g,x,y)=>{ ell(g,x,y,7,2.6,'#C9A96E'); line(g,[[x-2,y-2],[x+2,y+1]],'#5A3E2B',1.4); line(g,[[x+3,y-2],[x+2,y+1]],'#5A3E2B',1.4); }}, // straw sandal with thong
+  devil_shoes:{set:'devil', color:'#1A0F14', foot:bootFoot('#1A0F14','#E5484D')},
+  daily_shoes_white:{set:'daily', color:'#F2F0EA', foot:shoe('#F2F0EA','#9AA0AE')},
+  daily_shoes_red:{set:'daily', color:'#B8322E', foot:shoe('#B8322E','#5A1A18')},
+},
+skin:{
+  base:{skin:'#F2C9A0', skin2:'#D9A87C'},
+  red_skin:{set:'red', skin:'#D9A574', skin2:'#B9835A'},
+  thunder_skin:{set:'thunder', skin:'#F2C9A0', skin2:'#D9A87C', marks:(g,T,hy,bare)=>{ if(bare) line(g,[[-9,-T+4],[-4,-T+9],[-8,-T+13],[-3,-T+19]],'#1B1D24',2); line(g,[[-15,hy+3],[-11,hy+7],[-15,hy+12]],'#1B1D24',1.6); }}, // lightning on the chest and cheek
+  master_skin:{set:'master', skin:'#E8BC8F', skin2:'#C99A6E', marks:(g,T,hy,bare)=>{ if(bare){ line(g,[[-7,-T+6],[3,-T+16]],'#C4785A',1.6); line(g,[[-2,-T+5],[-4,-T+9]],'#C4785A',1.2); } line(g,[[-12,hy-9],[-9,hy+1]],'#C4785A',1.3); }},
+  devil_skin:{set:'devil', skin:'#A9A3B8', skin2:'#7E7794', marks:(g,T,hy,bare)=>{ if(bare){ line(g,[[0,-T+3],[0,-3]],'#7A3FE0',2); line(g,[[-7,-T+7],[0,-T+12],[7,-T+7]],'#7A3FE0',1.8); line(g,[[-6,-T+16],[0,-T+12],[6,-T+16]],'#7A3FE0',1.8); } line(g,[[-15,hy+3],[-12,hy+8],[-15,hy+12]],'#7A3FE0',1.6); }},
+  daily_skin_pale:{set:'daily', skin:'#F7DFC8', skin2:'#E0BFA3'},
+  daily_skin_dark:{set:'daily', skin:'#8D5A3C', skin2:'#6E4128'},
+}};
+const ITEM_SLOT = {}; for(const s of SLOTS) for(const id of Object.keys(ITEMS[s])) if(id!=='base') ITEM_SLOT[id] = s;
+const DAILY_IDS = Object.keys(ITEM_SLOT).filter(id => ITEMS[ITEM_SLOT[id]][id].set==='daily');
+const LIFE_KEYS = ['dashes','ewgf','tries','tongbal','hellsweep','maxChain','maxStreak','tightEwgf','days','donate'];
+const lifeDefault = () => ({dashes:0, ewgf:0, tries:0, tongbal:0, hellsweep:0, maxChain:0, maxStreak:0, tightEwgf:0, days:0, donate:0, giftDay:'', trials:{wave10:0, ewgf20:0, combo10:0, rush30:0}});
+const fitDefault = () => Object.fromEntries(SLOTS.map(s => [s,'base']));
+// achievements: id = the item it unlocks. stat(life) is the current value, done when stat >= target. Records-based ones read store.records (best of the last 30).
+const bestRec = (m, f) => (store.records[m]||[]).reduce((b,r) => Math.max(b, f(r)||0), 0);
+const ewgf20Hits = r => Number.isFinite(r.hits) ? r.hits : Math.round(r.score/5); // score is the % rate of 20 attempts
+const ACH = {
+  red_head:{target:10, stat:l=>l.dashes}, red_top:{target:1, stat:l=>l.ewgf}, red_arms:{target:1, stat:l=>Math.min(l.tongbal,l.hellsweep)},
+  red_legs:{target:5, stat:l=>l.maxChain}, red_shoes:{target:1, stat:l=>l.trials.rush30}, red_skin:{target:3, stat:l=>l.days},
+  thunder_head:{target:500, stat:l=>l.dashes}, thunder_top:{target:50, stat:l=>l.ewgf}, thunder_arms:{target:3, stat:l=>l.maxStreak},
+  thunder_legs:{target:15, stat:()=>bestRec('wave10', r=>r.dashes)}, thunder_shoes:{target:100, stat:()=>bestRec('rush30', r=>r.score)}, thunder_skin:{target:30, stat:l=>Math.min(l.tongbal,l.hellsweep)},
+  master_head:{target:3000, stat:l=>l.dashes}, master_top:{target:300, stat:l=>l.ewgf}, master_arms:{target:5, stat:l=>l.maxStreak},
+  master_legs:{target:20, stat:l=>l.maxChain}, master_shoes:{target:16, stat:()=>bestRec('ewgf20', ewgf20Hits)}, master_skin:{target:10, stat:l=>l.tightEwgf},
+  devil_head:{target:10000, stat:l=>l.dashes}, devil_top:{target:1000, stat:l=>l.ewgf}, devil_arms:{target:10, stat:l=>l.maxStreak},
+  devil_legs:{target:20, stat:()=>bestRec('ewgf20', ewgf20Hits)}, devil_shoes:{target:200, stat:()=>bestRec('rush30', r=>r.score)}, devil_skin:{target:30, stat:l=>l.days},
+  bowl_head:{target:1, stat:l=>l.donate}, // opened the donate window (pressing the button is enough; a real donation cannot be seen)
+};
+let lookCache = null; // slot → item objects for store.fit; rebuilt when the outfit changes
+const lookOf = f => Object.fromEntries(SLOTS.map(s => [s, ITEMS[s][f[s]] || ITEMS[s].base]));
+function currentLook(){ return lookCache || (lookCache = lookOf(store.fit)); }
+function setFit(slot, id){ if(!ITEMS[slot] || !ITEMS[slot][id] || !owned(id)) return false; store.fit[slot] = id; lookCache = null; save(); renderFit(); return true; }
+
 /* ---------- persistent settings ---------- */
 const STORE = 'wave-ewgf-dojo-v1';
 const detectLang = () => { const l = (typeof navigator!=='undefined' && navigator.language || '').toLowerCase(); return l.startsWith('ko')?'ko':l.startsWith('ja')?'ja':'en'; };
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[],rush30:[]}, nick:'', nickToken:'', visitDay:''};
+let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[],rush30:[]}, nick:'', nickToken:'', visitDay:'', life:lifeDefault(), ach:{}, fit:fitDefault()};
+const owned = id => id==='base' || !!store.ach[id]; // store.ach = unlock record (achievement items and daily gifts alike): id → time
 const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function validKey(slot, code){
   const arrows = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
@@ -528,9 +710,18 @@ try{
         Math.abs(r.date)<=8640000000000000 && typeof r.label==='string' && typeof r.sub==='string'
       ).slice(-30);
     }
+    if(s.life && typeof s.life==='object'){ // lifetime counters (wardrobe achievements): non-negative integers, else 0
+      for(const k of LIFE_KEYS) if(Number.isInteger(s.life[k]) && s.life[k]>=0) store.life[k]=s.life[k];
+      if(typeof s.life.giftDay==='string' && /^\d{4}-\d\d-\d\d$/.test(s.life.giftDay)) store.life.giftDay=s.life.giftDay;
+      for(const m of Object.keys(store.life.trials)) if(Number.isInteger(s.life.trials?.[m]) && s.life.trials[m]>=0) store.life.trials[m]=s.life.trials[m];
+    }
+    if(s.ach && typeof s.ach==='object') for(const id of Object.keys(s.ach)) if(ITEM_SLOT[id] && Number.isFinite(s.ach[id])) store.ach[id]=s.ach[id]; // unknown ids dropped
+    if(s.fit && typeof s.fit==='object') for(const sl of SLOTS){ const id = s.fit[sl]; if(typeof id==='string' && ITEMS[sl][id] && owned(id)) store.fit[sl]=id; } // an unowned item falls back to base
   }
 }catch(e){}
 const save = () => { try{ localStorage.setItem(STORE, JSON.stringify(store)); }catch(e){} };
+let saveTimer = null; // saveSoon: lifetime counters change on every dash/attempt; the synchronous localStorage write waits 1.5s so it never sits in the input path
+const saveSoon = () => { if(saveTimer) return; saveTimer = setTimeout(() => { saveTimer = null; save(); }, 1500); };
 
 /* ---------- i18n ---------- */
 const LANGS = ['ko','en','ja'];
@@ -566,6 +757,7 @@ ko:{
   'set.keyConflict':'이미 사용 중이거나 방향키와 충돌하는 키입니다. 다른 키를 누르세요. Esc로 취소합니다.',
   'set.pad':'게임패드', 'set.padNone':'연결 안 됨 · 패드 아무 버튼이나 누르면 감지', 'set.padOn':'연결됨 · ',
   'set.padNote':'패드 기본 배치: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>, 십자키·왼쪽 스틱 모두 방향으로 인식. 브라우저 입력은 약 4ms 단위로 읽히므로 실제 게임보다 오차가 조금 있습니다. 기본 판정은 0.7프레임(보통)이며, 실제 게임에 맞추려면 저스트 0.5f로 좁히세요.',
+  'set.reset':'기록·업적 초기화', 'set.resetBtn':'초기화…', 'set.resetNote':'모드별 최고 기록, 누적 통계, 업적, 복장을 지웁니다. 닉네임과 설정은 남습니다.', 'set.resetConfirm':'최고 기록·누적 통계·업적·복장을 모두 지웁니다. 되돌릴 수 없습니다. 계속할까요?', 'set.resetDone':'기록과 업적을 초기화했습니다.',
   'hist.title':'초풍 버튼 타이밍 분포', 'hist.sub':'d/f 입력 시점을 0으로, 2(RP) 버튼이 눌린 프레임 차이 · 최근 60회',
   'hist.lOk':'초풍 (판정 안)', 'hist.lEarly':'빠름 (d+2)', 'hist.lLate':'늦음 (풍신권)', 'hist.aria':'초풍 버튼 타이밍 히스토그램',
   'hist.empty':'초풍을 시도하면 분포가 쌓입니다', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}회 · ${k}`, 'hist.kOk':'초풍', 'hist.kEarly':'빠름', 'hist.kLate':'늦음',
@@ -641,6 +833,30 @@ ko:{
   'donate.chooseTitle':'후원 방법 선택', 'donate.kakao':'카카오페이', 'donate.kakaoSub':'휴대폰 카카오톡 송금 · PC에서는 QR', 'donate.kofi':'Ko-fi', 'donate.kofiSub':'카드 · PayPal', 'donate.back':'뒤로',
   'donate.title':'카카오페이로 후원', 'donate.qrNote':'카카오페이 송금 링크는 휴대폰에서만 열립니다. PC에서는 카카오톡의 QR 스캔으로 아래 코드를 찍어 주세요. 휴대폰으로 보고 있다면 아래 버튼으로 바로 열립니다.',
   'donate.qrAlt':'카카오페이 송금 QR 코드', 'donate.open':'휴대폰에서 카카오페이 열기',
+  // 옷장·업적 (wardrobe + achievements)
+  'fit.title':'옷장', 'fit.hud':'옷장 · 업적', 'fit.tabFit':'옷장', 'fit.tabAch':'업적', 'fit.reset':'기본 복장', 'fit.canvasAria':'코스튬 미리보기',
+  'fit.locked':n=>'잠김 · 업적 "'+n+'"', 'fit.lockedDaily':'잠김 · 출석 선물로 무작위 지급', 'fit.achCount':(n,t)=>'달성 '+n+' / '+t, 'fit.reward':n=>'보상: '+n, 'fit.special':'특별', 'fit.dailyGroup':'출석 선물',
+  'fit.dailyCount':(n,t)=>'출석 선물 '+n+' / '+t+' · 매일 첫 방문에 하나', 'fit.dailyDone':'출석 선물을 모두 모았습니다', 'fit.dailyTitle':n=>'출석 '+n+'일째 · 오늘의 선물', 'fit.dailyGift':'출석 선물',
+  'fit.unlockedBig':'업적 달성!', 'fit.wearHint':'옷장에서 입어 보세요', 'fit.ok':'확인', 'fit.more':n=>'외 '+n+'개',
+  'slot.head':'머리', 'slot.top':'상의', 'slot.arms':'팔', 'slot.legs':'하의', 'slot.shoes':'신발', 'slot.skin':'피부',
+  'set.red':'붉은 도복', 'set.thunder':'뇌신', 'set.master':'사범', 'set.devil':'마왕',
+  'item.base.head':'기본 머리', 'item.base.top':'맨몸', 'item.base.arms':'붉은 글러브', 'item.base.legs':'흰 바지', 'item.base.shoes':'검은 신발', 'item.base.skin':'기본 피부',
+  'item.red_head':'붉은 두건', 'item.red_top':'붉은 도복 상의', 'item.red_arms':'손목 붕대', 'item.red_legs':'붉은 도복 바지', 'item.red_shoes':'발 보호대', 'item.red_skin':'구릿빛 피부',
+  'item.thunder_head':'뇌신의 후드', 'item.thunder_top':'뇌신의 재킷', 'item.thunder_arms':'뇌신의 건틀릿', 'item.thunder_legs':'화염 바지', 'item.thunder_shoes':'뇌신의 부츠', 'item.thunder_skin':'번개 문신',
+  'item.master_head':'사범의 백발', 'item.master_top':'사범의 맨몸', 'item.master_arms':'사범의 붕대손', 'item.master_legs':'사범의 도복 바지', 'item.master_shoes':'사범의 짚신', 'item.master_skin':'사범의 흉터',
+  'item.devil_head':'마왕의 뿔', 'item.devil_top':'흑염 날개', 'item.devil_arms':'마왕의 발톱', 'item.devil_legs':'마왕의 검은 바지', 'item.devil_shoes':'지옥 부츠', 'item.devil_skin':'마왕의 문신',
+  'item.bowl_head':'밥그릇 투구',
+  'item.daily_head_blue':'파란 염색', 'item.daily_head_gold':'금발 염색', 'item.daily_top_tank':'검은 민소매', 'item.daily_top_gi':'흰 도복 상의', 'item.daily_arms_blue':'파란 글러브', 'item.daily_arms_black':'검은 글러브',
+  'item.daily_legs_black':'검은 바지', 'item.daily_legs_navy':'남색 바지', 'item.daily_shoes_white':'흰 운동화', 'item.daily_shoes_red':'붉은 부츠', 'item.daily_skin_pale':'창백한 피부', 'item.daily_skin_dark':'어두운 피부',
+  'ach.red_head':'첫 발걸음', 'ach.red_head.d':'크라우치 대시 10회 누적', 'ach.red_top':'첫 초풍', 'ach.red_top.d':'초풍 1회 성공', 'ach.red_arms':'손과 발', 'ach.red_arms.d':'통발 1회와 나락 1회',
+  'ach.red_legs':'다섯 걸음 파도', 'ach.red_legs.d':'웨이브 5연속', 'ach.red_shoes':'첫 격파', 'ach.red_shoes.d':'더미 격파 30초 1회 완주', 'ach.red_skin':'사흘 출석', 'ach.red_skin.d':'3일 방문',
+  'ach.thunder_head':'파도타기', 'ach.thunder_head.d':'대시 500회 누적', 'ach.thunder_top':'초풍 50', 'ach.thunder_top.d':'초풍 50회 누적', 'ach.thunder_arms':'3연속 초풍', 'ach.thunder_arms.d':'초풍 3연속',
+  'ach.thunder_legs':'10초에 15', 'ach.thunder_legs.d':'웨이브 10초에서 15대시', 'ach.thunder_shoes':'100점 격파', 'ach.thunder_shoes.d':'더미 격파 30초 100점', 'ach.thunder_skin':'중단과 하단', 'ach.thunder_skin.d':'통발 30회와 나락 30회',
+  'ach.master_head':'파도 삼천', 'ach.master_head.d':'대시 3,000회 누적', 'ach.master_top':'초풍 300', 'ach.master_top.d':'초풍 300회 누적', 'ach.master_arms':'5연속 초풍', 'ach.master_arms.d':'초풍 5연속',
+  'ach.master_legs':'스무 걸음 파도', 'ach.master_legs.d':'웨이브 20연속', 'ach.master_shoes':'20개 중 16', 'ach.master_shoes.d':'초풍 20회에서 16회 성공', 'ach.master_skin':'0.5f의 초풍', 'ach.master_skin.d':'판정 폭 0.5f에서 초풍 10회',
+  'ach.devil_head':'파도 만 번', 'ach.devil_head.d':'대시 10,000회 누적', 'ach.devil_top':'초풍 천 번', 'ach.devil_top.d':'초풍 1,000회 누적', 'ach.devil_arms':'10연속 초풍', 'ach.devil_arms.d':'초풍 10연속',
+  'ach.devil_legs':'20개 중 20', 'ach.devil_legs.d':'초풍 20회 전부 성공', 'ach.devil_shoes':'200점 격파', 'ach.devil_shoes.d':'더미 격파 30초 200점', 'ach.devil_skin':'한 달 출석', 'ach.devil_skin.d':'30일 방문',
+  'ach.bowl_head':'후원 생각이 있었군요..!?', 'ach.bowl_head.d':'후원 창을 열어 보았다 (버튼만 눌러도 됩니다)',
   'share.discordNote':'디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.',
   'share.copied':'이미지를 클립보드에 복사했습니다.', 'share.copyFail':'이 브라우저는 이미지 복사를 지원하지 않습니다. PNG 저장을 이용하세요.',
   'board.title':'주간 순위', 'board.tabsAria':'순위표 선택', 'board.week':(a,b)=>a+' ~ '+b+' (KST) · 월요일 0시 초기화',
@@ -711,6 +927,7 @@ en:{
   'set.keyConflict':'That key is already in use or conflicts with the arrow keys. Press another key. Esc cancels.',
   'set.pad':'Gamepad', 'set.padNone':'Not connected · press any pad button to detect', 'set.padOn':'Connected · ',
   'set.padNote':'Default pad layout: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>; d-pad and left stick both count as direction. Browser input is polled at roughly 4ms, so expect slight deviation from the real game. The default window is 0.7 frames (normal); narrow it to Just 0.5f to match the real game.',
+  'set.reset':'Reset records & achievements', 'set.resetBtn':'Reset…', 'set.resetNote':'Clears best records, lifetime stats, achievements and the outfit. Nickname and settings stay.', 'set.resetConfirm':'This wipes best records, lifetime stats, achievements and the outfit. It cannot be undone. Continue?', 'set.resetDone':'Records and achievements were reset.',
   'hist.title':'EWGF button timing', 'hist.sub':'Frame difference of the 2 (RP) press relative to the d/f input at 0 · last 60',
   'hist.lOk':'EWGF (in window)', 'hist.lEarly':'Early (d+2)', 'hist.lLate':'Late (WGF)', 'hist.aria':'EWGF button timing histogram',
   'hist.empty':'Attempt an EWGF and the distribution builds up here', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}× · ${k}`, 'hist.kOk':'EWGF', 'hist.kEarly':'early', 'hist.kLate':'late',
@@ -786,6 +1003,30 @@ en:{
   'donate.chooseTitle':'Choose how to support', 'donate.kakao':'KakaoPay (Korea)', 'donate.kakaoSub':'KakaoTalk transfer on a phone · QR on PC', 'donate.kofi':'Ko-fi', 'donate.kofiSub':'Card · PayPal', 'donate.back':'Back',
   'donate.title':'Support via KakaoPay', 'donate.qrNote':'The KakaoPay link only opens on a phone. On a PC, scan the code below with the KakaoTalk QR scanner. On a phone, the button below opens it directly.',
   'donate.qrAlt':'KakaoPay transfer QR code', 'donate.open':'Open KakaoPay on your phone',
+  // wardrobe + achievements
+  'fit.title':'Wardrobe', 'fit.hud':'Wardrobe · achievements', 'fit.tabFit':'Wardrobe', 'fit.tabAch':'Achievements', 'fit.reset':'Default outfit', 'fit.canvasAria':'Costume preview',
+  'fit.locked':n=>'Locked · achievement "'+n+'"', 'fit.lockedDaily':'Locked · random daily gift', 'fit.achCount':(n,t)=>n+' / '+t+' unlocked', 'fit.reward':n=>'Reward: '+n, 'fit.special':'Special', 'fit.dailyGroup':'Daily gifts',
+  'fit.dailyCount':(n,t)=>'Daily gifts '+n+' / '+t+' · one on the first visit each day', 'fit.dailyDone':'All daily gifts collected', 'fit.dailyTitle':n=>'Day '+n+' · today\'s gift', 'fit.dailyGift':'Daily gift',
+  'fit.unlockedBig':'ACHIEVEMENT!', 'fit.wearHint':'Try it on in the wardrobe', 'fit.ok':'OK', 'fit.more':n=>'+'+n+' more',
+  'slot.head':'Head', 'slot.top':'Top', 'slot.arms':'Arms', 'slot.legs':'Legs', 'slot.shoes':'Shoes', 'slot.skin':'Skin',
+  'set.red':'Crimson Dobok', 'set.thunder':'Thunder God', 'set.master':'Old Master', 'set.devil':'Devil Lord',
+  'item.base.head':'Default hair', 'item.base.top':'Bare chest', 'item.base.arms':'Red gloves', 'item.base.legs':'White pants', 'item.base.shoes':'Black shoes', 'item.base.skin':'Default skin',
+  'item.red_head':'Crimson Headband', 'item.red_top':'Crimson Dobok Top', 'item.red_arms':'Wrist Wraps', 'item.red_legs':'Crimson Dobok Pants', 'item.red_shoes':'Foot Guards', 'item.red_skin':'Bronze Skin',
+  'item.thunder_head':'Thunder Hood', 'item.thunder_top':'Thunder Jacket', 'item.thunder_arms':'Thunder Gauntlets', 'item.thunder_legs':'Flame Pants', 'item.thunder_shoes':'Thunder Boots', 'item.thunder_skin':'Lightning Tattoo',
+  'item.master_head':'Master\'s White Hair', 'item.master_top':'Master\'s Bare Chest', 'item.master_arms':'Master\'s Bandaged Fists', 'item.master_legs':'Master\'s Gi Pants', 'item.master_shoes':'Master\'s Straw Sandals', 'item.master_skin':'Master\'s Scars',
+  'item.devil_head':'Devil Horns', 'item.devil_top':'Black Flame Wings', 'item.devil_arms':'Devil Claws', 'item.devil_legs':'Devil\'s Black Pants', 'item.devil_shoes':'Hell Boots', 'item.devil_skin':'Devil Tattoo',
+  'item.bowl_head':'Rice Bowl Helmet',
+  'item.daily_head_blue':'Blue Dye', 'item.daily_head_gold':'Blond Dye', 'item.daily_top_tank':'Black Tank Top', 'item.daily_top_gi':'White Gi Top', 'item.daily_arms_blue':'Blue Gloves', 'item.daily_arms_black':'Black Gloves',
+  'item.daily_legs_black':'Black Pants', 'item.daily_legs_navy':'Navy Pants', 'item.daily_shoes_white':'White Sneakers', 'item.daily_shoes_red':'Red Boots', 'item.daily_skin_pale':'Pale Skin', 'item.daily_skin_dark':'Dark Skin',
+  'ach.red_head':'First Steps', 'ach.red_head.d':'10 crouch dashes in total', 'ach.red_top':'First EWGF', 'ach.red_top.d':'Land one EWGF', 'ach.red_arms':'Hand and Foot', 'ach.red_arms.d':'One f,f+2 and one hell sweep',
+  'ach.red_legs':'Five-Step Wave', 'ach.red_legs.d':'A 5-dash wave chain', 'ach.red_shoes':'First Rush', 'ach.red_shoes.d':'Finish one 30s dummy rush', 'ach.red_skin':'Three Days', 'ach.red_skin.d':'Visit on 3 days',
+  'ach.thunder_head':'Wave Rider', 'ach.thunder_head.d':'500 dashes in total', 'ach.thunder_top':'EWGF 50', 'ach.thunder_top.d':'50 EWGFs in total', 'ach.thunder_arms':'Triple EWGF', 'ach.thunder_arms.d':'3 EWGFs in a row',
+  'ach.thunder_legs':'15 in 10s', 'ach.thunder_legs.d':'15 dashes in a Wave 10s trial', 'ach.thunder_shoes':'100-Point Rush', 'ach.thunder_shoes.d':'100 points in a dummy rush', 'ach.thunder_skin':'Mid and Low', 'ach.thunder_skin.d':'30 f,f+2 and 30 hell sweeps',
+  'ach.master_head':'Three Thousand Waves', 'ach.master_head.d':'3,000 dashes in total', 'ach.master_top':'EWGF 300', 'ach.master_top.d':'300 EWGFs in total', 'ach.master_arms':'Five in a Row', 'ach.master_arms.d':'5 EWGFs in a row',
+  'ach.master_legs':'Twenty-Step Wave', 'ach.master_legs.d':'A 20-dash wave chain', 'ach.master_shoes':'16 of 20', 'ach.master_shoes.d':'16 hits in an EWGF 20 trial', 'ach.master_skin':'0.5f EWGF', 'ach.master_skin.d':'10 EWGFs at the 0.5f window',
+  'ach.devil_head':'Ten Thousand Waves', 'ach.devil_head.d':'10,000 dashes in total', 'ach.devil_top':'Thousand EWGFs', 'ach.devil_top.d':'1,000 EWGFs in total', 'ach.devil_arms':'Ten in a Row', 'ach.devil_arms.d':'10 EWGFs in a row',
+  'ach.devil_legs':'Perfect 20', 'ach.devil_legs.d':'All 20 in an EWGF 20 trial', 'ach.devil_shoes':'200-Point Rush', 'ach.devil_shoes.d':'200 points in a dummy rush', 'ach.devil_skin':'A Month of Practice', 'ach.devil_skin.d':'Visit on 30 days',
+  'ach.bowl_head':'So You Thought About Donating..!?', 'ach.bowl_head.d':'Opened the donate window (just pressing the button counts)',
   'share.discordNote':'Discord: click "Copy image", then paste into the chat with Ctrl+V. If copying is unavailable, save the PNG and attach it.',
   'share.copied':'Image copied to the clipboard.', 'share.copyFail':'This browser cannot copy images. Use Save PNG instead.',
   'board.title':'Weekly ranking', 'board.tabsAria':'Choose a board', 'board.week':(a,b)=>a+' – '+b+' (KST) · resets Monday 00:00',
@@ -855,6 +1096,7 @@ ja:{
   'set.keyConflict':'すでに使用中か矢印キーと衝突するキーです。別のキーを押してください。Escでキャンセル。',
   'set.pad':'ゲームパッド', 'set.padNone':'未接続 · パッドのボタンを押すと検出', 'set.padOn':'接続済み · ',
   'set.padNote':'パッド初期配置: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>、十字キー・左スティックとも方向として認識。ブラウザ入力は約4ms単位で読まれるため、実機よりわずかに誤差があります。初期判定は0.7フレーム(普通)です。実機に合わせるならジャスト0.5fに狭めてください。',
+  'set.reset':'記録・実績の初期化', 'set.resetBtn':'初期化…', 'set.resetNote':'モード別最高記録・累計統計・実績・服装を消します。ニックネームと設定は残ります。', 'set.resetConfirm':'最高記録・累計統計・実績・服装をすべて消します。元に戻せません。続けますか?', 'set.resetDone':'記録と実績を初期化しました。',
   'hist.title':'最風ボタンタイミング分布', 'hist.sub':'3(d/f)入力時点を0とした2(RP)ボタン押下のフレーム差 · 直近60回',
   'hist.lOk':'最風 (判定内)', 'hist.lEarly':'早い (2+2)', 'hist.lLate':'遅い (風神拳)', 'hist.aria':'最風ボタンタイミングのヒストグラム',
   'hist.empty':'最風を試行すると分布が溜まります', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}回 · ${k}`, 'hist.kOk':'最風', 'hist.kEarly':'早い', 'hist.kLate':'遅い',
@@ -930,6 +1172,30 @@ ja:{
   'donate.chooseTitle':'支援方法を選ぶ', 'donate.kakao':'カカオペイ (韓国)', 'donate.kakaoSub':'スマホのカカオトーク送金 · PCはQR', 'donate.kofi':'Ko-fi', 'donate.kofiSub':'カード · PayPal', 'donate.back':'戻る',
   'donate.title':'カカオペイで支援', 'donate.qrNote':'カカオペイの送金リンクはスマートフォンでのみ開けます。PCではカカオトークのQRスキャンで下のコードを読み取ってください。スマートフォンなら下のボタンでそのまま開きます。',
   'donate.qrAlt':'カカオペイ送金QRコード', 'donate.open':'スマートフォンでカカオペイを開く',
+  // クローゼット・実績 (wardrobe + achievements)
+  'fit.title':'クローゼット', 'fit.hud':'クローゼット・実績', 'fit.tabFit':'クローゼット', 'fit.tabAch':'実績', 'fit.reset':'初期の服装', 'fit.canvasAria':'コスチュームのプレビュー',
+  'fit.locked':n=>'未解放・実績「'+n+'」', 'fit.lockedDaily':'未解放・出席ギフトでランダム入手', 'fit.achCount':(n,t)=>'達成 '+n+' / '+t, 'fit.reward':n=>'報酬: '+n, 'fit.special':'特別', 'fit.dailyGroup':'出席ギフト',
+  'fit.dailyCount':(n,t)=>'出席ギフト '+n+' / '+t+'・毎日初回訪問で1つ', 'fit.dailyDone':'出席ギフトをすべて集めました', 'fit.dailyTitle':n=>'出席'+n+'日目・今日のギフト', 'fit.dailyGift':'出席ギフト',
+  'fit.unlockedBig':'実績達成!', 'fit.wearHint':'クローゼットで着てみよう', 'fit.ok':'OK', 'fit.more':n=>'ほか'+n+'件',
+  'slot.head':'頭', 'slot.top':'上半身', 'slot.arms':'腕', 'slot.legs':'下半身', 'slot.shoes':'靴', 'slot.skin':'肌',
+  'set.red':'紅の道着', 'set.thunder':'雷神', 'set.master':'師範', 'set.devil':'魔王',
+  'item.base.head':'初期の髪', 'item.base.top':'上半身裸', 'item.base.arms':'赤いグローブ', 'item.base.legs':'白いズボン', 'item.base.shoes':'黒い靴', 'item.base.skin':'初期の肌',
+  'item.red_head':'紅の鉢巻', 'item.red_top':'紅の道着(上)', 'item.red_arms':'手首のテーピング', 'item.red_legs':'紅の道着(下)', 'item.red_shoes':'足サポーター', 'item.red_skin':'小麦色の肌',
+  'item.thunder_head':'雷神のフード', 'item.thunder_top':'雷神のジャケット', 'item.thunder_arms':'雷神のガントレット', 'item.thunder_legs':'炎のズボン', 'item.thunder_shoes':'雷神のブーツ', 'item.thunder_skin':'稲妻の刺青',
+  'item.master_head':'師範の白髪', 'item.master_top':'師範の裸身', 'item.master_arms':'師範の包帯拳', 'item.master_legs':'師範の道着(下)', 'item.master_shoes':'師範の草履', 'item.master_skin':'師範の傷跡',
+  'item.devil_head':'魔王の角', 'item.devil_top':'黒炎の翼', 'item.devil_arms':'魔王の爪', 'item.devil_legs':'魔王の黒いズボン', 'item.devil_shoes':'地獄のブーツ', 'item.devil_skin':'魔王の刺青',
+  'item.bowl_head':'茶碗ヘルメット',
+  'item.daily_head_blue':'青髪', 'item.daily_head_gold':'金髪', 'item.daily_top_tank':'黒いタンクトップ', 'item.daily_top_gi':'白い道着(上)', 'item.daily_arms_blue':'青いグローブ', 'item.daily_arms_black':'黒いグローブ',
+  'item.daily_legs_black':'黒いズボン', 'item.daily_legs_navy':'紺のズボン', 'item.daily_shoes_white':'白いスニーカー', 'item.daily_shoes_red':'赤いブーツ', 'item.daily_skin_pale':'色白の肌', 'item.daily_skin_dark':'褐色の肌',
+  'ach.red_head':'最初の一歩', 'ach.red_head.d':'しゃがみステップ累計10回', 'ach.red_top':'初めての最風', 'ach.red_top.d':'最風を1回成功', 'ach.red_arms':'手と足', 'ach.red_arms.d':'66+2と奈落を1回ずつ',
+  'ach.red_legs':'五歩の波', 'ach.red_legs.d':'ウェーブ5連続', 'ach.red_shoes':'初撃破', 'ach.red_shoes.d':'ダミー撃破30秒を1回完走', 'ach.red_skin':'三日出席', 'ach.red_skin.d':'3日訪問',
+  'ach.thunder_head':'波乗り', 'ach.thunder_head.d':'ステップ累計500回', 'ach.thunder_top':'最風50', 'ach.thunder_top.d':'最風累計50回', 'ach.thunder_arms':'最風3連', 'ach.thunder_arms.d':'最風3連続',
+  'ach.thunder_legs':'10秒で15', 'ach.thunder_legs.d':'ウェーブ10秒で15ステップ', 'ach.thunder_shoes':'100点撃破', 'ach.thunder_shoes.d':'ダミー撃破30秒で100点', 'ach.thunder_skin':'中段と下段', 'ach.thunder_skin.d':'66+2と奈落を30回ずつ',
+  'ach.master_head':'三千の波', 'ach.master_head.d':'ステップ累計3,000回', 'ach.master_top':'最風300', 'ach.master_top.d':'最風累計300回', 'ach.master_arms':'最風5連', 'ach.master_arms.d':'最風5連続',
+  'ach.master_legs':'二十歩の波', 'ach.master_legs.d':'ウェーブ20連続', 'ach.master_shoes':'20回中16回', 'ach.master_shoes.d':'最風20回で16回成功', 'ach.master_skin':'0.5fの最風', 'ach.master_skin.d':'判定幅0.5fで最風10回',
+  'ach.devil_head':'一万の波', 'ach.devil_head.d':'ステップ累計10,000回', 'ach.devil_top':'千の最風', 'ach.devil_top.d':'最風累計1,000回', 'ach.devil_arms':'最風10連', 'ach.devil_arms.d':'最風10連続',
+  'ach.devil_legs':'20回中20回', 'ach.devil_legs.d':'最風20回を全部成功', 'ach.devil_shoes':'200点撃破', 'ach.devil_shoes.d':'ダミー撃破30秒で200点', 'ach.devil_skin':'一か月出席', 'ach.devil_skin.d':'30日訪問',
+  'ach.bowl_head':'支援する気があったんですね..!?', 'ach.bowl_head.d':'支援ウィンドウを開いた (ボタンを押すだけでOK)',
   'share.discordNote':'Discord: 「画像をコピー」後、チャット欄に Ctrl+V で貼り付けてください。コピーできない場合は PNG を保存して添付してください。',
   'share.copied':'画像をクリップボードにコピーしました。', 'share.copyFail':'このブラウザは画像コピーに対応していません。PNG保存をご利用ください。',
   'board.title':'週間ランキング', 'board.tabsAria':'ランキングを選択', 'board.week':(a,b)=>a+' ～ '+b+' (KST) · 月曜0時にリセット',
@@ -1022,11 +1288,23 @@ function bgmSync(){ // Web Lock keeps visible windows of this origin from playin
     if(snd.bgm.paused){ const r = snd.bgm.play(); if(r && r.catch) r.catch(e => { if(e.name==='NotAllowedError'){ snd.unlocked=false; bgmSync(); } }); } // interruption by pause is not an autoplay refusal
   } else if(snd.bgm && !snd.bgm.paused) snd.bgm.pause();
 }
-function unlockAudio(){ if(!snd.ok || snd.unlocked) return; snd.unlocked=true; ['wave','ewgf'].forEach(sfxPool); bgmSync(); }
+let chimeCtx = null; // wardrobe unlock chime: a soft rising four-note sine arpeggio synthesized with Web Audio (no audio file; follows the sound toggle and SFX volume)
+function playChime(){
+  if(!store.sound || store.sfxVol<=0 || typeof AudioContext==='undefined') return;
+  try{
+    chimeCtx = chimeCtx || new AudioContext(); if(chimeCtx.state==='suspended') chimeCtx.resume().catch(()=>{});
+    const ac = chimeCtx, t0 = ac.currentTime + 0.01, v = store.sfxVol/100*0.22, bus = ac.createGain(); bus.gain.value = 1; bus.connect(ac.destination);
+    [[523.25,0],[659.25,0.1],[783.99,0.2],[1046.5,0.32]].forEach(([f,d]) => { const o = ac.createOscillator(), e = ac.createGain(); o.type='sine'; o.frequency.value=f;
+      e.gain.setValueAtTime(0.0001, t0+d); e.gain.exponentialRampToValueAtTime(v, t0+d+0.02); e.gain.exponentialRampToValueAtTime(0.0001, t0+d+1.1); o.connect(e); e.connect(bus); o.start(t0+d); o.stop(t0+d+1.2); });
+    return () => bus.disconnect();
+  }catch(e){}
+}
+function unlockAudio(){ dailyGift(); /* any first key/click of a KST day hands out the daily wardrobe gift (no-op otherwise) */ if(!snd.ok || snd.unlocked) return; snd.unlocked=true; ['wave','ewgf'].forEach(sfxPool); bgmSync(); }
 addEventListener('pointerdown', unlockAudio);
 addEventListener('visibilitychange', bgmSync);
 addEventListener('focus', bgmSync);
 addEventListener('pagehide', () => {
+  if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; save(); } // flush a pending counter save
   if(snd.bgm) snd.bgm.pause();
   if(snd.lock){ snd.lock.abort(); snd.lock=null; }
   if(snd.release){ const release=snd.release; snd.release=null; release(); }
@@ -1085,7 +1363,7 @@ function kbVector(){
   kbDir = { x:(rt?1:0)-(lf?1:0), y:(up?1:0)-(dn?1:0) };
 }
 const mappedCodes = () => new Set([...Object.values(store.keys),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
-const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open || $('donateDlg').open; // nickname gate / result card / settings / donate QR: game input is paused (called at pad-poll rate, so no DOM query)
+const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open || $('donateDlg').open || $('fitDlg').open; // nickname gate / result card / settings / donate QR: game input is paused (called at pad-poll rate, so no DOM query)
 let listening = null; // key remap slot
 addEventListener('keydown', e => {
   if(listening){
@@ -1120,7 +1398,7 @@ function resetInput(){
 addEventListener('blur', () => { resetInput(); endTrial(true); bgmSync(); });
 
 /* gamepad */
-let padIndex = null;
+let padIndex = null, padLastT = 0; // padLastT: last judged pad time (keeps t monotonic across the timestamp fallback)
 function renderPadStatus(){ $('padStatus').textContent = ui.padId==null ? T('set.padNone') : T('set.padOn') + ui.padId; }
 addEventListener('gamepadconnected', e => { padIndex = e.gamepad.index; ui.padId = e.gamepad.id.slice(0,40); renderPadStatus(); });
 function releasePad(){
@@ -1142,7 +1420,8 @@ function pollPad(){
   for(const p of pads){ if(p && (padIndex===null || p.index===padIndex)){ gp=p; break; } }
   if(!gp){ if(padIndex!==null) releasePad(); return; }
   if(padIndex===null){ padIndex=gp.index; ui.padId=gp.id.slice(0,40); renderPadStatus(); }
-  const t = performance.now();
+  const now = performance.now(), ts = gp.timestamp; // judge at the device's own update time, not the poll time: a late 4ms timer (busy frame) must not turn a simultaneous d/f+2 into a 1f gap
+  const t = (Number.isFinite(ts) && ts > 0 && ts <= now && ts >= padLastT) ? ts : now; // only changed input advances the judgment clock
   const b = gp.buttons, ax = gp.axes;
   const on = i => !!(b[i] && (b[i].pressed || b[i].value>0.5));
   const [hx,hy] = gp.mapping==='standard' ? [0,0] : hatVec(ax[9]); // DirectInput hat 축
@@ -1152,6 +1431,7 @@ function pollPad(){
   let changed = false;
   if(nx!==padDir.x || ny!==padDir.y){ padDir={x:nx,y:ny}; changed=true; }
   const map = [2,3,0,1]; // 1=X/□ 2=Y/△ 3=A/✕ 4=B/○
+  if(changed || map.some((bi,i) => on(bi)!==padBtn[i])) padLastT = t;
   if(changed) recomputeDir(t,'pad'); // 같은 샘플의 방향을 먼저 반영해야 d/f+2를 판정할 수 있다.
   map.forEach((bi,i) => { const p = on(bi); if(p && !padBtn[i]){ unlockAudio(); onButton(i+1,t); } padBtn[i]=p; }); // a pad press may not count as a browser gesture; play() rejection is handled in bgmSync
   if(padBtn.some(Boolean) && lastSrc!=='pad') setSrc('pad');
@@ -1284,6 +1564,7 @@ function completeCD(t){
   cd.lastDF = t; cd.tDF = t; cd.state = 4; cd.cancelled = false;
   session.dashes++;
   session.bestChain = Math.max(session.bestChain, cd.chain);
+  store.life.dashes++; store.life.maxChain = Math.max(store.life.maxChain, cd.chain); saveSoon(); checkAch();
   if(cyc.cycle){ const dps = 1000/cyc.cycle; session.cycles.push({t, cycle:cyc.cycle, dps}); if(session.cycles.length>200) session.cycles.shift(); }
   if(cd.chain>=3){ const last3 = cd.chainCycles.slice(-3); const span = last3[2].t - last3[0].t; const dps = 2000/span; if(dps>session.bestDps) session.bestDps = dps; }
   if(trial.running && mode==='wave10'){ trial.count++; trial.bestChain = Math.max(trial.bestChain||0, cd.chain); }
@@ -1358,7 +1639,7 @@ function strike(kind, t){
   setCoach(['a.'+kind+'.coach']);
   addLog(t, 'log.tStrike', ['res.'+kind], '', chainBefore? ['log.mAfterWave', chainBefore]:'', ok?'ok':'no');
   if(kind==='tongbal') fx.tongbal(); else if(kind==='hellsweep') fx.hellsweep(); else fx.jab();
-  if(ok) rushStrike(kind, t);
+  if(ok){ rushStrike(kind, t); store.life[kind]++; saveSoon(); checkAch(); }
   endCommand(); updateHud();
 }
 function classify(off, t){
@@ -1373,6 +1654,7 @@ function attempt(kind, off, t){
   const a = { t, kind, off, chain: chainBefore, mode, streak: combo.n, dash: kind==='ewgf' && cd.dashT>0 && cd.dashT===cd.tF && !cd.dashWave };
   session.attempts.push(a); if(session.attempts.length>300) session.attempts.shift();
   session.tries++; if(kind==='ewgf') session.hits++;
+  { const L = store.life; L.tries++; if(kind==='ewgf'){ L.ewgf++; if(store.window===8) L.tightEwgf++; L.maxStreak = Math.max(L.maxStreak, combo.n); } saveSoon(); checkAch(); }
   if(off!=null){ session.offsetSum+=off; session.offsetCount++; }
   const comboOK = chainBefore>=3;
   const f = off==null?'':fmtF(off), ms = off==null?'':fmtMs(off);
@@ -1504,7 +1786,7 @@ function endChain(now){
       setTrend(() => T('chain.end', n, dps.toFixed(1), T('seg.n.'+worst[0]), Math.round(worst[1])) + T(worst[1]>90?'chain.fix':'chain.ok'));
     }
   }
-  cd.chain=0; cd.chainCycles=[]; updateHud(); renderWave();
+  cd.chain=0; cd.chainCycles=[]; updateHud(); renderWave(); saveSoon(); // dash counters (store.life) reach disk shortly after
 }
 
 /* ---------- trials ---------- */
@@ -1537,6 +1819,7 @@ function setMode(m){
 function startTrial(){
   const M = MODES[mode]; if(!M.start) return;
   endTrial(true); clearShare();
+  jackpotPause();
   trial.running=false; trial.count=0; trial.bestChain=0; trial.target=M.target||0; trial.dur=M.dur||0; trial.score=0; trial.kills=0; trial.whiffs=0; trial.dashPts=0;
   $('dStart').disabled=true;
   let c = 3; $('hudCenter').textContent=c;
@@ -1546,7 +1829,7 @@ function endTrial(cancel){
   const wasRunning = trial.running; trial.running=false; clearInterval(trial.cdTimer); trial.cdTimer=null; clearTimeout(trial.messageTimer); trial.messageTimer=null; clearTimeout(trial.openTimer); trial.openTimer=null; $('dStart').disabled=false; $('hudCenter').textContent='';
   if(world.dummy.type){ world.dummy.type=null; world.dummy.respawn=0; } // every exit (finish, cancel from blur/settings/donate/nick/setMode/reset) hands the stage back to the plain dummy
   $('hudScore').textContent='';
-  if(cancel || !wasRunning) { $('dProg').textContent=''; return; }
+  if(cancel || !wasRunning) { $('dProg').textContent=''; setTimeout(jackpotNext, 0); return; } // a reveal held back by the trial may play now (after whatever dialog opened)
   const since = a => a.t>=trial.tStart;
   let rec, text, at = session.attempts.filter(since);
   if(mode==='wave10'){
@@ -1572,6 +1855,7 @@ function endTrial(cancel){
   trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; }, 2200);
   $('dProg').textContent = text;
   store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); save(); renderBests();
+  store.life.trials[mode]++; jackpotHold = true; setTimeout(() => { jackpotHold = false; jackpotNext(); }, 2300); checkAch(); // unlocks wait for the result flash
   trial.result = {rec, attempts:at, cycles:session.cycles.filter(since), window:store.window}; $('dShare').hidden=false;
   boardSubmit(); // always to the weekly ranking (the server keeps only the weekly best); no-op without a claimed nickname
   trial.openTimer = setTimeout(() => openShare().then(() => { trial.openTimer = null; }), 900); // result card after the HUD flash; openTimer stays set until it is open
@@ -1762,7 +2046,7 @@ segSel('touchSel','touch', v => { store.touch=v; save(); applyTouchUI(); });
 segSel('sideSel','side', v => { endTrial(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); });
 segSel('fxSel','fx', v => { store.fx=+v; save(); });
 segSel('langSel','lang', v => { setLang(v); });
-$('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDlg'); if(!d.open){ endTrial(true); resetInput(); d.showModal(); } });
+$('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDlg'); if(!d.open){ endTrial(true); resetInput(); d.showModal(); jackpotPause(); } });
 $('setClose').addEventListener('click', () => { listening=null; renderKeys(); $('setDlg').close(); });
 segSel('soundSel','sound', v => { store.sound=+v; save(); unlockAudio(); bgmSync(); sfxSync(); renderSound(); });
 function renderSound(){ // slider values + % readouts; language-independent, so it only runs at boot and on change
@@ -1774,6 +2058,12 @@ const volOf = id => clamp(Math.round(+$(id).value)||0, 0, 100);
 $('bgmVol').addEventListener('input', () => { store.bgmVol = volOf('bgmVol'); save(); renderSound(); bgmSync(); });
 $('sfxVol').addEventListener('input', () => { store.sfxVol = volOf('sfxVol'); save(); sfxSync(); renderSound(); });
 $('sfxVol').addEventListener('change', () => playSfx('wave')); // preview at the new level
+$('dataReset').addEventListener('click', () => { // wipes records, lifetime stats, achievements and the outfit; nickname/token and settings stay (a dropped nickname would stay occupied on the server)
+  if(typeof confirm==='function' && !confirm(T('set.resetConfirm'))) return;
+  jackpotPause(false);
+  store.records = {wave10:[], ewgf20:[], combo10:[], rush30:[]}; store.life = lifeDefault(); store.life.days = 1; store.ach = {}; store.fit = fitDefault(); lookCache = null; jackpotQ.length = 0; save();
+  $('dReset').click(); renderBests(); setCoach(['set.resetDone']); if($('fitDlg').open) renderFit();
+});
 renderSound();
 const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK'};
 const pretty = c => c.replace(/^Key|^Digit|^Numpad/, m=>m==='Numpad'?'Num':'').replace('Arrow','');
@@ -1815,11 +2105,11 @@ function setShareMsg(m){ ui.shareMsg = m; $('shareMsg').textContent = msg(m); }
 function openShare(){
   shareSrc = shareSource(); if(!shareSrc) return Promise.resolve();
   setShareMsg(''); renderShareRank();
-  return renderShare().then(() => { const d = $('shareDlg'); if(!d.open){ resetInput(); d.showModal(); } }); // like setOpen/openDonate: a finger still on the pad must not keep driving onDir behind the card
+  return renderShare().then(() => { const d = $('shareDlg'); if(!d.open){ resetInput(); d.showModal(); jackpotPause(); } }); // like setOpen/openDonate: a finger still on the pad must not keep driving onDir behind the card
 }
 $('dShare').addEventListener('click', openShare);
 $('shareClose').addEventListener('click', () => $('shareDlg').close());
-$('shareDlg').addEventListener('close', () => { if(live.nickLost){ live.nickLost = false; openNick('nick.expired'); } }); // a token rejected mid-trial: ask once the card is out of the way
+$('shareDlg').addEventListener('close', () => { if(live.nickLost){ live.nickLost = false; openNick('nick.expired'); } setTimeout(jackpotNext, 0); }); // a token rejected mid-trial: ask once the card is out of the way
 $('shareCopy').addEventListener('click', () => {
   const c = $('shareCanvas'), fail = () => setShareMsg(['share.copyFail']);
   try{
@@ -1853,11 +2143,118 @@ function renderDonate(){
   $('donateOpen').href = DONATE.kakao.url; $('donateQr').src = DONATE.kakao.qr;
 }
 function donateView(v){ $('donateChoose').hidden = v==='kakao'; $('donateKakao').hidden = v!=='kakao'; }
-function openDonate(){ donateView('choose'); const d = $('donateDlg'); if(typeof d.showModal==='function' && !d.open){ endTrial(true); resetInput(); d.showModal(); } }
+function openDonate(){ donateView('choose'); const d = $('donateDlg'); if(typeof d.showModal==='function' && !d.open){ endTrial(true); resetInput(); d.showModal(); jackpotPause(); store.life.donate++; save(); checkAch(); } } // opening the window is the 'thought about donating' achievement
 ['donateBtn','donateTop','donateShareBtn'].forEach(id => $(id).addEventListener('click', openDonate));
 $('donateOptions').addEventListener('click', e => { const t = e.target && e.target.closest ? e.target.closest('[data-opt]') : null; if(!t) return; if(t.dataset.opt==='kakao'){ e.preventDefault(); donateView('kakao'); } else $('donateDlg').close(); });
 $('donateBack').addEventListener('click', () => donateView('choose'));
 $('donateClose').addEventListener('click', () => $('donateDlg').close());
+
+/* ---------- 옷장·업적 runtime: lifetime counters → unlock checks → jackpot reveal → #fitDlg ---------- */
+// Presentation only: nothing here feeds the judging state machine, session stats or trial scores (design decision 14). Progress lives in store.life/ach/fit (this browser only).
+const SLOT_ICON = {head:'🎩', top:'👕', arms:'🥊', legs:'👖', shoes:'👟', skin:'✋'};
+const REEL_POOL = ['🍚','⚡','🔥','👊','💀','🌊','🥋','⭐'];
+const jackpotQ = []; let jackpotBusy = false, jackpotHold = false, jackpotFinish = null; // jackpotFinish: closes the card currently on screen (OK button) // hold: endTrial keeps the reveal off the result flash for 2.3s
+let jackpotActive = null;
+function jackpotPause(requeue = true){
+  const a = jackpotActive; if(!a) return;
+  a.timers.forEach(clearTimeout); clearInterval(a.rumble);
+  if(a.stopChime) a.stopChime();
+  if(requeue && !a.done) jackpotQ.unshift({...a.j, extra:a.extra});
+  jackpotActive = null; jackpotFinish = null; jackpotBusy = false;
+  petalsStop(); petals.length = 0;
+  $('jackpot').hidden = true; $('jackpot').dataset.phase = '';
+  shake = 0; if(flashGold){ flash = 0; flashGold = false; }
+}
+function renderJackpot(){
+  if(!jackpotActive) return;
+  const {j, extra} = jackpotActive;
+  $('jpTitle').textContent = j.kind==='daily' ? T('fit.dailyTitle', j.day) : T('fit.unlockedBig');
+  $('jpAch').textContent = (j.kind==='daily' ? T('fit.dailyGift') : T('ach.'+j.id)) + (extra ? ' '+T('fit.more', extra) : '');
+  $('jpItem').textContent = T('item.'+j.id); $('jpHint').textContent = T('fit.wearHint');
+}
+const fit = { view:'fit' };
+const canDraw = c => { const g = c && typeof c.getContext==='function' ? c.getContext('2d') : null; return g && typeof g.arc==='function' ? g : null; }; // the node harness has no 2D context
+function drawPreview(c, look, scale){ const g = canDraw(c); if(!g) return; g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,c.width,c.height); g.save(); g.translate(c.width/2, c.height-8); g.scale(scale,scale); drawFighter(g, 0, 0, {lean:4, armR:35, armL:-30, spread:0.25}, 1, 1, null, look); g.restore(); }
+function unlockItem(id, kind){ store.ach[id] = Date.now(); jackpotQ.push({kind, id, day:store.life.days}); }
+function checkAch(){ // called after every counter change; cheap (25 predicates)
+  const l = store.life; let n = 0;
+  for(const id of Object.keys(ACH)) if(!store.ach[id] && ACH[id].stat(l)>=ACH[id].target){ unlockItem(id, 'ach'); n++; }
+  if(n){ save(); if($('fitDlg').open) renderFit(); jackpotNext(); }
+  return n;
+}
+function dailyGift(){ // one random daily item on the first gesture of a KST day; giftDay is written even when nothing is left so the pool check runs once a day
+  bumpVisitDay(); // a gesture just after midnight can precede the minute timer
+  const day = KST_DAY(); if(store.life.giftDay===day) return null;
+  store.life.giftDay = day;
+  const pool = DAILY_IDS.filter(id => !store.ach[id]);
+  const id = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+  if(id) unlockItem(id, 'daily');
+  save(); if(id){ if($('fitDlg').open) renderFit(); jackpotNext(); }
+  return id;
+}
+function bumpVisitDay(){ // first visit of a KST day: counts a day for the achievements and flags the visit-counter POST (visitsLoad consumes live.visitPending)
+  const day = KST_DAY(); if(store.visitDay===day) return false;
+  store.visitDay = day; store.life.days++; live.visitPending = true; save(); checkAch(); return true;
+}
+function goldSparks(n){ if(reduced) return; for(let i=0;i<n;i++) sparks.push({x:world.charX, y:-90, vx:(Math.random()-0.5)*14, vy:-Math.random()*9-3, t:1, c:Math.random()<.5?'#FFFFFF':'#F5C542'}); }
+const petals = []; let petalRaf = 0, petalSpawn = false; // flower petals drifting down over the reveal overlay (its own canvas, above the dim)
+function petalsStart(){ const c = $('jpFall'), g = canDraw(c); if(!g || petalRaf) return; petalSpawn = true; let last = performance.now();
+  const cols = ['#FFC1D6','#FFE3EC','#F5C542','#FFFFFF','#FF9EBB'];
+  const tick = now => { const dt = Math.min(2, (now-last)/16.7); last = now; const w = c.clientWidth, h = c.clientHeight; if(c.width!==w||c.height!==h){ c.width = w; c.height = h; }
+    if(petalSpawn && petals.length<90) for(let i=0;i<2;i++) petals.push({x:Math.random()*w, y:-12, vy:0.9+Math.random()*1.3, sw:0.6+Math.random()*1.2, ph:Math.random()*Math.PI*2, r:Math.random()*Math.PI, vr:(Math.random()-0.5)*0.05, a:5+Math.random()*4, c:cols[Math.floor(Math.random()*cols.length)], t:1});
+    g.clearRect(0,0,w,h);
+    for(let i=petals.length-1;i>=0;i--){ const p = petals[i]; p.ph += 0.03*dt; p.x += Math.sin(p.ph)*p.sw*dt; p.y += p.vy*dt; p.r += p.vr*dt; if(!petalSpawn) p.t -= 0.02*dt; if(p.t<=0||p.y>h+12){ petals.splice(i,1); continue; }
+      g.save(); g.translate(p.x,p.y); g.rotate(p.r); g.globalAlpha = Math.min(1,p.t); g.fillStyle = p.c; g.beginPath(); g.ellipse(0,0,p.a,p.a*0.55,0,0,Math.PI*2); g.fill(); g.restore(); }
+    if(petals.length || petalSpawn) petalRaf = requestAnimationFrame(tick); else { petalRaf = 0; g.clearRect(0,0,w,h); } };
+  petalRaf = requestAnimationFrame(tick); }
+function petalsStop(){ petalSpawn = false; }
+function jackpotNext(){ // plays queued unlocks one at a time, never over a trial, a countdown or an open dialog (dialog close events and endTrial call back in)
+  if(jackpotBusy || jackpotHold || !jackpotQ.length || trial.running || trial.cdTimer || modalOpen()) return;
+  const j = jackpotQ.shift(); let extra = j.extra || 0;
+  if(jackpotQ.length>=3){ extra += jackpotQ.reduce((n,j) => n+1+(j.extra||0), 0); jackpotQ.length = 0; } // all rewards are already saved
+  playJackpot(j, extra);
+}
+function playJackpot(j, extra){ // "?" box shakes harder and harder (egg hatching, 1.8s) → white-out + chime → the result card (character wearing the item, names) fades in with rays and falling petals, stays until 확인 → fade out
+  jackpotBusy = true;
+  const a = jackpotActive = {j, extra, timers:[], rumble:null, done:false};
+  const ready = () => { if(jackpotActive!==a) return false; if(trial.running || trial.cdTimer || modalOpen()){ jackpotPause(); return false; } return true; };
+  const later = (fn, ms) => a.timers.push(setTimeout(() => { if(ready()) fn(); }, ms));
+  const el = $('jackpot'), slot = ITEM_SLOT[j.id], look = lookOf({...store.fit, [slot]:j.id}), fast = reduced || !store.fx;
+  renderJackpot(); $('jpBox').textContent = '?';
+  el.hidden = false;
+  const finish = () => { if(jackpotFinish!==finish || !ready()) return; a.done = true; jackpotFinish = null; petalsStop(); el.dataset.phase = 'out'; later(() => { jackpotPause(false); jackpotNext(); }, fast ? 300 : 800); };
+  const reveal = () => { el.dataset.phase = 'reveal'; drawPreview($('jpCanvas'), look, 1.6); if(!fast){ flash = 1; flashGold = true; shake = 10; goldSparks(30); petalsStart(); } jackpotFinish = finish; const ok = $('jpOk'); if(typeof ok.focus==='function') try{ ok.focus({preventScroll:true}); }catch(e){} }; // stays until 확인
+  if(fast){ a.stopChime = playChime(); reveal(); return; }
+  el.dataset.phase = 'egg';
+  let k = 0; a.rumble = setInterval(() => { if(!ready()) return; k++; shake = 2 + k*1.1; if(k>=11) clearInterval(a.rumble); }, 150);
+  later(() => { clearInterval(a.rumble); el.dataset.phase = 'white'; shake = 14; a.stopChime = playChime(); later(reveal, 230); }, 1800);
+}
+/* wardrobe dialog: outfit tab (preview + one chip row per slot) and achievements tab (sets → rows with progress, then the daily pool) */
+function fitView(v){ fit.view = v; $('fitWear').hidden = v!=='fit'; $('fitAch').hidden = v!=='ach'; $('fitTabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.view===v ? 'true' : 'false')); }
+const itemName = (slot, id) => T(id==='base' ? 'item.base.'+slot : 'item.'+id);
+function renderFit(){
+  const have = DAILY_IDS.filter(id => store.ach[id]).length;
+  $('fitDaily').textContent = have===DAILY_IDS.length ? T('fit.dailyDone') : T('fit.dailyCount', have, DAILY_IDS.length);
+  $('fitSlots').innerHTML = SLOTS.map(s => `<div class="fit-slot"><div class="t">${escapeHTML(T('slot.'+s))}</div><div class="fit-chips">${Object.keys(ITEMS[s]).map(id => {
+    const own = owned(id), daily = ITEMS[s][id].set==='daily', tip = own ? '' : ` title="${escapeHTML(daily ? T('fit.lockedDaily') : T('fit.locked', T('ach.'+id)))}"`;
+    return `<button type="button" class="fit-chip${own?'':' locked'}${daily?' daily':''}" data-slot="${s}" data-id="${id}" aria-pressed="${store.fit[s]===id?'true':'false'}"${own?'':' aria-disabled="true"'}${tip}>${own?'':'🔒 '}${escapeHTML(itemName(s,id))}</button>`; }).join('')}</div></div>`).join('');
+  const ids = Object.keys(ACH), setOf = id => ITEMS[ITEM_SLOT[id]][id].set;
+  const groups = [...SETS.map(s => ({title:T('set.'+s), ids:ids.filter(id => setOf(id)===s)})), {title:T('fit.special'), ids:ids.filter(id => !setOf(id))}];
+  $('fitAch').innerHTML = `<div class="ach-count">${escapeHTML(T('fit.achCount', ids.filter(id => store.ach[id]).length, ids.length))}</div>`
+    + groups.map(gp => `<div class="ach-group"><h3>${escapeHTML(gp.title)}</h3>${gp.ids.map(id => { const a = ACH[id], ok = !!store.ach[id], n = ok ? a.target : Math.min(a.target, a.stat(store.life));
+        return `<div class="ach-row${ok?' done':''}"><b>${ok?'✓ ':''}${escapeHTML(T('ach.'+id))}</b><span class="d">${escapeHTML(T('ach.'+id+'.d'))}</span><span class="p">${n} / ${a.target}</span><span class="i">${escapeHTML(T('fit.reward', T('item.'+id)))}</span></div>`; }).join('')}</div>`).join('')
+    + `<div class="ach-group"><h3>${escapeHTML(T('fit.dailyGroup'))}</h3><div class="fit-chips">${DAILY_IDS.map(id => `<span class="fit-chip daily${store.ach[id]?'':' locked'}">${store.ach[id] ? escapeHTML(T('item.'+id)) : '?'}</span>`).join('')}</div></div>`;
+  drawPreview($('fitPreview'), currentLook(), 1.7);
+}
+function openFit(){ const d = $('fitDlg'); if(typeof d.showModal!=='function' || d.open) return; unlockAudio(); endTrial(true); resetInput(); fitView(fit.view); renderFit(); d.showModal(); jackpotPause(); }
+$('jpOk').addEventListener('click', () => { if(jackpotFinish) jackpotFinish(); });
+$('fitOpen').addEventListener('click', openFit);
+$('fitClose').addEventListener('click', () => $('fitDlg').close());
+$('fitTabs').addEventListener('click', e => { const b = e.target && e.target.closest ? e.target.closest('button[data-view]') : null; if(b) fitView(b.dataset.view); });
+$('fitSlots').addEventListener('click', e => { const b = e.target && e.target.closest ? e.target.closest('button[data-id]') : null; if(b) setFit(b.dataset.slot, b.dataset.id); });
+$('fitReset').addEventListener('click', () => { for(const s of SLOTS) store.fit[s] = 'base'; lookCache = null; save(); renderFit(); });
+['setDlg','donateDlg','fitDlg'].forEach(id => $(id).addEventListener('close', () => setTimeout(jackpotNext, 0))); // a queued reveal waits for the dialog to go (#shareDlg/#nickDlg: in their own close handlers)
+
 const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per start-mode trial; must match worker/index.js BOARDS and #boardTabs
 const board = { tab:'wave10', data:{}, msg:'', seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise)
 const live = { visits:null, posts:null, postsMsg:'', posting:false, visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false };
@@ -1921,7 +2318,7 @@ function openNick(msgKey){
   if(!BOARD_URL) return;
   if(trial.running || trial.cdTimer) endTrial(true); // a modal pauses input but not the clock: cancel rather than let the trial end blind
   live.nickMsg = msgKey ? [msgKey] : ''; live.nickLater = false; $('nickInput').value = store.nick || ''; renderNick();
-  const d = $('nickDlg'); if(!d.open && typeof d.showModal==='function') d.showModal();
+  const d = $('nickDlg'); if(!d.open && typeof d.showModal==='function') d.showModal(); jackpotPause();
 }
 async function claimNick(n){
   if(live.nickBusy) return;
@@ -1949,7 +2346,7 @@ $('nickForm').addEventListener('submit', ev => {
 $('nickClose').addEventListener('click', () => closeDlg('nickDlg'));
 $('nickLater').addEventListener('click', () => closeDlg('nickDlg'));
 $('nickDlg').addEventListener('cancel', ev => { if(!hasNick()) ev.preventDefault(); }); // Escape should not skip the gate (browsers still allow it without user activation)…
-$('nickDlg').addEventListener('close', () => { renderNick(); renderTrialRank(); }); // …so whatever closed it, the header button and trial bar say how to get back
+$('nickDlg').addEventListener('close', () => { renderNick(); renderTrialRank(); setTimeout(jackpotNext, 0); }); // …so whatever closed it, the header button and trial bar say how to get back
 $('nickBtn').addEventListener('click', () => openNick());
 function setBoardMsg(m){ board.msg = m; $('boardMsg').textContent = msg(m); }
 async function boardFetch(path, init){
@@ -2026,8 +2423,7 @@ $('boardTabs').addEventListener('click', ev => {
 // visit counter: each browser counts once per KST day (store.visitDay); otherwise just read the numbers
 async function visitsLoad(){
   if(!BOARD_URL || live.visitsBusy) return;
-  const day = KST_DAY(), hit = store.visitDay !== day;
-  if(hit){ store.visitDay = day; save(); } // marked before the request: a reload or second tab mid-flight must not count twice (a failed POST is simply lost — approximate counter)
+  const hit = live.visitPending; live.visitPending = false; // bumpVisitDay() marked store.visitDay before the request: a reload or second tab mid-flight must not count twice (a failed POST is simply lost — approximate counter)
   live.visitsBusy = true;
   try{ live.visits = await boardFetch('/visits', hit ? {method:'POST'} : undefined); }catch(e){}
   live.visitsBusy = false; renderVisits();
@@ -2065,7 +2461,7 @@ function backendInit(){
   if(!BOARD_URL) return;
   boardLoad(); postsLoad(); visitsLoad(); renderNick();
   if(!hasNick()){ openNick(); if(store.nick) claimNick(store.nick); } // first visit → gate; a nickname saved before tokens existed is claimed as-is
-  setInterval(() => { if(document.hidden) return; waveRefresh(); postsLoad(); visitsLoad(); }, 60000); // background tabs stay quiet
+  setInterval(() => { if(document.hidden) return; waveRefresh(); postsLoad(); bumpVisitDay(); visitsLoad(); }, 60000); // background tabs stay quiet
 }
 
 /* ---------- language ---------- */
@@ -2079,12 +2475,13 @@ function applyStatic(){
   if(!lastSrc) srcBadge.textContent = T(touchOn ? 'src.waitTouch' : 'src.wait'); else setSrc(lastSrc);
 }
 function renderAll(){
+  renderJackpot();
   applyStatic(); renderMode(); renderPadStatus(); renderKeys();
   showResult(ui.result.cls, ui.result.kind, ui.result.title, ui.result.sub);
   setCoach(ui.coach); setTrend(ui.trend); renderSeg(ui.seg);
   renderBests(); renderLog(); renderHist(); renderWave();
   $('shareMsg').textContent = msg(ui.shareMsg); if($('shareDlg').open) renderShare();
-  renderBoard(); renderTrialRank(); renderVisits(); renderPosts(); if(BOARD_URL) renderNick(); renderDonate();
+  renderBoard(); renderTrialRank(); renderVisits(); renderPosts(); if(BOARD_URL) renderNick(); renderDonate(); if($('fitDlg').open) renderFit();
   if(trial.running) trialTick(performance.now());
 }
 function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); renderAll(); }
@@ -2100,8 +2497,8 @@ const DUMMY_TYPES = ['high','mid','low'];
 const DUMMY_STOP = 36; // px the fighter keeps in front of a live dummy (walking, and every move in rush30)
 const anim = { kind:'idle', t0:0, from:0, to:0, moveT0:0, moveFrom:0, moveTo:0 };
 const ghosts = [], pops = [], sparks = [], dust = [], bolts = [];
-let flash = 0, shake = 0;
-const SKIN='#F2C9A0', SKIN2='#D9A87C', HAIR='#141821', PANTS='#EDE7DD', PANTS2='#5A3E9E', GLOVE='#D1352F', BELT='#2B2F3A';
+let flash = 0, shake = 0, flashGold = false; // flashGold: jackpot flashes gold instead of the EWGF blue
+// character colours live in ITEMS[slot].base (wardrobe); drawFighter reads them through the look
 
 function startAnim(kind){ anim.kind=kind; anim.t0=performance.now(); }
 function moveChar(dx, ms){ anim.moveT0=performance.now(); anim.moveFrom=world.charX; anim.moveTo=world.charX+dx*store.side; anim.moveDur=ms; }
@@ -2119,7 +2516,7 @@ const fx = {
   crouchDash(){ startAnim('cd'); moveChar(46, 130); puff(4, 1); playSfx('wave'); },
   ewgf(n=1, fromDash){
     const L = streakStyle(n), color = cssVar(L.color[0], L.color[1]);
-    startAnim('ewgf'); anim.electric=true; moveChar(28, 120); if(store.fx && !reduced){ flash=1; shake=L.shake; }
+    startAnim('ewgf'); anim.electric=true; moveChar(28, 120); if(store.fx && !reduced){ flash=1; flashGold=false; shake=L.shake; }
     pop(n>1 ? T('pop.streak', n) : T(fromDash ? 'pop.dashEwgf' : 'pop.ewgf'), color, L.size, {lvl:clamp(n,1,6), glow:L.glow, rings:reduced?0:L.rings, core:L.core, life:n>=4?1100:900});
     if(!reduced) for(let i=0;i<L.sparks;i++) sparks.push({x:world.charX+30*store.side, y:-118, vx:(Math.random()-0.5)*10, vy:-Math.random()*7-2, t:1, c:Math.random()<.5?'#FFFFFF':color});
     playSfx('ewgf'); if(!world.dummy.type) tryHit('ewgf'); // typed dummies are judged by rushStrike
@@ -2181,80 +2578,78 @@ function rushStrike(move, t){ // called after every judged move; only scores whi
   renderRushHud();
 }
 
-function drawFighter(g, px, py, p, dir, alpha, tint){
+function drawFighter(g, px, py, p, dir, alpha, tint, look){ // look: slot → item (wardrobe); default = the current outfit. tint = flat ghost colour (all costume detail skipped)
+  look = look || currentLook();
+  const C = look.skin, HD = look.head, TP = look.top, AR = look.arms, LG = look.legs, SH = look.shoes;
   g.save(); g.globalAlpha=alpha; g.translate(px,py); g.scale(dir,1);
   const crouch=p.crouch||0, lean=(p.lean||0)*Math.PI/180, jump=p.jump||0, spread = 7 + 12*(p.spread||0);
   g.translate(0,-jump+(p.sink||0)); // sink: push the whole stance lower (hell sweep)
   const legL = 24 - 11*crouch;
   g.lineCap='round'; g.lineJoin='round';
   const tuck = p.tuck||0, step = p.step||0; // step −1..1: stride phase for walk/dash (front foot forward and lifted). 0 keeps the legacy stance pixel-identical.
+  const foot = (x,y) => { if(tint){ g.fillStyle=tint; g.beginPath(); g.ellipse(x,y,7,3.5,0,0,Math.PI*2); g.fill(); } else SH.foot(g,x,y); };
   if(p.sweep!=null){
     // hell sweep: the right leg extends straight and orbits a low, flattened circle around the crotch (the lower body spins one turn); the left leg stays tucked as the pivot
     const a = p.sweep, Cx = 0, Cy = -6, Rx = 36, Ry = 11;           // flattened orbit keeps the foot skimming the floor
     const fx0 = Cx + Rx*Math.cos(a), fy0 = Cy + Ry*Math.sin(a), hx = spread*0.3, hy = -legL;
     if(!tint){ g.strokeStyle='rgba(143,220,255,.30)'; g.lineWidth=3.5; g.beginPath(); // motion arc trailing the sweeping foot
       for(let i=0;i<=12;i++){ const aa=a - i*0.13, tx=Cx+Rx*Math.cos(aa), ty=Cy+Ry*Math.sin(aa); i?g.lineTo(tx,ty):g.moveTo(tx,ty); } g.stroke(); }
-    g.lineWidth=8; g.strokeStyle = tint||PANTS;
+    g.lineWidth=LG.width||8; g.strokeStyle = tint||LG.pants;
     g.beginPath(); g.moveTo(-6, 0); g.lineTo(-spread*0.3, hy); g.stroke();          // tucked support leg
     g.beginPath(); g.moveTo(hx, hy); g.lineTo(fx0, fy0); g.stroke();                 // extended right leg
-    g.fillStyle = tint||'#23272F';
-    g.beginPath(); g.ellipse(-7, 0, 7, 3.5, 0, 0, Math.PI*2); g.fill();              // support foot
+    foot(-7, 0);                                                                     // support foot
+    g.fillStyle = tint||SH.color;
     g.save(); g.translate(fx0, fy0); g.rotate(a); g.beginPath(); g.ellipse(4, 0, 9, 4, 0, 0, Math.PI*2); g.fill(); g.restore(); // sweeping foot, along the leg
   } else {
   // legs
-  g.lineWidth=8; g.strokeStyle = tint||PANTS;
+  g.lineWidth=LG.width||8; g.strokeStyle = tint||LG.pants;
   const lx = -spread - step*8, rx = spread + step*8, ly = -tuck*10 - Math.max(0,-step)*4, ry = -tuck*8 - Math.max(0,step)*4;
   g.beginPath(); g.moveTo(lx, ly); g.lineTo(-spread*0.35, -legL); g.stroke();
   g.beginPath(); g.moveTo(rx, ry); g.lineTo(spread*0.3, -legL); g.stroke();
+  if(!tint && LG.deco) LG.deco(g, [[lx,ly,-spread*0.35,-legL],[rx,ry,spread*0.3,-legL]]);
   // shoes
-  g.fillStyle = tint||'#23272F';
-  g.beginPath(); g.ellipse(lx-1, ly, 7, 3.5, 0, 0, Math.PI*2); g.fill();
-  g.beginPath(); g.ellipse(rx+2, ry, 7, 3.5, 0, 0, Math.PI*2); g.fill();
+  foot(lx-1, ly); foot(rx+2, ry);
   }
   // hips / torso
   g.translate(0,-legL); g.rotate(lean);
   const T = 22 - 4*crouch;
+  if(!tint && TP.back) TP.back(g,T,C); // wings, hood drape … behind everything
   // back arm
   const armL = 17;
   const arm = (sx, a, front, ext) => {
     const L = armL + (ext||0); // ext: extra reach on a thrown punch (통발)
     const ex = sx + Math.sin(a)*L, ey = -T+5 + Math.cos(a)*L;
-    g.lineWidth=6.5; g.strokeStyle=tint||SKIN2; g.beginPath(); g.moveTo(sx,-T+5); g.lineTo(ex,ey); g.stroke();
-    g.fillStyle=tint||GLOVE; g.beginPath(); g.arc(ex,ey,6.5,0,Math.PI*2); g.fill();
-    if(!tint){ g.fillStyle='rgba(255,255,255,.25)'; g.beginPath(); g.arc(ex-2,ey-2,2.2,0,Math.PI*2); g.fill(); }
+    g.lineWidth=6.5; g.strokeStyle=tint||TP.sleeve||C.skin2; g.beginPath(); g.moveTo(sx,-T+5); g.lineTo(ex,ey); g.stroke();
+    if(tint){ g.fillStyle=tint; g.beginPath(); g.arc(ex,ey,6.5,0,Math.PI*2); g.fill(); } else AR.hand(g,ex,ey,a,C);
     const m = g.getTransform();
     return [(m.a*ex + m.c*ey + m.e)/dpr, (m.b*ex + m.d*ey + m.f)/dpr];
   };
   arm(-6, (p.armL==null?-25:p.armL)*Math.PI/180);
   // belt + pants top
-  g.fillStyle = tint||PANTS; g.fillRect(-10, -4, 20, 6);
-  g.fillStyle = tint||BELT; g.fillRect(-10, -3, 20, 3);
-  // torso
-  g.fillStyle = tint||SKIN;
+  g.fillStyle = tint||LG.pants; g.fillRect(-10, -4, 20, 6);
+  g.fillStyle = tint||TP.belt; g.fillRect(-10, -3, 20, 3);
+  // torso (bare skin, or the top's colour)
+  g.fillStyle = tint||TP.color||C.skin;
   g.beginPath(); g.moveTo(-11,-T+2); g.quadraticCurveTo(-13,-T/2,-10,0); g.lineTo(10,0); g.quadraticCurveTo(13,-T/2,11,-T+2); g.quadraticCurveTo(0,-T-3,-11,-T+2); g.fill();
-  if(!tint){ g.strokeStyle=SKIN2; g.lineWidth=1.5; g.beginPath(); g.moveTo(0,-T+8); g.lineTo(0,-6); g.stroke(); g.beginPath(); g.moveTo(-8,-T+7); g.quadraticCurveTo(0,-T+11,8,-T+7); g.stroke(); }
+  if(!tint){ g.strokeStyle=TP.line||C.skin2; g.lineWidth=1.5; g.beginPath(); g.moveTo(0,-T+8); g.lineTo(0,-6); g.stroke(); g.beginPath(); g.moveTo(-8,-T+7); g.quadraticCurveTo(0,-T+11,8,-T+7); g.stroke(); if(TP.front) TP.front(g,T,C); }
   // head
   const hy = -T-15;
-  g.fillStyle = tint||SKIN; g.beginPath(); g.arc(0,hy,19,0,Math.PI*2); g.fill();
-  // hair (spiky, swept back)
-  g.fillStyle = tint||HAIR;
-  g.beginPath(); g.arc(0,hy-1,19.5,Math.PI*1.02,Math.PI*1.98); g.lineTo(-19.5,hy-1); g.fill();
-  g.beginPath();
-  g.moveTo(-19,hy-2); g.lineTo(-30,hy-12); g.lineTo(-17,hy-14); g.lineTo(-27,hy-26); g.lineTo(-11,hy-20);
-  g.lineTo(-12,hy-36); g.lineTo(-1,hy-22); g.lineTo(4,hy-38); g.lineTo(9,hy-21); g.lineTo(18,hy-31); g.lineTo(15,hy-14); g.lineTo(21,hy-8); g.closePath(); g.fill();
-  // sideburn
-  g.fillRect(-19,hy-2,5,12);
+  g.fillStyle = tint||C.skin; g.beginPath(); g.arc(0,hy,19,0,Math.PI*2); g.fill();
+  // hair (item-specific; ghosts keep the legacy silhouette)
+  if(tint) hairBase(g,hy,tint); else HD.draw(g,hy,HD,C);
   if(!tint){
     // eyebrows (angry) + eyes
-    g.strokeStyle=HAIR; g.lineWidth=2.6; g.lineCap='round';
+    g.strokeStyle=HD.brow||HD.hair; g.lineWidth=2.6; g.lineCap='round';
     g.beginPath(); g.moveTo(3,hy-3); g.lineTo(14,hy-7); g.stroke();
     g.beginPath(); g.moveTo(-3,hy-4); g.lineTo(-13,hy-8); g.stroke();
     g.fillStyle='#fff'; g.beginPath(); g.ellipse(9,hy+2,4,4.5,0,0,Math.PI*2); g.fill(); g.beginPath(); g.ellipse(-7,hy+2,3.6,4.2,0,0,Math.PI*2); g.fill();
     g.fillStyle='#1a1f2b'; g.beginPath(); g.arc(10,hy+2.5,2.2,0,Math.PI*2); g.fill(); g.beginPath(); g.arc(-6,hy+2.5,2,0,Math.PI*2); g.fill();
-    if(p.eyeGlow){ g.fillStyle='#4CC9FF'; g.beginPath(); g.arc(10,hy+2.5,2.4,0,Math.PI*2); g.fill(); g.beginPath(); g.arc(-6,hy+2.5,2.2,0,Math.PI*2); g.fill(); }
+    const glow = HD.glow || (p.eyeGlow ? '#4CC9FF' : null);
+    if(glow){ g.fillStyle=glow; g.beginPath(); g.arc(10,hy+2.5,2.4,0,Math.PI*2); g.fill(); g.beginPath(); g.arc(-6,hy+2.5,2.2,0,Math.PI*2); g.fill(); }
     // scar + mouth
     g.strokeStyle='#C4785A'; g.lineWidth=1.3; g.beginPath(); g.moveTo(5,hy+8); g.lineTo(11,hy+11); g.stroke();
     g.strokeStyle='#8B4A3C'; g.lineWidth=1.8; g.beginPath(); g.moveTo(-2,hy+11); g.lineTo(6,hy+10.5); g.stroke();
+    if(C.marks) C.marks(g,T,hy,!TP.color); // tattoos/scars: on the torso only when the chest is bare
     if(p.sweat){ g.fillStyle='#8FDCFF'; g.beginPath(); g.moveTo(-20,hy-6); g.lineTo(-24,hy+4); g.lineTo(-16,hy+4); g.closePath(); g.fill(); }
   }
   // front arm
@@ -2549,11 +2944,11 @@ function frame(now){
     if(p.core){ ctx.globalAlpha*=0.55; ctx.fillStyle=p.core; ctx.font=`${p.size*0.92}px ${displayFont()}`; ctx.fillText(p.text,0,0); }
     ctx.restore(); }
   ctx.restore();
-  if(flash>0.02){ ctx.fillStyle=`rgba(180,235,255,${flash*0.55})`; ctx.fillRect(0,0,W,H); flash*=0.85; } else flash=0;
+  if(flash>0.02){ ctx.fillStyle = flashGold ? `rgba(255,222,120,${flash*0.55})` : `rgba(180,235,255,${flash*0.55})`; ctx.fillRect(0,0,W,H); flash*=0.85; } else { flash=0; flashGold=false; }
   requestAnimationFrame(frame);
 }
 /* ---------- boot ---------- */
-renderAll(); setMode('free'); renderHistory(); updateStats(); backendInit();
+renderAll(); setMode('free'); renderHistory(); updateStats(); bumpVisitDay(); backendInit();
 world.camX = world.charX - W*0.32;
 requestAnimationFrame(frame);
 })();

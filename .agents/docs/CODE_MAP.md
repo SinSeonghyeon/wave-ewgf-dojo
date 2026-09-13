@@ -1,11 +1,11 @@
 # CODE_MAP — `index.html` 구조
 
-단일 파일. 순서대로 `<title>`·SEO/OG 메타(정적, 한/영 병기)·폰트 링크 → `<style>` → 마크업 → `<script>`(IIFE) 하나. 시간 기준 `FRAME = 1000/60`. 키보드는 `event.timeStamp`, 패드는 폴링 시각(약 4ms 해상도).
+단일 파일. 순서대로 `<title>`·SEO/OG 메타(정적, 한/영 병기)·폰트 링크 → `<style>` → 마크업 → `<script>`(IIFE) 하나. 시간 기준 `FRAME = 1000/60`. 키보드는 `event.timeStamp`, 패드는 `gamepad.timestamp`(기기 갱신 시각, 0/NaN/과거값이면 폴링 시각 `performance.now()`로 폴백, `padLastT`로 단조 유지 — 2026-09-13: 바쁜 프레임에 4ms 타이머가 밀려 동시 입력이 1f 벌어지던 것을 제거).
 
 ## 스크립트 구성 (위에서 아래 순서)
 
 ```
-설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,touch,sound,bgmVol,sfxVol,keys,records,nick,…} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save()
+설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,touch,sound,bgmVol,sfxVol,keys,records,nick,…,life,ach,fit} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save()
 소리      SND{bgm,wave,ewgf} 파일명 · snd{ok(typeof Audio),unlocked,bgm,pool,idx,lock,release} · 부트 때는 아무것도 만들지 않음(테스트 vm·og 생성이 미디어를 안 건드림)
           unlockAudio(): 첫 keydown/pointerdown/패드 버튼에서 1회 → 효과음 풀(이름당 Audio 3개, 라운드로빈) 생성 + bgmSync()
           bgmSync(): sound && bgmVol>0 && unlocked && !hidden이면 Web Locks(mishima-dojo-bgm) 획득 후 bgm 지연 생성·volume·play(). 같은 브라우저·사이트에서 한 창만 재생. 숨김/끄기/pagehide 시 대기 취소·pause·권한 반환, pageshow/visibilitychange/focus/blur에서 동기화. Web Locks 미지원은 hasFocus 조건으로 대체. NotAllowedError만 unlocked=false로 다음 제스처에 재시도(AbortError는 무시)
@@ -15,7 +15,7 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
           ui{result,coach,trend,seg,padId}: 마지막 표시 내용을 키/클로저로 보관 → setLang → renderAll()
           정적 마크업은 data-i18n / data-i18n-html / data-i18n-aria 속성으로 applyStatic()이 채운다
 세션      session{dashes,bestChain,bestDps,tries,hits,offsetSum,offsetCount,cycles,attempts,log}
-입력      keydown/keyup → held Set → kbVector() → recomputeDir() · pollPad() 4ms → padDir/padBtn · 터치 오버레이 → touchDir/touchPress (아래 "터치" 줄)
+입력      keydown/keyup → held Set → kbVector() → recomputeDir() · pollPad() 4ms(판정 시각은 gamepad.timestamp, 실제 방향·버튼 변화에서만 padLastT 갱신) → padDir/padBtn · 터치 오버레이 → touchDir/touchPress (아래 "터치" 줄)
 터치      html.touch-ui(applyTouchUI: store.touch 'auto'|'on'|'off', auto = (pointer:coarse) && maxTouchPoints>0, 미디어 쿼리 change에 재적용) → #touch 오버레이(스테이지 하단 46%, 데스크톱은 display:none) · #tpad 원형 슬라이드 패드: 첫 포인터가 setPointerCapture, 중심 대비 벡터 → touchVec(x,y,t): 반지름 22%(TOUCH_DEAD) 안은 N, 밖은 atan2를 45° 섹터로 반올림해 8방향 → touchDir → recomputeDir(t,'touch')(kbDir+padDir+touchDir 합) · #tbtns 2×2(1 2 / 3 4, 포인터 별도) pointerdown → touchPress(n,t): modalOpen이면 무시, unlockAudio, onButton · resetInput()이 touchDir·노브를 지움(touchRelease) · 판정·상태 머신은 손대지 않음 · 시각은 e.timeStamp(키보드와 같은 클록, pointermove가 한 프레임 늦게 와도 실제 시각) · 노브 좌표는 단위원으로 클램프(캡처된 손가락이 패드 밖으로 나가도 노브는 안에) · 패드 라벨은 glyphFor(2P 미러) · 모달이 열리면 pointermove도 무시, openShare가 resetInput() 후 showModal · 대기 배지는 touchOn이면 src.waitTouch · touch-ui면 frame()의 바닥 gy가 H*0.80 → H*0.46(발과 오버레이 사이 띠에 힌트 2줄이 들어갈 자리), .stage 비율 4/5(max-height 72vh, 가로 모드는 16/9), .hud-hint는 오버레이 바로 위 바닥 띠(bottom:calc(46% + 3px), 가로 모드는 한 줄 말줄임), #touch는 container-type:size라 패드 폭·버튼 칸이 오버레이 높이(cqh)로 제한됨 · 문서 기본 태그(<!doctype html>·<html lang="ko">·charset·viewport)는 2026-09-12 터치 작업 때 추가(그 전엔 쿼크 모드, 폰에서 980px로 렌더)
           dirName(x,y): side 반영해 'f','n','d','df',... · history[]: 입력 스트립(직전 입력과 프레임 간격)
 상태 머신 onDir(dir,t)  0 idle → 1 시작 6 → 2 중립 → 3 d(2) → 4 d/f(3, completeCD)
@@ -69,8 +69,13 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
           world.dummy.type: null=일반 백(아무 기술이나 반응) · high/mid/low=rush30 표적(HIT_TYPE 일치만 격파). tryHit(move)는 true/false 반환(사거리 10~130px, 날아가는 중이면 false), 명중 즉시 hit=1로 중복 득점을 차단하고 launchAt=지금+110까지 낙하·스파크를 지연한다. updateDummy(now)가 물리·재등장을 처리하며 타입 더미는 낙하 완료와 무관하게 respawn=명중+700 이후 첫 프레임에 교체한다. rushSpawn()=타입·거리 랜덤(140~min(380,W*0.6)px). drawDummy는 DUMMY_LOOK로 타입별 위치·색·라벨(dummy.high/mid/low)
           STREAK[1..6] 연속 초풍 팝 스타일(size/color 토큰/glow/rings/sparks/shake, 6에서 고정) · pop opts {lvl,glow,rings,core,life} → 렌더러가 punch-in(easeOutBack)·shadowBlur·퍼지는 링·흰 코어를 그림. reduced motion이면 크기·색·글로우만
           frame(): 걷기(curDir f/b 유지 + idle/walk 이고 moveDur 없음, WALK_F/WALK_B px/s, 살아있는 더미 DUMMY_STOP(36px) 앞에서 정지) → 이동 → rush 더미 통과 방지 clamp → 카메라 → 더미(타입 있으면 rushSpawn 리스폰, 없으면 기존 앞으로 재배치) → 배경/바닥 → 먼지 → 잔상(cd/dash/backdash) → 더미 → 캐릭터 → 번개 → 스파크 → 텍스트 팝 → 플래시
-          drawFighter(g,x,y,pose,dir,alpha,tint) pose.step(−1..1: 보폭, 0이면 기존과 픽셀 동일)·reach(앞팔 추가 길이, 통발)·sink(스탠스 낮춤, 나락)·sweep(오른 다리 궤도각, null이 아니면 다리 하나를 하체 중심 저평 타원 궤도로 그려 한 바퀴 스윕) · poseAt(now): anim.kind('cd','ewgf','jab','stumble','dash','backdash','tongbal','hellsweep','walk','idle')
-부트      renderAll(); setMode('free'); renderHistory(); updateStats(); requestAnimationFrame(frame)
+          drawFighter(g,x,y,pose,dir,alpha,tint,look=currentLook()) look=슬롯별 아이템(옷장; tint가 있으면 훅 생략, hairBase 실루엣) · pose.step(−1..1: 보폭, 0이면 기존과 픽셀 동일)·reach(앞팔 추가 길이, 통발)·sink(스탠스 낮춤, 나락)·sweep(오른 다리 궤도각, null이 아니면 다리 하나를 하체 중심 저평 타원 궤도로 그려 한 바퀴 스윕) · poseAt(now): anim.kind('cd','ewgf','jab','stumble','dash','backdash','tongbal','hellsweep','walk','idle')
+옷장      데이터(저장소 앞): SLOTS[head,top,arms,legs,shoes,skin] · SETS[red,thunder,master,devil] · ITEMS[slot][id]{set, 색, 훅: head.draw(g,hy,item,C) / top.back·front(g,T,C) / arms.hand(g,x,y,angle,C) / legs.deco(g,lines)·width / shoes.foot(g,x,y)·color / skin.marks(g,T,hy,bare)} · base = 기존 캐릭터(픽셀 동일) · ITEM_SLOT(id→slot) · DAILY_IDS(12) · ACH[id]{target, stat(life)} 25개(id = 해금 아이템) · owned(id) · lookOf(fit)/currentLook()(캐시)/setFit(slot,id)
+          저장: store.life{dashes,ewgf,tries,tongbal,hellsweep,maxChain,maxStreak,tightEwgf,days,donate,giftDay,trials{모드}} · store.ach{id:시각}(업적·출석 공통 해금 기록) · store.fit{slot:id} · 로더가 정수·id·소유 여부 검증(미소유 복장은 base) · 저장은 completeCD/attempt/strike/endChain에서 saveSoon()(1.5초 디바운스, 입력 경로에서 동기 localStorage 쓰기 제거), 해금·endTrial은 즉시 save(), pagehide가 대기 중인 저장을 flush
+          런타임(후원 코드 뒤): checkAch()(카운터 변경마다) → unlockItem → jackpotQ · dailyGift()(unlockAudio에서, KST 날짜당 1회, Math.random) · bumpVisitDay()(부트·1분 주기, life.days++, live.visitPending → visitsLoad의 POST) · jackpotNext()(busy/hold/측정/카운트다운/modalOpen이면 대기; endTrial 2.3초 뒤·대화상자 close에서 재호출; 큐 4개 이상이면 "외 N개") · playJackpot(j,extra): #jackpot data-phase egg(#jpBox "?"가 jpHatch 1.8s로 점점 세게 흔들림 + stage shake 상승) → white(.jp-white 화이트아웃 230ms, playChime) → reveal(.jp-card jpIn 페이드인, jpCanvas에 drawPreview, flashGold·goldSparks, #jpFall 캔버스에 꽃잎 낙하(petalsStart/Stop, 카드가 떠 있는 동안 계속); 스테이지는 .jackpot 배경으로 딤) → #jpOk 확인 클릭(jackpotFinish, 버튼에 포커스라 Enter도 됨)까지 유지 → out · reduced/fx off면 차임+정적 카드 · playChime: AudioContext 지연 생성, C5-E5-G5-C6 사인 아르페지오, 소리 끄기/효과음 0%면 무음 · 설정 #dataReset: confirm 후 records/life(days=1)/ach/fit 초기화 + dReset, 닉네임·설정·visitDay 유지
+          jackpotActive{j,extra,timers,rumble,done,stopChime}: 현재 보상·타이머·차임을 관리. jackpotPause는 측정 시작·모든 대화상자 진입에서 즉시 연출/소리를 정지하고 미확인 보상을 큐 앞에 복구(확인한 out 단계는 재생하지 않음). dataReset은 현재 보상과 큐를 모두 폐기. renderJackpot은 renderAll에서 현재 언어로 다시 그림. dailyGift는 지급 전에 bumpVisitDay로 자정 경계를 반영.
+          #fitDlg(dialog.share.fit) ← #fitOpen(.hud-gear.hud-fit) · fitView(fit|ach) · renderFit(): #fitDaily(출석 n/12), #fitSlots(슬롯별 .fit-chip, 잠김은 🔒+title), #fitAch(세트별 .ach-row 진행 n/목표 + 특별 + 출석 풀), #fitPreview에 drawPreview · #fitReset · modalOpen()에 포함, renderAll이 열려 있으면 다시 그림
+부트      renderAll(); setMode('free'); renderHistory(); updateStats(); bumpVisitDay(); backendInit(); requestAnimationFrame(frame)
 ```
 
 ## 판정 상수 (경험값. 너무 엄격·느슨하면 여기부터)
@@ -97,7 +102,7 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 ## 리소스
 
 - `og.png`: Open Graph 이미지 1200×630. `node tools/make-og.js [--lang ko|en|ja] [--out 경로]`로 생성(헤드리스 Chrome/Edge + CDP, 의존성 없음, Google Fonts 서브셋을 카드 문자열로 미리 로드). drawCard·og.* 문자열·색 토큰이 바뀌면 다시 생성해 커밋. 페이지 오류(폰트 요청 실패 포함)가 있으면 종료 코드 1.
-- `tools/cdp.js`: 헤드리스 Chrome/Edge 실행·CDP 연결·evalJs·오류 수집을 한 곳에 둔 공용 모듈. `tests/smoke-chrome.js`와 `tools/make-og.js`가 씀(포트 9333/9334, 프로필 분리로 동시 실행 가능). 브라우저 자동화가 필요한 스크립트는 여기서 `launch()`를 가져다 쓴다.
+- `tools/cdp.js`: 헤드리스 Chrome/Edge 실행·CDP 연결·evalJs·오류 수집을 한 곳에 둔 공용 모듈. WebSocket 연결 10초·CDP 명령 15초 제한으로 응답 없는 대기를 실패로 보고한다. `tests/smoke-chrome.js`와 `tools/make-og.js`가 씀(포트 9333/9334, 프로필 분리로 동시 실행 가능). 브라우저 자동화가 필요한 스크립트는 여기서 `launch()`를 가져다 쓴다.
 - `worker/`: 백엔드(Cloudflare Worker + D1: 주간 순위·방문자 수·한마디). `index.js`(ESM, `weekKey`·`weekBounds`·`dayKey`·`validate`·`cleanText`·`nickKey`·`handle`·`BOARDS`·`WINDOWS` export + default fetch), `schema.sql`(scores + UNIQUE(week,board,nick), nicks(key=NFKC 소문자 유니크, token), visits, posts. 멱등), `package.json`(`"type":"module"`만), `wrangler.toml`(D1 + 레이트 리밋 바인딩 `POST_LIMIT` 3회/분·`NICK_LIMIT` 10회/분), `README.md`(배포·관리자 삭제·설계). 비밀 `ADMIN_TOKEN`(wrangler secret)은 DELETE /posts/:id 전용. 앱과 계약이 바뀌면 `index.html`의 boardEntry/renderBoard와 `tests/board.test.cjs`, dojo.test.cjs의 계약 교차 검증을 함께 고친다.
 - `tests/fake-d1.js`: node:sqlite 인메모리에 `worker/schema.sql`을 그대로 적용한 가짜 D1(Node 22.13+). 단위 테스트와 스모크 테스트가 공유. dojo.test.cjs의 `boot(saved, fetch)`는 두 번째 인자로 fetch 스텁을 받아 백엔드 경합(등록 중 닉 변경·탭 전환, 403, 방문 집계)을 검사한다.
 - `bgm.mp3`(3.7MB, 루프), `sfx-wave.mp3`(크라우치 대시), `sfx-ewgf.mp3`(초풍 성공): 자체 제작(사용자 확인 2026-09-11). 2026-09-12에 영문 파일명으로 개명하고 재생 코드 연결. 스모크 테스트는 스크래치 페이지 옆에 세 파일을 복사한다(없으면 리소스 오류로 실패).
