@@ -2,7 +2,7 @@
 //   node tools/board-admin.js            interactive menu (or double-click tools/admin.cmd): pick a board by number, then a row by number
 //                                        and choose ban / unban / delete. Also lists posts and the ban list.
 // Direct commands (same actions without the menu):
-//   top <board> [week]   every row of that board's week with ids, ranks and ban marks (board: wave10 | ewgf20 | combo10 | rush30; week: any YYYY-MM-DD in that KST week)
+//   top <board> [week]   every row of that board's week with ids, ranks and ban marks (board: wave10 | ewgf20 | combo10 | rush30 | bd10; week: any YYYY-MM-DD in that KST week)
 //   ban <nick>           shadow-ban a nickname: its rows disappear from the public list/total/cut10, the owner still sees their own rank
 //   unban <nick>         lift the ban; the stored rows show again
 //   bans                 list banned nicknames
@@ -18,7 +18,7 @@ const BOARD_URL = (process.env.BOARD_URL || 'https://mishima-dojo-board.mishima-
 const tokenFile = path.join(__dirname, '..', '.sandbox', 'admin-token.txt');
 const token = (process.env.ADMIN_TOKEN || (fs.existsSync(tokenFile) ? fs.readFileSync(tokenFile, 'utf8') : '')).trim();
 const [cmd, ...args] = process.argv.slice(2);
-const BOARDS = [['wave10', '웨이브 10초'], ['ewgf20', '초풍 20회'], ['combo10', '웨이브 초풍 10회'], ['rush30', '더미 격파 30초']]; // worker BOARDS keys + the app's mode.<id>.name (ko); the menu is built from this list
+const BOARDS = [['wave10', '웨이브 10초'], ['ewgf20', '초풍 20회'], ['combo10', '웨이브 초풍 10회'], ['rush30', '더미 격파 30초'], ['bd10', '백대시 10초']]; // worker BOARDS keys + the app's mode.<id>.name (ko); the menu is built from this list
 
 const usage = () => { // the comment block at the top of this file is the help text
   const head = []; for (const l of fs.readFileSync(__filename, 'utf8').split('\n')) { if (!l.startsWith('//')) break; head.push(l.slice(3)); }

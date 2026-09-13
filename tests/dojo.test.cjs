@@ -21,11 +21,14 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,jackpotQ,jackpotNext,owned,renderFit};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,jackpotQ,jackpotNext,owned,renderFit};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
 function dash(a,t=1000){a.onDir('f',t);a.onDir('n',t+20);a.onDir('d',t+40);a.onDir('df',t+60);}
+const F=1000/60, fr=n=>Math.round(n*F); // backdash tests speak in frames
+function bdOut(a,t,tap=2,n=2){a.onDir('b',t);a.onDir('n',t+fr(tap));const o=t+fr(tap)+fr(n);a.onDir('b',o);return o;} // b,N,b → the backdash comes out at the returned time
+function bdSet(a,o,h,db=2,tap=2,n=2){const c=o+fr(h);a.onDir('db',c);a.onDir('b',c+fr(db));a.onDir('n',c+fr(db)+fr(tap));const o2=c+fr(db)+fr(tap)+fr(n);a.onDir('b',o2);return o2;} // cancel h frames after the backdash, roll into the next one
 
 test('idle pad polls after timestamp zero allow delayed device timestamps to recover',()=>{
   const a=boot();
@@ -425,7 +428,8 @@ test('app and worker agree on the leaderboard contract (boards, windows, detail 
   const run=(mode,play)=>{a.setMode(mode);a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();play();a.endTrial();return JSON.parse(JSON.stringify(a.boardEntry(a.trial.result,mode)));};
   const entries={wave10:run('wave10',()=>{dash(a,4100);a.time(14100);}),ewgf20:run('ewgf20',()=>{dash(a,4100);a.onButton(2,4160);}),
     combo10:run('combo10',()=>{dash(a,4100);for(const t of [4200,4400]){a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}a.onButton(2,4500);}),
-    rush30:run('rush30',()=>{dash(a,4100);a.world.dummyX=a.world.charX+60;a.world.dummy.type='low';dash(a,4300);a.onButton(4,4400);a.time(34100);a.trialTick(34100);})};
+    rush30:run('rush30',()=>{dash(a,4100);a.world.dummyX=a.world.charX+60;a.world.dummy.type='low';dash(a,4300);a.onButton(4,4400);a.time(34100);a.trialTick(34100);}),
+    bd10:run('bd10',()=>{const o=bdOut(a,4100);a.onDir('db',o+fr(a.BD.MOVE_F));a.time(14100);})};
   for(const [m,e] of Object.entries(entries)){
     const v=w.validate({...e,nick:'smoke'});assert.equal(v.error,undefined,m+': '+JSON.stringify(e));
     assert.deepEqual(Object.keys(v.value.detail),Object.keys(e.detail),m+' detail fields');assert.equal(v.value.win,15);
@@ -883,7 +887,7 @@ test('wardrobe: donate button is an achievement; a reveal waits while a dialog i
 test('wardrobe: saved progress is validated on load, an unowned outfit falls back to base, and setFit refuses locked items',()=>{
   const a=boot({v:4,visitDay:'2000-01-01',life:{dashes:'x',ewgf:-1,tongbal:7,days:2,giftDay:'2026-09-01',trials:{rush30:1,bogus:3}},ach:{red_top:1,bogus:2,red_head:'x',daily_arms_blue:5},fit:{top:'red_top',head:'red_head',arms:'daily_arms_blue',legs:'nope',skin:42}});
   assert.equal(a.store.life.dashes,0);assert.equal(a.store.life.ewgf,0);assert.equal(a.store.life.tongbal,7);assert.equal(a.store.life.giftDay,'2026-09-01');
-  assert.deepEqual(J(a.store.life.trials),{wave10:0,ewgf20:0,combo10:0,rush30:1});
+  assert.deepEqual(J(a.store.life.trials),{wave10:0,ewgf20:0,combo10:0,rush30:1,bd10:0},'an old save gains the bd10 counter at 0');
   assert.deepEqual(J(Object.keys(a.store.ach).sort()),['daily_arms_blue','red_shoes','red_skin','red_top'],'bogus and non-numeric dropped; rush30 finish and day 3 unlocked at boot');
   assert.equal(a.store.life.days,3,'a new KST day counts');
   assert.deepEqual(J(a.store.fit),{head:'base',top:'red_top',arms:'daily_arms_blue',legs:'base',shoes:'base',skin:'base'});
@@ -928,7 +932,7 @@ test('wardrobe dialog: opens from the stage button, cancels a trial, lists chips
   a.get('fitOpen').click();assert.equal(a.get('fitDlg').open,true);assert.equal(a.trial.cdTimer,null,'countdown cancelled');
   assert.match(a.get('fitSlots').innerHTML,/data-id="red_top"[^>]*aria-disabled="true"/);assert.match(a.get('fitSlots').innerHTML,/🔒 붉은 도복 상의/);assert.match(a.get('fitSlots').innerHTML,/data-id="base" aria-pressed="true"/);
   assert.match(a.get('fitAch').innerHTML,/달성 0 \/ 25/);assert.match(a.get('fitAch').innerHTML,/첫 초풍<\/b><span class="d">초풍 1회 성공<\/span><span class="p">0 \/ 1<\/span><span class="i">보상: 붉은 도복 상의/);
-  assert.match(a.get('fitAch').innerHTML,/특별/);assert.match(a.get('fitAch').innerHTML,/출석 선물<\/h3><div class="fit-chips"><span class="fit-chip daily locked">\?<\/span>/);
+  assert.match(a.get('fitAch').innerHTML,/특별/);assert.match(a.get('fitAch').innerHTML,/출석 선물<\/h3><div class="fit-chips">(<span class="fit-chip daily">[^<]*<\/span>)?<span class="fit-chip daily locked">\?<\/span>/,'the day gift may have landed on the first chip');
   a.get('fitDlg').open=false;a.get('fitDlg').close();dash(a,5000);a.onButton(2,5060);
   a.get('fitOpen').click();assert.match(a.get('fitSlots').innerHTML,/class="fit-chip" data-slot="top" data-id="red_top" aria-pressed="false">붉은 도복 상의/);
   assert.match(a.get('fitAch').innerHTML,/달성 1 \/ 25/);assert.match(a.get('fitAch').innerHTML,/class="ach-row done"><b>✓ 첫 초풍/);
@@ -948,4 +952,151 @@ test('settings: data reset wipes records, lifetime stats, achievements and the o
   assert.equal(b.store.nick,'me');assert.equal(b.store.nickToken,tok);assert.equal(b.store.window,8);assert.equal(b.store.sound,0);assert.equal(b.store.visitDay,kstToday());
   assert.equal(b.get('coachMsg').innerHTML,'기록과 업적을 초기화했습니다.');
   const c=boot(undefined,undefined,{confirm:undefined});dash(c,1000);c.get('dataReset').click();assert.equal(c.store.life.dashes,0,'no confirm available (harness): resets');
+});
+
+/* ---------- backdash practice (414 N 414 N …, 2026-09-13, 설계 결정 17) ---------- */
+test('backdash machine is inert during the wave and other trials, and free practice stays silent until the first 1 cancel',()=>{
+  let a=boot();dash(a);a.onDir('f',1100);a.onDir('n',1120);dash(a,1140);assert.equal(a.bd.state,0,'the wave never enters the backdash machine');
+  for(const m of ['wave10','ewgf20','combo10','rush30']){
+    a=boot({v:4});a.setMode(m);a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();
+    const title=a.get('rTitle').textContent;const o=bdOut(a,4100);a.onDir('db',o+fr(10));bdOut(a,o+fr(14));
+    assert.equal(a.bd.state,0,m+': not judged in another trial');assert.equal(a.anim.kind,'backdash',m+': the b,N,b visual is unchanged (the db cancelled the recovery)');
+    assert.equal(a.trial.count||0,0,m);assert.equal(a.session.bd.count,0,m);assert.equal(a.get('rTitle').textContent,title,m+': no card');
+  }
+  a=boot();const title=a.get('rTitle').textContent,logs=a.session.log.length;
+  let o=bdOut(a,1000);assert.equal(a.bd.state,3);assert.equal(a.bd.chain,1);assert.equal(a.anim.kind,'backdash');
+  assert.equal(a.get('rTitle').textContent,title,'b,N,b alone is repositioning: no card');assert.equal(a.session.log.length,logs);assert.equal(a.get('hudChainL').textContent,'WAVE');
+  a.onDir('n',o+fr(12));assert.equal(a.get('rTitle').textContent,title,'…and releasing it says nothing either');assert.equal(a.session.bd.dist,1,'the distance is still counted');
+  o=bdOut(a,3000);a.onDir('db',o+fr(10));assert.equal(a.bd.engaged,true);assert.equal(a.get('rKind').textContent,'BACKDASH','the first 1 cancel switches the feedback on');
+  assert.equal(a.get('hudChainL').textContent,'BACKDASH');assert.equal(a.get('hudChainN').textContent,1);
+  a.onDir('n',o+fr(14));a.tick(o+fr(14)+3100);assert.equal(a.bd.engaged,false,'silent again after 3s without a backdash');
+  assert.equal(a.get('hudChainL').textContent,'WAVE');
+});
+
+test('backdash sets: distance by cancel frame, set speed grades from BD.TIERS, chain, cancel feedback and the biggest-loss coach line',()=>{
+  const a=boot({v:4,lang:'ko'});const {BD}=a;const mps=(dist,period)=>Math.round(dist*6000/period)/100;
+  let o=bdOut(a,1000);a.onDir('db',o+fr(BD.MOVE_F));
+  assert.equal(a.session.bd.dist,1,'cancel at MOVE_F earns the full metre');assert.equal(a.bd.state,4);
+  assert.equal(a.get('rOff').textContent,a.T('bd.cancel',BD.MOVE_F,0,'1.0'));assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.cancelOk'));
+  let c=o+fr(BD.MOVE_F);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));o=c+fr(6);a.onDir('b',o); // 1 held 2f, 4N4 4f → period 16f
+  const v1=mps(1,BD.MOVE_F+6);assert.ok(v1>=BD.TIERS[0].mps,'this set is very fast');
+  assert.equal(a.bd.chain,2);assert.equal(a.get('rTitle').textContent,a.T('bd.title',2,a.T('bd.grade.top')));assert.equal(a.get('rOff').textContent,a.T('bd.sub',v1.toFixed(1),BD.MOVE_F,2,4));
+  assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.good'));assert.equal(JSON.stringify(a.session.log[0].res),'["res.bd_top"]');assert.equal(a.session.log[0].type,'log.tBack');assert.equal(a.session.bd.top,1);
+  // early cancel: less distance, the coach says how many frames early, and the set drops a grade
+  a.onDir('db',o+fr(BD.MIN_F));assert.equal(a.session.bd.dist,1+BD.MIN_F/BD.MOVE_F);assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.early',BD.MOVE_F-BD.MIN_F));
+  c=o+fr(BD.MIN_F);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));o=c+fr(6);a.onDir('b',o);
+  const v2=mps(BD.MIN_F/BD.MOVE_F,BD.MIN_F+6);const g2=(BD.TIERS.find(x=>v2>=x.mps)||{k:'slow'}).k;
+  assert.equal(a.get('rTitle').textContent,a.T('bd.title',g2==='slow'?1:3,a.T('bd.grade.'+g2)));assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.early',BD.MOVE_F-BD.MIN_F),'the early cancel is the biggest loss');
+  // late cancel
+  a.onDir('db',o+fr(BD.MOVE_F+5));assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.late',5));
+  c=o+fr(BD.MOVE_F+5);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));o=c+fr(6);a.onDir('b',o);assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.late',4));
+  // 1 held too long, then 4N4 too long
+  a.onDir('db',o+fr(BD.MOVE_F));c=o+fr(BD.MOVE_F);a.onDir('b',c+fr(10));a.onDir('n',c+fr(12));o=c+fr(14);a.onDir('b',o);assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.db',8));
+  a.onDir('db',o+fr(BD.MOVE_F));c=o+fr(BD.MOVE_F);a.onDir('b',c+fr(2));a.onDir('n',c+fr(10));o=c+fr(12);a.onDir('b',o);assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.tap',6));
+  // slow set resets the chain to 1 but the backdash still counts
+  const before=a.session.bd.count;a.onDir('db',o+fr(BD.MOVE_F));c=o+fr(BD.MOVE_F);a.onDir('b',c+fr(30));a.onDir('n',c+fr(32));o=c+fr(34);a.onDir('b',o);
+  assert.equal(a.bd.chain,1);assert.equal(a.get('rTitle').textContent,a.T('bd.title',1,a.T('bd.grade.slow')));assert.equal(a.session.log[0].res[0],'res.bd_slow');assert.equal(a.session.bd.count,before+1);
+  // a chain of 3+ leaves a summary log line when it breaks; the dictionaries name no official character
+  const b=boot({v:4,lang:'en'});let p=bdOut(b,1000);for(let i=0;i<3;i++) p=bdSet(b,p,BD.MOVE_F);assert.equal(b.bd.chain,4);b.onDir('n',p+fr(12));
+  assert.equal(JSON.stringify(b.session.log[1].res),'["bd.chain.end",4]');assert.equal(b.session.log[0].res[0],'bd.f.noCancel.title');
+  const banned=/데빌진|화랑|카즈야|헤이하치|Jin\b|Hwoarang|Kazuya|Heihachi|仁|風間|三島|カズヤ|平八|ファラン/;
+  for(const l of ['ko','en','ja']){b.setLang(l);for(const k of Object.keys(b.I18N[l])) if(/^(bd\.|mode\.bd10|hint\.bd10|tier\.\d\.bd10)/.test(k)) assert.doesNotMatch(String(b.T(k,3,2,1,0)),banned,l+' '+k);}
+});
+
+test('backdash faults: 1 before MIN_F cancels the dash, no cancel locks RECOVER_F of stiffness, sidestep and neutral-after-1 break the set, LINK_MAX_F ends it, 2P mirrors',()=>{
+  const {BD}=boot();let a=boot({v:4,lang:'ko'});
+  let o=bdOut(a,1000);a.onDir('db',o+fr(BD.MIN_F-1));assert.equal(a.bd.state,0);assert.equal(a.session.bd.count,0,'no backdash, no distance');
+  // no cancel → stiff for RECOVER_F frames from the backdash, counted from the output
+  o=bdOut(a,2000);a.onDir('n',o+fr(12));assert.equal(a.session.bd.dist,1);assert.equal(a.bd.chain,0);
+  const t2=bdOut(a,o+fr(BD.RECOVER_F-6));assert.ok(t2<o+fr(BD.RECOVER_F));assert.equal(a.bd.state,0,'still recovering: nothing comes out');assert.equal(a.session.bd.count,1);
+  bdOut(a,o+fr(BD.RECOVER_F+2));assert.equal(a.bd.state,3,'after the recovery the next one is fine');
+  // engaged first, then the loud faults
+  a=boot({v:4,lang:'ko'});o=bdOut(a,1000);o=bdSet(a,o,BD.MOVE_F);assert.equal(a.bd.chain,2);
+  a.onDir('d',o+fr(BD.MOVE_F));assert.equal(a.get('rTitle').textContent,a.T('bd.f.side.title'));assert.equal(a.bd.chain,0);assert.equal(a.session.bd.dist,2,'a sidestep cancel still moved');
+  o=bdOut(a,o+fr(30));a.onDir('db',o+fr(BD.MOVE_F));a.onDir('n',o+fr(BD.MOVE_F+2));assert.equal(a.get('rTitle').textContent,a.T('bd.f.neutral1.title'));assert.equal(a.bd.state,0);
+  o=bdOut(a,o+fr(60));a.onDir('db',o+fr(BD.MOVE_F));a.onDir('b',o+fr(BD.MOVE_F+2));a.onDir('d',o+fr(BD.MOVE_F+4));assert.equal(a.get('rTitle').textContent,a.T('bd.f.dir.title'));
+  o=bdOut(a,o+fr(90));a.onDir('db',o+fr(BD.MOVE_F));a.tick(o+fr(BD.MOVE_F+BD.LINK_MAX_F+1));assert.equal(a.bd.state,0,'sitting longer than LINK_MAX_F is just a crouch');assert.equal(a.bd.chain,0);
+  o=bdOut(a,o+fr(200));a.onDir('db',o+fr(BD.MOVE_F));a.onDir('b',o+fr(BD.MOVE_F+2));a.onDir('n',o+fr(BD.MOVE_F+4));a.onDir('b',o+fr(BD.MOVE_F+4)+260);assert.equal(a.get('rTitle').textContent,a.T('bd.f.nLong.title'));assert.equal(a.bd.state,1,'the late b starts a new pair');
+  a=boot({v:4,side:-1});o=bdOut(a,1000);o=bdSet(a,o,BD.MOVE_F);assert.equal(a.bd.chain,2,'2P side: same directions, same judging');assert.ok(a.anim.moveTo>a.anim.moveFrom,'visual mirrors');
+});
+
+test('bd10: countdown, distance on the HUD, record, share card, board entry against the worker, and leaving clears',async()=>{
+  const w=await import(require('node:url').pathToFileURL(require('node:path').join(__dirname,'../worker/index.js')).href);
+  const a=boot({v:4,lang:'en'});const {BD}=a;a.setMode('bd10');
+  assert.equal(a.get('dStart').hidden,false);assert.match(a.get('hudHint').textContent,/4 N 4/);assert.match(a.get('dDesc').textContent,new RegExp(BD.RECOVER_F+'f'));
+  a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();
+  assert.equal(a.trial.running,true);assert.equal(a.get('hudScore').textContent,'0.0 m');
+  let o=bdOut(a,4100);o=bdSet(a,o,BD.MOVE_F);assert.equal(a.get('hudScore').textContent,'1.0 m');assert.equal(a.get('dProg').textContent,a.T('trial.bdProg',1,'1.0'));
+  o=bdSet(a,o,BD.MOVE_F);assert.equal(a.get('hudScore').textContent,'2.0 m');a.onDir('n',o+fr(12)); // three backdashes: 1 + 1 + 1 (the last one ran out), two very fast sets, chain 3
+  assert.equal(a.trial.dist,3);assert.equal(a.trial.bdCount,3);assert.equal(a.trial.bdTop,2);assert.equal(a.trial.bestChain,3);assert.equal(a.get('hudScore').textContent,'3.0 m');
+  a.time(14100);a.trialTick(14100);assert.equal(a.trial.running,false);assert.equal(a.bd.state,0,'endTrial clears the machine');
+  const rec=a.store.records.bd10[0];assert.equal(rec.score,3);assert.equal(rec.dashes,3);assert.equal(rec.top,2);assert.equal(rec.chain,3);assert.equal(a.get('hudCenter').textContent,'3.0 m');
+  assert.equal(a.get('dProg').textContent,a.T('trial.bdEnd','3.0',3));assert.equal(a.store.life.trials.bd10,1);
+  const e=JSON.parse(JSON.stringify(a.boardEntry(a.trial.result,'bd10')));assert.deepEqual(e,{board:'bd10',win:a.store.window,lang:'en',score:3,tie:2,detail:{dashes:3,top:2,chain:3}});
+  assert.equal(w.validate({...e,nick:'smoke'}).error,undefined);
+  const card=a.buildCard({kind:'trial',mode:'bd10',rec,attempts:[],cycles:[],window:a.store.window});assert.equal(card.hero.value,'3.0 m');assert.equal(card.chart,null);
+  assert.doesNotMatch(JSON.stringify(card),/NaN|undefined|(^|[\s"])(card|rec|trial|mode|bd)\.[a-zA-Z0-9]+/);
+  a.renderBests();assert.match(a.get('bests').innerHTML,/3\.0 m/);
+  a.setMode('free');assert.equal(a.get('hudScore').textContent,'');assert.equal(a.bd.chain,0);
+});
+
+test('backdash recovery is a stage mechanic in every mode: no second backdash or back walk for RECOVER_F, a crouch/sidestep ends it, the stance holds meanwhile',()=>{
+  const {BD}=boot();
+  for(const m of ['free','wave10']){
+    const a=boot({v:4});a.setMode(m);a.time(1000);const o=bdOut(a,1000);assert.equal(a.anim.moveT0,1000);
+    assert.equal(a.bdRec.until,o+BD.RECOVER_F*F);assert.equal(a.anim.kind,'backdash');
+    a.onDir('n',o+fr(12));a.time(2000);bdOut(a,o+fr(14));assert.equal(a.anim.moveT0,1000,m+': a b,N,b inside the recovery does not move');assert.equal(a.pops.length,0,'no STIFF pop');
+    assert.equal(a.poseAt(1300).sweat,true,'still not idle: the recovery stance (240ms of dash, then the settle pose)');assert.equal(a.anim.kind,'backdash');
+    assert.equal(a.poseAt(o+BD.RECOVER_F*F+1).sweat,undefined,'idle again once the recovery is over');
+    a.time(1000);a.onDir('b',2500);a.onDir('n',2520);a.onDir('b',2540);a.onDir('d',2560);assert.equal(a.bdRec.until,2560,'a crouch ends the recovery early');a.onDir('n',2580);
+    a.time(3000);bdOut(a,2600);assert.equal(a.anim.moveT0,3000,m+': and the next backdash comes out');
+  }
+  // a d/b during the dash stops the movement where it is (all modes) and sits
+  const a=boot({v:4});a.setMode('ewgf20');const o=bdOut(a,1000);assert.ok(a.anim.moveDur>0);a.onDir('db',o+fr(BD.MOVE_F));assert.equal(a.anim.moveDur,0);assert.equal(a.anim.kind,'bdCrouch');
+  assert.equal(a.bd.state,0,'judging still off outside free/bd10');
+});
+
+test('the segment bar shows the last backdash: 4 tap · N · hold until the cancel · 1 held until the next 4',()=>{
+  const a=boot({v:4,lang:'ko'});const {BD}=a;
+  let o=bdOut(a,1000,3,2);assert.equal(a.bd.seg,null,'nothing until the backdash is cancelled or released');
+  a.onDir('db',o+fr(BD.MOVE_F));assert.deepEqual(JSON.parse(JSON.stringify(a.bd.seg)),{bd:true,tap:fr(3),n:fr(2),hold:fr(BD.MOVE_F),db:null});
+  assert.equal(a.get('segTitle').textContent,a.T('seg.titleBd'));
+  const c=o+fr(BD.MOVE_F);a.onDir('b',c+fr(4));assert.equal(a.bd.seg.db,fr(4),'the 1 hold closes the bar');a.onDir('n',c+fr(6));o=c+fr(8);a.onDir('b',o);
+  assert.equal(a.bd.seg.db,fr(4),'the finished bar stays through the next backdash');a.onDir('n',o+fr(12));
+  assert.deepEqual(JSON.parse(JSON.stringify(a.bd.seg)),{bd:true,tap:fr(2),n:fr(2),hold:fr(12),db:0},'released without a cancel: hold until the release, no 1');
+  a.setLang('en');assert.equal(a.get('segTitle').textContent,'Last backdash segments (ms)');
+  dash(a,5000);assert.equal(a.get('segTitle').textContent,a.T('seg.title'),'a crouch dash takes the bar back');
+});
+
+test('review fixes (2026-09-13): one 4N4 pairing rule, provisional no-cancel metre, chain 1 records, silent bar, HUD after bd10, d/f and 1-hold faults, cancel card, one trial-mode list',()=>{
+  const {BD}=boot();const near=(x,y,m)=>assert.ok(Math.abs(x-y)<1e-9,m+': '+x+' vs '+y);
+  // judging pairs the second 4 the way tapDetect does (within TAP_MS of the first 4, not of the N): no credited backdash without a drawn one
+  let a=boot({v:4,lang:'ko'});a.onDir('b',1000);a.onDir('n',1200);a.onDir('b',1300);
+  assert.equal(a.bd.state,1,'too slow to pair: the late 4 is a new first tap');assert.notEqual(a.anim.kind,'backdash');assert.equal(a.bd.chain,0);
+  a.onDir('n',1320);a.onDir('b',1340);assert.equal(a.bd.state,3);assert.equal(a.anim.kind,'backdash','the judged backdash is the drawn one');
+  // released without a cancel, then crouched/sidestepped inside the recovery: the metre shrinks to what was travelled (release-then-crouch spam earns nothing)
+  a=boot({v:4,lang:'ko'});let o=bdOut(a,1000);a.onDir('n',o+fr(2));assert.equal(a.session.bd.dist,1);a.onDir('db',o+fr(3));assert.equal(a.session.bd.dist,0,'crouched before MIN_F: nothing');
+  o=bdOut(a,2000);a.onDir('n',o+fr(2));a.onDir('d',o+fr(8));near(a.session.bd.dist,0.8,'sidestep at 8f');
+  o=bdOut(a,3000);a.onDir('n',o+fr(2));a.tick(o+fr(BD.RECOVER_F+1));a.onDir('db',o+fr(BD.RECOVER_F+2));near(a.session.bd.dist,1.8,'after the recovery the full metre stays');
+  // free practice before the first 1 cancel: a release or sidestep leaves the segment bar alone
+  a=boot({v:4,lang:'ko'});dash(a,1000);o=bdOut(a,3000);a.onDir('n',o+fr(12));assert.equal(a.bd.seg,null);assert.equal(a.get('segTitle').textContent,a.T('seg.title'),'release: the wave bar stays');
+  o=bdOut(a,5000);a.onDir('d',o+fr(8));assert.equal(a.bd.seg,null);assert.equal(a.get('segTitle').textContent,a.T('seg.title'),'sidestep: the wave bar stays');
+  // engaged: d/f is a crouch (it cancels the recovery), so its distance counts; any direction while holding the 1 ends the set with a card
+  a=boot({v:4,lang:'ko'});o=bdOut(a,1000);o=bdSet(a,o,BD.MOVE_F);assert.equal(a.bd.chain,2);
+  a.onDir('df',o+fr(BD.MOVE_F));assert.equal(a.session.bd.dist,2,'d/f credits the distance');assert.equal(a.get('rTitle').textContent,a.T('bd.f.dir.title'));assert.equal(a.bd.chain,0);
+  o=bdOut(a,o+fr(60));a.onDir('db',o+fr(BD.MOVE_F));a.onDir('d',o+fr(BD.MOVE_F+2));assert.equal(a.get('rTitle').textContent,a.T('bd.f.dir.title'),'1 → 2 says why the set ended');assert.equal(a.bd.state,0);
+  // the cancel line redraws the backdash card even if another card was shown in between
+  a=boot({v:4,lang:'ko'});o=bdOut(a,1000);o=bdSet(a,o,BD.MOVE_F);const title=a.get('rTitle').textContent;assert.equal(title,a.T('bd.title',2,a.T('bd.grade.top')));
+  a.onButton(2,o+fr(3));assert.notEqual(a.get('rKind').textContent,'BACKDASH','a stray 2 shows its own card');
+  a.onDir('db',o+fr(BD.MOVE_F));assert.equal(a.get('rKind').textContent,'BACKDASH');assert.equal(a.get('rTitle').textContent,title);assert.equal(a.get('rOff').textContent,a.T('bd.cancel',BD.MOVE_F,0,'1.0'));
+  // bd10: an isolated backdash is a chain of 1 on the record; the HUD chain widget is redrawn when the trial ends
+  a=boot({v:4,lang:'en'});a.setMode('bd10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();
+  o=bdOut(a,4100);a.onDir('n',o+fr(12));assert.equal(a.trial.bestChain,1,'an isolated backdash is a chain of 1');assert.equal(a.session.bd.bestChain,1);
+  o=bdOut(a,o+fr(40));o=bdSet(a,o,BD.MOVE_F);o=bdSet(a,o,BD.MOVE_F);assert.equal(a.get('hudChainL').textContent,'BACKDASH');assert.equal(a.get('hudChainN').textContent,3);
+  a.time(14100);a.trialTick(14100);assert.equal(a.trial.running,false);assert.equal(a.store.records.bd10[0].chain,3);
+  assert.equal(a.get('hudChainN').textContent,0);assert.equal(a.get('hudChainL').textContent,'WAVE','endTrial redraws the chain widget');
+  // records, lifetime trial counters and the reset button all follow the one trial-mode list; the admin CLI knows every board
+  assert.deepEqual(Object.keys(a.store.records),[...a.BOARDS]);assert.deepEqual(Object.keys(a.store.life.trials),[...a.BOARDS]);
+  const b=boot(undefined,undefined,{confirm:()=>true});b.get('dataReset').click();assert.deepEqual(Object.keys(b.store.records),[...b.BOARDS]);assert.deepEqual(Object.keys(b.store.life.trials),[...b.BOARDS]);
+  const adm=fs.readFileSync(require('node:path').join(__dirname,'../tools/board-admin.js'),'utf8');for(const id of a.BOARDS) assert.ok(adm.includes("['"+id+"', '"),'board-admin.js lists '+id);
 });

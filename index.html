@@ -359,6 +359,7 @@
       <button role="tab" data-mode="ewgf20" aria-selected="false" data-i18n="mode.ewgf20.name">초풍 20회</button>
       <button role="tab" data-mode="combo10" aria-selected="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button>
       <button role="tab" data-mode="rush30" aria-selected="false" data-i18n="mode.rush30.name">더미 격파 30초</button>
+      <button role="tab" data-mode="bd10" aria-selected="false" data-i18n="mode.bd10.name">백대시 10초</button>
     </nav>
     <div class="top-right">
       <div class="lang" id="langSel" role="group" aria-label="Language"><button data-lang="ko" aria-pressed="true">한국어</button><button data-lang="en" aria-pressed="false">EN</button><button data-lang="ja" aria-pressed="false">日本語</button></div>
@@ -374,7 +375,7 @@
       <div class="stage" id="stageBox">
         <canvas id="stage" data-i18n-aria="stage.canvasAria" aria-label="SD 캐릭터 연출 화면"></canvas>
         <div class="hud">
-          <div class="hud-chain" id="hudChain"><span id="hudChainN">0</span><small>WAVE</small></div>
+          <div class="hud-chain" id="hudChain"><span id="hudChainN">0</span><small id="hudChainL">WAVE</small></div>
           <div class="hud-score" id="hudScore"></div>
           <div class="hud-timer" id="hudTimer"></div>
           <div class="hud-center" id="hudCenter"></div>
@@ -415,7 +416,7 @@
         <div class="coach-trend" id="coachTrend"></div>
       </div>
       <div class="coach-box">
-        <h3 data-i18n="seg.title">마지막 대시 구간 (ms)</h3>
+        <h3 data-i18n="seg.title" id="segTitle">마지막 대시 구간 (ms)</h3>
         <div class="seg" id="segBar"><div class="s1" style="flex:1">6</div><div class="s2" style="flex:1">N</div><div class="s3" style="flex:1">2</div><div class="s4" style="flex:1">3</div><div class="s5" style="flex:1">캔슬6</div></div>
         <div class="seg-legend"><span><i style="background:var(--seg1)"></i><em data-i18n="seg.l1">시작 6 유지</em></span><span><i style="background:var(--seg2)"></i><em data-i18n="seg.l2">중립</em></span><span><i style="background:var(--seg3)"></i><em data-i18n="seg.l3">2 유지</em></span><span><i style="background:var(--seg4)"></i><em data-i18n="seg.l4">3 유지 → 캔슬 6</em></span><span><i style="background:var(--seg5)"></i><em data-i18n="seg.l5">캔슬 6 → 다음 시작 6</em></span></div>
       </div>
@@ -510,7 +511,7 @@
     <div class="card board-card" id="boardCard" hidden>
       <h2 data-i18n="board.title">주간 순위</h2>
       <p class="sub" data-i18n="board.note">상위 10명 · 닉네임당 주간 최고 기록 1건 · 매주 월요일 0시(KST) 초기화 · 닉네임과 기록만 저장됩니다</p>
-      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button><button data-board="rush30" aria-pressed="false" data-i18n="mode.rush30.name">더미 격파 30초</button></div>
+      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button><button data-board="rush30" aria-pressed="false" data-i18n="mode.rush30.name">더미 격파 30초</button><button data-board="bd10" aria-pressed="false" data-i18n="mode.bd10.name">백대시 10초</button></div>
       <div class="board-week" id="boardWeek"></div>
       <div class="board-me" id="boardMe"></div>
       <div class="tbl board-list" id="boardList"></div>
@@ -569,6 +570,16 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const WALK_F = 90, WALK_B = 70, TAP_MS = 250; // walk speed px/s (forward/back), f,N,f double-tap dash window. Visual only; judging never reads these.
 const FF_MS = 250;      // judging: f,f+2 (통발) accepts the 2 up to this long after the second f (state 1/2 with cd.dashT===cd.tF)
 const RUSH_PTS = {kill:5, wgf:2, dashMax:3}; // 더미 격파: correct hit 5, non-just WGF on the high dummy 2, each crouch dash min(chain,3)
+// 백대시 모델 (2026-09-13). 실측이 아니라 사용자 체감·참고 자료 기반 가정값 — 숫자만 고치면 판정·거리·등급·문구·테스트가 함께 따라온다 (설계 결정 17).
+const BD = {
+  MIN_F: 6,        // 두 번째 4를 이 프레임 미만으로 잡고 1(↙)을 누르면 백대시가 나가기 전에 앉은 것 → 백대시 없음, 거리 0
+  MOVE_F: 10,      // 이동 구간: 이 프레임에 최대 거리 1.0 m 도달 = 최적 캔슬 시점. 거리 = min(h, MOVE_F)/MOVE_F
+  RECOVER_F: 26,   // 백대시 경직(출력 기준, 사용자 체감 2026-09-13). 그동안 뒤로만 못 간다(백대시·뒤 걷기 없음, 나머지는 전부 가능). 앉기·횡(1/2/3/7/8/9)이 경직을 지운다 — 모든 모드의 연출과 bd 판정이 같은 bdRec을 본다
+  LINK_MAX_F: 60,  // 1이 이보다 늦으면 세트가 아니라 그냥 앉기 → 연속 종료 (4 탭·N 자체는 TAP_MS 안이어야 4N4로 묶인다)
+  TIERS: [{k:'top', mps:3.5}, {k:'fast', mps:3.0}, {k:'ok', mps:2.2}], // 세트 속도(m/s) 하한: 이 백대시의 거리 ÷ (이 출력 → 다음 출력). 미만이면 'slow'
+};
+const bdF = ms => Math.max(1, Math.round(ms/FRAME));                       // frames as the history strip shows them
+const bdDist = h => h < BD.MIN_F ? 0 : Math.min(h, BD.MOVE_F)/BD.MOVE_F;   // metres earned by a backdash cancelled after h frames
 
 /* ---------- 옷장 (wardrobe): costume items per slot + achievements that unlock them ---------- */
 // Design decision 14: homage sets with original names only (no official character names/art), six slots, one item per achievement,
@@ -652,8 +663,10 @@ skin:{
 }};
 const ITEM_SLOT = {}; for(const s of SLOTS) for(const id of Object.keys(ITEMS[s])) if(id!=='base') ITEM_SLOT[id] = s;
 const DAILY_IDS = Object.keys(ITEM_SLOT).filter(id => ITEMS[ITEM_SLOT[id]][id].set==='daily');
+const TRIAL_MODES = ['wave10','ewgf20','combo10','rush30','bd10']; // every start-mode trial (MODES/#modes/#boardTabs/worker BOARDS follow this order); records, life.trials and the reset button all derive from it
+const perTrial = v => Object.fromEntries(TRIAL_MODES.map(m => [m, v()]));
 const LIFE_KEYS = ['dashes','ewgf','tries','tongbal','hellsweep','maxChain','maxStreak','tightEwgf','days','donate'];
-const lifeDefault = () => ({dashes:0, ewgf:0, tries:0, tongbal:0, hellsweep:0, maxChain:0, maxStreak:0, tightEwgf:0, days:0, donate:0, giftDay:'', trials:{wave10:0, ewgf20:0, combo10:0, rush30:0}});
+const lifeDefault = () => ({dashes:0, ewgf:0, tries:0, tongbal:0, hellsweep:0, maxChain:0, maxStreak:0, tightEwgf:0, days:0, donate:0, giftDay:'', trials:perTrial(() => 0)});
 const fitDefault = () => Object.fromEntries(SLOTS.map(s => [s,'base']));
 // achievements: id = the item it unlocks. stat(life) is the current value, done when stat >= target. Records-based ones read store.records (best of the last 30).
 const bestRec = (m, f) => (store.records[m]||[]).reduce((b,r) => Math.max(b, f(r)||0), 0);
@@ -680,7 +693,7 @@ const detectLang = () => { const l = (typeof navigator!=='undefined' && navigato
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:{wave10:[],ewgf20:[],combo10:[],rush30:[]}, nick:'', nickToken:'', visitDay:'', life:lifeDefault(), ach:{}, fit:fitDefault()};
+let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', life:lifeDefault(), ach:{}, fit:fitDefault()};
 const owned = id => id==='base' || !!store.ach[id]; // store.ach = unlock record (achievement items and daily gifts alike): id → time
 const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function validKey(slot, code){
@@ -745,7 +758,7 @@ ko:{
   'coach.intro':'먼저 <strong>→(6)</strong>를 톡 치고 뗀 뒤, <strong>↓(2)</strong>를 누르고 그대로 →를 더해 <strong>↓→(3)</strong>. 이게 크라우치 대시 한 번입니다. 이어가려면 3 직후 ↓를 떼 <strong>6으로 캔슬</strong>하고, 떼었다가 다시 6N23.',
   'trend.intro':'최근 시도가 쌓이면 경향 분석이 여기에 표시됩니다.',
   'trend.few':'최근 시도가 3회 이상 쌓이면 경향 분석이 표시됩니다.',
-  'seg.title':'마지막 대시 구간 (ms)', 'seg.names':['6','N','2','3','캔슬6'],
+  'seg.title':'마지막 대시 구간 (ms)', 'seg.names':['6','N','2','3','캔슬6'], 'seg.titleBd':'마지막 백대시 구간 (ms)', 'seg.namesBd':['4','N','4홀드','1',''],
   'seg.l1':'시작 6 유지', 'seg.l2':'중립', 'seg.l3':'2 유지', 'seg.l4':'3 유지 → 캔슬 6', 'seg.l5':'캔슬 6 → 다음 시작 6',
   'stat.dps':'최고 웨이브 속도 (대시/초)', 'stat.chain':'최고 연속 대시', 'stat.dash':'총 대시', 'stat.rate':'초풍 성공률', 'stat.try':'초풍 시도', 'stat.mean':'평균 버튼 오프셋',
   'set.title':'입력 · 판정 설정',
@@ -826,6 +839,32 @@ ko:{
   'pop.tongbal':'통발', 'pop.hellsweep':'나락', 'pop.whiff':'헛침',
   'dummy.high':'상단', 'dummy.mid':'중단', 'dummy.low':'하단',
   'card.pts':'점수', 'card.kills':'격파', 'card.whiffs':'헛침', 'card.dashPts':'웨이브 점수',
+  // 백대시 (bd10 · 자유 연습). 프레임 숫자는 BD 상수에서 읽는다
+  'mode.bd10.name':'백대시 10초', 'mode.bd10.desc':()=>'10초 동안 백대시로 물러난 거리(m)를 잽니다. 4 N 4로 백대시, 1(↙)로 경직을 끊고 1에서 4로 바로 굴려 이어 갑니다: 414 N 414 N … 캔슬은 백대시가 나간 뒤 '+BD.MOVE_F+'f 부근이 최적(그전엔 거리가 짧고, 캔슬 없이 끝내면 '+BD.RECOVER_F+'f 동안 다음 백대시가 안 나갑니다). 2(↓)·8(↑) 캔슬은 횡이라 가드가 풀립니다. 거리·경직 프레임은 근사값입니다.',
+  'hint.bd10':()=>'4 N 4 → 1(↙) → 4 N 4 … 캔슬은 '+BD.MOVE_F+'f 부근 · 1에서 4로 바로 · 2/8은 횡(가드 풀림)',
+  'trial.bdProg':(n,d)=>'백대시 '+n+' · '+d+' m', 'trial.bdEnd':(d,n)=>'10초 종료 · '+d+' m (백대시 '+n+')',
+  'rec.dist':d=>d+' m', 'rec.bdSub':(n,t,c)=>'백대시 '+n+' · 매우 빠름 '+t+' · 최대 연속 '+c,
+  'card.dist':'거리', 'card.backdashes':'백대시', 'card.top':'매우 빠름',
+  'log.tBack':'백대시', 'res.bd_top':'매우 빠름', 'res.bd_fast':'빠름', 'res.bd_ok':'보통', 'res.bd_slow':'느림',
+  'bd.grade.top':'매우 빠름', 'bd.grade.fast':'빠름', 'bd.grade.ok':'보통', 'bd.grade.slow':'느림',
+  'bd.title':(n,g)=>'백대시 ×'+n+' · '+g, 'bd.first.title':'백대시', 'bd.first.sub':f=>'4 N 4 '+f+'f · 이제 1(↙)로 경직을 끊고 4로 바로 굴리세요',
+  'bd.sub':(mps,h,db,tap)=>mps+' m/s · 캔슬 '+h+'f · 1 '+db+'f · 4N4 '+tap+'f',
+  'bd.cancel':(h,off,d)=>'캔슬 '+h+'f ('+(off===0?'최적':(off>0?'+':'')+off+'f')+') · '+d+' m', 'bd.log.cancel':h=>'캔슬 '+h+'f',
+  'bd.chain.end':n=>'연속 백대시 '+n,
+  'bd.coach.first':()=>'백대시가 나갔습니다. 4를 잡은 채 <strong>'+BD.MOVE_F+'f</strong> 부근에서 <strong>1(↙)</strong>로 경직을 끊고, 1에서 <strong>4</strong>로 바로 굴려 N, 4로 다음 백대시를 이어 가세요.',
+  'bd.coach.early':n=>'캔슬이 <strong>'+n+'f</strong> 빠릅니다. 백대시는 '+BD.MOVE_F+'f쯤에 최대 거리에 닿으니 그때 1(↙)을 누르세요. 너무 빠르면 거리를 손해 봅니다.',
+  'bd.coach.late':n=>'캔슬이 <strong>'+n+'f</strong> 늦습니다. '+BD.MOVE_F+'f가 지나면 더 안 나가니 1(↙)을 바로 넣으세요.',
+  'bd.coach.db':n=>'1(↙)을 <strong>'+n+'f</strong> 길게 잡았습니다. 앉기가 들어가면 바로 4로 굴리세요.',
+  'bd.coach.tap':n=>'4 N 4 사이가 <strong>'+n+'f</strong> 깁니다. 4를 톡 치고 떼자마자 다시 4.',
+  'bd.coach.cancelOk':'좋은 캔슬 타이밍. 이제 1에서 4로 바로 굴려 N, 4.', 'bd.coach.good':'군더더기 없는 세트. 이 리듬을 유지하세요.',
+  'bd.f.early1.title':'1이 너무 빠름 (백대시 취소)', 'bd.f.early1.coach':()=>'백대시가 나가기 전에 앉았습니다. 두 번째 4를 최소 '+BD.MIN_F+'f, 이상적으로 '+BD.MOVE_F+'f 잡은 뒤 1(↙).',
+  'bd.f.noCancel.title':'캔슬 없음', 'bd.f.noCancel.sub':()=>'백대시가 끝까지 나갔습니다. '+BD.RECOVER_F+'f 동안 다음 백대시가 나가지 않습니다', 'bd.f.noCancel.coach':()=>'4를 떼기 전에 <strong>1(↙)</strong>로 경직을 끊으세요. 끊지 않으면 '+BD.RECOVER_F+'f 경직 동안 다음 4 N 4가 안 나갑니다.',
+  'bd.f.stiff.title':'경직 중 (백대시 안 나감)', 'bd.f.stiff.coach':()=>'앞 백대시를 캔슬하지 않아 아직 경직 중입니다('+BD.RECOVER_F+'f). 경직 중엔 뒤로만 못 갑니다 — 백대시 뒤 1(↙)로 끊어야 바로 다음이 나갑니다.',
+  'bd.f.side.title':'횡 캔슬 (가드 풀림)', 'bd.f.side.coach':'2(↓)·8(↑)은 횡이라 캔슬은 되지만 가드가 풀립니다. 1(↙)로 앉아서 끊으세요.',
+  'bd.f.neutral1.title':'1 뒤 중립', 'bd.f.neutral1.coach':'1(↙)에서 손을 떼지 말고 <strong>4</strong>로 바로 굴리세요. 중립을 거치면 세트가 끊깁니다: 41<u>4</u> N 414 N …',
+  'bd.f.dir.title':'다른 방향', 'bd.f.dir.coach':'4 N 4 사이에 다른 방향이 들어갔습니다. 4를 톡, 떼고, 다시 4.',
+  'bd.f.tapLong.title':'4를 너무 길게', 'bd.f.tapLong.coach':'첫 4는 톡 치고 바로 떼세요. 길게 잡으면 뒤로 걷기가 됩니다.',
+  'bd.f.nLong.title':'N이 너무 김', 'bd.f.nLong.coach':'4를 뗀 뒤 두 번째 4가 늦어 백대시로 묶이지 않았습니다. 4 N 4를 더 빠르게.',
   'set.sound':'소리', 'set.bgmVol':'배경음 볼륨', 'set.sfxVol':'효과음 볼륨', 'set.soundNote':'배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).',
   'share.card':'공유 카드', 'share.session':'세션 카드', 'share.title':'결과 공유 카드', 'share.canvasAria':'결과 공유 카드 미리보기',
   'share.copy':'이미지 복사', 'share.download':'PNG 저장', 'share.tweet':'X(트위터)에 공유', 'share.close':'닫기',
@@ -880,6 +919,7 @@ ko:{
   'tier.3.wave10':'웨이브 좀 타시네요? 반은 넘었습니다.', 'tier.3.ewgf20':'절반 이상 저스트. 이제 편차만 줄이면 됩니다.', 'tier.3.combo10':'웨이브는 되는데 마지막 3+2가 반반. 거의 다 왔습니다.', 'tier.3.rush30':'격파 반, 헛침 반. 더미 높이를 먼저 보세요.',
   'tier.4.wave10':'손이 풀리는 중. 캔슬 6을 조금만 더 빨리.', 'tier.4.ewgf20':'초풍이 나올 듯 말 듯. 3과 2를 동시에.', 'tier.4.combo10':'웨이브 타다 초풍 타이밍을 놓칩니다. 마지막 대시만 침착하게.', 'tier.4.rush30':'손이 풀리는 중. 초풍·통발·나락 중 하나가 늦습니다.',
   'tier.5.wave10':'사람이... 맞으시죠? 6N23 6 N, 다시 갑시다.', 'tier.5.ewgf20':'사람이... 맞으시죠? 풍신권도 기술입니다. 다시.', 'tier.5.combo10':'사람이... 맞으시죠? 웨이브 3회 뒤 초풍, 다시.', 'tier.5.rush30':'사람이... 맞으시죠? 더미는 도망가지 않습니다. 다시.',
+  'tier.0.bd10':'사람이 아니군요!? 화면 끝까지 물러났습니다.', 'tier.1.bd10':'훌륭합니다! 이 백대시는 아무도 못 따라잡아요!', 'tier.2.bd10':'상급 백대시. 상대 러시가 허공을 칩니다.', 'tier.3.bd10':'백대시 좀 타시네요? 캔슬 타이밍만 다듬으면 됩니다.', 'tier.4.bd10':'손이 풀리는 중. 1에서 4로 더 빨리 굴리세요.', 'tier.5.bd10':'사람이... 맞으시죠? 414 N, 다시 갑시다.',
   'board.note':'상위 10명 · 닉네임당 주간 최고 기록 1건 · 매주 월요일 0시(KST) 초기화 · 닉네임과 기록만 저장됩니다',
   'visits':(d,t)=>'오늘 방문 '+d+' · 누적 '+t, 'posts.title':'한마디', 'posts.sub':'건의·질문·잡담 무엇이든 · 최신 50개 · 1분마다 새로 고침',
   'posts.ph':'하고 싶은 말 (200자)', 'posts.send':'남기기', 'posts.sending':'보내는 중…', 'posts.empty':'아직 글이 없습니다. 첫 글을 남겨 보세요.',
@@ -915,7 +955,7 @@ en:{
   'coach.intro':'Tap <strong>→(6)</strong> and release, press <strong>↓(2)</strong>, then add → for <strong>↓→(3)</strong>. That is one crouch dash. To chain, release ↓ right after 3 to <strong>cancel with 6</strong>, release, then 6N23 again.',
   'trend.intro':'Trend analysis appears here once attempts accumulate.',
   'trend.few':'Trend analysis appears after 3 or more recent attempts.',
-  'seg.title':'Last dash segments (ms)', 'seg.names':['6','N','2','3','cancel 6'],
+  'seg.title':'Last dash segments (ms)', 'seg.names':['6','N','2','3','cancel 6'], 'seg.titleBd':'Last backdash segments (ms)', 'seg.namesBd':['4','N','hold 4','1',''],
   'seg.l1':'Start 6 held', 'seg.l2':'Neutral', 'seg.l3':'2 held', 'seg.l4':'3 held → cancel 6', 'seg.l5':'Cancel 6 → next start 6',
   'stat.dps':'Best wave speed (dashes/s)', 'stat.chain':'Best chain', 'stat.dash':'Total dashes', 'stat.rate':'EWGF rate', 'stat.try':'EWGF attempts', 'stat.mean':'Avg button offset',
   'set.title':'Input · judgement settings',
@@ -996,6 +1036,31 @@ en:{
   'pop.tongbal':'f,f+2', 'pop.hellsweep':'SWEEP', 'pop.whiff':'whiff',
   'dummy.high':'HIGH', 'dummy.mid':'MID', 'dummy.low':'LOW',
   'card.pts':'Points', 'card.kills':'Destroyed', 'card.whiffs':'Whiffs', 'card.dashPts':'Wave points',
+  'mode.bd10.name':'Backdash 10s', 'mode.bd10.desc':()=>'Measures how far you retreat with backdashes in 10 seconds (m). Backdash with 4 N 4, cut the recovery with 1 (d/b) and roll straight from 1 into 4: 414 N 414 N … The cancel is best about '+BD.MOVE_F+'f after the backdash comes out (earlier = shorter distance; without a cancel the next backdash is locked for '+BD.RECOVER_F+'f). A 2 (d) or 8 (u) cancel is a sidestep and drops your guard. Distance and recovery frames are approximations.',
+  'hint.bd10':()=>'4 N 4 → 1 (d/b) → 4 N 4 … cancel near '+BD.MOVE_F+'f · roll 1 straight into 4 · 2/8 = sidestep (drops guard)',
+  'trial.bdProg':(n,d)=>n+' backdashes · '+d+' m', 'trial.bdEnd':(d,n)=>'10s over · '+d+' m ('+n+' backdashes)',
+  'rec.dist':d=>d+' m', 'rec.bdSub':(n,t,c)=>n+' backdashes · '+t+' very fast · best chain '+c,
+  'card.dist':'Distance', 'card.backdashes':'Backdashes', 'card.top':'Very fast',
+  'log.tBack':'Backdash', 'res.bd_top':'Very fast', 'res.bd_fast':'Fast', 'res.bd_ok':'OK', 'res.bd_slow':'Slow',
+  'bd.grade.top':'Very fast', 'bd.grade.fast':'Fast', 'bd.grade.ok':'OK', 'bd.grade.slow':'Slow',
+  'bd.title':(n,g)=>'Backdash ×'+n+' · '+g, 'bd.first.title':'Backdash', 'bd.first.sub':f=>'4 N 4 in '+f+'f · now cut the recovery with 1 (d/b) and roll straight into 4',
+  'bd.sub':(mps,h,db,tap)=>mps+' m/s · cancel '+h+'f · 1 '+db+'f · 4N4 '+tap+'f',
+  'bd.cancel':(h,off,d)=>'cancel '+h+'f ('+(off===0?'optimal':(off>0?'+':'')+off+'f')+') · '+d+' m', 'bd.log.cancel':h=>'cancel '+h+'f',
+  'bd.chain.end':n=>'backdash chain '+n,
+  'bd.coach.first':()=>'The backdash is out. Keep holding 4 and cut the recovery with <strong>1 (d/b)</strong> around <strong>'+BD.MOVE_F+'f</strong>, then roll straight from 1 into <strong>4</strong>, N, 4 for the next one.',
+  'bd.coach.early':n=>'The cancel is <strong>'+n+'f</strong> early. The backdash reaches full distance around '+BD.MOVE_F+'f — press 1 (d/b) then. Cancelling sooner throws distance away.',
+  'bd.coach.late':n=>'The cancel is <strong>'+n+'f</strong> late. Nothing moves after '+BD.MOVE_F+'f, so put the 1 (d/b) in right away.',
+  'bd.coach.db':n=>'1 (d/b) was held <strong>'+n+'f</strong> too long. Once the crouch registers, roll straight into 4.',
+  'bd.coach.tap':n=>'The gap inside 4 N 4 is <strong>'+n+'f</strong> long. Tap 4, release, and 4 again at once.',
+  'bd.coach.cancelOk':'Good cancel timing. Now roll straight from 1 into 4, N, 4.', 'bd.coach.good':'A clean set. Keep this rhythm.',
+  'bd.f.early1.title':'1 too early (backdash cancelled)', 'bd.f.early1.coach':()=>'You crouched before the backdash came out. Hold the second 4 at least '+BD.MIN_F+'f, ideally '+BD.MOVE_F+'f, then 1 (d/b).',
+  'bd.f.noCancel.title':'No cancel', 'bd.f.noCancel.sub':()=>'The backdash ran to the end. The next backdash is locked for '+BD.RECOVER_F+'f', 'bd.f.noCancel.coach':()=>'Cut the recovery with <strong>1 (d/b)</strong> before you release 4. Without it the next 4 N 4 will not come out during the '+BD.RECOVER_F+'f recovery.',
+  'bd.f.stiff.title':'Still recovering (no backdash)', 'bd.f.stiff.coach':()=>'The previous backdash was not cancelled, so you are still in its '+BD.RECOVER_F+'f recovery. Only backing up is locked — a 1 (d/b) after each backdash lets the next one come out at once.',
+  'bd.f.side.title':'Sidestep cancel (guard dropped)', 'bd.f.side.coach':'2 (d) and 8 (u) are sidesteps: they cancel too, but your guard drops. Sit down with 1 (d/b) instead.',
+  'bd.f.neutral1.title':'Neutral after 1', 'bd.f.neutral1.coach':'Do not let go of 1 (d/b) — roll straight into <strong>4</strong>. Passing through neutral breaks the set: 41<u>4</u> N 414 N …',
+  'bd.f.dir.title':'Other direction', 'bd.f.dir.coach':'Another direction slipped into 4 N 4. Tap 4, release, 4 again.',
+  'bd.f.tapLong.title':'4 held too long', 'bd.f.tapLong.coach':'Tap the first 4 and release it at once. Holding it is a back walk.',
+  'bd.f.nLong.title':'Neutral too long', 'bd.f.nLong.coach':'The second 4 came too late after the release to pair into a backdash. 4 N 4 faster.',
   'set.sound':'Sound', 'set.bgmVol':'BGM volume', 'set.sfxVol':'SFX volume', 'set.soundNote':'BGM starts after your first key press or click (browser autoplay policy).',
   'share.card':'Share card', 'share.session':'Session card', 'share.title':'Result share card', 'share.canvasAria':'Result share card preview',
   'share.copy':'Copy image', 'share.download':'Save PNG', 'share.tweet':'Share on X (Twitter)', 'share.close':'Close',
@@ -1049,6 +1114,7 @@ en:{
   'tier.3.wave10':'Riding the wave now. Past the halfway mark.', 'tier.3.ewgf20':'More than half just-frame. Now shrink the spread.', 'tier.3.combo10':'The wave is there, the last 3+2 is a coin flip. Almost.', 'tier.3.rush30':'Half kills, half whiffs. Check the dummy height first.',
   'tier.4.wave10':'Hands are waking up. Cancel 6 a touch sooner.', 'tier.4.ewgf20':'The EWGF is almost there. 3 and 2 together.', 'tier.4.combo10':'The wave steals the EWGF timing. Keep the last dash calm.', 'tier.4.rush30':'Hands are waking up. One of EWGF, f,f+2 or hellsweep is late.',
   'tier.5.wave10':'You are... human, right? 6N23 6 N, once more.', 'tier.5.ewgf20':'You are... human, right? A WGF is still a move. Again.', 'tier.5.combo10':'You are... human, right? Three waves, then EWGF. Again.', 'tier.5.rush30':'You are... human, right? The dummies are not running away. Again.',
+  'tier.0.bd10':'Are you even human!? Backed off the edge of the screen.', 'tier.1.bd10':'Superb! Nobody is catching that backdash!', 'tier.2.bd10':'Advanced backdash. Their rush hits thin air.', 'tier.3.bd10':'Riding the backdash now. Just polish the cancel timing.', 'tier.4.bd10':'Hands are waking up. Roll from 1 into 4 sooner.', 'tier.5.bd10':'You are... human, right? 414 N, once more.',
   'board.note':'Top 10 · one weekly best per nickname · resets every Monday 00:00 KST · only your nickname and result are stored',
   'visits':(d,t)=>'Today '+d+' · total '+t+' visits', 'posts.title':'Shoutbox', 'posts.sub':'Requests, questions, anything · latest 50 · refreshes every minute',
   'posts.ph':'Say something (200 chars)', 'posts.send':'Post', 'posts.sending':'Sending…', 'posts.empty':'No posts yet. Be the first.',
@@ -1084,7 +1150,7 @@ ja:{
   'coach.intro':'まず<strong>→(6)</strong>を軽く押して離し、<strong>↓(2)</strong>を押したまま→を足して<strong>↓→(3)</strong>。これが風神ステップ1回です。つなげるには3の直後に↓を離して<strong>6でキャンセル</strong>し、離してまた6N23。',
   'trend.intro':'試行が溜まると傾向分析がここに表示されます。',
   'trend.few':'直近の試行が3回以上溜まると傾向分析が表示されます。',
-  'seg.title':'最後のステップ区間 (ms)', 'seg.names':['6','N','2','3','ｷｬﾝｾﾙ6'],
+  'seg.title':'最後のステップ区間 (ms)', 'seg.names':['6','N','2','3','ｷｬﾝｾﾙ6'], 'seg.titleBd':'最後のバックダッシュ区間 (ms)', 'seg.namesBd':['4','N','4保持','1',''],
   'seg.l1':'始動6保持', 'seg.l2':'ニュートラル', 'seg.l3':'2保持', 'seg.l4':'3保持 → キャンセル6', 'seg.l5':'キャンセル6 → 次の始動6',
   'stat.dps':'最高ウェーブ速度 (ダッシュ/秒)', 'stat.chain':'最高連続ステップ', 'stat.dash':'総ステップ数', 'stat.rate':'最風成功率', 'stat.try':'最風試行', 'stat.mean':'平均ボタンオフセット',
   'set.title':'入力・判定設定',
@@ -1165,6 +1231,31 @@ ja:{
   'pop.tongbal':'66+2', 'pop.hellsweep':'奈落', 'pop.whiff':'空振り',
   'dummy.high':'上段', 'dummy.mid':'中段', 'dummy.low':'下段',
   'card.pts':'得点', 'card.kills':'撃破', 'card.whiffs':'空振り', 'card.dashPts':'ウェーブ得点',
+  'mode.bd10.name':'バックダッシュ10秒', 'mode.bd10.desc':()=>'10秒間にバックダッシュで下がった距離(m)を測ります。4 N 4でバックダッシュ、1(↙)で硬直を切り、1から4へ直接倒して続けます: 414 N 414 N … キャンセルはバックダッシュが出てから'+BD.MOVE_F+'f前後が最適(それより早いと距離が短く、キャンセルしないと'+BD.RECOVER_F+'fの間は次が出ません)。2(↓)・8(↑)キャンセルは横移動でガードが解けます。距離・硬直フレームは近似値です。',
+  'hint.bd10':()=>'4 N 4 → 1(↙) → 4 N 4 … キャンセルは'+BD.MOVE_F+'f前後 · 1から4へ直接 · 2/8は横移動(ガードが解ける)',
+  'trial.bdProg':(n,d)=>'バックダッシュ '+n+' · '+d+' m', 'trial.bdEnd':(d,n)=>'10秒終了 · '+d+' m (バックダッシュ '+n+')',
+  'rec.dist':d=>d+' m', 'rec.bdSub':(n,t,c)=>'バックダッシュ '+n+' · とても速い '+t+' · 最大連続 '+c,
+  'card.dist':'距離', 'card.backdashes':'バックダッシュ', 'card.top':'とても速い',
+  'log.tBack':'バックダッシュ', 'res.bd_top':'とても速い', 'res.bd_fast':'速い', 'res.bd_ok':'普通', 'res.bd_slow':'遅い',
+  'bd.grade.top':'とても速い', 'bd.grade.fast':'速い', 'bd.grade.ok':'普通', 'bd.grade.slow':'遅い',
+  'bd.title':(n,g)=>'バックダッシュ ×'+n+' · '+g, 'bd.first.title':'バックダッシュ', 'bd.first.sub':f=>'4 N 4 '+f+'f · 次は1(↙)で硬直を切って4へ直接倒してください',
+  'bd.sub':(mps,h,db,tap)=>mps+' m/s · キャンセル '+h+'f · 1 '+db+'f · 4N4 '+tap+'f',
+  'bd.cancel':(h,off,d)=>'キャンセル '+h+'f ('+(off===0?'最適':(off>0?'+':'')+off+'f')+') · '+d+' m', 'bd.log.cancel':h=>'キャンセル '+h+'f',
+  'bd.chain.end':n=>'連続バックダッシュ '+n,
+  'bd.coach.first':()=>'バックダッシュが出ました。4を押したまま<strong>'+BD.MOVE_F+'f</strong>前後で<strong>1(↙)</strong>を入れて硬直を切り、1から<strong>4</strong>へ直接倒してN、4で次につなげます。',
+  'bd.coach.early':n=>'キャンセルが<strong>'+n+'f</strong>早いです。バックダッシュは'+BD.MOVE_F+'fあたりで最大距離に届くので、そこで1(↙)。早すぎると距離を損します。',
+  'bd.coach.late':n=>'キャンセルが<strong>'+n+'f</strong>遅いです。'+BD.MOVE_F+'fを過ぎるともう進まないので、1(↙)をすぐ入れてください。',
+  'bd.coach.db':n=>'1(↙)を<strong>'+n+'f</strong>長く押しました。しゃがみが入ったらすぐ4へ倒してください。',
+  'bd.coach.tap':n=>'4 N 4の間が<strong>'+n+'f</strong>長いです。4をトンと押して離したらすぐ4。',
+  'bd.coach.cancelOk':'良いキャンセルのタイミング。次は1から4へ直接倒してN、4。', 'bd.coach.good':'無駄のないセット。このリズムを保ちましょう。',
+  'bd.f.early1.title':'1が早すぎ (バックダッシュ取り消し)', 'bd.f.early1.coach':()=>'バックダッシュが出る前にしゃがみました。2回目の4を最低'+BD.MIN_F+'f、理想は'+BD.MOVE_F+'f押してから1(↙)。',
+  'bd.f.noCancel.title':'キャンセルなし', 'bd.f.noCancel.sub':()=>'バックダッシュが最後まで出ました。'+BD.RECOVER_F+'fの間は次のバックダッシュが出ません', 'bd.f.noCancel.coach':()=>'4を離す前に<strong>1(↙)</strong>で硬直を切ってください。切らないと'+BD.RECOVER_F+'fの硬直中は次の4 N 4が出ません。',
+  'bd.f.stiff.title':'硬直中 (バックダッシュが出ない)', 'bd.f.stiff.coach':()=>'前のバックダッシュをキャンセルしていないのでまだ硬直中です('+BD.RECOVER_F+'f)。硬直中は後ろに下がれないだけ — バックダッシュの後に1(↙)で切れば次がすぐ出ます。',
+  'bd.f.side.title':'横移動キャンセル (ガードが解ける)', 'bd.f.side.coach':'2(↓)・8(↑)は横移動なのでキャンセルはできますがガードが解けます。1(↙)でしゃがんで切ってください。',
+  'bd.f.neutral1.title':'1の後にニュートラル', 'bd.f.neutral1.coach':'1(↙)から手を離さず<strong>4</strong>へ直接倒してください。ニュートラルを挟むとセットが切れます: 41<u>4</u> N 414 N …',
+  'bd.f.dir.title':'別の方向', 'bd.f.dir.coach':'4 N 4の間に別の方向が入りました。4をトン、離して、また4。',
+  'bd.f.tapLong.title':'4が長すぎ', 'bd.f.tapLong.coach':'最初の4はトンと押してすぐ離してください。長く押すと後ろ歩きになります。',
+  'bd.f.nLong.title':'Nが長すぎ', 'bd.f.nLong.coach':'4を離してから2回目の4が遅く、バックダッシュとしてつながりませんでした。4 N 4をもっと速く。',
   'set.sound':'サウンド', 'set.bgmVol':'BGM音量', 'set.sfxVol':'効果音音量', 'set.soundNote':'BGMは最初のキー入力かクリックの後に始まります (ブラウザの自動再生制限)。',
   'share.card':'共有カード', 'share.session':'セッションカード', 'share.title':'結果共有カード', 'share.canvasAria':'結果共有カードのプレビュー',
   'share.copy':'画像をコピー', 'share.download':'PNG保存', 'share.tweet':'X(Twitter)で共有', 'share.close':'閉じる',
@@ -1218,6 +1309,7 @@ ja:{
   'tier.3.wave10':'ウェーブ乗れてますね？半分は越えました。', 'tier.3.ewgf20':'半分以上ジャスト。あとはばらつきを減らすだけ。', 'tier.3.combo10':'ウェーブは出るのに最後の3+2が五分五分。あと少し。', 'tier.3.rush30':'撃破半分、空振り半分。まずダミーの高さを見て。',
   'tier.4.wave10':'手が温まってきました。キャンセル6をもう少し早く。', 'tier.4.ewgf20':'最風が出そうで出ない。3と2を同時に。', 'tier.4.combo10':'ウェーブ中に最風のタイミングを逃します。最後のダッシュだけ落ち着いて。', 'tier.4.rush30':'手が温まってきました。最風・f,f+2・奈落のどれかが遅い。',
   'tier.5.wave10':'人間…ですよね？6N23 6 N、もう一度。', 'tier.5.ewgf20':'人間…ですよね？風神拳も技です。もう一度。', 'tier.5.combo10':'人間…ですよね？ウェーブ3回のあと最風、もう一度。', 'tier.5.rush30':'人間…ですよね？ダミーは逃げません。もう一度。',
+  'tier.0.bd10':'人間じゃないですね!? 画面の端まで下がりました。', 'tier.1.bd10':'見事です！このバックダッシュには誰も追いつけません！', 'tier.2.bd10':'上級バックダッシュ。相手のラッシュが空を切ります。', 'tier.3.bd10':'バックダッシュ乗れてますね？あとはキャンセルのタイミングだけ。', 'tier.4.bd10':'手が温まってきました。1から4へもっと早く。', 'tier.5.bd10':'人間…ですよね？414 N、もう一度。',
   'board.note':'上位10人 · ニックネームごとに週間ベスト1件 · 毎週月曜0時(KST)にリセット · 保存されるのはニックネームと記録だけです',
   'visits':(d,t)=>'今日の訪問 '+d+' · 累計 '+t, 'posts.title':'ひとこと', 'posts.sub':'要望・質問・雑談なんでも · 最新50件 · 1分ごとに更新',
   'posts.ph':'言いたいこと (200文字)', 'posts.send':'投稿', 'posts.sending':'送信中…', 'posts.empty':'まだ投稿がありません。最初の一言をどうぞ。',
@@ -1312,12 +1404,17 @@ addEventListener('pagehide', () => {
 addEventListener('pageshow', bgmSync);
 
 /* ---------- session state ---------- */
-const session = { dashes:0, bestChain:0, bestDps:0, tries:0, hits:0, offsetSum:0, offsetCount:0, cycles:[], attempts:[], log:[] };
+const sessionDefault = () => ({ dashes:0, bestChain:0, bestDps:0, tries:0, hits:0, offsetSum:0, offsetCount:0, cycles:[], attempts:[], log:[], bd:{count:0, dist:0, bestChain:0, top:0} }); // bd: backdash practice (bdOut/bdEarn), not shown in the stats grid
+const session = sessionDefault();
 /* states: 0 idle · 1 시작 6 · 2 중립 · 3 d · 4 d/f(대시 중) · 5 캔슬 6 · 6 캔슬 후 중립 · 7 d/f 뗀 뒤 캔슬 대기 */
 const cd = { state:0, tF:0, tN:0, tD:0, tDF:0, tC:0, tRel:0, lastDF:-1e9, cancelled:true, chain:0, chainCycles:[], pending:null, dashT:-1e9, dashWave:false }; // dashT: time of the f,N,f dash that started this command (dashT===tF → 통발 eligible; 대초 label only when !dashWave). pending: {t, btn} button pressed while d is still held
+/* 백대시(414 N 414 N …) 머신 — cd와 독립 (설계 결정 17). states: 0 idle · 1 첫 4 홀드 · 2 중립 · 3 백대시 중(두 번째 4 홀드) · 4 캔슬 1(↙) 홀드.
+   prev: 직전 백대시 {t4b,h,dist,t1} — 다음 백대시가 출력될 때 세트 속도(prev.dist ÷ 출력 간격)를 매긴다. engaged: 자유 연습은 첫 1 캔슬 전까지 문구를 내지 않는다(b,N,b만으로는 위치 조정) */
+const bd = { state:0, t4a:0, tN:0, t4b:0, prev:null, chain:0, engaged:false, lastT:-1e9, seg:null }; // seg: last backdash segments for the stack bar {bd:true, tap, n, hold, db} in ms
 const combo = { n:0, t:-1e9 }; // consecutive EWGF successes: reset by any other attempt/fault, by 3s without one, and by resetInput/setMode/trial GO
 function resetCombo(){ combo.n=0; combo.t=-1e9; }
 const taps = { dir:null, t:-1e9, neutral:false }; // f,N,f / b,N,b double-tap detector (dash visuals only; never touches judging)
+const bdRec = { until:-1e9 }; // backdash recovery (BD.RECOVER_F after every b,N,b, cleared by a crouch/sidestep direction). Every mode: no backdash and no back walk until then; the fighter holds the backdash stance. cd judging never reads it.
 function resetTaps(){ taps.dir=null; taps.neutral=false; }
 function tapDetect(dir, t){ // returns 'f' | 'b' on a completed double tap, else null
   if(dir==='f' || dir==='b'){
@@ -1393,7 +1490,7 @@ addEventListener('keyup', e => {
 });
 function resetInput(){
   held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); touchDir={x:0,y:0}; curDir='n'; touchRelease();
-  clearCommand(); resetCombo(); resetTaps(); updateHud();
+  clearCommand(); resetCombo(); resetTaps(); bdClear(); updateHud();
 }
 addEventListener('blur', () => { resetInput(); endTrial(true); bgmSync(); });
 
@@ -1508,7 +1605,11 @@ function onDir(dir, t){
   pushHistory({t, dir});
   // dash / backdash from a double tap. Runs before the switch so the second f still becomes the start 6 (cd.tF===t → f,f+2 eligible, 대초 label).
   // The wave's cancel 6 → N → start 6 is a dash too (2026-09-12 user decision; the cancel 6 alone is not): shorter visual, no 대초 label (dashWave).
-  { const wave = dir==='f' && cd.state===6; const dbl = tapDetect(dir, t); if(dbl==='f'){ cd.dashT=t; cd.dashWave=wave; fx.dash(wave); } else if(dbl==='b') fx.backdash(); }
+  let bdOutNow = false; // this input completed a b,N,b outside the recovery
+  { const wave = dir==='f' && cd.state===6; const dbl = tapDetect(dir, t); if(dbl==='f'){ cd.dashT=t; cd.dashWave=wave; fx.dash(wave); } else if(dbl==='b' && t>=bdRec.until){ bdOutNow = true; fx.backdash(); } } // a b,N,b inside the recovery does nothing (stiff)
+  if(t<bdRec.until && (dir==='d'||dir==='db'||dir==='df'||dir==='u'||dir==='ub'||dir==='uf')){ bdRec.until = t; bdCut(t); if(anim.kind==='backdash'){ anim.moveDur=0; startAnim('bdCrouch'); } } // crouch or sidestep cancels the recovery (the Korean backdash); the dash stops where it is
+  if(bdActive()) bdDir(dir, t); // backdash judging (free practice · bd10 only); never touches cd
+  if(bdOutNow) bdRec.until = t + BD.RECOVER_F*FRAME; // the recovery starts after judging has seen this backdash (a 1 cancel later clears it)
   switch(cd.state){
     case 0: if(dir==='f'){ cd.state=1; cd.tF=t; } break;
     case 1:
@@ -1596,6 +1697,103 @@ function fault(kind, t){
   setCoach(['fault.'+kind+'.coach']);
   fx.stumble();
   addLog(t, 'log.tDash', ['log.rFail'], '', ['fault.'+kind+'.title'], 'no');
+}
+
+/* ---------- backdash (414 N 414 N …) machine. Reads/writes only bd, session.bd, trial.dist/bdCount/bdTop/bestChain; shows through the same result card / coach / log as everything else ---------- */
+const bdActive = () => mode==='bd10' || (mode==='free' && !trial.running);
+const bdLoud = () => bd.engaged || mode==='bd10'; // free practice is silent until the first 1(↙) cancel
+function bdClear(){ Object.assign(bd,{state:0,t4a:0,tN:0,t4b:0,prev:null,chain:0,engaged:false,lastT:-1e9,seg:null,open:null,card:null}); }
+function bdBreak(t){ // chain over (fail, no cancel, timeout). Logs a 3+ chain like endChain does for the wave.
+  bd.state=0; bd.prev=null;
+  if(bd.chain>=3 && bdLoud()) addLog(t,'log.tBack',['bd.chain.end',bd.chain],'','','');
+  if(bd.chain){ bd.chain=0; updateHud(); }
+}
+function bdFail(kind, t){
+  const loud = bdLoud(); bdBreak(t);
+  if(!loud) return;
+  showResult('miss','MISS',['bd.f.'+kind+'.title'],'');
+  setCoach(['bd.f.'+kind+'.coach']);
+  addLog(t,'log.tBack',['bd.f.'+kind+'.title'],'','','no');
+}
+function bdEarn(dist, t){ // distance credited for a backdash (cancelled or completed)
+  session.bd.count++; session.bd.dist += dist; bd.lastT = t;
+  if(trial.running && mode==='bd10'){ trial.dist += dist; trial.bdCount++; renderBdHud(); }
+}
+function bdNoCancel(t){ // 4 released (or held past LINK_MAX_F) without a 1: full distance, then RECOVER_F of stiffness
+  const loud = bdLoud(); bdEarn(1, t); bd.open = {t4b:bd.t4b}; // the metre is provisional until the recovery ends: a crouch/sidestep before MOVE_F stops the dash and bdCut takes the rest back (the recovery itself is bdRec, set when the backdash came out)
+  if(loud){ bd.seg=null; bdSeg({tap:bd.tN-bd.t4a, n:bd.t4b-bd.tN, hold:t-bd.t4b, db:0}); }
+  bdBreak(t);
+  if(loud){ showResult('wgf','NO CANCEL',['bd.f.noCancel.title'],['bd.f.noCancel.sub']); setCoach(['bd.f.noCancel.coach']); addLog(t,'log.tBack',['bd.f.noCancel.title'],'','','no'); }
+}
+function bdOut(t){ // b,N,b completed: the backdash comes out. Grades the set that started at the previous backdash (p); the first one of a chain is just counted.
+  const p = bd.prev, tapF = bdF(t-bd.t4a), loud = bdLoud(); bd.state=3; bd.t4b=t; bd.lastT=t; bd.prev=null; bd.card=null;
+  const period = p ? bdF(t-p.t4b) : 0, dbF_ = p ? bdF(bd.t4a-p.t1) : 0, mps = p ? Math.round(p.dist*6000/period)/100 : 0; // m/s to 2 decimals (exact at the tier bounds: 0.6 m over 12f is 3.00, not 2.999…)
+  const g = p ? (BD.TIERS.find(x => mps>=x.mps)||{k:'slow'}).k : null;
+  bd.chain = !p || g==='slow' ? 1 : bd.chain+1;
+  session.bd.bestChain = Math.max(session.bd.bestChain, bd.chain); if(g==='top') session.bd.top++;
+  if(trial.running && mode==='bd10'){ trial.bestChain = Math.max(trial.bestChain||0, bd.chain); if(g==='top') trial.bdTop++; renderBdHud(); }
+  updateHud();
+  if(!loud) return;
+  if(!p){ bd.card = {cls:'wave', title:['bd.first.title']}; showResult(bd.card.cls,'BACKDASH',bd.card.title,['bd.first.sub',tapF]); setCoach(['bd.coach.first']); return; }
+  const n = bd.chain, worst = [['early', BD.MOVE_F-p.h], ['late', p.h-BD.MOVE_F-1], ['db', dbF_-2], ['tap', tapF-4]].sort((a,b)=>b[1]-a[1])[0]; // biggest loss in frames decides the coach line (a 2f 1 and a 2f+2f 4N4 are already tight)
+  bd.card = {cls:g==='slow'?'wgf':'wave', title:() => T('bd.title', n, T('bd.grade.'+g))}; // bdCancel redraws this card with the cancel line, whatever else was shown in between
+  showResult(bd.card.cls,'BACKDASH', bd.card.title, () => T('bd.sub', mps.toFixed(1), p.h, dbF_, tapF));
+  setCoach(worst[1]>0 ? ['bd.coach.'+worst[0], worst[1]] : ['bd.coach.good']);
+  addLog(t,'log.tBack',['res.bd_'+g], mps.toFixed(1)+' m/s', ['bd.log.cancel',p.h], g==='slow'?'wg':'ok');
+}
+function bdCancel(h, dist){ // 1(↙) after the backdash: immediate feedback on the cancel timing (the set grade follows at the next backdash)
+  const off = h-BD.MOVE_F, sub = () => T('bd.cancel', h, off, dist.toFixed(1)), card = bd.card || {cls:'wave', title:['bd.first.title']}; // no card yet when this 1 is the one that engaged free practice
+  showResult(card.cls, 'BACKDASH', card.title, sub);
+  setCoach(off<0 ? ['bd.coach.early', -off] : off>1 ? ['bd.coach.late', off] : ['bd.coach.cancelOk']);
+}
+function bdCut(t){ // crouch/sidestep inside the recovery of an uncancelled backdash: the dash stopped here, so the provisional metre becomes the distance actually travelled
+  if(!bd.open) return;
+  const d = bdDist(bdF(t-bd.open.t4b)) - 1; bd.open=null; if(!d) return;
+  session.bd.dist += d; if(trial.running && mode==='bd10'){ trial.dist += d; renderBdHud(); }
+}
+function bdDir(dir, t){
+  switch(bd.state){
+    case 0: if(dir==='b'){ bd.state=1; bd.t4a=t; } break;
+    case 1:
+      if(dir==='n'){ bd.state=2; bd.tN=t; }
+      else if(bd.prev) bdFail('dir', t); else bd.state=0;
+      break;
+    case 2:
+      if(dir==='b'){
+        if(t-bd.t4a>TAP_MS){ if(bd.prev) bdFail('nLong', t); bd.state=1; bd.t4a=t; }               // too slow to pair (same rule as tapDetect: second 4 within TAP_MS of the first 4, so judging and the visual agree): this b is a new first tap
+        else if(t<bdRec.until) bdFail('stiff', t);                                                  // still recovering from an uncancelled backdash (no pop: the stance says it)
+        else bdOut(t);
+      }
+      else if(bd.prev) bdFail('dir', t); else bd.state=0;
+      break;
+    case 3: {
+      const h = bdF(t-bd.t4b);
+      if(dir==='db'){
+        if(h<BD.MIN_F){ bdFail('early1', t); break; }                                               // sat down before the backdash came out (the tracker already stopped the dash)
+        const dist = bdDist(h); bd.seg=null; bdSeg({tap:bd.tN-bd.t4a, n:bd.t4b-bd.tN, hold:t-bd.t4b}); // the bar shows this backdash; its 1 hold fills in at the next 4
+        bd.engaged=true; bd.prev={t4b:bd.t4b, h, dist, t1:t}; bd.state=4; bdEarn(dist, t); bdCancel(h, dist); updateHud(); // engaged from here: the HUD chain widget may switch to BACKDASH
+      }
+      else if(dir==='n') bdNoCancel(t);
+      else if(dir==='f') bdFail('dir', t);                                                          // forward does not cancel anything (the recovery runs on; nothing is credited)
+      else { // d/u/ub/uf = sidestep, df = crouch: both stop the dash (onDir cleared bdRec), so the distance counts but the set is over
+        bdEarn(bdDist(h), t); if(bdLoud()){ bd.seg=null; bdSeg({tap:bd.tN-bd.t4a, n:bd.t4b-bd.tN, hold:t-bd.t4b, db:0}); }
+        bdFail(dir==='df' ? 'dir' : 'side', t);
+      }
+      break; }
+    case 4:
+      if(dir==='b'){ bd.state=1; bd.t4a=t; bdSeg({db:t-bd.prev.t1}); } // the 1 hold closes the bar
+      else bdFail(dir==='n' ? 'neutral1' : 'dir', t);
+      break;
+  }
+}
+function bdSeg(part){ bd.seg = Object.assign(bd.seg||{bd:true, tap:null, n:null, hold:null, db:null}, part); renderSeg(bd.seg); } // the "last backdash segments" bar fills in as the set unfolds
+function bdTick(now){
+  if(bd.state===1 && now-bd.t4a>TAP_MS){ if(bd.prev) bdFail('tapLong', now); else bd.state=0; }
+  else if(bd.state===2 && now-bd.t4a>TAP_MS){ if(bd.prev) bdFail('nLong', now); else bd.state=0; }
+  else if(bd.state===3 && now-bd.t4b>BD.LINK_MAX_F*FRAME) bdNoCancel(now);
+  else if(bd.state===4 && now-bd.prev.t1>BD.LINK_MAX_F*FRAME) bdBreak(now);
+  if(bd.open && now>=bdRec.until) bd.open=null; // the uncancelled backdash ran its full course: the metre stays
+  if(bd.engaged && bd.state===0 && now-bd.lastT>3000){ bd.engaged=false; updateHud(); } // back to silent repositioning
 }
 
 /* ---------- button / EWGF ---------- */
@@ -1725,12 +1923,12 @@ function coachTrend(){
 }
 function renderSeg(cyc){
   ui.seg = cyc;
-  const names = T('seg.names');
-  const bar = $('segBar');
+  const isBd = !!(cyc && cyc.bd), names = T(isBd ? 'seg.namesBd' : 'seg.names'); // backdash: 4 tap · N · 4 held until the cancel · 1 held until the next 4 (fifth slot collapsed)
+  const bar = $('segBar'); $('segTitle').textContent = T(isBd ? 'seg.titleBd' : 'seg.title');
   if(!cyc){ [...bar.children].forEach((el,i)=>{ el.style.flex=1; el.textContent=names[i]; el.title=''; }); return; }
-  const vals = [cyc.fHold, cyc.nGap, cyc.dHold, cyc.dfHold==null?0:cyc.dfHold, cyc.cancelGap==null?0:cyc.cancelGap].map(v=>Math.max(0,v));
+  const vals = (isBd ? [cyc.tap, cyc.n, cyc.hold, cyc.db, 0] : [cyc.fHold, cyc.nGap, cyc.dHold, cyc.dfHold==null?0:cyc.dfHold, cyc.cancelGap==null?0:cyc.cancelGap]).map(v=>Math.max(0,v||0));
   const total = vals.reduce((s,v)=>s+v,0)||1;
-  [...bar.children].forEach((el,i)=>{ el.style.flex = Math.max(vals[i]/total, 0.04); el.textContent = vals[i] ? names[i]+' '+Math.round(vals[i]) : names[i]; el.title = names[i]+' '+Math.round(vals[i])+'ms'; });
+  [...bar.children].forEach((el,i)=>{ if(!names[i]){ el.style.flex=0; el.textContent=''; el.title=''; return; } el.style.flex = Math.max(vals[i]/total, 0.04); el.textContent = vals[i] ? names[i]+' '+Math.round(vals[i]) : names[i]; el.title = names[i]+' '+Math.round(vals[i])+'ms'; });
 }
 
 /* ---------- result card / stats / hud / log ---------- */
@@ -1749,7 +1947,8 @@ function updateStats(){
   $('stMean').textContent = session.offsetCount? fmtF(session.offsetSum/session.offsetCount):'–';
 }
 function updateHud(){
-  const h = $('hudChain'); $('hudChainN').textContent = cd.chain; h.classList.toggle('hot', cd.chain>=3);
+  const h = $('hudChain'), useBd = cd.chain===0 && bd.chain>0 && bdLoud(), n = useBd ? bd.chain : cd.chain; // the wave chain always wins the widget; backdash chain shows only while no wave is running
+  $('hudChainN').textContent = n; $('hudChainL').textContent = useBd ? 'BACKDASH' : 'WAVE'; h.classList.toggle('hot', n>=3);
 }
 function addLog(t, type, res, num, memo, cls){
   session.log.unshift({time:new Date(), type, res, num, memo, cls:cls||''}); if(session.log.length>12) session.log.pop(); renderLog();
@@ -1773,6 +1972,7 @@ function tick(now){
   else if(cd.state===7 && now-cd.tRel>120) cd.state=0;
   if(cd.pending && now-cd.pending.t>120){ resolvePending(null, now); }
   if(cd.chain>0 && now-cd.lastDF>700){ endChain(now); }
+  if(bdActive()) bdTick(now);
 }
 function endChain(now){
   const n = cd.chain, cyc = cd.chainCycles;
@@ -1796,7 +1996,13 @@ const MODES = {
   ewgf20: {start:true, target:20},
   combo10:{start:true, target:10},
   rush30: {start:true, dur:30000, rush:true}, // 더미 격파: typed dummies, points (see RUSH_PTS)
+  bd10:   {start:true, dur:10000, bd:true},   // 백대시: metres retreated with cancelled backdashes (see BD)
 };
+function renderBdHud(){ // bd10 only: distance on the stage HUD and in the trial bar
+  if(!(trial.running && mode==='bd10')) return;
+  $('hudScore').textContent = trial.dist.toFixed(1)+' m';
+  $('dProg').textContent = T('trial.bdProg', trial.bdCount, trial.dist.toFixed(1));
+}
 function renderRushHud(){ // rush30 only: score on the stage HUD and in the trial bar
   const on = trial.running && mode==='rush30';
   $('hudScore').textContent = on ? trial.score+' PTS' : '';
@@ -1811,7 +2017,7 @@ function renderMode(){
 }
 function clearShare(){ trial.result=null; $('dShare').hidden = !!MODES[mode].start; renderTrialRank(); }
 function setMode(m){
-  endTrial(true); clearCommand(); resetCombo(); updateHud(); mode = m; trial.result=null;
+  endTrial(true); clearCommand(); resetCombo(); bdClear(); updateHud(); mode = m; trial.result=null;
   document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-selected', b.dataset.mode===m?'true':'false'));
   $('dProg').textContent=''; $('hudTimer').textContent='';
   renderMode();
@@ -1820,13 +2026,13 @@ function startTrial(){
   const M = MODES[mode]; if(!M.start) return;
   endTrial(true); clearShare();
   jackpotPause();
-  trial.running=false; trial.count=0; trial.bestChain=0; trial.target=M.target||0; trial.dur=M.dur||0; trial.score=0; trial.kills=0; trial.whiffs=0; trial.dashPts=0;
+  trial.running=false; trial.count=0; trial.bestChain=0; trial.target=M.target||0; trial.dur=M.dur||0; trial.score=0; trial.kills=0; trial.whiffs=0; trial.dashPts=0; trial.dist=0; trial.bdCount=0; trial.bdTop=0;
   $('dStart').disabled=true;
   let c = 3; $('hudCenter').textContent=c;
-  trial.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(trial.cdTimer); trial.cdTimer=null; $('hudCenter').textContent='GO!'; trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; },500); clearCommand(); resetCombo(); updateHud(); trial.running=true; trial.tStart=performance.now(); if(M.rush){ rushSpawn(); renderRushHud(); } } }, 1000);
+  trial.cdTimer = setInterval(()=>{ c--; if(c>0){ $('hudCenter').textContent=c; } else { clearInterval(trial.cdTimer); trial.cdTimer=null; $('hudCenter').textContent='GO!'; trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; },500); clearCommand(); resetCombo(); bdClear(); updateHud(); trial.running=true; trial.tStart=performance.now(); if(M.rush){ rushSpawn(); renderRushHud(); } if(M.bd) renderBdHud(); } }, 1000);
 }
 function endTrial(cancel){
-  const wasRunning = trial.running; trial.running=false; clearInterval(trial.cdTimer); trial.cdTimer=null; clearTimeout(trial.messageTimer); trial.messageTimer=null; clearTimeout(trial.openTimer); trial.openTimer=null; $('dStart').disabled=false; $('hudCenter').textContent='';
+  const wasRunning = trial.running; trial.running=false; bdClear(); updateHud(); clearInterval(trial.cdTimer); trial.cdTimer=null; clearTimeout(trial.messageTimer); trial.messageTimer=null; clearTimeout(trial.openTimer); trial.openTimer=null; $('dStart').disabled=false; $('hudCenter').textContent='';
   if(world.dummy.type){ world.dummy.type=null; world.dummy.respawn=0; } // every exit (finish, cancel from blur/settings/donate/nick/setMode/reset) hands the stage back to the plain dummy
   $('hudScore').textContent='';
   if(cancel || !wasRunning) { $('dProg').textContent=''; setTimeout(jackpotNext, 0); return; } // a reveal held back by the trial may play now (after whatever dialog opened)
@@ -1842,6 +2048,11 @@ function endTrial(cancel){
     rec = {date:Date.now(), score, kills, whiffs, dashPts, label:T('rec.pts',score), sub:T('rec.rushSub',kills,whiffs,dashPts)};
     text = T('trial.rushEnd', score, kills);
     $('hudCenter').textContent = score+' PTS';
+  } else if(mode==='bd10'){
+    const dist = +trial.dist.toFixed(2), dashes = trial.bdCount, top = trial.bdTop, chain = trial.bestChain||0;
+    rec = {date:Date.now(), score:dist, dashes, top, chain, label:T('rec.dist',dist.toFixed(1)), sub:T('rec.bdSub',dashes,top,chain)};
+    text = T('trial.bdEnd', dist.toFixed(1), dashes);
+    $('hudCenter').textContent = dist.toFixed(1)+' m';
   } else {
     at = at.slice(-trial.target);
     const ok = at.filter(a => a.kind==='ewgf' && (mode!=='combo10' || a.chain>=3)).length;
@@ -1865,7 +2076,7 @@ function trialTick(now){
   if(trial.dur){ // timed modes (wave10, rush30)
     const left = Math.max(0, trial.dur-(now-trial.tStart));
     const el = $('hudTimer'); el.textContent = (left/1000).toFixed(1); el.classList.toggle('warn', left<3000);
-    if(mode==='rush30') renderRushHud(); else $('dProg').textContent = T('trial.dashes', trial.count);
+    if(mode==='rush30') renderRushHud(); else if(mode==='bd10') renderBdHud(); else $('dProg').textContent = T('trial.dashes', trial.count);
     if(left<=0) endTrial();
   } else {
     $('dProg').textContent = trial.count+' / '+trial.target;
@@ -1874,6 +2085,7 @@ function trialTick(now){
 function recText(m, r){ // prefer numeric fields so old records re-render in the current language
   if(m==='wave10' && Number.isFinite(r.dashes)) return {label:T('rec.dps',(+r.score).toFixed(1)), sub:T('rec.waveSub',r.dashes,r.chain||0)};
   if(m==='rush30' && Number.isFinite(r.kills)) return {label:T('rec.pts',r.score), sub:T('rec.rushSub',r.kills,r.whiffs||0,r.dashPts||0)};
+  if(m==='bd10' && Number.isFinite(r.dashes)) return {label:T('rec.dist',(+r.score).toFixed(1)), sub:T('rec.bdSub',r.dashes,r.top||0,r.chain||0)};
   if(Number.isFinite(r.hits) && Number.isFinite(r.target) && Number.isFinite(r.mean)){
     const dps = m==='combo10' && Number.isFinite(r.dps) ? ' · '+T('rec.dps',r.dps.toFixed(1)) : ''; // combo10 ranks by dash/s, so show it
     return {label:r.score+'%', sub:T('rec.ewgfSub',r.hits,r.target,fmtF(r.mean))+dps};
@@ -1983,6 +2195,13 @@ function buildCard(src){
     chart = {type:'wave', pts:cycles.slice(-40).map(c=>c.dps), top:waveTop()};
     summary = T('rec.dps',dps)+' · '+T('rec.waveSub', r.dashes, chain);
     sub = T('trial.waveEnd', r.dashes, dps);
+  } else if(src.kind==='trial' && m==='bd10'){
+    const r = src.rec, dist = (+r.score).toFixed(1);
+    hero = {value:dist+' m', label:T('card.dist')};
+    metrics = [metric('card.backdashes', r.dashes||0), metric('card.top', r.top||0), metric('card.chain', r.chain||0)];
+    chart = null;
+    summary = T('rec.dist', dist)+' · '+T('rec.bdSub', r.dashes||0, r.top||0, r.chain||0);
+    sub = T('trial.bdEnd', dist, r.dashes||0);
   } else if(src.kind==='trial' && m==='rush30'){
     const r = src.rec;
     hero = {value:String(r.score), label:T('card.pts')};
@@ -2061,7 +2280,7 @@ $('sfxVol').addEventListener('change', () => playSfx('wave')); // preview at the
 $('dataReset').addEventListener('click', () => { // wipes records, lifetime stats, achievements and the outfit; nickname/token and settings stay (a dropped nickname would stay occupied on the server)
   if(typeof confirm==='function' && !confirm(T('set.resetConfirm'))) return;
   jackpotPause(false);
-  store.records = {wave10:[], ewgf20:[], combo10:[], rush30:[]}; store.life = lifeDefault(); store.life.days = 1; store.ach = {}; store.fit = fitDefault(); lookCache = null; jackpotQ.length = 0; save();
+  store.records = perTrial(() => []); store.life = lifeDefault(); store.life.days = 1; store.ach = {}; store.fit = fitDefault(); lookCache = null; jackpotQ.length = 0; save();
   $('dReset').click(); renderBests(); setCoach(['set.resetDone']); if($('fitDlg').open) renderFit();
 });
 renderSound();
@@ -2075,7 +2294,7 @@ $('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', (
 $('dStart').addEventListener('click', startTrial);
 $('dReset').addEventListener('click', () => {
   endTrial(true); clearShare(); resetInput();
-  Object.assign(session,{dashes:0,bestChain:0,bestDps:0,tries:0,hits:0,offsetSum:0,offsetCount:0,cycles:[],attempts:[],log:[]}); history.length=0; lastInputT=performance.now();
+  Object.assign(session, sessionDefault()); history.length=0; lastInputT=performance.now();
   updateStats(); updateHud(); renderHistory(); renderLog(); renderHist(); renderWave(); coachTrend();
   showResult('', 'READY', ['ready.reset'], ['ready.title']);
 });
@@ -2293,6 +2512,7 @@ function boardEntry(r, m){ // pure: finished trial result → submission payload
   if(m==='wave10'){ e.score = +rec.score; e.tie = rec.chain||0; e.detail = {dashes:rec.dashes, chain:rec.chain||0}; }
   else if(m==='combo10'){ e.score = rec.score; e.tie = rec.dps||0; e.detail = {hits:rec.hits, target:rec.target, mean:rec.mean, dps:rec.dps||0}; }
   else if(m==='rush30'){ e.score = rec.score; e.tie = rec.kills||0; e.detail = {kills:rec.kills||0, whiffs:rec.whiffs||0, dashPts:rec.dashPts||0}; }
+  else if(m==='bd10'){ e.score = +rec.score; e.tie = rec.top||0; e.detail = {dashes:rec.dashes||0, top:rec.top||0, chain:rec.chain||0}; }
   else { e.score = rec.score; e.tie = -Math.abs(rec.mean) || 0; e.detail = {hits:rec.hits, target:rec.target, mean:rec.mean}; }
   return e;
 }
@@ -2671,7 +2891,10 @@ function poseAt(now){
     case 'jab': { if(t<200){ const k = Math.sin(Math.min(1,t/200)*Math.PI); return {crouch:0.5, lean:12, armR:90*k+10, armL:-20, spread:0.4, sweat:true}; } break; }
     case 'stumble': { if(t<420){ const k=Math.sin(t/420*Math.PI); return {crouch:0.15*k, lean:-18*k, armR:120*k, armL:100*k, spread:0.8, sweat:true}; } break; }
     case 'dash': { if(t<220){ const k=t/220; return {crouch:0.2*(1-k), lean:4+18*(1-k), spread:0.6, step:0.9-1.4*k, armR:10, armL:-45}; } break; }
-    case 'backdash': { if(t<240){ const k=t/240; return {crouch:0.15, lean:-14*(1-k), spread:0.7, step:-0.9+1.2*k, armR:20, armL:-55}; } break; }
+    case 'backdash': { if(t<240){ const k=t/240; return {crouch:0.15, lean:-14*(1-k), spread:0.7, step:-0.9+1.2*k, armR:20, armL:-55}; }
+      if(now<bdRec.until) return {crouch:0.12, lean:-5, spread:0.7, step:0.3, armR:22, armL:-56, sweat:true}; // recovery: not back to idle yet (a b,N,b now does nothing; a crouch ends it)
+      break; }
+    case 'bdCrouch': { if(t<110){ const k=t/110; return {crouch:0.6-0.2*k, lean:-6, spread:0.75, step:-0.2, armR:15, armL:-50}; } break; } // 1(↙) cancel: a short sit where the backdash stopped
     case 'tongbal': { // f,f+2: quick forward lunge with a long right straight punch that snaps out fast
       if(t<70){ const k=t/70; return {crouch:0.28-0.13*k, lean:8+8*k, armR:-10+102*k, armL:-42, spread:0.5+0.1*k, step:0.3+0.5*k, reach:13*k}; } // snap the arm out fast to full reach
       if(t<230) return {crouch:0.15, lean:17, armR:94, armL:-42, spread:0.62, step:0.82, reach:13};                                     // held at full extension
@@ -2864,7 +3087,7 @@ function frame(now){
   // walking (visual only): hold f/b while nothing else is animating. Blocked just in front of a live dummy; backing away lets the dummy respawn off-screen.
   const dt = Math.min(50, now-(anim.lastT||now)); anim.lastT = now;
   { const dm = world.dummy, dAhead = (world.dummyX - world.charX)*store.side;
-    const canWalk = !anim.moveDur && (anim.kind==='idle'||anim.kind==='walk') && (curDir==='f'||curDir==='b');
+    const canWalk = !anim.moveDur && (anim.kind==='idle'||anim.kind==='walk') && (curDir==='f'||(curDir==='b' && now>=bdRec.until)); // backdash recovery: everything but going backwards
     const blocked = curDir==='f' && dm.alive && !dm.hit && dAhead<DUMMY_STOP;
     if(canWalk && !blocked){ world.charX += (curDir==='f'?WALK_F:-WALK_B)*store.side*dt/1000; anim.kind='walk'; anim.walkDir=curDir; }
     else if(anim.kind==='walk') anim.kind='idle'; }

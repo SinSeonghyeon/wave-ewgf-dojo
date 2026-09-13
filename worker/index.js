@@ -25,6 +25,7 @@ export const BOARDS = {
   ewgf20:  {score: [0, 100], tie: [-500, 0],  detail: {hits: [0, 20], target: [20, 20], mean: [-500, 500]}},
   combo10: {score: [0, 100], tie: [0, 20],    detail: {hits: [0, 10], target: [10, 10], mean: [-500, 500], dps: [0, 20]}},
   rush30:  {score: [0, 2000], tie: [0, 500],  detail: {kills: [0, 500], whiffs: [0, 2000], dashPts: [0, 1000]}}, // 더미 격파 30초 (2026-09-13): score = points, tie = dummies destroyed
+  bd10:    {score: [0, 60],   tie: [0, 200],  detail: {dashes: [0, 200], top: [0, 200], chain: [0, 200]}},      // 백대시 10초 (2026-09-13): score = metres retreated, tie = 'very fast' sets (theoretical max ≈ 46 m)
 };
 export const WINDOWS = [8, 12, 15];
 const LANGS = ['ko', 'en', 'ja'];

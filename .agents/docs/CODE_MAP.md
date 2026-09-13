@@ -25,6 +25,12 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
           fault(kind): f_before_d / n_to_df / cancel_as_start
           대시(연출 전용) taps{dir,t,neutral} · tapDetect(dir,t): f,N,f / b,N,b 가 TAP_MS(250) 안이면 fx.dash()/fx.backdash(). onDir의 switch 앞에서 실행하므로 두 번째 f는 그대로 시작 6
           상태 6(캔슬 후 중립)에서 오는 f(웨이브의 시작 6)도 대시로 잡는다(2026-09-13). cd.dashT=대시 시각, cd.dashWave=(상태 6에서 온 대시). fx.dash(wave)는 wave면 짧게(24px). 통발 자격은 cd.dashT===cd.tF, 대초 라벨은 그중 !cd.dashWave만
+백대시     bd{state,t4a,tN,t4b,prev,chain,engaged,lastT,seg,open,card} (2026-09-13, 결정 17) — cd와 독립(방향만 본다, 버튼·cd는 읽지도 쓰지도 않음; bdRec.until은 읽기만). onDir의 switch 앞에서 bdActive()(free이고 측정 아님 · bd10)일 때만 bdDir(dir,t), tick 끝에서 bdTick(now)
+          0 idle → 1 첫 4 홀드 → 2 중립 → 3 백대시 중(두 번째 4 홀드, bdOut: 첫 4로부터 TAP_MS 안의 b — tapDetect와 같은 규칙이라 판정된 백대시 = 그려진 백대시) → 4 캔슬 1(↙) 홀드 → 1 … · 3에서 n = 캔슬 없음(bdNoCancel: 거리 1.0을 일단 주고 bd.open={t4b}; 경직 안에 앉기·횡이 오면 onDir의 bdCut(t)이 bdDist(h)로 깎는다, 경직이 끝나면 bdTick이 open을 지워 확정) · 2에서 b가 bdRec 안이면 bdFail('stiff') · 3에서 d/u/ub/uf = 횡 캔슬(거리 인정, bdFail('side')), df = 앉기(거리 인정, bdFail('dir')), f = bdFail('dir') · 4에서 n = bdFail('neutral1'), 그 외 방향 = bdFail('dir')
+          bd.card{cls,title} = bdOut이 띄운 카드. bdCancel은 ui.result를 들여다보지 않고 이걸 캔슬 문구와 함께 다시 그린다(사이에 다른 카드가 떠도 유지). 체인·bestChain은 첫 백대시(chain 1)도 기록한다
+          거리 bdDist(h) = h<MIN_F ? 0 : min(h,MOVE_F)/MOVE_F (h = 두 번째 4를 잡은 프레임 bdF(ms)=max(1,round(ms/FRAME))) · 세트 채점은 다음 백대시가 출력될 때 bdOut에서: mps = prev.dist×60 ÷ (이 출력 − 직전 출력 프레임) → BD.TIERS 첫 통과 등급(top/fast/ok) 아니면 slow(체인 1). 코치는 [early MOVE_F−h, late h−MOVE_F−1, db 1홀드−2, tap 4N4−4] 중 최대 손실
+          자유 연습은 bd.engaged(첫 1 캔슬에 true, 백대시 없이 3초면 false)일 때만 카드·코치·로그·HUD(hudChainL BACKDASH, cd.chain===0일 때만)를 건드린다. bdClear()는 resetInput/setMode/측정 GO/endTrial(모두 updateHud와 짝). session.bd{count,dist,bestChain,top}(테스트가 읽는 관측값, 통계 격자에는 안 나옴). bd10 측정은 trial.dist/bdCount/bdTop/bestChain → renderBdHud(#hudScore "n.n m") · 구간 막대: bd.seg{tap,n,hold,db} → renderSeg(bd 변형, seg.namesBd 4·N·4홀드·1, 5번째 칸 접힘, 제목 #segTitle)
+경직      bdRec{until} — 모든 모드의 스테이지 기능(판정 아님): onDir에서 b,N,b가 나가면 until = t + RECOVER_F(판정이 그 백대시를 본 뒤 설정), 그 안의 b,N,b는 fx.backdash 없음, d/db/df/u/ub/uf가 until을 지우고 anim이 backdash면 이동 정지 + bdCrouch. frame()은 until 전엔 뒤 걷기만 막고, poseAt backdash는 240ms 뒤에도 until까지 자세 유지(sweat)
 초풍 판정 onButton(n,t): n===4 → 나락(strike), n===2 → 초풍 판정, 그 외 → wrongBtn 코치
           초풍: classify(off) → attempt(kind, off, t) · off = 버튼 시각 − 마지막 3 시각 · |off| ≤ store.window → ewgf · off > window → wgf · off < −window → early
           상태 3(d 유지)에서 버튼이 먼저 오면 cd.pending={t,btn}, 3이 오면 음수 오프셋으로 판정, 120ms 안에 3이 없으면 no_df(btn 2만)
@@ -34,7 +40,7 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
 통발·나락 strike(kind,t) kind: tongbal(f,f+2 중단)/hellsweep(6N23+4 하단, 저스트 없음)/hellsweepEarly(4가 3보다 이름). 끝에 endCommand()(rush30이면 clearCommand 대신 chain 유지, 그 외엔 clearCommand). attempt가 아니라 session.tries/hits·히스토그램·combo에 안 잡힘. 통발=상태 1/2 + cd.dashT===cd.tF + 2가 두 번째 6 후 FF_MS(250) 안. 나락=상태 4/7 또는 캔슬 6 후 250ms의 4, 상태 3은 cd.pending.btn=4로 df 대기(resolvePending: btn 4는 off≥−window면 hellsweep, 이르면 hellsweepEarly, df 안 오면 조용). rushStrike로 더미 격파 점수. 저스트가 아니라 라벨에 "!"·연속 없음
 코치      setCoach(m) · setTrend(m) · coachWaveLive(cyc): 5구간 중 가장 긴 구간 조언 · coachTrend(): 최근 10회 평균·편차
 기록      addLog(t,typeKey,resMsg,num,memoMsg,cls) → session.log[12] · renderLog() 시각은 LOCALE[store.lang]
-          store.records[mode][30]: wave10 {score(dps),dashes,chain} · ewgf20/combo10 {score(%),hits,target,mean} · rush30 {score(점수),kills,whiffs,dashPts}
+          store.records[mode][30]: wave10 {score(dps),dashes,chain} · ewgf20/combo10 {score(%),hits,target,mean} · rush30 {score(점수),kills,whiffs,dashPts} · bd10 {score(m),dashes,top,chain}
           label/sub 문자열도 같이 저장(구버전 호환). recText()가 숫자 필드 우선으로 현재 언어로 다시 만든다
 차트      histBins(attempts,window): −6f~+9f 빈(순수) · renderHist(): 히스토그램, 판정 폭 음영 · renderWave(): 최근 40 사이클 대시/초 · SVG 문자열 직접 생성
 공유 카드 buildCard(src): 순수 데이터 → {app,modeName,sub,hero,metrics[],chart{hist|wave|null},windowText,dateText,url,tweet,file} (DOM 없음, 단위 테스트 대상)
@@ -62,7 +68,7 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
           방문자(#visits, 헤더 우상단): visitsLoad()가 KST 날짜(KST_DAY)와 store.visitDay를 비교해 다르면 visitDay를 먼저 저장하고 POST /visits(요청 중 새로고침·두 번째 탭이 다시 세지 않게; 실패하면 그날은 안 세어짐), 같으면 GET. live.visitsBusy로 한 번에 하나만. 문구 visits(today,total)
           한마디(#postsCard): #postForm(#postNickLabel 표시 + 본문 #postText 200자) → postSend(POST /posts; hasNick()이 아니면 게이트를 연다) → 응답 rows로 목록 갱신. 오류 코드 매핑 rate→posts.tooFast, text→posts.textBad, auth→lostNick()
           서버 코드는 worker/ (CODE_MAP 범위 밖, worker/README.md 참조). 응답 shape: /nick {ok,nick,token} | 409 taken · /top {week,start,end,board,total,rows[{id,rank,nick,score,tie,detail,win,created_at}],me|null,cut10(상위 10% 경계 점수, 10명 미만은 1위, 빈 보드 null)} · /submit 같은 shape + {ok,id,rank,improved} · /visits {day,today,total} · /posts {rows[{id,nick,text,created_at}]}
-모드      MODES{free,wave10(10초),ewgf20(20회),combo10(10회),rush30(30초 더미 격파)} · setMode → renderMode · startTrial(3초 카운트다운, rush면 GO에 rushSpawn) · endTrial(기록 저장, rush면 dummy.type=null 복구) · trialTick(trial.dur 있으면 타이머, rush는 renderRushHud) · rush30: trial{score,kills,whiffs,dashPts}, RUSH_PTS{kill:5,wgf:2,dashMax:3}, HIT_TYPE{ewgf:high,wgf:high,tongbal:mid,hellsweep:low}, boardEntry tie=kills
+모드      MODES{free,wave10(10초),ewgf20(20회),combo10(10회),rush30(30초 더미 격파),bd10(10초 백대시 거리)} · setMode → renderMode · startTrial(3초 카운트다운, rush면 GO에 rushSpawn) · endTrial(기록 저장, rush면 dummy.type=null 복구) · trialTick(trial.dur 있으면 타이머, rush는 renderRushHud) · rush30: trial{score,kills,whiffs,dashPts}, RUSH_PTS{kill:5,wgf:2,dashMax:3}, HIT_TYPE{ewgf:high,wgf:high,tongbal:mid,hellsweep:low}, boardEntry tie=kills
 설정 UI   #setDlg(dialog.share.settings, aside 안에 둠) ← 스테이지 우상단 톱니 버튼 #setOpen(.hud-gear, pointer-events:auto) · #setClose · 톱니 바로 왼쪽 #sideSel(.hud-side)의 1P/2P 버튼은 스테이지에서 바로 방향 전환(설정 창에서는 제거, 기존 측정 취소·입력 초기화·저장 유지). 480px 이하 화면은 타이머를 버튼 아래로 배치 · 열려 있으면 modalOpen()이 게임 입력을 멈춤(키 리맵 listening은 그보다 먼저 처리되어 동작)
           segSel(id,attr,cb): winSel/sideSel/fxSel/touchSel/soundSel/langSel · renderKeys(): 키 리맵(중복·방향키 충돌 거부, Esc 취소) · 볼륨 기본값 100/100
 스테이지  canvas · world/anim/ghosts/pops/sparks/dust/bolts · fx{crouchDash,ewgf(n,fromDash),wgf,jab,stumble,dash(short),backdash,tongbal,hellsweep} · pop(text,color,size,opts) 폰트는 displayFont() · opts에 x(월드 px),y(바닥 위 px) 추가 가능(격파 팝은 더미 위)
@@ -81,6 +87,7 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 ## 판정 상수 (경험값. 너무 엄격·느슨하면 여기부터)
 
 - 상태 타임아웃 250ms, d/f 유지 상태 450ms, d/f 뗀 뒤 캔슬 대기 120ms, pending 버튼 120ms, 체인 종료 700ms.
+- 백대시 `BD`(가정값, 결정 17): MIN_F 6 · MOVE_F 10 · RECOVER_F 26 · LINK_MAX_F 60 · TIERS top 3.5 / fast 3.0 / ok 2.2 m/s. 4 탭·N 짝짓기는 TAP_MS(250) 공유. 문구(클로저)와 테스트가 상수를 읽으므로 숫자만 바꾸면 된다.
 - 판정 폭 8/12/15ms(0.5f/0.7f/0.9f). 기본 12. "완벽한 저스트" 코치 문구는 `|off| ≤ min(8, window/2)`.
 - 웨이브 상위 띠(차트 음영·카드 chart.top·코치 tempo.5)는 이번 주 웨이브 10초 순위 상위 10% 경계(`waveTop()`, 워커 `cut10`). 보드 응답 전·백엔드 없음·응답 end 만료 시 5 대시/초 폴백. 1분 주기 waveRefresh()가 만료·누락된 wave10을 선택 탭 변경 없이 재조회한다(중복 요청 방지, 실패 시 다음 주기 재시도, 새 로드·등록·닉 변경 우선). boardLoad/boardSubmit이 wave10 데이터를 받으면 renderWave()로 띠를 갱신. 구간 조언은 가장 긴 구간이 90ms를 넘을 때만.
 

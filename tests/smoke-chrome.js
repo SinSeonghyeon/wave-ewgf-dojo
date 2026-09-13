@@ -149,8 +149,18 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.moves.rush = await evalJs(`({score:${q('#hudScore')}.textContent, prog:${q('#dProg')}.textContent, timer:${q('#hudTimer')}.textContent, hint:${q('#hudHint')}.textContent, modes:document.querySelectorAll('#modes button').length})`);
   await evalJs(`${q('#modes button[data-mode="free"]')}.click()`); await sleep(200);
   out.moves.left = await evalJs(`({score:${q('#hudScore')}.textContent, records:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.rush30.length})`);
+  // backdash 10s (2026-09-13): 4 N 4, 1 cancel near 10f, roll 1→4 N 4 → distance on the HUD and a graded ×2 set on the card; leaving the mode clears it without a record
+  await evalJs(`${q('#modes button[data-mode="bd10"]')}.click(); ${q('#dStart')}.click()`); await sleep(3300);
+  await tap('KeyA',20); await sleep(30); await key('KeyA'); await sleep(170); await key('KeyS'); await sleep(30); await key('KeyS','keyup'); await sleep(30); await key('KeyA','keyup'); await sleep(30); await key('KeyA'); await sleep(120);
+  out.moves.bd = await evalJs(`({score:${q('#hudScore')}.textContent, title:${q('#rTitle')}.textContent, kind:${q('#rKind')}.textContent, chain:${q('#hudChainL')}.textContent})`);
+  await key('KeyA','keyup'); await sleep(300);
+  out.moves.bdEnd = await evalJs(`({score:${q('#hudScore')}.textContent, prog:${q('#dProg')}.textContent, timer:${q('#hudTimer')}.textContent})`);
+  await evalJs(`${q('#modes button[data-mode="free"]')}.click()`); await sleep(200);
+  out.moves.bdLeft = await evalJs(`({score:${q('#hudScore')}.textContent, records:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.bd10.length})`);
+  if(!/^\d\.\d m$/.test(out.moves.bd.score) || out.moves.bd.kind!=='BACKDASH' || !/×2/.test(out.moves.bd.title) || out.moves.bd.chain!=='BACKDASH' || !/^\d\.\d m$/.test(out.moves.bdEnd.score) || parseFloat(out.moves.bdEnd.score)<=parseFloat(out.moves.bd.score)
+     || !/^\d+\.\d$/.test(out.moves.bdEnd.timer) || out.moves.bdLeft.score!=='' || out.moves.bdLeft.records!==0) errors.push('bd10 check failed: '+JSON.stringify({bd:out.moves.bd, bdEnd:out.moves.bdEnd, bdLeft:out.moves.bdLeft}));
   if(!/f,f\+2|통발|66\+2/.test(out.moves.tongbal) || !/Hell Sweep|나락|奈落/.test(out.moves.sweep.title) || !/Move/.test(out.moves.sweep.log) || out.moves.rush.score!=='1 PTS' || !/^1 /.test(out.moves.rush.prog) || !/^\d+\.\d$/.test(out.moves.rush.timer)
-     || !/6N23\+4/.test(out.moves.rush.hint) || out.moves.rush.modes!==5 || out.moves.left.score!=='' || out.moves.left.records!==0) errors.push('f,f+2 / hell sweep / rush30 check failed: '+JSON.stringify(out.moves));
+     || !/6N23\+4/.test(out.moves.rush.hint) || out.moves.rush.modes!==6 || out.moves.left.score!=='' || out.moves.left.records!==0) errors.push('f,f+2 / hell sweep / rush30 check failed: '+JSON.stringify(out.moves));
   if(out.sound.off.on!=='0' || out.sound.off.stSound!==0 || out.sound.off.stSfx!==30 || !out.sound.off.disabled || out.sound.on.on!=='1' || out.sound.on.disabled) errors.push('sound settings check failed: '+JSON.stringify(out.sound));
   for(const l of ['en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);
@@ -218,7 +228,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.ko2 = await evalJs(`({title:${q('#boardCard h2')}.textContent, empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, rank:${q('#dRank')}.textContent, visits:${q('#visits')}.textContent, postsTitle:${q('#postsCard h2')}.textContent, nickBtn:${q('#nickBtn')}.textContent})`);
   out.db = {scores:db.rows.map(r => ({board:r.board, nick:r.nick, score:r.score, tie:r.tie, win:r.win, week:r.week})), posts:db.posts.map(p => [p.nick, p.text]), visits:db.visits, nicks:db.db.prepare('SELECT key,nick FROM nicks ORDER BY key').all().map(r => [r.key, r.nick])};
   const bd = out.board, auto = bd.auto;
-  if(bd.tabs.length!==4 || !/rush30|Dummy Rush/.test(bd.tabs[3]||'')) errors.push('leaderboard tabs check failed: '+JSON.stringify(bd.tabs));
+  if(bd.tabs.length!==5 || !/rush30|Dummy Rush/.test(bd.tabs[3]||'') || !/bd10|Backdash/.test(bd.tabs[4]||'')) errors.push('leaderboard tabs check failed: '+JSON.stringify(bd.tabs));
   if(bd.cardHidden || bd.postsHidden || !/rank 1 of 1 · top 100%/.test(bd.rank) || !bd.retryHidden || !/^\d+\/\d+ – \d+\/\d+ \(KST\)/.test(bd.week) || !/1 entries/.test(bd.week) || !/rank 1 of 1 · top 100%/.test(bd.me) || !bd.meRow || bd.rows.length!==1 || bd.rows[0][1]!=='스모크 테스트' || bd.rows[0][0]!=='1' || !/^Today 1 · total 1 visits$/.test(bd.visits)) errors.push('leaderboard check failed: '+JSON.stringify(bd));
   if(!auto || auto.during.rank!=='' || auto.during.open || !/best stands · rank 1 of 1/.test(auto.after.rank) || auto.after.rows!==1 || !auto.after.open || !/best stands/.test(auto.after.line) || auto.after.tier!=='S') errors.push('leaderboard auto-submit check failed: '+JSON.stringify(auto));
   if(!bd.ewgfTab.empty || !/No entry from you/.test(bd.ewgfTab.me) || bd.ewgfTab.pressed!=='true') errors.push('leaderboard tab check failed: '+JSON.stringify(bd.ewgfTab));
