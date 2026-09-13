@@ -2,7 +2,7 @@
 //   node tools/board-admin.js            interactive menu (or double-click tools/admin.cmd): pick a board by number, then a row by number
 //                                        and choose ban / unban / delete. Also lists posts and the ban list.
 // Direct commands (same actions without the menu):
-//   top <board> [week]   every row of that board's week with ids, ranks and ban marks (board: wave10 | ewgf20 | combo10 | rush30 | bd10; week: any YYYY-MM-DD in that KST week)
+//   top <board>          every row of that board (cumulative, no reset since 2026-09-14) with ids, ranks and ban marks (board: wave10 | ewgf20 | combo10 | rush30 | bd10)
 //   ban <nick>           shadow-ban a nickname: its rows disappear from the public list/total/cut10, the owner still sees their own rank
 //   unban <nick>         lift the ban; the stored rows show again
 //   bans                 list banned nicknames
@@ -37,10 +37,10 @@ const width = s => [...s].reduce((n, c) => n + (c.codePointAt(0) > 0x2e7f ? 2 : 
 const pad = (s, n) => s + ' '.repeat(Math.max(0, n - width(s)));
 
 // Rows of one board with the public rank the worker computed (banned rows are marked and have none). Returns the rows so the menu can index them.
-async function showBoard(board, week) {
-  const j = await call('GET', '/scores?board=' + encodeURIComponent(board) + (week ? '&week=' + encodeURIComponent(week) : ''));
+async function showBoard(board) {
+  const j = await call('GET', '/scores?board=' + encodeURIComponent(board));
   const name = (BOARDS.find(b => b[0] === board) || [board, board])[1];
-  console.log(`\n${name} (${j.board}) · ${j.week} 주 · ${j.rows.length}행 (순위는 보이는 행 기준, BAN = 차단됨)`);
+  console.log(`\n${name} (${j.board}) · 누적 · ${j.rows.length}행 (순위는 보이는 행 기준, BAN = 차단됨)`);
   j.rows.forEach((r, i) => console.log([String(i + 1).padStart(4) + ')', String(r.banned ? 'BAN' : r.rank + '위').padStart(5), pad(r.nick, 14), String(r.score).padStart(7), String(r.tie).padStart(7), JSON.stringify(r.detail), when(r.created_at)].join('  ')));
   if (!j.rows.length) console.log('  (기록 없음)');
   return j.rows;
@@ -114,7 +114,7 @@ async function menu() {
 
 (async () => {
   if (!cmd) return menu();
-  if (cmd === 'top') { const [board, week] = args; if (!board) usage(); await showBoard(board, week); }
+  if (cmd === 'top') { const [board] = args; if (!board) usage(); await showBoard(board); }
   else if (cmd === 'ban') { const nick = args.join(' '); if (!nick) usage(); await ban(nick); }
   else if (cmd === 'unban') { const nick = args.join(' '); if (!nick) usage(); await unban(nick); }
   else if (cmd === 'bans') await showBans();

@@ -1,15 +1,14 @@
-// Mishima Dojo backend — Cloudflare Worker + D1. Weekly leaderboard, visit counter, message board.
+// Mishima Dojo backend — Cloudflare Worker + D1. Cumulative leaderboard (no reset), visit counter, message board.
 // Routes:  POST /nick {nick} → {ok,nick,token} | 409 {error:'taken'}   (nicknames are unique, case-insensitive; the token proves ownership)
-//          GET  /top?board=wave10[&nick=x] → {week,start,end,board,total,rows[≤10],me,cut10}   (cut10: score at the top-10% boundary, null on an empty board)
+//          GET  /top?board=wave10[&nick=x] → {season,board,total,rows[≤10],me,cut10}   (cut10: score at the top-10% boundary, null on an empty board)
 //          POST /submit {board,nick,token,score,tie,detail,win,lang} → {ok,id,rank,improved} + the /top shape   (403 {error:'auth'} on a bad token)
-//                (one row per nick per board per week: a worse result leaves the stored best untouched, improved=false)
+//                (one row per nick per board: a worse result leaves the stored best untouched, improved=false)
 //          GET  /visits → {day,today,total}   ·   POST /visits → counts one visit for today (KST) and returns the same
 //          GET  /posts → {rows[≤50: {id,nick,text,created_at,up,down}]}   ·   POST /posts {nick,token,text} → {ok,id,rows}   ·   DELETE /posts/:id (Bearer ADMIN_TOKEN, also drops its votes)
 //          POST /vote {nick,token,id,v: 1|-1|0} → {ok,id,mine,rows}   (2026-09-13: sets the caller's like/dislike on post `id`, 0 clears it; one vote per nick per post;
 //                400 id/v · 403 auth · 404 {error:'post'} · 429 rate via VOTE_LIMIT)
 //          Admin (Bearer ADMIN_TOKEN, no Origin needed):  DELETE /scores/:id → {ok,deleted}   ·   GET /ban → {rows}   ·   POST /ban {nick} → {ok,nick,registered}
-//                DELETE /ban?nick=x → {ok,deleted}   ·   GET /scores?board=x[&week=YYYY-MM-DD] → {week,board,rows} (every row of that week, banned marked, with ids and public ranks;
-//                any date addresses its KST week)
+//                DELETE /ban?nick=x → {ok,deleted}   ·   GET /scores?board=x → {season,board,rows} (every row of the board, banned marked, with ids and public ranks)
 //          GET  / → health   ·   OPTIONS * → CORS preflight
 // No accounts and no automatic anti-cheat (2026-09-12): a nickname is claimed once (POST /nick) and the browser keeps the returned
 // token; scores and posts must carry it. POST /posts and /nick are rate-limited per IP through the optional POST_LIMIT / NICK_LIMIT
@@ -19,9 +18,12 @@
 // cut10 — so the player cannot tell; every other request skips the banned rows in the list, total, cut10 and rank counts. The per-nick
 // lookup is public like the rest of /top, so anyone who names a banned nick sees its rows: the ban hides players from the board, not from
 // a direct query. Unbanning (DELETE /ban) restores the rows for everyone; DELETE /scores/:id removes one row for good.
-// Pure helpers (weekKey, weekBounds, dayKey, validate, cleanText, nickKey, handle) and the contract (BOARDS, WINDOWS) are exported for node tests.
+// Seasons (2026-09-14, user decision): the board no longer resets. Every row is stored under the season key SEASON ('all') in scores.week and the
+// best result per nick per board simply accumulates. A reset (weekly or otherwise) comes back by changing seasonKey() alone — rows of other keys
+// stay in the table and stop being listed. Existing weekly rows were folded into 'all' by migrate-2026-09-14-alltime.sql (best per nick kept).
+// Pure helpers (seasonKey, weekKey, dayKey, validate, cleanText, nickKey, handle) and the contract (BOARDS, WINDOWS, SEASON) are exported for node tests.
 
-const KST = 9 * 3600e3, DAY = 86400e3, WEEK = 7 * DAY, TOP = 10, POSTS = 50, TEXT_MAX = 200;
+const KST = 9 * 3600e3, DAY = 86400e3, TOP = 10, POSTS = 50, TEXT_MAX = 200;
 export const BOARDS = {
   wave10:  {score: [0, 20],  tie: [0, 500],   detail: {dashes: [0, 200], chain: [0, 200]}},
   ewgf20:  {score: [0, 100], tie: [-500, 0],  detail: {hits: [0, 20], target: [20, 20], mean: [-500, 500]}},
@@ -52,14 +54,14 @@ const withCors = (res, request, env) => { for (const [k, v] of Object.entries(co
 
 const kstDay = ms => Math.floor((ms + KST) / DAY);       // KST days since epoch
 const isoDay = day => new Date(day * DAY).toISOString().slice(0, 10);
-// Monday (YYYY-MM-DD) of the KST week containing `ms`. Weeks reset Monday 00:00 KST = Sunday 15:00 UTC.
+// Season key every score is stored under and every board is read from. One constant = one cumulative board that never resets
+// (2026-09-14 user decision: bring a reset back only once there is real traffic). To reset weekly again, return weekKey(now) here.
+export const SEASON = 'all';
+export const seasonKey = now => SEASON; // eslint-disable-line no-unused-vars — `now` is the hook a future reset keys on
+// Monday (YYYY-MM-DD) of the KST week containing `ms` (Monday 00:00 KST = Sunday 15:00 UTC). Unused by the live board; kept as the ready-made weekly key.
 export function weekKey(ms) {
   const day = kstDay(ms), dow = (day + 4) % 7;          // 1970-01-01 was a Thursday → 0=Sun … 6=Sat
   return isoDay(day - ((dow + 6) % 7));
-}
-export function weekBounds(key) {
-  const start = Date.parse(key + 'T00:00:00+09:00');
-  return {start, end: start + WEEK};
 }
 export const dayKey = ms => isoDay(kstDay(ms));         // KST calendar day 'YYYY-MM-DD'
 
@@ -90,7 +92,7 @@ const isAdmin = (request, env) => !!env.ADMIN_TOKEN && (request.headers.get('aut
 // nick banned before anyone claimed it stays hidden after someone claims it in another case. Unregistered legacy rows match by exact spelling.
 const BANNED = 'SELECT nick FROM bans UNION SELECT n.nick FROM nicks n JOIN bans b ON b.key=n.key';
 const VISIBLE = `nick NOT IN (${BANNED})`; // rows of banned nicks exist but never reach other players
-const SCOPE = 'FROM scores WHERE week=? AND board=?', BY_RANK = 'ORDER BY score DESC, tie DESC, id ASC';
+const SCOPE = 'FROM scores WHERE week=? AND board=?', BY_RANK = 'ORDER BY score DESC, tie DESC, id ASC'; // scores.week holds the season key (see seasonKey)
 
 export function validate(body) {
   if (!body || typeof body !== 'object') return {error: 'body'};
@@ -120,8 +122,8 @@ const ROW = 'id,nick,score,tie,detail,win,created_at';
 
 // Top list plus, when `nick` is given, that nick's own row with its rank even when it sits below the top list. The requester's own rows
 // pass the ban filter (`OR nick=?`), so a banned player gets the board they would see unbanned; see the header comment.
-async function top(db, board, week, nick) {
-  const where = `${SCOPE} AND (${VISIBLE} OR nick=?)`, args = [week, board, nick || ''];
+async function top(db, board, season, nick) {
+  const where = `${SCOPE} AND (${VISIBLE} OR nick=?)`, args = [season, board, nick || ''];
   const {results} = await db.prepare(`SELECT ${ROW} ${where} ${BY_RANK} LIMIT ${TOP}`).bind(...args).all();
   const total = await db.prepare(`SELECT COUNT(*) AS n ${where}`).bind(...args).first('n');
   const rows = rankRows(results.map(parseRow));
@@ -129,14 +131,14 @@ async function top(db, board, week, nick) {
   const cut10 = total ? await db.prepare(`SELECT score ${where} ${BY_RANK} LIMIT 1 OFFSET ?`).bind(...args, Math.ceil(Math.max(total, 10) / 10) - 1).first('score') : null;
   let me = null;
   if (nick) {
-    const mine = await db.prepare(`SELECT ${ROW} ${SCOPE} AND nick=?`).bind(week, board, nick).first();
+    const mine = await db.prepare(`SELECT ${ROW} ${SCOPE} AND nick=?`).bind(season, board, nick).first();
     if (mine) {
       me = parseRow(mine);
       const listed = rows.find(r => r.id === me.id);
       me.rank = listed ? listed.rank : 1 + (await db.prepare(`SELECT COUNT(*) AS n ${where} AND (score>? OR (score=? AND tie>?))`).bind(...args, me.score, me.score, me.tie).first('n') || 0);
     }
   }
-  return {week, ...weekBounds(week), board, total: total || 0, rows, me, cut10: cut10 ?? null};
+  return {season, board, total: total || 0, rows, me, cut10: cut10 ?? null};
 }
 
 async function visits(db, now, hit) {
@@ -165,12 +167,12 @@ async function route(request, env, now) {
   if (method === 'OPTIONS') return new Response(null, {status: originOk(request, env) ? 204 : 403});
   const mod = await admin(request, env, url, path, method, now); if (mod) return mod; // token-only routes, before the origin gate (curl sends no Origin)
   if (method === 'POST' && !originOk(request, env)) return json({error: 'origin'}, 403);
-  if (path === '/' && method === 'GET') return json({ok: true, service: 'mishima-dojo-board', week: weekKey(now)});
+  if (path === '/' && method === 'GET') return json({ok: true, service: 'mishima-dojo-board', season: seasonKey(now)});
 
   if (path === '/top' && method === 'GET') {
     const board = url.searchParams.get('board');
     if (!boardSpec(board)) return json({error: 'board'}, 400);
-    return json(await top(env.DB, board, weekKey(now), cleanNick(url.searchParams.get('nick'))));
+    return json(await top(env.DB, board, seasonKey(now), cleanNick(url.searchParams.get('nick'))));
   }
   if (path === '/nick' && method === 'POST') {
     const {body, status, error} = await readJson(request); if (error) return json({error}, status);
@@ -186,15 +188,15 @@ async function route(request, env, now) {
     const {body, status, error} = await readJson(request); if (error) return json({error}, status);
     const v = validate(body);
     if (v.error) return json({error: v.error}, 400);
-    const e = v.value, week = weekKey(now);
+    const e = v.value, season = seasonKey(now);
     const nick = await owner(env.DB, e.nick, body.token); if (!nick) return json({error: 'auth'}, 403);
     e.nick = nick; // stored under the registered spelling
-    // One row per (week, board, nick); the UPDATE only fires when the new result beats the stored one.
+    // One row per (season, board, nick); the UPDATE only fires when the new result beats the stored one.
     await env.DB.prepare('INSERT INTO scores (week,board,nick,score,tie,detail,win,lang,created_at) VALUES (?,?,?,?,?,?,?,?,?) ' +
       'ON CONFLICT(week,board,nick) DO UPDATE SET score=excluded.score, tie=excluded.tie, detail=excluded.detail, win=excluded.win, lang=excluded.lang, created_at=excluded.created_at ' +
       'WHERE excluded.score>scores.score OR (excluded.score=scores.score AND excluded.tie>scores.tie)')
-      .bind(week, e.board, e.nick, e.score, e.tie, JSON.stringify(e.detail), e.win, e.lang, now).run();
-    const t = await top(env.DB, e.board, week, e.nick);
+      .bind(season, e.board, e.nick, e.score, e.tie, JSON.stringify(e.detail), e.win, e.lang, now).run();
+    const t = await top(env.DB, e.board, season, e.nick);
     return json({ok: true, id: t.me.id, rank: t.me.rank, improved: t.me.created_at === now, ...t});
   }
 
@@ -253,14 +255,12 @@ async function admin(request, env, url, path, method, now) {
     const r = await db.prepare('DELETE FROM bans WHERE key=?').bind(nickKey(n)).run();
     return json({ok: true, deleted: r.meta.changes || 0});
   }
-  if (path === '/scores' && method === 'GET') { // the whole week of one board with ids, ban marks and public ranks, so the admin can pick rows to delete
+  if (path === '/scores' && method === 'GET') { // every row of one board with ids, ban marks and public ranks, so the admin can pick rows to delete
     const board = url.searchParams.get('board'); if (!boardSpec(board)) return json({error: 'board'}, 400);
-    const q = url.searchParams.get('week'), t = q ? Date.parse(q + 'T00:00:00+09:00') : now; // any date names its KST week; garbage is a 400, not silently this week
-    if (q && !(/^\d{4}-\d{2}-\d{2}$/.test(q) && Number.isFinite(t))) return json({error: 'week'}, 400);
-    const week = weekKey(t);
-    const {results} = await db.prepare(`SELECT ${ROW}, nick IN (${BANNED}) AS banned ${SCOPE} ${BY_RANK}`).bind(week, board).all();
+    const season = seasonKey(now);
+    const {results} = await db.prepare(`SELECT ${ROW}, nick IN (${BANNED}) AS banned ${SCOPE} ${BY_RANK}`).bind(season, board).all();
     const rows = results.map(parseRow); rankRows(rows.filter(r => !r.banned)); // the rank players see; banned rows get none
-    return json({week, board, rows});
+    return json({season, board, rows});
   }
   return json({error: 'not_found'}, 404);
 }

@@ -3,6 +3,7 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {pathToFileURL} = require('node:url');
 const path = require('node:path');
+const fs = require('node:fs');
 const fakeD1 = require('./fake-d1');
 const worker = () => import(pathToFileURL(path.join(__dirname, '../worker/index.js')).href);
 const NOW = Date.UTC(2026, 8, 12, 3, 0);           // Sat 2026-09-12 12:00 KST
@@ -19,15 +20,31 @@ const owned = (w, env) => { const tokens = {}; return {
   tokens}; };
 const ch = code => String.fromCharCode(code);
 
-test('week and day keys follow KST: week flips Sunday 15:00 UTC, day flips 15:00 UTC', async () => {
+test('season key is the constant "all" (the board never resets); the KST week and day helpers still flip at 15:00 UTC', async () => {
   const w = await worker();
+  assert.equal(w.SEASON, 'all');
+  for (const t of [0, NOW, Date.UTC(2026, 8, 13, 15, 0), Date.UTC(2030, 0, 1)]) assert.equal(w.seasonKey(t), 'all', String(t));
   assert.equal(w.weekKey(Date.UTC(2026, 8, 13, 14, 59)), '2026-09-07');
   assert.equal(w.weekKey(Date.UTC(2026, 8, 13, 15, 0)), '2026-09-14');
   assert.equal(w.weekKey(Date.UTC(2026, 8, 6, 15, 0)), '2026-09-07');
   assert.equal(w.weekKey(Date.UTC(1970, 0, 1)), '1969-12-29');
-  const b = w.weekBounds('2026-09-07');
-  assert.equal(b.start, Date.UTC(2026, 8, 6, 15, 0)); assert.equal(b.end - b.start, 7 * 86400e3);
   assert.equal(w.dayKey(Date.UTC(2026, 8, 12, 14, 59)), '2026-09-12'); assert.equal(w.dayKey(Date.UTC(2026, 8, 12, 15, 0)), '2026-09-13');
+});
+
+test('migration 2026-09-14: weekly rows collapse to one best per nick per board under the season key "all", idempotently', async () => {
+  const w = await worker(); const env = {DB: fakeD1()};
+  const ins = (week, board, nick, score, tie, at) => env.DB.db.prepare('INSERT INTO scores (week,board,nick,score,tie,detail,win,lang,created_at) VALUES (?,?,?,?,?,?,?,?,?)').run(week, board, nick, score, tie, '{}', 12, 'ko', at);
+  ins('2026-09-07', 'wave10', 'alpha', 4.2, 12, 1); ins('2026-09-14', 'wave10', 'alpha', 5.0, 3, 2);   // the later week is better → kept
+  ins('2026-09-07', 'wave10', 'bravo', 6.0, 1, 3); ins('2026-09-14', 'wave10', 'bravo', 5.5, 9, 4);    // the earlier week is better → kept
+  ins('2026-09-07', 'wave10', 'charlie', 5.0, 3, 5); ins('2026-09-14', 'wave10', 'charlie', 5.0, 3, 6); // exact tie → the older row (lower id) stays, like BY_RANK
+  ins('2026-09-07', 'ewgf20', 'alpha', 90, -1, 7);                                                       // another board: its own best
+  ins('all', 'wave10', 'delta', 7.0, 0, 8);                                                              // written by the new Worker before the migration ran → untouched
+  const sql = fs.readFileSync(path.join(__dirname, '../worker/migrate-2026-09-14-alltime.sql'), 'utf8');
+  env.DB.db.exec(sql); env.DB.db.exec(sql);
+  assert.deepEqual(env.DB.rows.map(r => [r.id, r.week, r.board, r.nick, r.score]),
+    [[2, 'all', 'wave10', 'alpha', 5], [3, 'all', 'wave10', 'bravo', 6], [5, 'all', 'wave10', 'charlie', 5], [7, 'all', 'ewgf20', 'alpha', 90], [8, 'all', 'wave10', 'delta', 7]]);
+  const top = await (await w.handle(req('/top?board=wave10&nick=alpha'), env, NOW)).json();
+  assert.deepEqual(top.rows.map(r => [r.rank, r.nick]), [[1, 'delta'], [2, 'bravo'], [3, 'alpha'], [3, 'charlie']]); assert.equal(top.me.rank, 3); assert.equal(top.total, 4);
 });
 
 test('validate normalises the nickname and rejects out-of-range or malformed entries', async () => {
@@ -79,10 +96,10 @@ test('nick: claim once, case/width-insensitive uniqueness, token proves ownershi
   const r = await post('/nick', {nick: 'bravo'})(w, nickLimited); assert.equal(r.status, 429); assert.deepEqual(await r.json(), {error: 'rate'});
 });
 
-test('submit keeps one row per nick per week: better results replace, worse ones are ignored, ranks share on exact ties', async () => {
+test('submit keeps one row per nick per board: better results replace, worse ones are ignored, ranks share on exact ties', async () => {
   const w = await worker(); const env = {DB: fakeD1()}; const me = owned(w, env);
   const r1 = await (await me.submit({nick: 'alpha', score: 4.2, tie: 12})).json();
-  assert.equal(r1.ok, true); assert.equal(r1.rank, 1); assert.equal(r1.total, 1); assert.equal(r1.week, '2026-09-07'); assert.equal(r1.id, 1); assert.equal(r1.improved, true);
+  assert.equal(r1.ok, true); assert.equal(r1.rank, 1); assert.equal(r1.total, 1); assert.equal(r1.season, 'all'); assert.equal(r1.id, 1); assert.equal(r1.improved, true);
   assert.equal(r1.me.id, 1); assert.equal(r1.me.rank, 1); assert.deepEqual(r1.me.detail, {dashes: 42, chain: 12});
   const r2 = await (await me.submit({nick: 'bravo', score: 4.5, tie: 3})).json();
   assert.equal(r2.rank, 1); assert.equal(r2.total, 2);
@@ -98,16 +115,16 @@ test('submit keeps one row per nick per week: better results replace, worse ones
   assert.equal(better.improved, true); assert.equal(better.id, 1); assert.equal(better.rank, 2); assert.equal(better.total, 4);
   assert.deepEqual(better.rows.map(r => [r.rank, r.nick, r.tie]), [[1, 'bravo', 3], [2, 'alpha', 25], [3, 'charlie', 20], [4, 'delta', 12]]);
   assert.equal(better.me.created_at, NOW + 2000);
-  // other board and other week are isolated; the same nick may hold a row in each
+  // other boards are isolated (the same nick may hold a row in each); time never splits a board: a result weeks later updates the same row and the list never empties
   await me.submit({board: 'ewgf20', nick: 'alpha', score: 90, tie: -1, detail: {hits: 18, target: 20, mean: 1}});
-  await me.submit({nick: 'alpha', score: 9}, NOW - 7 * 86400e3);
-  const top = await (await w.handle(req('/top?board=wave10'), env, NOW)).json();
-  assert.equal(top.total, 4); assert.equal(top.rows.length, 4); assert.equal(top.rows[0].nick, 'bravo'); assert.equal(top.start, Date.UTC(2026, 8, 6, 15)); assert.equal(top.me, null);
+  const later = await (await me.submit({nick: 'alpha', score: 9}, NOW + 7 * 86400e3)).json();
+  assert.equal(later.improved, true); assert.equal(later.id, 1); assert.equal(later.rank, 1); assert.equal(later.total, 4);
+  const top = await (await w.handle(req('/top?board=wave10'), env, NOW + 60 * 86400e3)).json();
+  assert.equal(top.season, 'all'); assert.equal(top.total, 4); assert.equal(top.rows.length, 4); assert.equal(top.rows[0].nick, 'alpha'); assert.equal(top.me, null);
+  assert.equal(top.week, undefined); assert.equal(top.start, undefined); assert.equal(top.end, undefined);
   const ewgf = await (await w.handle(req('/top?board=ewgf20&nick=alpha'), env, NOW)).json();
   assert.deepEqual(ewgf.rows.map(r => r.nick), ['alpha']); assert.equal(ewgf.me.rank, 1);
-  const nextWeek = await (await w.handle(req('/top?board=wave10&nick=alpha'), env, NOW + 7 * 86400e3)).json();
-  assert.equal(nextWeek.total, 0); assert.deepEqual(nextWeek.rows, []); assert.equal(nextWeek.me, null);
-  assert.equal(env.DB.rows.length, 6);
+  assert.equal(env.DB.rows.length, 5); assert.ok(env.DB.rows.every(r => r.week === 'all'), 'every row sits under the season key');
 });
 
 test('top list is capped at 10 while total and my rank keep counting below the list', async () => {
@@ -232,14 +249,11 @@ test('shadow ban: banned nicks vanish from the list, total and cut10 for others 
   assert.equal(own.me.nick, 'macro'); assert.equal(own.me.rank, 1); assert.equal(own.total, 4); assert.equal(own.cut10, 9.5);
   const sub = await (await me.submit({nick: 'macro', score: 9.9, tie: 2}, NOW + 1000)).json();
   assert.equal(sub.ok, true); assert.equal(sub.improved, true); assert.equal(sub.rank, 1); assert.equal(sub.me.score, 9.9); assert.equal(sub.rows[0].nick, 'macro'); assert.equal(sub.total, 4);
-  const low = await (await me.submit({nick: 'macro', score: 4.2, tie: 0}, NOW + 2000)).json(); assert.equal(low.improved, false, 'best-of-week rule still applies to the hidden row');
+  const low = await (await me.submit({nick: 'macro', score: 4.2, tie: 0}, NOW + 2000)).json(); assert.equal(low.improved, false, 'best-only rule still applies to the hidden row');
   assert.equal((await (await w.handle(req('/top?board=wave10'), env, NOW)).json()).total, 3, 'everyone else still gets the filtered board');
-  // GET /scores shows the whole week with ids, the ban mark and the public rank; any date addresses its week, garbage is a 400
+  // GET /scores shows the whole board with ids, the ban mark and the public rank
   const all = await (await adminReq('/scores?board=wave10')).json();
-  assert.equal(all.week, '2026-09-07'); assert.deepEqual(all.rows.map(x => [x.nick, x.banned, x.rank]), [['macro', 1, undefined], ['alpha', 0, 1], ['bravo', 0, 2], ['charlie', 0, 3]]);
-  assert.deepEqual(await (await adminReq('/scores?board=wave10&week=2026-09-10')).json(), all, 'a Thursday names the same week');
-  assert.equal((await (await adminReq('/scores?board=wave10&week=2026-09-14')).json()).rows.length, 0, 'next Monday is the next week');
-  for (const bad of ['2026-9-7', '2026-13-01', 'abc']) assert.equal((await adminReq('/scores?board=wave10&week=' + bad)).status, 400, bad);
+  assert.equal(all.season, 'all'); assert.deepEqual(all.rows.map(x => [x.nick, x.banned, x.rank]), [['macro', 1, undefined], ['alpha', 0, 1], ['bravo', 0, 2], ['charlie', 0, 3]]);
   assert.equal((await adminReq('/scores?board=nope')).status, 400);
   assert.deepEqual(await (await adminReq('/scores/' + all.rows[3].id, {method: 'DELETE'})).json(), {ok: true, deleted: 1});
   assert.deepEqual(await (await adminReq('/scores/' + all.rows[3].id, {method: 'DELETE'})).json(), {ok: true, deleted: 0});
@@ -265,7 +279,7 @@ test('http surface: CORS preflight, health, 400/404/413 and 500 without leaking 
   const pre = await w.handle(req('/submit', {method: 'OPTIONS'}), env, NOW);
   assert.equal(pre.status, 204); assert.equal(pre.headers.get('access-control-allow-origin'), ORIGIN, 'echoes the allowed origin, never *');
   assert.match(pre.headers.get('access-control-allow-headers'), /content-type/); assert.match(pre.headers.get('access-control-allow-methods'), /DELETE/);
-  const health = await w.handle(req('/'), env, NOW); assert.equal(health.status, 200); assert.equal((await health.json()).week, '2026-09-07');
+  const health = await w.handle(req('/'), env, NOW); assert.equal(health.status, 200); assert.equal((await health.json()).season, 'all');
   assert.equal((await w.handle(req('/top'), env, NOW)).status, 400);
   assert.equal((await w.handle(req('/top?board=free'), env, NOW)).status, 400);
   for (const b of ['constructor', '__proto__', 'toString']) {

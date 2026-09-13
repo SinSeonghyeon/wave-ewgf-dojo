@@ -141,9 +141,9 @@
   .trial .d-rank:empty{display:none}
   .posts-form input,.nick-form input{background:var(--bg);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:7px 10px;font-size:14px;max-width:100%}
 
-  /* weekly leaderboard card + message board card (inside .records) */
+  /* leaderboard card + message board card (inside .records) */
   .board-tabs{margin:8px 0 6px}
-  .board-week{font-family:var(--mono);font-size:12px;color:var(--muted);min-height:1.3em}
+  .board-info{font-family:var(--mono);font-size:12px;color:var(--muted);min-height:1.3em}
   .board-me{font-family:var(--mono);font-size:12.5px;color:var(--accent);min-height:1.4em;margin:4px 0 8px}
   .board-list td.n{font-family:var(--mono);color:var(--muted);width:2.5em}
   .board-list td.s{font-family:var(--display);color:var(--gold);font-size:17px;white-space:nowrap}
@@ -500,7 +500,7 @@
 
   <dialog class="share nick" id="nickDlg" aria-labelledby="nickTitle">
     <h2 id="nickTitle" data-i18n="nick.title">닉네임 정하기</h2>
-    <p class="note" data-i18n="nick.note">주간 순위와 한마디에 쓰이는 이름입니다. 다른 사람과 겹칠 수 없고 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 새 닉네임을 정해야 합니다.</p>
+    <p class="note" data-i18n="nick.note">순위와 한마디에 쓰이는 이름입니다. 다른 사람과 겹칠 수 없고 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 새 닉네임을 정해야 합니다.</p>
     <form class="nick-form" id="nickForm"><input id="nickInput" maxlength="12" autocomplete="off" spellcheck="false" data-i18n-aria="board.nickPh" aria-label="닉네임 (2~12자)"><button class="btn" id="nickSubmit" type="submit" data-i18n="nick.submit">시작</button><button class="btn ghost" id="nickClose" type="button" hidden data-i18n="share.close">닫기</button><button class="btn ghost" id="nickLater" type="button" hidden data-i18n="nick.later">나중에 · 순위 없이 연습</button></form>
     <div class="share-msg" id="nickMsg"></div>
   </dialog>
@@ -535,10 +535,10 @@
 
   <section class="records" data-i18n-aria="records.aria" aria-label="기록">
     <div class="card board-card" id="boardCard" hidden>
-      <h2 data-i18n="board.title">주간 순위</h2>
-      <p class="sub" data-i18n="board.note">상위 10명 · 닉네임당 주간 최고 기록 1건 · 매주 월요일 0시(KST) 초기화 · 닉네임과 기록만 저장됩니다</p>
+      <h2 data-i18n="board.title">순위</h2>
+      <p class="sub" data-i18n="board.note">상위 10명 · 닉네임당 최고 기록 1건 · 초기화 없이 계속 쌓입니다 · 닉네임과 기록만 저장됩니다</p>
       <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button><button data-board="rush30" aria-pressed="false" data-i18n="mode.rush30.name">더미 격파 30초</button><button data-board="bd10" aria-pressed="false" data-i18n="mode.bd10.name">백대시 10초</button></div>
-      <div class="board-week" id="boardWeek"></div>
+      <div class="board-info" id="boardInfo"></div>
       <div class="board-me" id="boardMe"></div>
       <div class="tbl board-list" id="boardList"></div>
       <div class="card-msg" id="boardMsg"></div>
@@ -560,7 +560,7 @@
     </div>
     <div class="card chart" id="waveCard">
       <h2 data-i18n="wave.title">웨이브 속도 추이</h2>
-      <p class="sub" data-i18n="wave.sub">크라우치 대시 한 번당 속도 (대시/초) · 최근 40회 · 음영 = 이번 주 웨이브 10초 순위 상위 10%</p>
+      <p class="sub" data-i18n="wave.sub">크라우치 대시 한 번당 속도 (대시/초) · 최근 40회 · 음영 = 웨이브 10초 순위 상위 10%</p>
       <div id="waveChart"></div>
       <div class="tip" id="waveTip"></div>
     </div>
@@ -583,14 +583,14 @@
       <p data-i18n="about.what.p">미시마 도장은 철권(철권8) 미시마류의 핵심 입력인 초풍신권(EWGF, 6N23+2)과 웨이브 대시(풍신 스텝 연속, 6N23 6 N 6N23 6 N …)를 브라우저에서 연습하는 무료 도구입니다. 설치 없이 키보드·게임패드·레버리스(히트박스)로 바로 쓸 수 있고, 게임을 켜지 않아도 입력만으로 판정합니다. 비공식 팬 제작이며, 게임 자체를 건드리는 매크로나 치트가 아닙니다.</p>
       <h3 data-i18n="about.judge.h">판정 방식</h3>
       <p data-i18n="about.judge.p">입력 하나하나의 시각을 밀리초 단위로 기록해 1프레임(16.67ms) 기준으로 판정합니다. 초풍은 3(d/f)이 들어간 순간과 버튼 2를 누른 순간의 차이를 재서, 판정 폭(0.5f·0.7f·0.9f, 기본 0.7f = ±12ms) 안이면 초풍, 늦으면 풍신권, 빠르면 실패로 표시하고 몇 ms 빠르거나 늦었는지 알려 줍니다. 웨이브는 6 → N → 2 → 3 순서와 캔슬 6·시작 6 누락을 잡아 연속 횟수와 초당 대시 수를 셉니다. 브라우저 입력 시각의 정밀도(약 4ms) 때문에 실제 게임 판정과는 약간의 오차가 있습니다.</p>
-      <h3 data-i18n="about.modes.h">측정 모드와 주간 순위</h3>
-      <p data-i18n="about.modes.p">자유 연습 외에 웨이브 10초, 초풍 20회, 웨이브 초풍 10회, 더미 격파 30초, 백대시 10초 측정 모드가 있습니다. 결과는 초풍 버튼 타이밍 분포와 웨이브 속도 추이로 그려지고, 닉네임을 정하면 주간 순위에 올려 다른 플레이어와 비교하고 상위 %에 따른 등급(SS~D)을 받습니다. 결과 카드는 이미지로 저장해 공유할 수 있습니다.</p>
+      <h3 data-i18n="about.modes.h">측정 모드와 순위</h3>
+      <p data-i18n="about.modes.p">자유 연습 외에 웨이브 10초, 초풍 20회, 웨이브 초풍 10회, 더미 격파 30초, 백대시 10초 측정 모드가 있습니다. 결과는 초풍 버튼 타이밍 분포와 웨이브 속도 추이로 그려지고, 닉네임을 정하면 순위에 올려 다른 플레이어와 비교하고 상위 %에 따른 등급(SS~D)을 받습니다. 결과 카드는 이미지로 저장해 공유할 수 있습니다.</p>
       <h3 data-i18n="about.faq.h">자주 묻는 질문</h3>
       <dl>
         <dt data-i18n="about.q1">초풍이 자꾸 풍신권으로 나가요.</dt><dd data-i18n="about.a1">버튼 2가 3(d/f)보다 늦은 경우입니다. 결과에 표시되는 ms 값을 보면서, 3을 다 넣고 누르는 게 아니라 2(d)에서 3(d/f)으로 굴리는 순간에 버튼 2를 누른다고 생각하세요.</dd>
         <dt data-i18n="about.q2">웨이브가 자꾸 끊겨요.</dt><dd data-i18n="about.a2">대부분 3 뒤의 캔슬 6이 빠지거나, 캔슬 6을 다음 대시의 시작 6으로 겸용해서 N이 빠진 경우입니다. 결과 창에 "캔슬 6 누락", "시작 6 누락"으로 원인이 표시됩니다.</dd>
         <dt data-i18n="about.q3">스틱(레버)이나 휴대폰도 되나요?</dt><dd data-i18n="about.a3">브라우저가 게임패드로 인식하는 컨트롤러면 설정에서 방향과 버튼을 모두 다시 지정할 수 있습니다. 키보드와 레버리스는 확인했고, 레버는 기기에 따라 다를 수 있으니 안 되면 문의해 주세요. 휴대폰은 터치 컨트롤이 뜨지만 정밀도는 낮습니다.</dd>
-        <dt data-i18n="about.q4">기록은 어디에 저장되나요?</dt><dd data-i18n="about.a4">설정과 기록은 이 브라우저에만 저장됩니다. 주간 순위에 올린 점수와 닉네임만 서버에 보관합니다.</dd>
+        <dt data-i18n="about.q4">기록은 어디에 저장되나요?</dt><dd data-i18n="about.a4">설정과 기록은 이 브라우저에만 저장됩니다. 순위에 올린 점수와 닉네임만 서버에 보관합니다.</dd>
         <dt data-i18n="about.q5">무료인가요?</dt><dd data-i18n="about.a5">전부 무료이고 광고가 없습니다. 후원으로 운영합니다.</dd>
       </dl>
       <p class="note"><span data-i18n="about.links">소개 페이지</span>: <a href="en/" hreflang="en">English</a> · <a href="ja/" hreflang="ja">日本語</a></p>
@@ -826,7 +826,7 @@ ko:{
   'hist.title':'초풍 버튼 타이밍 분포', 'hist.sub':'d/f 입력 시점을 0으로, 2(RP) 버튼이 눌린 프레임 차이 · 최근 60회',
   'hist.lOk':'초풍 (판정 안)', 'hist.lEarly':'빠름 (d+2)', 'hist.lLate':'늦음 (풍신권)', 'hist.aria':'초풍 버튼 타이밍 히스토그램',
   'hist.empty':'초풍을 시도하면 분포가 쌓입니다', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}회 · ${k}`, 'hist.kOk':'초풍', 'hist.kEarly':'빠름', 'hist.kLate':'늦음',
-  'wave.title':'웨이브 속도 추이', 'wave.sub':'크라우치 대시 한 번당 속도 (대시/초) · 최근 40회 · 음영 = 이번 주 웨이브 10초 순위 상위 10%', 'wave.aria':'웨이브 속도 추이',
+  'wave.title':'웨이브 속도 추이', 'wave.sub':'크라우치 대시 한 번당 속도 (대시/초) · 최근 40회 · 음영 = 웨이브 10초 순위 상위 10%', 'wave.aria':'웨이브 속도 추이',
   'wave.top':v=>'상위 10% ('+v+' 이상)', 'wave.topFixed':'상급 (5 이상)', 'wave.empty':'크라우치 대시를 2회 이상 연속으로 넣으면 그려집니다', 'wave.old':'오래된 대시', 'wave.recent':'최근',
   'wave.tip':(dps,ms,f)=>`${dps} 대시/초 · 사이클 ${ms}ms (${f}f)`,
   'best.title':'모드별 최고 기록', 'best.sub':'이 브라우저에 저장됩니다', 'best.none':'아직 기록 없음', 'best.last':'최근: ',
@@ -950,16 +950,16 @@ ko:{
   'ach.bowl_head':'후원 생각이 있었군요..!?', 'ach.bowl_head.d':'후원 창을 열어 보았다 (버튼만 눌러도 됩니다)',
   'share.discordNote':'디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.',
   'share.copied':'이미지를 클립보드에 복사했습니다.', 'share.copyFail':'이 브라우저는 이미지 복사를 지원하지 않습니다. PNG 저장을 이용하세요.',
-  'board.title':'주간 순위', 'board.tabsAria':'순위표 선택', 'board.week':(a,b)=>a+' ~ '+b+' (KST) · 월요일 0시 초기화',
+  'board.title':'순위', 'board.tabsAria':'순위표 선택',
   'board.submit':'순위 등록', 'board.nickPh':'닉네임 (2~12자)', 'board.refresh':'새로고침', 'board.retry':'다시 시도',
   'board.submitting':'순위 등록 중…',
   'board.hRank':'순위', 'board.hNick':'닉네임', 'board.hScore':'기록', 'board.hWin':'판정',
-  'board.empty':'이번 주 기록이 아직 없습니다. 측정 모드를 끝내면 첫 번째로 등록됩니다.', 'board.loading':'불러오는 중…', 'board.total':n=>'참가 '+n+'명',
+  'board.empty':'아직 기록이 없습니다. 측정 모드를 끝내면 첫 번째로 등록됩니다.', 'board.loading':'불러오는 중…', 'board.total':n=>'참가 '+n+'명',
   'board.loadFail':'순위표를 불러올 수 없습니다. 잠시 후 다시 시도하세요.', 'board.submitFail':'등록에 실패했습니다. 잠시 후 다시 시도하세요.',
   'board.nickBad':'닉네임은 2~12자로 입력하세요.', 'board.done':(r,n,p)=>'등록 완료 · '+r+'위 / '+n+'명 · 상위 '+p+'%',
-  'board.kept':(r,n,p)=>'이번 주 최고 기록 유지 · '+r+'위 / '+n+'명 · 상위 '+p+'%', 'board.me':(r,n,p)=>'내 순위 '+r+'위 / '+n+'명 · 상위 '+p+'%',
-  'board.meNone':'이번 주에 등록한 기록이 없습니다', 'card.rank':(r,n,p)=>'주간 '+r+'위 / '+n+'명 · 상위 '+p+'%',
-  'nick.title':'닉네임 정하기', 'nick.note':'주간 순위와 한마디에 쓰이는 이름입니다. 다른 사람과 겹칠 수 없고 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 새 닉네임을 정해야 합니다.',
+  'board.kept':(r,n,p)=>'최고 기록 유지 · '+r+'위 / '+n+'명 · 상위 '+p+'%', 'board.me':(r,n,p)=>'내 순위 '+r+'위 / '+n+'명 · 상위 '+p+'%',
+  'board.meNone':'등록한 기록이 없습니다', 'card.rank':(r,n,p)=>r+'위 / '+n+'명 · 상위 '+p+'%',
+  'nick.title':'닉네임 정하기', 'nick.note':'순위와 한마디에 쓰이는 이름입니다. 다른 사람과 겹칠 수 없고 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 새 닉네임을 정해야 합니다.',
   'nick.submit':'시작', 'nick.change':n=>'닉네임 · '+n, 'nick.checking':'확인 중…', 'nick.taken':'이미 사용 중인 닉네임입니다. 다른 이름을 정하세요.',
   'nick.fail':'닉네임을 등록하지 못했습니다. 잠시 후 다시 시도하세요.', 'nick.tooFast':'너무 빠릅니다. 잠시 후 다시 시도하세요.', 'nick.expired':'닉네임 확인에 실패했습니다. 닉네임을 다시 정해 주세요.',
   'nick.set':'닉네임 정하기', 'nick.needed':'닉네임을 정하면 순위에 등록됩니다.', 'nick.later':'나중에 · 순위 없이 연습',
@@ -972,7 +972,7 @@ ko:{
   'tier.4.wave10':'손이 풀리는 중. 캔슬 6을 조금만 더 빨리.', 'tier.4.ewgf20':'초풍이 나올 듯 말 듯. 3과 2를 동시에.', 'tier.4.combo10':'웨이브 타다 초풍 타이밍을 놓칩니다. 마지막 대시만 침착하게.', 'tier.4.rush30':'손이 풀리는 중. 초풍·통발·나락 중 하나가 늦습니다.',
   'tier.5.wave10':'사람이... 맞으시죠? 6N23 6 N, 다시 갑시다.', 'tier.5.ewgf20':'사람이... 맞으시죠? 풍신권도 기술입니다. 다시.', 'tier.5.combo10':'사람이... 맞으시죠? 웨이브 3회 뒤 초풍, 다시.', 'tier.5.rush30':'사람이... 맞으시죠? 더미는 도망가지 않습니다. 다시.',
   'tier.0.bd10':'사람이 아니군요!? 화면 끝까지 물러났습니다.', 'tier.1.bd10':'훌륭합니다! 이 백대시는 아무도 못 따라잡아요!', 'tier.2.bd10':'상급 백대시. 상대 러시가 허공을 칩니다.', 'tier.3.bd10':'백대시 좀 타시네요? 캔슬 타이밍만 다듬으면 됩니다.', 'tier.4.bd10':'손이 풀리는 중. 1에서 4로 더 빨리 굴리세요.', 'tier.5.bd10':'사람이... 맞으시죠? 414 N, 다시 갑시다.',
-  'board.note':'상위 10명 · 닉네임당 주간 최고 기록 1건 · 매주 월요일 0시(KST) 초기화 · 닉네임과 기록만 저장됩니다',
+  'board.note':'상위 10명 · 닉네임당 최고 기록 1건 · 초기화 없이 계속 쌓입니다 · 닉네임과 기록만 저장됩니다',
   'visits':(d,t)=>'오늘 방문 '+d+' · 누적 '+t, 'posts.title':'한마디', 'posts.sub':'건의·질문·잡담 무엇이든 · 최신 50개 · 1분마다 새로 고침',
   'posts.ph':'하고 싶은 말 (200자)', 'posts.send':'남기기', 'posts.sending':'보내는 중…', 'posts.empty':'아직 글이 없습니다. 첫 글을 남겨 보세요.',
   'posts.textBad':'내용은 1~200자로 입력하세요.', 'posts.tooFast':'너무 빠릅니다. 1분에 3개까지 남길 수 있습니다.',
@@ -994,8 +994,8 @@ ko:{
   'about.what.p':'미시마 도장은 철권(철권8) 미시마류의 핵심 입력인 초풍신권(EWGF, 6N23+2)과 웨이브 대시(풍신 스텝 연속, 6N23 6 N 6N23 6 N …)를 브라우저에서 연습하는 무료 도구입니다. 설치 없이 키보드·게임패드·레버리스(히트박스)로 바로 쓸 수 있고, 게임을 켜지 않아도 입력만으로 판정합니다. 비공식 팬 제작이며, 게임 자체를 건드리는 매크로나 치트가 아닙니다.',
   'about.judge.h':'판정 방식',
   'about.judge.p':'입력 하나하나의 시각을 밀리초 단위로 기록해 1프레임(16.67ms) 기준으로 판정합니다. 초풍은 3(d/f)이 들어간 순간과 버튼 2를 누른 순간의 차이를 재서, 판정 폭(0.5f·0.7f·0.9f, 기본 0.7f = ±12ms) 안이면 초풍, 늦으면 풍신권, 빠르면 실패로 표시하고 몇 ms 빠르거나 늦었는지 알려 줍니다. 웨이브는 6 → N → 2 → 3 순서와 캔슬 6·시작 6 누락을 잡아 연속 횟수와 초당 대시 수를 셉니다. 브라우저 입력 시각의 정밀도(약 4ms) 때문에 실제 게임 판정과는 약간의 오차가 있습니다.',
-  'about.modes.h':'측정 모드와 주간 순위',
-  'about.modes.p':'자유 연습 외에 웨이브 10초, 초풍 20회, 웨이브 초풍 10회, 더미 격파 30초, 백대시 10초 측정 모드가 있습니다. 결과는 초풍 버튼 타이밍 분포와 웨이브 속도 추이로 그려지고, 닉네임을 정하면 주간 순위에 올려 다른 플레이어와 비교하고 상위 %에 따른 등급(SS~D)을 받습니다. 결과 카드는 이미지로 저장해 공유할 수 있습니다.',
+  'about.modes.h':'측정 모드와 순위',
+  'about.modes.p':'자유 연습 외에 웨이브 10초, 초풍 20회, 웨이브 초풍 10회, 더미 격파 30초, 백대시 10초 측정 모드가 있습니다. 결과는 초풍 버튼 타이밍 분포와 웨이브 속도 추이로 그려지고, 닉네임을 정하면 순위에 올려 다른 플레이어와 비교하고 상위 %에 따른 등급(SS~D)을 받습니다. 결과 카드는 이미지로 저장해 공유할 수 있습니다.',
   'about.faq.h':'자주 묻는 질문',
   'about.q1':'초풍이 자꾸 풍신권으로 나가요.',
   'about.a1':'버튼 2가 3(d/f)보다 늦은 경우입니다. 결과에 표시되는 ms 값을 보면서, 3을 다 넣고 누르는 게 아니라 2(d)에서 3(d/f)으로 굴리는 순간에 버튼 2를 누른다고 생각하세요.',
@@ -1004,7 +1004,7 @@ ko:{
   'about.q3':'스틱(레버)이나 휴대폰도 되나요?',
   'about.a3':'브라우저가 게임패드로 인식하는 컨트롤러면 설정에서 방향과 버튼을 모두 다시 지정할 수 있습니다. 키보드와 레버리스는 확인했고, 레버는 기기에 따라 다를 수 있으니 안 되면 문의해 주세요. 휴대폰은 터치 컨트롤이 뜨지만 정밀도는 낮습니다.',
   'about.q4':'기록은 어디에 저장되나요?',
-  'about.a4':'설정과 기록은 이 브라우저에만 저장됩니다. 주간 순위에 올린 점수와 닉네임만 서버에 보관합니다.',
+  'about.a4':'설정과 기록은 이 브라우저에만 저장됩니다. 순위에 올린 점수와 닉네임만 서버에 보관합니다.',
   'about.q5':'무료인가요?',
   'about.a5':'전부 무료이고 광고가 없습니다. 후원으로 운영합니다.',
   'about.links':'소개 페이지',
@@ -1043,7 +1043,7 @@ en:{
   'hist.title':'EWGF button timing', 'hist.sub':'Frame difference of the 2 (RP) press relative to the d/f input at 0 · last 60',
   'hist.lOk':'EWGF (in window)', 'hist.lEarly':'Early (d+2)', 'hist.lLate':'Late (WGF)', 'hist.aria':'EWGF button timing histogram',
   'hist.empty':'Attempt an EWGF and the distribution builds up here', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}× · ${k}`, 'hist.kOk':'EWGF', 'hist.kEarly':'early', 'hist.kLate':'late',
-  'wave.title':'Wave speed trend', 'wave.sub':'Speed per crouch dash (dashes/s) · last 40 · shaded = top 10% of this week\'s Wave 10s ranking', 'wave.aria':'Wave speed trend',
+  'wave.title':'Wave speed trend', 'wave.sub':'Speed per crouch dash (dashes/s) · last 40 · shaded = top 10% of the Wave 10s ranking', 'wave.aria':'Wave speed trend',
   'wave.top':v=>'Top 10% ('+v+'+)', 'wave.topFixed':'Advanced (5+)', 'wave.empty':'Chain 2 or more crouch dashes to draw the chart', 'wave.old':'older', 'wave.recent':'recent',
   'wave.tip':(dps,ms,f)=>`${dps} dashes/s · cycle ${ms}ms (${f}f)`,
   'best.title':'Best records by mode', 'best.sub':'Saved in this browser', 'best.none':'No record yet', 'best.last':'Last: ',
@@ -1166,16 +1166,16 @@ en:{
   'ach.bowl_head':'So You Thought About Donating..!?', 'ach.bowl_head.d':'Opened the donate window (just pressing the button counts)',
   'share.discordNote':'Discord: click "Copy image", then paste into the chat with Ctrl+V. If copying is unavailable, save the PNG and attach it.',
   'share.copied':'Image copied to the clipboard.', 'share.copyFail':'This browser cannot copy images. Use Save PNG instead.',
-  'board.title':'Weekly ranking', 'board.tabsAria':'Choose a board', 'board.week':(a,b)=>a+' – '+b+' (KST) · resets Monday 00:00',
+  'board.title':'Ranking', 'board.tabsAria':'Choose a board',
   'board.submit':'Submit to ranking', 'board.nickPh':'Nickname (2–12 chars)', 'board.refresh':'Refresh', 'board.retry':'Retry',
   'board.submitting':'Submitting…',
   'board.hRank':'#', 'board.hNick':'Nickname', 'board.hScore':'Result', 'board.hWin':'Window',
-  'board.empty':'No entries this week yet. Finish a trial to be the first.', 'board.loading':'Loading…', 'board.total':n=>n+' entries',
+  'board.empty':'No entries yet. Finish a trial to be the first.', 'board.loading':'Loading…', 'board.total':n=>n+' entries',
   'board.loadFail':'Could not load the ranking. Try again later.', 'board.submitFail':'Submission failed. Try again later.',
   'board.nickBad':'Nickname must be 2–12 characters.', 'board.done':(r,n,p)=>'Submitted · rank '+r+' of '+n+' · top '+p+'%',
-  'board.kept':(r,n,p)=>'Your weekly best stands · rank '+r+' of '+n+' · top '+p+'%', 'board.me':(r,n,p)=>'You: rank '+r+' of '+n+' · top '+p+'%',
-  'board.meNone':'No entry from you this week', 'card.rank':(r,n,p)=>'Weekly rank '+r+' of '+n+' · top '+p+'%',
-  'nick.title':'Pick a nickname', 'nick.note':'Used for the weekly ranking and the shoutbox. It cannot clash with anyone else and is stored in this browser. Clearing browser data means picking a new one.',
+  'board.kept':(r,n,p)=>'Your best stands · rank '+r+' of '+n+' · top '+p+'%', 'board.me':(r,n,p)=>'You: rank '+r+' of '+n+' · top '+p+'%',
+  'board.meNone':'No entry from you yet', 'card.rank':(r,n,p)=>'Rank '+r+' of '+n+' · top '+p+'%',
+  'nick.title':'Pick a nickname', 'nick.note':'Used for the ranking and the shoutbox. It cannot clash with anyone else and is stored in this browser. Clearing browser data means picking a new one.',
   'nick.submit':'Start', 'nick.change':n=>'Nickname · '+n, 'nick.checking':'Checking…', 'nick.taken':'That nickname is taken. Pick another.',
   'nick.fail':'Could not register the nickname. Try again later.', 'nick.tooFast':'Too fast. Try again in a moment.', 'nick.expired':'Nickname check failed. Please pick a nickname again.',
   'nick.set':'Pick a nickname', 'nick.needed':'Pick a nickname to enter the ranking.', 'nick.later':'Later · practise without ranking',
@@ -1187,7 +1187,7 @@ en:{
   'tier.4.wave10':'Hands are waking up. Cancel 6 a touch sooner.', 'tier.4.ewgf20':'The EWGF is almost there. 3 and 2 together.', 'tier.4.combo10':'The wave steals the EWGF timing. Keep the last dash calm.', 'tier.4.rush30':'Hands are waking up. One of EWGF, f,f+2 or hellsweep is late.',
   'tier.5.wave10':'You are... human, right? 6N23 6 N, once more.', 'tier.5.ewgf20':'You are... human, right? A WGF is still a move. Again.', 'tier.5.combo10':'You are... human, right? Three waves, then EWGF. Again.', 'tier.5.rush30':'You are... human, right? The dummies are not running away. Again.',
   'tier.0.bd10':'Are you even human!? Backed off the edge of the screen.', 'tier.1.bd10':'Superb! Nobody is catching that backdash!', 'tier.2.bd10':'Advanced backdash. Their rush hits thin air.', 'tier.3.bd10':'Riding the backdash now. Just polish the cancel timing.', 'tier.4.bd10':'Hands are waking up. Roll from 1 into 4 sooner.', 'tier.5.bd10':'You are... human, right? 414 N, once more.',
-  'board.note':'Top 10 · one weekly best per nickname · resets every Monday 00:00 KST · only your nickname and result are stored',
+  'board.note':'Top 10 · one best per nickname · never resets · only your nickname and result are stored',
   'visits':(d,t)=>'Today '+d+' · total '+t+' visits', 'posts.title':'Shoutbox', 'posts.sub':'Requests, questions, anything · latest 50 · refreshes every minute',
   'posts.ph':'Say something (200 chars)', 'posts.send':'Post', 'posts.sending':'Sending…', 'posts.empty':'No posts yet. Be the first.',
   'posts.textBad':'Text must be 1–200 characters.', 'posts.tooFast':'Too fast. Up to 3 posts per minute.',
@@ -1209,8 +1209,8 @@ en:{
   'about.what.p':'Mishima Dojo is a free browser tool for the two inputs every Mishima-style character in Tekken (Tekken 8) lives on: the Electric Wind God Fist (EWGF, f,N,d,d/f+2, written 6N23+2 here) and the wave dash (crouch dash chains, 6N23 6 N 6N23 6 N …). Nothing to install: it works with a keyboard, gamepad or hitbox/leverless, and it judges your inputs without the game running. It is an unofficial fan-made tool, not a macro or a cheat, and it never touches the game.',
   'about.judge.h':'How judging works',
   'about.judge.p':'Every key or button press is timestamped in milliseconds and graded against one frame (16.67 ms). For the EWGF it measures the gap between the moment d/f registers and the moment you press 2: inside the window (0.5f, 0.7f or 0.9f, default 0.7f = ±12 ms) it is an EWGF, late is a plain WGF, early is a fail, and either way you see the offset in ms. For the wave dash it checks the f → N → d → d/f order, catches a missing cancel f and a missing starting f, and counts chain length and dashes per second. Browser input timing is about 4 ms precise, so expect small differences from the real game.',
-  'about.modes.h':'Timed modes and the weekly leaderboard',
-  'about.modes.p':'Besides free practice there are Wave 10s, EWGF ×20, Wave EWGF ×10, Dummy Rush 30s and Backdash 10s. Results are charted as a button-timing histogram and a wave speed trend. Pick a nickname to post to the weekly leaderboard, compare with other players and get a tier (SS to D) from your top percentage. Result cards can be saved as images for sharing.',
+  'about.modes.h':'Timed modes and the leaderboard',
+  'about.modes.p':'Besides free practice there are Wave 10s, EWGF ×20, Wave EWGF ×10, Dummy Rush 30s and Backdash 10s. Results are charted as a button-timing histogram and a wave speed trend. Pick a nickname to post to the leaderboard, compare with other players and get a tier (SS to D) from your top percentage. Result cards can be saved as images for sharing.',
   'about.faq.h':'FAQ',
   'about.q1':'My EWGF keeps coming out as a normal WGF.',
   'about.a1':'Your 2 is landing after d/f. Watch the ms offset in the result and press 2 as you roll from d into d/f, not after d/f is fully in.',
@@ -1258,7 +1258,7 @@ ja:{
   'hist.title':'最風ボタンタイミング分布', 'hist.sub':'3(d/f)入力時点を0とした2(RP)ボタン押下のフレーム差 · 直近60回',
   'hist.lOk':'最風 (判定内)', 'hist.lEarly':'早い (2+2)', 'hist.lLate':'遅い (風神拳)', 'hist.aria':'最風ボタンタイミングのヒストグラム',
   'hist.empty':'最風を試行すると分布が溜まります', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}回 · ${k}`, 'hist.kOk':'最風', 'hist.kEarly':'早い', 'hist.kLate':'遅い',
-  'wave.title':'ウェーブ速度推移', 'wave.sub':'風神ステップ1回あたりの速度 (ダッシュ/秒) · 直近40回 · 網掛け = 今週のウェーブ10秒ランキング上位10%', 'wave.aria':'ウェーブ速度推移',
+  'wave.title':'ウェーブ速度推移', 'wave.sub':'風神ステップ1回あたりの速度 (ダッシュ/秒) · 直近40回 · 網掛け = ウェーブ10秒ランキング上位10%', 'wave.aria':'ウェーブ速度推移',
   'wave.top':v=>'上位10% ('+v+'以上)', 'wave.topFixed':'上級 (5以上)', 'wave.empty':'風神ステップを2回以上連続で入れると描画されます', 'wave.old':'古い', 'wave.recent':'最近',
   'wave.tip':(dps,ms,f)=>`${dps} ダッシュ/秒 · サイクル ${ms}ms (${f}f)`,
   'best.title':'モード別最高記録', 'best.sub':'このブラウザに保存されます', 'best.none':'記録なし', 'best.last':'最近: ',
@@ -1381,16 +1381,16 @@ ja:{
   'ach.bowl_head':'支援する気があったんですね..!?', 'ach.bowl_head.d':'支援ウィンドウを開いた (ボタンを押すだけでOK)',
   'share.discordNote':'Discord: 「画像をコピー」後、チャット欄に Ctrl+V で貼り付けてください。コピーできない場合は PNG を保存して添付してください。',
   'share.copied':'画像をクリップボードにコピーしました。', 'share.copyFail':'このブラウザは画像コピーに対応していません。PNG保存をご利用ください。',
-  'board.title':'週間ランキング', 'board.tabsAria':'ランキングを選択', 'board.week':(a,b)=>a+' ～ '+b+' (KST) · 月曜0時にリセット',
+  'board.title':'ランキング', 'board.tabsAria':'ランキングを選択',
   'board.submit':'ランキングに登録', 'board.nickPh':'ニックネーム (2～12文字)', 'board.refresh':'更新', 'board.retry':'再試行',
   'board.submitting':'登録中…',
   'board.hRank':'順位', 'board.hNick':'ニックネーム', 'board.hScore':'記録', 'board.hWin':'判定',
-  'board.empty':'今週の記録はまだありません。測定モードを終えると最初に登録されます。', 'board.loading':'読み込み中…', 'board.total':n=>'参加 '+n+'人',
+  'board.empty':'まだ記録がありません。測定モードを終えると最初に登録されます。', 'board.loading':'読み込み中…', 'board.total':n=>'参加 '+n+'人',
   'board.loadFail':'ランキングを読み込めません。しばらくしてからもう一度お試しください。', 'board.submitFail':'登録に失敗しました。しばらくしてからもう一度お試しください。',
   'board.nickBad':'ニックネームは2～12文字で入力してください。', 'board.done':(r,n,p)=>'登録完了 · '+r+'位 / '+n+'人 · 上位 '+p+'%',
-  'board.kept':(r,n,p)=>'今週の自己ベストを維持 · '+r+'位 / '+n+'人 · 上位 '+p+'%', 'board.me':(r,n,p)=>'自分の順位 '+r+'位 / '+n+'人 · 上位 '+p+'%',
-  'board.meNone':'今週の登録記録はありません', 'card.rank':(r,n,p)=>'週間 '+r+'位 / '+n+'人 · 上位 '+p+'%',
-  'nick.title':'ニックネームを決める', 'nick.note':'週間ランキングとひとことで使う名前です。他の人と重複できず、このブラウザに保存されます。ブラウザのデータを消すと新しく決め直す必要があります。',
+  'board.kept':(r,n,p)=>'自己ベストを維持 · '+r+'位 / '+n+'人 · 上位 '+p+'%', 'board.me':(r,n,p)=>'自分の順位 '+r+'位 / '+n+'人 · 上位 '+p+'%',
+  'board.meNone':'登録した記録はありません', 'card.rank':(r,n,p)=>r+'位 / '+n+'人 · 上位 '+p+'%',
+  'nick.title':'ニックネームを決める', 'nick.note':'ランキングとひとことで使う名前です。他の人と重複できず、このブラウザに保存されます。ブラウザのデータを消すと新しく決め直す必要があります。',
   'nick.submit':'開始', 'nick.change':n=>'ニックネーム · '+n, 'nick.checking':'確認中…', 'nick.taken':'そのニックネームは使用中です。別の名前にしてください。',
   'nick.fail':'ニックネームを登録できませんでした。しばらくしてからもう一度お試しください。', 'nick.tooFast':'速すぎます。少し待ってからもう一度お試しください。', 'nick.expired':'ニックネームの確認に失敗しました。もう一度決めてください。',
   'nick.set':'ニックネームを決める', 'nick.needed':'ニックネームを決めるとランキングに登録されます。', 'nick.later':'あとで · ランキングなしで練習',
@@ -1402,7 +1402,7 @@ ja:{
   'tier.4.wave10':'手が温まってきました。キャンセル6をもう少し早く。', 'tier.4.ewgf20':'最風が出そうで出ない。3と2を同時に。', 'tier.4.combo10':'ウェーブ中に最風のタイミングを逃します。最後のダッシュだけ落ち着いて。', 'tier.4.rush30':'手が温まってきました。最風・f,f+2・奈落のどれかが遅い。',
   'tier.5.wave10':'人間…ですよね？6N23 6 N、もう一度。', 'tier.5.ewgf20':'人間…ですよね？風神拳も技です。もう一度。', 'tier.5.combo10':'人間…ですよね？ウェーブ3回のあと最風、もう一度。', 'tier.5.rush30':'人間…ですよね？ダミーは逃げません。もう一度。',
   'tier.0.bd10':'人間じゃないですね!? 画面の端まで下がりました。', 'tier.1.bd10':'見事です！このバックダッシュには誰も追いつけません！', 'tier.2.bd10':'上級バックダッシュ。相手のラッシュが空を切ります。', 'tier.3.bd10':'バックダッシュ乗れてますね？あとはキャンセルのタイミングだけ。', 'tier.4.bd10':'手が温まってきました。1から4へもっと早く。', 'tier.5.bd10':'人間…ですよね？414 N、もう一度。',
-  'board.note':'上位10人 · ニックネームごとに週間ベスト1件 · 毎週月曜0時(KST)にリセット · 保存されるのはニックネームと記録だけです',
+  'board.note':'上位10人 · ニックネームごとにベスト1件 · リセットなしで積み上がります · 保存されるのはニックネームと記録だけです',
   'visits':(d,t)=>'今日の訪問 '+d+' · 累計 '+t, 'posts.title':'ひとこと', 'posts.sub':'要望・質問・雑談なんでも · 最新50件 · 1分ごとに更新',
   'posts.ph':'言いたいこと (200文字)', 'posts.send':'投稿', 'posts.sending':'送信中…', 'posts.empty':'まだ投稿がありません。最初の一言をどうぞ。',
   'posts.textBad':'本文は1～200文字で入力してください。', 'posts.tooFast':'速すぎます。1分に3件まで投稿できます。',
@@ -1424,8 +1424,8 @@ ja:{
   'about.what.p':'三島道場は、鉄拳（鉄拳8）の三島系キャラの要となる最速風神拳（最風、6N23+2）と風神ステップ連続（ウェーブ、6N23 6 N 6N23 6 N …）をブラウザで練習できる無料ツールです。インストール不要で、キーボード・パッド・レバーレス（ヒットボックス）にそのまま対応し、ゲームを起動しなくても入力だけで判定します。非公式のファン製作で、ゲーム本体に触れるマクロやチートではありません。',
   'about.judge.h':'判定の仕組み',
   'about.judge.p':'入力ひとつひとつの時刻をミリ秒単位で記録し、1フレーム（16.67ms）を基準に判定します。最風は3（斜め下前）が入った瞬間とボタン2を押した瞬間の差を測り、判定幅（0.5f・0.7f・0.9f、既定 0.7f = ±12ms）内なら最風、遅ければ風神拳、早ければ失敗と表示し、何ms早い・遅いかを示します。ウェーブは 6 → N → 2 → 3 の順序とキャンセル6・始動6の抜けを検出し、連続回数と1秒あたりのステップ数を数えます。ブラウザの入力時刻の精度（約4ms）の都合で、実際のゲームの判定とはわずかな差があります。',
-  'about.modes.h':'計測モードと週間ランキング',
-  'about.modes.p':'自由練習のほかに、ウェーブ10秒・最風20回・ウェーブ最風10回・ダミー撃破30秒・バックダッシュ10秒の計測モードがあります。結果はボタンタイミング分布とステップ速度の推移としてグラフ化され、ニックネームを決めると週間ランキングに登録して他のプレイヤーと比較し、上位%に応じたランク（SS〜D）が付きます。結果カードは画像として保存・共有できます。',
+  'about.modes.h':'計測モードとランキング',
+  'about.modes.p':'自由練習のほかに、ウェーブ10秒・最風20回・ウェーブ最風10回・ダミー撃破30秒・バックダッシュ10秒の計測モードがあります。結果はボタンタイミング分布とステップ速度の推移としてグラフ化され、ニックネームを決めるとランキングに登録して他のプレイヤーと比較し、上位%に応じたランク（SS〜D）が付きます。結果カードは画像として保存・共有できます。',
   'about.faq.h':'よくある質問',
   'about.q1':'最風がいつも風神拳になります。',
   'about.a1':'ボタン2が3より遅い場合です。結果に表示されるmsを見ながら、3を入れ切ってから押すのではなく、2（下）から3（斜め下前）へ倒す瞬間にボタン2を押すつもりで試してください。',
@@ -1434,7 +1434,7 @@ ja:{
   'about.q3':'レバーやスマホでも使えますか？',
   'about.a3':'ブラウザがゲームパッドとして認識するコントローラーなら、設定で方向とボタンをすべて割り当て直せます。キーボードとレバーレスは確認済みで、レバーは機器によって異なるため、動かない場合はお問い合わせください。スマホではタッチ操作が表示されますが精度は低めです。',
   'about.q4':'記録はどこに保存されますか？',
-  'about.a4':'設定と記録はこのブラウザにのみ保存されます。サーバーに保管するのは週間ランキングに登録したスコアとニックネームだけです。',
+  'about.a4':'設定と記録はこのブラウザにのみ保存されます。サーバーに保管するのはランキングに登録したスコアとニックネームだけです。',
   'about.q5':'無料ですか？',
   'about.a5':'すべて無料で広告もありません。支援で運営しています。',
   'about.links':'紹介ページ',
@@ -2019,7 +2019,7 @@ function coachWaveLive(cyc){
   const segs = SEGKEYS.map((k,i)=>[k, vals[i]]).filter(s=>s[1]!=null).sort((a,b)=>b[1]-a[1]);
   const worst = segs[0];
   const dps = cyc.cycle?1000/cyc.cycle:0;
-  const tempoKey = dps>=(waveTop()??WAVE_TOP_DEFAULT)?'tempo.5':dps>=4?'tempo.4':dps>=3?'tempo.3':'tempo.0'; // top band = this week's wave10 top-10% speed (5 until the board answers)
+  const tempoKey = dps>=(waveTop()??WAVE_TOP_DEFAULT)?'tempo.5':dps>=4?'tempo.4':dps>=3?'tempo.3':'tempo.0'; // top band = the wave10 top-10% speed (5 until the board answers)
   if(worst && worst[1]>90) setCoach(() => T(tempoKey) + T('wave.worst', T('seg.n.'+worst[0]), Math.round(worst[1])) + T('seg.a.'+worst[0]));
   else setCoach(() => T(tempoKey) + T('wave.even'));
 }
@@ -2180,7 +2180,7 @@ function endTrial(cancel){
   store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); save(); renderBests();
   store.life.trials[mode]++; jackpotHold = true; setTimeout(() => { jackpotHold = false; jackpotNext(); }, 2300); checkAch(); // unlocks wait for the result flash
   trial.result = {rec, attempts:at, cycles:session.cycles.filter(since), window:store.window}; $('dShare').hidden=false;
-  boardSubmit(); // always to the weekly ranking (the server keeps only the weekly best); no-op without a claimed nickname
+  boardSubmit(); // always to the ranking (the server keeps only the best); no-op without a claimed nickname
   trial.openTimer = setTimeout(() => openShare().then(() => { trial.openTimer = null; }), 900); // result card after the HUD flash; openTimer stays set until it is open
 }
 function trialTick(now){
@@ -2458,7 +2458,7 @@ $('shareTweet').addEventListener('click', () => {
   try{ window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(shareModel.tweet), '_blank', 'noopener'); }catch(e){}
 });
 
-/* ---------- backend: weekly ranking, visit counter, shoutbox (Cloudflare Worker in worker/; see worker/README.md) ---------- */
+/* ---------- backend: ranking (cumulative, no reset — 2026-09-14 user decision), visit counter, shoutbox (Cloudflare Worker in worker/; see worker/README.md) ---------- */
 const BOARD_URL = 'https://mishima-dojo-board.mishima-dojo.workers.dev'; // Cloudflare Worker in worker/ (no trailing slash). Empty → all backend UI hidden.
 /* ---------- donate (PLAN 2-3): plain external link per language, no scripts. Empty → footer row hidden for that language. ---------- */
 // Two ways to give; every donate button (#donateTop header, #donateShareBtn result dialog, #donateBtn footer) opens #donateDlg to pick one.
@@ -2588,31 +2588,30 @@ $('fitReset').addEventListener('click', () => { for(const s of SLOTS) store.fit[
 ['setDlg','donateDlg','fitDlg'].forEach(id => $(id).addEventListener('close', () => setTimeout(jackpotNext, 0))); // a queued reveal waits for the dialog to go (#shareDlg/#nickDlg: in their own close handlers)
 
 const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per start-mode trial; must match worker/index.js BOARDS and #boardTabs
-const board = { tab:'wave10', data:{}, msg:'', seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise)
+const board = { tab:'wave10', data:{}, at:{}, msg:'', seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise) · at: Date.now() of each board's last response (waveRefresh refetches wave10 after WAVE_TTL)
 const live = { visits:null, posts:null, postsMsg:'', posting:false, voting:false, visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // voting: a POST /vote is in flight (one at a time, every vote button disabled meanwhile)
 // nickLater: the gate offers "practise without ranking" after the server itself failed · nickLost: a 403 arrived while the result card was up
 const TIERS = [1, 10, 20, 50, 70]; // upper bounds of "top N%" for grades SS S A B C (tier 0..4); anything above is D (tier 5). Titles: tier.N.title, comments: tier.N.<mode>
 // Grade for the result banner. Tiny boards count as ten players so 1st of 1 lands on S (top 10%), not SS — and 1st of 1 is never "D" at top 100%.
 function tierOf(rank, total){ const p = pctTop(rank, Math.max(total, 10)); const i = TIERS.findIndex(t => p<=t); return i<0 ? 5 : i; }
 const pctTop = (rank, total) => Math.max(1, Math.ceil(rank / Math.max(1,total) * 100)); // "top N%" — 1st of 1 is top 100%
-// Wave chart top band: this week's wave10 top-10% score (cut10 from /top or /submit), null until the board answers → WAVE_TOP_DEFAULT.
-const WAVE_TOP_DEFAULT = 5;
-const waveCurrent = d => !!d && Number.isFinite(d.end) && Date.now()<d.end;
-const waveTop = () => { const d = board.data.wave10; return waveCurrent(d) && Number.isFinite(d.cut10) && d.cut10>0 ? d.cut10 : null; };
+// Wave chart top band: the wave10 top-10% score (cut10 from /top or /submit), null until the board answers → WAVE_TOP_DEFAULT.
+// The board never resets (2026-09-14), so a cut only moves when someone submits: the cached value stays in use and the periodic waveRefresh refetches it once it is WAVE_TTL old.
+const WAVE_TOP_DEFAULT = 5, WAVE_TTL = 10*60e3;
+const boardSet = (t, d) => { board.data[t] = d; board.at[t] = Date.now(); };
+const waveFresh = () => !!board.data.wave10 && Date.now() - (board.at.wave10||0) < WAVE_TTL;
+const waveTop = () => { const d = board.data.wave10; return !!d && Number.isFinite(d.cut10) && d.cut10>0 ? d.cut10 : null; };
 let waveRefreshing = false;
 async function waveRefresh(){
   const cached = board.data.wave10;
-  if(!BOARD_URL || waveCurrent(cached) || waveRefreshing) return;
+  if(!BOARD_URL || waveFresh() || waveRefreshing) return;
   waveRefreshing = true;
-  renderWave(); // remove last week's band while the new request is pending (or fails)
   const nick = store.nick, token = store.nickToken;
   try{
     const d = await boardFetch('/top?board=wave10'+(hasNick() ? '&nick='+encodeURIComponent(nick) : ''));
     // A manual load, submission or nickname change takes precedence over this background request.
-    if(nick===store.nick && token===store.nickToken && board.data.wave10===cached && waveCurrent(d)){
-      board.data.wave10 = d; renderWave(); renderBoard();
-    }
-  }catch(e){} // keep the fallback and retry on the next periodic refresh
+    if(nick===store.nick && token===store.nickToken && board.data.wave10===cached){ boardSet('wave10', d); renderWave(); renderBoard(); }
+  }catch(e){} // keep the last value and retry on the next periodic refresh
   finally{ waveRefreshing = false; }
 }
 const waveTopText = cut => cut==null ? T('wave.topFixed') : T('wave.top', cut.toFixed(1));
@@ -2630,10 +2629,6 @@ function boardEntry(r, m){ // pure: finished trial result → submission payload
   return e;
 }
 function boardRowText(m, row){ const x = recText(m, {score:row.score, ...(row.detail||{})}); return {label: x.label ?? String(row.score), sub: x.sub ?? ''}; }
-function boardWeekText(d){
-  const f = ms => { const x = new Date(ms + 9*3600e3); return (x.getUTCMonth()+1)+'/'+x.getUTCDate(); }; // KST calendar day, whatever the viewer's zone
-  return T('board.week', f(d.start), f(d.end - 86400000));
-}
 const cleanNick = v => String(v||'').replace(/\s+/g,' ').trim();
 const nickKey = n => n.normalize('NFKC').toLowerCase(); // same identity rule as the worker: a case/width change of my own nickname is not a new claim
 const hasNick = () => !!(store.nick && store.nickToken);
@@ -2695,7 +2690,7 @@ function renderBoard(){
   if(!BOARD_URL) return;
   const t = board.tab, d = board.data[t], me = d && d.me;
   document.querySelectorAll('#boardTabs button').forEach(b => b.setAttribute('aria-pressed', b.dataset.board===t?'true':'false'));
-  $('boardWeek').textContent = d ? boardWeekText(d) + (d.total ? ' · ' + T('board.total', d.total) : '') : '';
+  $('boardInfo').textContent = d && d.total ? T('board.total', d.total) : '';
   $('boardMe').textContent = !d ? '' : me ? T('board.me', me.rank, d.total, pctTop(me.rank, d.total)) : T('board.meNone');
   $('boardMsg').textContent = msg(board.msg);
   const rows = d ? d.rows : [];
@@ -2711,7 +2706,7 @@ async function boardLoad(){
   let d = null;
   try{ d = await boardFetch('/top?board='+t+(hasNick() ? '&nick='+encodeURIComponent(store.nick) : '')); } catch(e){} // an unclaimed name may belong to someone else
   if(seq!==board.seq) return; // superseded by a newer load or a submit: drop this response entirely
-  if(d){ board.data[t] = d; setBoardMsg(''); if(t==='wave10') renderWave(); } else setBoardMsg(['board.loadFail']); // wave10 carries cut10: the chart's top band follows it
+  if(d){ boardSet(t, d); setBoardMsg(''); if(t==='wave10') renderWave(); } else setBoardMsg(['board.loadFail']); // wave10 carries cut10: the chart's top band follows it
   renderBoard();
 }
 // Post-trial status in the trial bar (and the banner in the result card): auto-submitted, retry on failure.
@@ -2739,7 +2734,7 @@ async function boardSubmit(){
     const res = await boardFetch('/submit', {method:'POST', body:JSON.stringify({...e, nick, token:store.nickToken})});
     r.submit = {state:'done', rank:res.rank, total:res.total, improved:res.improved};
     if(nick===store.nick){ // the response describes this nickname's board; after a rename it is stale
-      board.data[e.board] = res; if(e.board==='wave10') renderWave();
+      boardSet(e.board, res); if(e.board==='wave10') renderWave();
       if(board.tab===tab0){ board.seq++; board.tab = e.board; setBoardMsg(''); } // show the trial's board, unless the user moved to another tab meanwhile (seq: loads for the old tab are dropped)
       renderBoard();
     }
@@ -3183,7 +3178,7 @@ function drawCard(g, model){
       g.fillStyle=P.text; fitFont(g, mt.value, w-28, 28, mono, 700, 16); g.fillText(mt.value, x+14, y+34);
       g.fillStyle=P.muted; fitFont(g, mt.label, w-28, 13, body, 500, 10); g.fillText(mt.label, x+14, y+58);
     });
-    if(model.rankText){ g.fillStyle=C.gold; fitFont(g, model.rankText, 540, 20, body, 700, 13); g.fillText(model.rankText, 56, 548); } // weekly rank + tier, under the tiles
+    if(model.rankText){ g.fillStyle=C.gold; fitFont(g, model.rankText, 540, 20, body, 700, 13); g.fillText(model.rankText, 56, 548); } // rank + tier, under the tiles
   }
   // chart panel (paper sheet in wood style)
   const cx=620, cy=160, cw=390, ch=280;

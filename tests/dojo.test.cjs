@@ -371,10 +371,10 @@ test('trial end submits only with a claimed nickname (token); a failed submit sh
   owner.setLang('en');assert.equal(owner.get('dRank').textContent,'Submission failed. Try again later.');
   owner.setMode('free');assert.equal(owner.get('dRank').textContent,'');assert.equal(owner.get('dRankRetry').hidden,true);
   assert.equal(boot({v:4,nickToken:'zz'}).store.nickToken,'','malformed token is dropped');
-  // share card model carries the weekly rank line and tier title when the submit succeeded
+  // share card model carries the rank line and tier title when the submit succeeded
   const card=boot({v:4,lang:'ko',window:12}); run(card); card.trial.result.submit={state:'done',rank:3,total:42,improved:true};
   const m=card.buildCard(card.shareSource());
-  assert.equal(m.rankText,'주간 3위 / 42명 · 상위 8% · S');assert.match(m.tweet,/주간 3위 \/ 42명 · 상위 8% · S\n/);
+  assert.equal(m.rankText,'3위 / 42명 · 상위 8% · S');assert.match(m.tweet,/\n3위 \/ 42명 · 상위 8% · S\n/);
   // the banner comment is per trial mode (tier.N.<mode>): the same grade reads differently in wave10 and rush30, and every mode has all six in every language
   for(const l of ['ko','en','ja']){card.setLang(l);for(const mode of card.BOARDS)for(let i=0;i<6;i++)assert.notEqual(card.T('tier.'+i+'.'+mode),'tier.'+i+'.'+mode,l+' '+mode+' '+i);}
   card.setLang('ko');const banner=card.get('shareTierMsg');
@@ -394,7 +394,7 @@ function backend(){
   const answer=(path,method,data,status)=>{const c=find(path,method);if(!c)throw new Error('no pending '+method+' '+path);c.done=true;c.resolve(data,status);return c;};
   return {fetch,calls,find,answer,flush:()=>new Promise(r=>setImmediate(r))};
 }
-const topRes=(nick,rank=1,total=1)=>({week:'2026-09-07',start:0,end:Date.now()+7*86400000,board:'wave10',total,rows:[{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}],me:{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}});
+const topRes=(nick,rank=1,total=1)=>({season:'all',board:'wave10',total,rows:[{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}],me:{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}});
 test('backend races: a late submit after a rename or a tab switch does not overwrite the board; a 403 mid-card waits; visits count once',async()=>{
   const tok='ab'.repeat(24), run=a=>{a.setMode('wave10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();dash(a,4100);a.time(14100);a.endTrial();};
   // rename while the submit is in flight: the submit's board snapshot belongs to the old nickname and is discarded
@@ -848,7 +848,7 @@ test('touch UI: idle badge says touch, the pad label follows 2P facing, and rese
   assert.equal(a.session.attempts.length,0);assert.equal(a.cd.state,1);
 });
 
-test('wave chart top band and coach tempo follow the weekly wave10 top-10% cut (cut10), falling back to 5 dashes/s',()=>{
+test('wave chart top band and coach tempo follow the wave10 top-10% cut (cut10), falling back to 5 dashes/s',()=>{
   const a=boot({v:4,lang:'ko',window:12}), chart=a.get('waveChart'), coach=a.get('coachMsg');
   const chain=t=>{dash(a,t);for(const d of [t+100,t+300]){a.onDir('f',d);a.onDir('n',d+20);dash(a,d+40);}}; // start 6 every 200ms = 5.0 dashes/s
   assert.equal(a.waveTop(),null);a.renderWave();assert.match(chart.innerHTML,/상급 \(5 이상\)/,'no board yet: fixed label');
@@ -864,39 +864,38 @@ test('wave chart top band and coach tempo follow the weekly wave10 top-10% cut (
 });
 
 
-test('weekly wave cut expires at Monday midnight KST and periodic refresh retries without changing tabs',async()=>{
-  const end=Date.parse('2026-09-13T15:00:00Z');let wall=end-1;
+test('wave cut never expires (no board reset): the periodic refresh refetches it once it is 10 minutes old, keeps the last value on failure and never changes tabs',async()=>{
+  let wall=Date.parse('2026-09-14T03:00:00Z');
   const b=backend(),a=boot({v:4,lang:'ko'},b.fetch,{Date:class extends Date{static now(){return wall;}}});
-  const old={...topRes('x'),end,cut10:8.5};
-  b.answer('/top?board=wave10','GET',old);await b.flush();
+  b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:8.5});await b.flush();
   const refresh=[...a.timers.values()].find(fn=>String(fn).includes('waveRefresh()'));
   assert.ok(refresh);a.board.tab='rush30';
   dash(a);for(const t of [1100,1300]){a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}
-  assert.equal(a.waveTop(),8.5);wall=end;
-  assert.equal(a.waveTop(),null,'the exact end boundary is expired');
-  assert.equal(a.buildCard(a.shareSource()).chart.top,null,'share card immediately selects the default band');
-  refresh();assert.match(a.get('waveChart').innerHTML,/상급 \(5 이상\)/);
+  assert.equal(a.waveTop(),8.5);
+  refresh();assert.equal(b.find('/top?board=wave10'),undefined,'fresh data needs no refetch');
+  wall+=10*60e3-1;refresh();assert.equal(b.find('/top?board=wave10'),undefined,'still fresh just under the TTL');
+  wall+=1;assert.equal(a.waveTop(),8.5,'a stale cut stays in use: nothing to fall back to, the board never reset');
+  refresh();assert.ok(b.find('/top?board=wave10'),'stale → background refetch');assert.match(a.get('waveChart').innerHTML,/상위 10% \(8\.5 이상\)/,'the band stays while the request is pending');
   const count=b.calls.filter(c=>c.url.includes('/top?board=wave10')).length;
   refresh();assert.equal(b.calls.filter(c=>c.url.includes('/top?board=wave10')).length,count,'only one background request in flight');
-  b.answer('/top?board=wave10','GET',{},500);await b.flush();assert.equal(a.waveTop(),null);
-  refresh();b.answer('/top?board=wave10','GET',old);await b.flush();assert.equal(a.waveTop(),null,'a late response from last week stays expired');
-  refresh();b.answer('/top?board=wave10','GET',{...old,end:end+7*86400000,cut10:6.2});await b.flush();
+  b.answer('/top?board=wave10','GET',{},500);await b.flush();assert.equal(a.waveTop(),8.5,'a failed refetch keeps the last value');
+  refresh();b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:6.2});await b.flush();
   assert.equal(a.waveTop(),6.2);assert.equal(a.board.tab,'rush30');
   assert.match(a.get('waveChart').innerHTML,/상위 10% \(6\.2 이상\)/);
   assert.equal(a.buildCard(a.shareSource()).chart.top,6.2);
-  refresh();assert.equal(b.find('/top?board=wave10'),undefined,'current data needs no refetch');
+  refresh();assert.equal(b.find('/top?board=wave10'),undefined,'fresh again after the answer');
 });
 
 test('background wave refresh preserves newer board data and ignores nickname changes',async()=>{
   for(const change of ['data','nick']){
     const b=backend(),a=boot({v:4,lang:'ko'},b.fetch);
-    b.answer('/top?board=wave10','GET',{...topRes('x'),end:1,cut10:8.5});await b.flush();
+    b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:8.5});await b.flush();a.board.at.wave10=0; // stale → the next refresh refetches
     const refresh=[...a.timers.values()].find(fn=>String(fn).includes('waveRefresh()'));
     refresh();
     if(change==='data')a.board.data.wave10={...topRes('x'),cut10:7};
     else a.store.nick='new';
     b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:6});await b.flush();
-    assert.equal(a.waveTop(),change==='data'?7:null);
+    assert.equal(a.waveTop(),change==='data'?7:8.5,'the late response is dropped; the last good cut stays (no reset to fall back to)');
   }
 });
 /* ---------- 옷장·업적 (wardrobe + achievements, 4-9) ---------- */

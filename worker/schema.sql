@@ -2,8 +2,8 @@
 -- Apply: npx wrangler d1 execute mishima-dojo-board --remote --file=schema.sql
 CREATE TABLE IF NOT EXISTS scores (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  week       TEXT    NOT NULL,             -- Monday of the KST week, 'YYYY-MM-DD'
-  board      TEXT    NOT NULL,             -- wave10 | ewgf20 | combo10
+  week       TEXT    NOT NULL,             -- season key the Worker reads/writes: 'all' since 2026-09-14 (one cumulative board, no reset). Was the Monday of the KST week 'YYYY-MM-DD'; see migrate-2026-09-14-alltime.sql
+  board      TEXT    NOT NULL,             -- wave10 | ewgf20 | combo10 | rush30 | bd10
   nick       TEXT    NOT NULL,             -- 2..12 code points
   score      REAL    NOT NULL,             -- primary metric (wave10: dash/s, others: success %)
   tie        REAL    NOT NULL DEFAULT 0,   -- secondary metric, higher wins (wave10: best chain, ewgf20: -|mean offset|, combo10: mean dash/s)
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS scores (
   created_at INTEGER NOT NULL              -- epoch ms
 );
 CREATE INDEX IF NOT EXISTS scores_rank ON scores(week, board, score DESC, tie DESC, id ASC);
--- One row per nick per board per week (2026-09-12 decision): /submit upserts and keeps the better result.
+-- One row per nick per board per season (2026-09-12 decision; a single season 'all' since 2026-09-14): /submit upserts and keeps the better result.
 CREATE UNIQUE INDEX IF NOT EXISTS scores_nick ON scores(week, board, nick);
 
 -- Claimed nicknames: key = NFKC-lowercased nick (unique), token = secret the claiming browser keeps (localStorage).
