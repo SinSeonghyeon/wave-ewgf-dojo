@@ -244,6 +244,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await touch('touchMove',[tp(pc.x, pc.y+R*0.7, 1)]); await sleep(30);            // d
   await touch('touchStart',[tp(pc.x+R*0.55, pc.y+R*0.55, 1), tp(tc.b2.x+tc.b2.w/2, tc.b2.y+tc.b2.h/2, 2)]); await sleep(40); // df + 2 in one dispatch
   await touch('touchEnd',[tp(pc.x+R*0.55, pc.y+R*0.55, 1)]); await sleep(30); await touch('touchEnd',[]); await sleep(300);
+  // the reward card must sit above the touch overlay so 확인 is tappable on a phone (the card is centred, so its button lands in the pad zone)
+  tc.jpHit = await evalJs(`(() => { const j=document.querySelector('#jackpot'), ok=document.querySelector('#jpOk'); j.hidden=false; j.dataset.phase='reveal'; const r=ok.getBoundingClientRect(); const el=document.elementFromPoint(r.x+r.width/2, r.y+r.height/2); const pad=document.elementFromPoint(${pc.x}, ${pc.y}); j.hidden=true; delete j.dataset.phase; return {hit:el===ok, hitId:el&&el.id, inTouchZone:r.y+r.height/2>${tc.touchTop}, padStillReachable:!!pad&&!!pad.closest('#tpad')}; })()`);
   tc.after = await evalJs(`({chips:[...document.querySelectorAll('#inputs .chip')].map(c => c.textContent.replace(/\\s+/g,'')).join(' '), title:${q('#rTitle')}.textContent, src:${q('#srcBadge')}.textContent,
     knob:${q('#tknob')}.style.transform, dir:${q('#tdir')}.textContent, log:${q('#logBody')}.textContent.slice(0,60)})`);
   // rotated phone: the stage widens to 16/9, pad and buttons stay inside the overlay (below the note, no overlap between them) and the mode hint sits just above it
@@ -260,6 +262,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await b.navigate(fileUrl(page), 1500);
   tc.desktop = await evalJs(`({ui:document.documentElement.classList.contains('touch-ui'), shown:getComputedStyle(${q('#touch')}).display})`);
   out.touch = tc;
+  if(!tc.jpHit.hit) errors.push('reward 확인 button is covered by the touch overlay: '+JSON.stringify(tc.jpHit));
   if(!tc.ui || tc.compat!=='CSS1Compat' || tc.width!==390 || tc.scrollW>390 || tc.shown!=='block' || tc.sel!=='true' || tc.pad.w<150 || tc.b2.w<56 || tc.pad.y<tc.stage.y+tc.stage.h*0.5 || tc.badge!=='👆 터치 대기' || tc.hint.y<tc.stage.y+tc.stage.h*0.46-1 || tc.hint.y+tc.hint.h>tc.touchTop+0.5
      || tc.after.title!=='초풍!' || tc.after.src!=='👆 터치' || !/^→[0-9f]* ★[0-9]+f ↓[0-9]+f ↘[0-9]+f/.test(tc.after.chips) || !tc.after.knob.startsWith('translate(calc(-50% + 0px)') || tc.after.dir!=='' || tc.desktop.ui || tc.desktop.shown!=='none')
     errors.push('touch controls check failed: '+JSON.stringify(tc));
