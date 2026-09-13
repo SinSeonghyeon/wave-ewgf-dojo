@@ -95,6 +95,7 @@
 
 ## 진행 로그
 
+- [x] 2026-09-13: 커스텀 도메인 mishimaryu.com(사용자가 Cloudflare Registrar에서 구매, 디시 등에서 github.io 링크가 막혀서). 루트 `CNAME`, `index.html` canonical·og:url·og:image·`SITE_URL`, README·LICENSE·AGENTS.md 주소 교체, 워커 `ALLOWED_ORIGINS`·`DEFAULT_ORIGINS`에 apex·www 추가(github.io 유지). **워커 재배포(`npx wrangler deploy`)와 DNS·Pages 설정은 사용자 작업.** og.png 하단에 주소가 찍히므로 `node tools/make-og.js`로 재생성(도구는 file:// 사본이 실제 워커를 CORS로 못 불러 종료 코드 1을 내지만 이미지는 정상 저장됨 — 기존 동작).
 - [x] 2026-09-13: 사용자 지적으로 `a.early_stage.coach`(ko/en/ja) 수정: "↓, ↓→ 까지 완성한 뒤 2"는 3을 다 넣고 누르라는 뜻이라 틀림 → "→, 떼고, ↓ 까지 넣은 뒤 ↓에서 오른쪽(↓→)으로 바꾸는 순간 2". (같은 날 만들었던 홍보 GIF 도구는 사용자 결정으로 폐기, 직접 촬영.)
 - [x] 2026-09-13: 옷장·패드 재리뷰 수정. 입력 변화 없는 패드 폴링의 판정 시각 갱신 제거, 대시 누적·최대 연속 즉시 저장 예약, 진행 중 잭팟의 측정·모달 진입 보류(타이머·차임 중단 및 같은 보상 재개), 현재 보상 언어 전환, 초기화 시 연출 폐기, KST 자정 첫 입력 출석 일수 갱신. CDP 연결·명령 대기 제한과 스모크 실패 시 정리 추가. 단위 77개·최종 브라우저 스모크 통과(JS 오류 0). 초기 출력 없는 대기 실행은 중단했으며 제한·진행 출력 추가 후 정상 완주를 확인.
 

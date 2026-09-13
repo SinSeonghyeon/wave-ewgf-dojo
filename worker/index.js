@@ -29,7 +29,7 @@ const boardSpec = b => typeof b === 'string' && Object.hasOwn(BOARDS, b) ? BOARD
 // CORS headers on reads and 403 {error:'origin'} on POST, so it has no leaderboard, posts or visit counter. The list comes from
 // env.ALLOWED_ORIGINS (comma-separated, wrangler.toml [vars]); '*' allows any origin (tests). DELETE stays protected by ADMIN_TOKEN only,
 // so the admin can curl it without an Origin header.
-const DEFAULT_ORIGINS = 'https://sinseonghyeon.github.io';
+const DEFAULT_ORIGINS = 'https://mishimaryu.com, https://www.mishimaryu.com, https://sinseonghyeon.github.io'; // custom domain (2026-09-13) + the GitHub Pages origin it redirects from
 const originList = env => String(env && env.ALLOWED_ORIGINS || DEFAULT_ORIGINS).split(',').map(s => s.trim()).filter(Boolean);
 export const originOk = (request, env) => { const list = originList(env); if (list.includes('*')) return true; const o = request.headers.get('origin'); return !!o && list.includes(o); };
 const corsHeaders = (request, env) => {

@@ -6,7 +6,7 @@ compatibility_date = "2025-09-01"
 # Browser origins allowed to call the API (comma-separated, no trailing slash). Add a custom domain here when one is connected.
 # Anything else gets no CORS headers and 403 on POST, so copies of the page cannot use the leaderboard/posts/visits.
 [vars]
-ALLOWED_ORIGINS = "https://sinseonghyeon.github.io"
+ALLOWED_ORIGINS = "https://mishimaryu.com, https://www.mishimaryu.com, https://sinseonghyeon.github.io"
 
 [[d1_databases]]
 binding = "DB"

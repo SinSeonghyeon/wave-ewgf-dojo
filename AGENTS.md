@@ -8,7 +8,7 @@
 
 - 이름: 미시마 도장 (Mishima Dojo / 三島道場). 철권 미시마류 웨이브 대시·초풍 입력을 브라우저에서 프레임 단위로 판정하는 연습 도구. 비공식 팬 제작.
 - 코드: 루트 `index.html` 단일 파일(HTML+CSS+JS). 빌드 없음, 외부 라이브러리 없음.
-- 배포: GitHub Pages, main 브랜치 루트. https://sinseonghyeon.github.io/wave-ewgf-dojo/ (저장소 이름은 `wave-ewgf-dojo`로 유지. Pages 주소가 바뀌므로 사용자 결정 없이 바꾸지 않는다.)
+- 배포: GitHub Pages, main 브랜치 루트, 커스텀 도메인 https://mishimaryu.com/ (루트 `CNAME` 파일, Cloudflare Registrar에서 2026-09-13 구매, 자동 갱신 꺼짐 — 만료 전 사용자가 갱신 결정). 예전 주소 https://sinseonghyeon.github.io/wave-ewgf-dojo/ 는 GitHub이 새 도메인으로 301. 저장소 이름은 `wave-ewgf-dojo`로 유지하고, 도메인·`CNAME`·워커 `ALLOWED_ORIGINS`는 사용자 결정 없이 바꾸지 않는다.
 - 주소 모음: 저장소 https://github.com/SinSeonghyeon/wave-ewgf-dojo · 백엔드 Worker https://mishima-dojo-board.mishima-dojo.workers.dev · 후원 Ko-fi https://ko-fi.com/misimadojo (en/ja) · 카카오페이 송금 링크 https://qr.kakaopay.com/Ej8EBCpJu (ko, 휴대폰 전용) · 문의 이메일 tlstjdgus3@gmail.com (푸터 mailto·README·LICENSE) — 코드의 `BOARD_URL`/`DONATE`와 같아야 한다.
 - 테스트: `node --test tests/dojo.test.cjs tests/board.test.cjs` (Node 22.13+, 의존성 없음. 가짜 D1이 `node:sqlite`를 쓴다) · `node tests/smoke-chrome.js` (로컬 Chrome/Edge 헤드리스, CDP).
 - 개발 도구: `tools/` (커밋 대상). `tools/cdp.js`는 헤드리스 브라우저 공용 모듈, `tools/make-og.js`는 `og.png` 재생성. 앱 자체는 여전히 `index.html` 하나다.
