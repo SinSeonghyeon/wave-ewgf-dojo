@@ -21,7 +21,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,jackpotQ,jackpotNext,owned,renderFit};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,jackpotQ,jackpotNext,owned,renderFit};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -418,6 +418,51 @@ test('backend races: a late submit after a rename or a tab switch does not overw
   b=backend(); a=boot({v:4,lang:'ko',window:12},b.fetch); a.claimNick('fresh'); await b.flush(); b.answer('/nick','POST',{error:'server'},500); await b.flush();
   assert.equal(a.live.nickLater,true); assert.equal(a.get('nickLater').hidden,false);
   a.claimNick('fresh'); await b.flush(); b.answer('/nick','POST',{error:'taken'},409); await b.flush(); assert.equal(a.live.nickLater,false); assert.equal(a.get('nickLater').hidden,true);
+});
+
+test('post votes: cancel/switch through an idempotent set, validated local cache, cleared on rename, nickname gate, deleted post',async()=>{
+  const tok='ab'.repeat(24), rows=(up,down)=>[{id:7,nick:'x',text:'hi',created_at:1,up,down}], mine=()=>JSON.parse(JSON.stringify(a.store.votes)); // votes come from the vm realm: compare as plain JSON
+  let b=backend(); let a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok,votes:{'7':1,'x':1,'8':5,'9':-1,'12345678901234':1}},b.fetch);
+  assert.deepEqual(mine(),{'7':1,'9':-1},'only numeric ids with 1/-1 survive the loader');
+  b.answer('/posts','GET',{rows:rows(1,0)}); await b.flush();
+  assert.deepEqual(mine(),{'7':1},'votes on posts no longer listed are forgotten');
+  let html=a.get('postList').innerHTML;
+  assert.match(html,/data-id="7" data-v="1" aria-pressed="true"[^>]*aria-label="좋아요"[^>]*>👍 1</,'my like is marked');
+  assert.match(html,/data-id="7" data-v="-1" aria-pressed="false"[^>]*aria-label="싫어요"[^>]*>👎 0</);
+  // pressing my current vote cancels (v:0); the response's `mine` and rows replace the cache and the list
+  a.postVote(7,1); await b.flush(); let c=b.find('/vote','POST'); assert.deepEqual(c.body,{nick:'me',token:tok,id:7,v:0});
+  assert.match(a.get('postList').innerHTML,/data-id="7" data-v="1" aria-pressed="true" [^>]*disabled/,'vote buttons are disabled while a request is in flight');
+  a.postVote(7,-1); await b.flush(); assert.equal(b.calls.filter(x=>x.url.includes('/vote')).length,1,'no second request while one is in flight');
+  b.answer('/vote','POST',{ok:true,id:7,mine:0,rows:rows(0,0)}); await b.flush();
+  assert.deepEqual(mine(),{}); assert.match(a.get('postList').innerHTML,/data-v="1" aria-pressed="false"[^>]*>👍 0</);
+  // the other button switches; a stale cache is corrected by the server's answer, not by the click
+  a.postVote(7,-1); await b.flush(); assert.equal(b.find('/vote','POST').body.v,-1);
+  b.answer('/vote','POST',{ok:true,id:7,mine:-1,rows:rows(0,1)}); await b.flush(); assert.deepEqual(mine(),{'7':-1});
+  assert.match(a.get('postList').innerHTML,/data-v="-1" aria-pressed="true"[^>]*>👎 1</);
+  // errors: rate → message, 404 post → list reload, 403 → nickname lost and votes dropped
+  a.postVote(7,1); await b.flush(); b.answer('/vote','POST',{error:'rate'},429); await b.flush();
+  assert.deepEqual([...a.live.postsMsg],['posts.voteFast']); assert.equal(a.get('postMsg').textContent,'너무 빠릅니다. 잠시 후 다시 눌러 주세요.'); assert.deepEqual(mine(),{'7':-1});
+  a.postVote(7,1); await b.flush(); b.answer('/vote','POST',{ok:true,id:7,mine:1,rows:rows(1,0)}); await b.flush(); assert.equal(a.live.postsMsg,'','a success clears the vote message');
+  a.postVote(7,1); await b.flush(); b.answer('/vote','POST',{error:'post'},404); await b.flush();
+  assert.ok(b.find('/posts','GET'),'a deleted post triggers a list reload'); assert.deepEqual(mine(),{}); b.answer('/posts','GET',{rows:[]}); await b.flush();
+  assert.match(a.get('postList').innerHTML,/class="empty"/);
+  a.get('nickDlg').showModal=function(){this.open=true;}; // the stub dialog has no showModal by default
+  a.postVote(7,1); await b.flush(); b.answer('/vote','POST',{error:'auth'},403); await b.flush();
+  assert.equal(a.store.nickToken,''); assert.deepEqual(mine(),{}); assert.equal(a.get('nickDlg').open,true,'gate opens on a lost token');
+  // without a nickname the gate opens and nothing is sent
+  b=backend(); a=boot({v:4,lang:'ko',window:12},b.fetch); const before=b.calls.length;
+  a.get('nickDlg').showModal=function(){this.open=true;}; a.get('nickDlg').open=false; a.postVote(7,1); await b.flush(); assert.equal(b.calls.length,before); assert.equal(a.get('nickDlg').open,true);
+  // bad arguments are ignored; a rename to another nickname drops the cache, a case change of the same name keeps it
+  b=backend(); a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok,votes:{'7':1}},b.fetch); b.answer('/posts','GET',{rows:rows(1,0)}); await b.flush();
+  a.postVote('7',1); a.postVote(7,2); await b.flush(); assert.equal(b.find('/vote','POST'),undefined);
+  a.claimNick('ME'); await b.flush(); b.answer('/nick','POST',{ok:true,nick:'ME',token:'cd'.repeat(24)}); await b.flush(); assert.deepEqual(mine(),{'7':1});
+  a.claimNick('other'); await b.flush(); b.answer('/nick','POST',{ok:true,nick:'other',token:'ef'.repeat(24)}); await b.flush(); assert.deepEqual(mine(),{});
+  // a rename while a vote is in flight: the answer updates the list but not the new nickname's cache; a saved cache without a nickname is dropped on load
+  a.postVote(7,1); await b.flush(); a.claimNick('third'); await b.flush(); b.answer('/nick','POST',{ok:true,nick:'third',token:'ab'.repeat(24)}); await b.flush();
+  b.answer('/vote','POST',{ok:true,id:7,mine:1,rows:rows(1,0)}); await b.flush(); assert.deepEqual(mine(),{},'the old nickname\'s vote is not remembered under the new one'); assert.equal(a.live.voting,false); assert.match(a.get('postList').innerHTML,/>👍 1</);
+  a=boot({v:4,lang:'ko',window:12,votes:{'7':1}},b.fetch); assert.deepEqual(JSON.parse(JSON.stringify(a.store.votes)),{});
+  // old worker without counts: buttons still render with 0
+  a.live.posts=[{id:7,nick:'x',text:'hi',created_at:1}]; a.renderPosts(); assert.match(a.get('postList').innerHTML,/>👍 0<[\s\S]*>👎 0</);
 });
 
 test('app and worker agree on the leaderboard contract (boards, windows, detail fields)',async()=>{

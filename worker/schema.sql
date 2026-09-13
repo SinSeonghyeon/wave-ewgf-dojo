@@ -46,3 +46,13 @@ CREATE TABLE IF NOT EXISTS posts (
   text       TEXT    NOT NULL,             -- 1..200 code points, whitespace collapsed
   created_at INTEGER NOT NULL              -- epoch ms
 );
+
+-- Post votes (2026-09-13): one row per (post, nickname); v = 1 like / -1 dislike. /posts aggregates them into up/down,
+-- POST /vote sets/clears the caller's row (PRIMARY KEY = one vote per nick per post), DELETE /posts/:id removes the post's rows.
+CREATE TABLE IF NOT EXISTS votes (
+  post_id    INTEGER NOT NULL,
+  key        TEXT    NOT NULL,              -- nicks.key of the voter (NFKC-lowercased nick)
+  v          INTEGER NOT NULL,              -- 1 | -1
+  created_at INTEGER NOT NULL,              -- epoch ms of the last set/change
+  PRIMARY KEY (post_id, key)
+);

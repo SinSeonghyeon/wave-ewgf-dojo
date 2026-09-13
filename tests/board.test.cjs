@@ -167,6 +167,46 @@ test('posts: newest first, capped at 50, validated, rate-limited per IP when the
   assert.equal((await w.handle(req('/posts/abc', {method: 'DELETE', headers: {authorization: 'Bearer s3cret'}}), admin, NOW)).status, 404);
 });
 
+test('votes: one per nick per post, idempotent set, switch, cancel, validated, rate-limited, gone with the post', async () => {
+  const w = await worker(); const env = {DB: fakeD1()}; const me = owned(w, env);
+  await me.post({nick: 'alpha', text: 'first'}); await me.post({nick: 'alpha', text: 'second'}, NOW + 1);
+  const tok = me.tokens.alpha, bravo = (await claim(w, env, 'Bravo')).token;
+  const vote = (body, now = NOW, headers = {}) => post('/vote', {nick: 'alpha', token: tok, ...body}, now, headers)(w, env);
+  const counts = rows => rows.map(r => [r.id, r.up, r.down]);
+  assert.deepEqual(counts((await (await w.handle(req('/posts'), env, NOW)).json()).rows), [[2, 0, 0], [1, 0, 0]], 'unvoted posts carry zero counts');
+  // set, repeat (idempotent), switch, another nick, cancel
+  let j = await (await vote({id: 1, v: 1})).json(); assert.equal(j.ok, true); assert.equal(j.id, 1); assert.equal(j.mine, 1); assert.deepEqual(counts(j.rows), [[2, 0, 0], [1, 1, 0]]);
+  j = await (await vote({id: 1, v: 1}, NOW + 5)).json(); assert.deepEqual(counts(j.rows), [[2, 0, 0], [1, 1, 0]], 'the same vote again does not double-count');
+  assert.equal(env.DB.votes.length, 1); assert.equal(env.DB.votes[0].created_at, NOW + 5, 'the row is updated in place');
+  j = await (await vote({id: 1, v: -1})).json(); assert.equal(j.mine, -1); assert.deepEqual(counts(j.rows), [[2, 0, 0], [1, 0, 1]], 'switching moves the single vote');
+  j = await (await post('/vote', {nick: 'bravo', token: bravo, id: 1, v: -1})(w, env)).json(); assert.deepEqual(counts(j.rows), [[2, 0, 0], [1, 0, 2]]);
+  assert.deepEqual(env.DB.votes.map(r => [r.post_id, r.key, r.v]), [[1, 'alpha', -1], [1, 'bravo', -1]], 'stored under the nick key');
+  j = await (await vote({id: 1, v: 0})).json(); assert.equal(j.mine, 0); assert.deepEqual(counts(j.rows), [[2, 0, 0], [1, 0, 1]]); assert.equal(env.DB.votes.length, 1);
+  j = await (await vote({id: 1, v: 0})).json(); assert.equal(j.ok, true, 'cancelling nothing is fine'); assert.equal(env.DB.votes.length, 1);
+  j = await (await vote({id: 2, v: 1})).json(); assert.deepEqual(counts(j.rows), [[2, 1, 0], [1, 0, 1]]);
+  // validation: 400 by field, 403 on a bad token, 404 on an unknown post, origin lock like every POST
+  for (const [k, body] of Object.entries({id: {id: '1', v: 1}, 'id zero': {id: 0, v: 1}, 'id float': {id: 1.5, v: 1}, v: {id: 1, v: 2}, 'v string': {id: 1, v: '1'}, 'v missing': {id: 1}, nick: {nick: 'a', id: 1, v: 1}})) {
+    const r = await vote(body); assert.equal(r.status, 400, k); assert.equal((await r.json()).error, k.split(' ')[0], k);
+  }
+  let r = await post('/vote', null)(w, env); assert.equal(r.status, 400); assert.deepEqual(await r.json(), {error: 'body'});
+  r = await vote({id: 1, v: 1, token: 'nope'}); assert.equal(r.status, 403); assert.deepEqual(await r.json(), {error: 'auth'});
+  r = await vote({id: 999, v: 1}); assert.equal(r.status, 404); assert.deepEqual(await r.json(), {error: 'post'});
+  r = await post('/vote', {nick: 'alpha', token: tok, id: 1, v: 1}, NOW, {origin: 'https://evil.example'})(w, env); assert.equal(r.status, 403); assert.deepEqual(await r.json(), {error: 'origin'});
+  assert.equal(env.DB.votes.length, 2, 'rejected requests change nothing');
+  // rate limit binding: consulted with the client IP after the token check, 429 when it says no
+  const keys = []; const limited = {DB: env.DB, VOTE_LIMIT: {async limit({key}) { keys.push(key); return {success: keys.length <= 1}; }}};
+  assert.equal((await post('/vote', {nick: 'alpha', token: tok, id: 1, v: 1}, NOW, {'cf-connecting-ip': '203.0.113.7'})(w, limited)).status, 200);
+  r = await post('/vote', {nick: 'alpha', token: tok, id: 1, v: 1}, NOW, {'cf-connecting-ip': '203.0.113.7'})(w, limited); assert.equal(r.status, 429); assert.deepEqual(await r.json(), {error: 'rate'});
+  assert.equal((await post('/vote', {nick: 'alpha', token: 'nope', id: 1, v: 1}, NOW, {'cf-connecting-ip': '203.0.113.7'})(w, limited)).status, 403, 'a bad token never reaches the limiter');
+  assert.deepEqual(keys, ['vote:203.0.113.7', 'vote:203.0.113.7']);
+  // deleting a post takes its votes along; the other post's votes stay
+  assert.equal(env.DB.votes.filter(v => v.post_id === 1).length, 2);
+  const admin = {DB: env.DB, ADMIN_TOKEN: 's3cret'};
+  assert.deepEqual(await (await w.handle(req('/posts/1', {method: 'DELETE', headers: {authorization: 'Bearer s3cret'}}), admin, NOW)).json(), {ok: true, deleted: 1});
+  assert.deepEqual(env.DB.votes.map(r => [r.post_id, r.key, r.v]), [[2, 'alpha', 1]]);
+  assert.deepEqual(counts((await (await w.handle(req('/posts'), env, NOW)).json()).rows), [[2, 1, 0]]);
+});
+
 test('shadow ban: banned nicks vanish from the list, total and cut10 for others but see the board unchanged themselves; admin deletes a score', async () => {
   const w = await worker(); const env = {DB: fakeD1(), ADMIN_TOKEN: 's3cret'}; const me = owned(w, env);
   const adminReq = (p, init = {}) => w.handle(new Request('https://board.test' + p, {...init, headers: {authorization: 'Bearer s3cret', ...(init.headers || {})}}), env, NOW); // no Origin, like curl

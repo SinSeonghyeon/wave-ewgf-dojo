@@ -4,7 +4,9 @@
 //          POST /submit {board,nick,token,score,tie,detail,win,lang} → {ok,id,rank,improved} + the /top shape   (403 {error:'auth'} on a bad token)
 //                (one row per nick per board per week: a worse result leaves the stored best untouched, improved=false)
 //          GET  /visits → {day,today,total}   ·   POST /visits → counts one visit for today (KST) and returns the same
-//          GET  /posts → {rows[≤50]}   ·   POST /posts {nick,token,text} → {ok,id,rows}   ·   DELETE /posts/:id (Bearer ADMIN_TOKEN)
+//          GET  /posts → {rows[≤50: {id,nick,text,created_at,up,down}]}   ·   POST /posts {nick,token,text} → {ok,id,rows}   ·   DELETE /posts/:id (Bearer ADMIN_TOKEN, also drops its votes)
+//          POST /vote {nick,token,id,v: 1|-1|0} → {ok,id,mine,rows}   (2026-09-13: sets the caller's like/dislike on post `id`, 0 clears it; one vote per nick per post;
+//                400 id/v · 403 auth · 404 {error:'post'} · 429 rate via VOTE_LIMIT)
 //          Admin (Bearer ADMIN_TOKEN, no Origin needed):  DELETE /scores/:id → {ok,deleted}   ·   GET /ban → {rows}   ·   POST /ban {nick} → {ok,nick,registered}
 //                DELETE /ban?nick=x → {ok,deleted}   ·   GET /scores?board=x[&week=YYYY-MM-DD] → {week,board,rows} (every row of that week, banned marked, with ids and public ranks;
 //                any date addresses its KST week)
@@ -145,8 +147,9 @@ async function visits(db, now, hit) {
   return {day, today: today || 0, total: total || 0};
 }
 
-async function posts(db) {
-  const {results} = await db.prepare(`SELECT id,nick,text,created_at FROM posts ORDER BY id DESC LIMIT ${POSTS}`).all();
+async function posts(db) { // up/down = like/dislike counts from `votes` (2026-09-13); the caller's own vote is never returned (the app remembers it)
+  const {results} = await db.prepare('SELECT p.id,p.nick,p.text,p.created_at, COALESCE(SUM(v.v=1),0) AS up, COALESCE(SUM(v.v=-1),0) AS down ' +
+    `FROM posts p LEFT JOIN votes v ON v.post_id=p.id GROUP BY p.id ORDER BY p.id DESC LIMIT ${POSTS}`).all();
   return {rows: results};
 }
 
@@ -208,6 +211,20 @@ async function route(request, env, now) {
     const ins = await env.DB.prepare('INSERT INTO posts (nick,text,created_at) VALUES (?,?,?)').bind(nick, text, now).run();
     return json({ok: true, id: ins.meta.last_row_id, ...await posts(env.DB)});
   }
+  if (path === '/vote' && method === 'POST') { // idempotent "set my vote on post id to v" (1 like, -1 dislike, 0 none): one row per (post, nick), so a stale client cannot double-count
+    const {body, status, error} = await readJson(request); if (error) return json({error}, status);
+    if (!body || typeof body !== 'object') return json({error: 'body'}, 400);
+    const id = body.id; if (!Number.isInteger(id) || id < 1 || id > 1e12) return json({error: 'id'}, 400);
+    const v = body.v; if (![1, -1, 0].includes(v)) return json({error: 'v'}, 400);
+    if (!cleanNick(body.nick)) return json({error: 'nick'}, 400);
+    const nick = await owner(env.DB, body.nick, body.token); if (!nick) return json({error: 'auth'}, 403);
+    if (await limited(env, 'VOTE_LIMIT', 'vote:' + ip(request))) return json({error: 'rate'}, 429);
+    if (!await env.DB.prepare('SELECT 1 FROM posts WHERE id=?').bind(id).first()) return json({error: 'post'}, 404);
+    const key = nickKey(nick);
+    if (v === 0) await env.DB.prepare('DELETE FROM votes WHERE post_id=? AND key=?').bind(id, key).run();
+    else await env.DB.prepare('INSERT INTO votes (post_id,key,v,created_at) VALUES (?,?,?,?) ON CONFLICT(post_id,key) DO UPDATE SET v=excluded.v, created_at=excluded.created_at').bind(id, key, v, now).run();
+    return json({ok: true, id, mine: v, ...await posts(env.DB)});
+  }
   return json({error: 'not_found'}, 404);
 }
 
@@ -217,7 +234,11 @@ async function admin(request, env, url, path, method, now) {
   if (path !== '/ban' && path !== '/scores' && !del) return undefined;
   if (!isAdmin(request, env)) return json({error: 'auth'}, 403);
   const db = env.DB;
-  if (del) return json({ok: true, deleted: (await db.prepare(`DELETE FROM ${del[1]} WHERE id=?`).bind(+del[2]).run()).meta.changes || 0});
+  if (del) {
+    const deleted = (await db.prepare(`DELETE FROM ${del[1]} WHERE id=?`).bind(+del[2]).run()).meta.changes || 0;
+    if (del[1] === 'posts') await db.prepare('DELETE FROM votes WHERE post_id=?').bind(+del[2]).run(); // a deleted post takes its votes with it
+    return json({ok: true, deleted});
+  }
   if (path === '/ban' && method === 'GET') return json({rows: (await db.prepare('SELECT key,nick,created_at FROM bans ORDER BY created_at DESC').all()).results});
   if (path === '/ban' && method === 'POST') { // stored under the registered spelling when the key is claimed (the list shows it as players do); the filter also joins nicks by key
     const {body, status, error} = await readJson(request); if (error) return json({error}, status);

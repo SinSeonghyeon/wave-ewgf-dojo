@@ -26,4 +26,10 @@ name = "NICK_LIMIT"
 namespace_id = "1002"
 simple = { limit = 10, period = 60 }
 
+# Per-IP limit for POST /vote (30 per minute): likes/dislikes on posts (2026-09-13).
+[[ratelimits]]
+name = "VOTE_LIMIT"
+namespace_id = "1003"
+simple = { limit = 30, period = 60 }
+
 # Secrets (not in this file): ADMIN_TOKEN unlocks every admin route (delete posts/scores, shadow bans, whole-week score listing) → npx wrangler secret put ADMIN_TOKEN

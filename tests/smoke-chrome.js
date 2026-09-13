@@ -220,6 +220,11 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.posts = {empty:await evalJs(`${q('#postList .empty')}?.textContent`)};
   await evalJs(`${q('#postText')}.value='  스모크   테스트 글 '; ${q('#postSend')}.click()`); await sleep(1000);
   out.posts.after = await evalJs(`({msg:${q('#postMsg')}.textContent, text:${q('#postText')}.value, items:[...document.querySelectorAll('#postList .post')].map(p=>[p.querySelector('b').textContent, p.querySelector('p').textContent])})`);
+  // like → count 1 and marked as mine (server row under my nick) → like again cancels → dislike
+  const voteState = () => evalJs(`[...document.querySelectorAll('#postList .vote')].map(b=>b.textContent+':'+b.getAttribute('aria-pressed'))`);
+  await evalJs(`${q('#postList .vote[data-v="1"]')}.click()`); await sleep(600); out.posts.like = {ui:await voteState(), db:db.votes.map(v => [v.post_id, v.key, v.v])};
+  await evalJs(`${q('#postList .vote[data-v="1"]')}.click()`); await sleep(600); out.posts.unlike = {ui:await voteState(), db:db.votes.length};
+  await evalJs(`${q('#postList .vote[data-v="-1"]')}.click()`); await sleep(600); out.posts.dislike = {ui:await voteState(), db:db.votes.map(v => [v.post_id, v.key, v.v]), msg:await evalJs(`${q('#postMsg')}.textContent`)};
   await evalJs(`${q('#nickBtn')}.click()`); await sleep(150);
   out.nick2 = {open:await evalJs(`${q('#nickDlg')}.open`), closeHidden:await evalJs(`${q('#nickClose')}.hidden`), prefilled:await evalJs(`${q('#nickInput')}.value`)};
   await evalJs(`${q('#nickInput')}.value='스모크2'; ${q('#nickSubmit')}.click()`); await sleep(800);
@@ -233,6 +238,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(!auto || auto.during.rank!=='' || auto.during.open || !/best stands · rank 1 of 1/.test(auto.after.rank) || auto.after.rows!==1 || !auto.after.open || !/best stands/.test(auto.after.line) || auto.after.tier!=='S') errors.push('leaderboard auto-submit check failed: '+JSON.stringify(auto));
   if(!bd.ewgfTab.empty || !/No entry from you/.test(bd.ewgfTab.me) || bd.ewgfTab.pressed!=='true') errors.push('leaderboard tab check failed: '+JSON.stringify(bd.ewgfTab));
   if(!out.posts.empty || out.posts.after.msg!=='' || out.posts.after.text!=='' || JSON.stringify(out.posts.after.items)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']])) errors.push('shoutbox check failed: '+JSON.stringify(out.posts));
+  const votes = {like:JSON.stringify(out.posts.like), unlike:JSON.stringify(out.posts.unlike), dislike:JSON.stringify(out.posts.dislike)};
+  if(votes.like!==JSON.stringify({ui:['👍 1:true','👎 0:false'], db:[[1,'스모크 테스트',1]]}) || votes.unlike!==JSON.stringify({ui:['👍 0:false','👎 0:false'], db:0}) || votes.dislike!==JSON.stringify({ui:['👍 0:false','👎 1:true'], db:[[1,'스모크 테스트',-1]], msg:''})) errors.push('post votes check failed: '+JSON.stringify(votes));
   if(!out.nick2.open || out.nick2.closeHidden || out.nick2.prefilled!=='스모크 테스트' || out.nick2.after.open || !/스모크2/.test(out.nick2.after.btn) || out.nick2.after.postNick!=='스모크2' || !/No entry from you/.test(out.nick2.after.me)) errors.push('nickname change check failed: '+JSON.stringify(out.nick2));
   if(out.ko2.title!=='주간 순위' || !/아직 없습니다/.test(out.ko2.empty||'') || !/등록한 기록이 없습니다/.test(out.ko2.me) || !/최고 기록 유지 · 1위 \/ 1명 · 상위 100%/.test(out.ko2.rank) || !/^오늘 방문 1 · 누적 1$/.test(out.ko2.visits) || out.ko2.postsTitle!=='한마디' || out.ko2.nickBtn!=='닉네임 · 스모크2') errors.push('backend ko re-render check failed: '+JSON.stringify(out.ko2));
   if(out.db.scores.length!==1 || out.db.scores[0].board!=='wave10' || out.db.scores[0].nick!=='스모크 테스트' || out.db.scores[0].win!==12 || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
