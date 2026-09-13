@@ -55,7 +55,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
       pad:q('#padStatus').textContent, empty:q('#logBody').textContent, seg:[...q('#segBar').children].map(e=>e.textContent),
       display:css.getPropertyValue('--display').trim(), bests:q('#bests').textContent.slice(0,80), footer:q('footer').textContent.slice(0,40),
       histEmpty:q('#hist svg text:last-of-type')?.textContent, waveTop:q('#waveChart svg text')?.textContent, keyBtn:q('#keys .key b')?.textContent,
-      langPressed:[...document.querySelectorAll('#langSel button')].map(b=>b.getAttribute('aria-pressed')).join('')};
+      bgmTitle:q('#bgmBtn').title, langPressed:[...document.querySelectorAll('#langSel button')].map(b=>b.getAttribute('aria-pressed')).join('')};
   })()`);
   out.initial = await snap();
   const key = async (code, type='keydown') => send('Input.dispatchKeyEvent',{type: type==='keydown'?'keyDown':'keyUp', code, key: code.replace('Key','').toLowerCase(), windowsVirtualKeyCode: code.charCodeAt(code.length-1)});
@@ -77,8 +77,27 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(5); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(300);
   out.afterInput = await snap();
   // sound settings: the key events above were the unlocking gesture. Toggle off → slider → back on → one more EWGF with sound enabled (play() rejections would surface in errors)
-  const soundSnap = () => evalJs(`(() => { const q=s=>document.querySelector(s); const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')); return {on:q('#soundSel button[aria-pressed=\"true\"]').dataset.sound, bgm:q('#bgmVol').value, sfx:q('#sfxVol').value, out:q('#sfxVolOut').textContent, disabled:q('#sfxVol').disabled, stSound:st.sound, stSfx:st.sfxVol}; })()`);
+  const soundSnap = () => evalJs(`(() => { const q=s=>document.querySelector(s); const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')); return {on:q('#soundSel button[aria-pressed=\"true\"]').dataset.sound, bgm:q('#bgmVol').value, sfx:q('#sfxVol').value, out:q('#sfxVolOut').textContent, disabled:q('#sfxVol').disabled, stSound:st.sound, stSfx:st.sfxVol, bgmBtn:q('#bgmBtn').getAttribute('aria-pressed'), bgmSel:q('#bgmSel button[aria-pressed=true]').dataset.bgm, stBgm:st.bgm, bgmDisabled:q('#bgmVol').disabled}; })()`);
   out.sound = {initial: await soundSnap()};
+  await evalJs(`document.querySelector('#bgmBtn').click()`);
+  out.sound.headerOff = await soundSnap();
+  await evalJs(`document.querySelector('#bgmBtn').click()`);
+  out.sound.headerOn = await soundSnap();
+  await evalJs(`document.querySelector('#setOpen').click(); document.querySelector('#bgmSel button[data-bgm="0"]').click()`);
+  out.sound.settingsOff = await soundSnap();
+  await evalJs(`document.querySelector('#setClose').click()`);
+  await b.navigate(fileUrl(page), 700);
+  out.sound.reloadedOff = await soundSnap();
+  await evalJs(`document.querySelector('#setOpen').click(); document.querySelector('#bgmSel button[data-bgm="1"]').click(); document.querySelector('#setClose').click()`);
+  out.sound.settingsOn = await soundSnap();
+  await evalJs(`document.querySelector('#soundSel button[data-sound="0"]').click(); document.querySelector('#bgmBtn').click()`);
+  out.sound.masterRestored = await soundSnap();
+  for(const state of [out.sound.headerOff,out.sound.settingsOff,out.sound.reloadedOff]){
+    if(state.bgmBtn!=='false' || state.bgmSel!=='0' || state.stBgm!==0 || !state.bgmDisabled || state.disabled) errors.push('BGM off sync failed: '+JSON.stringify(state));
+  }
+  for(const state of [out.sound.headerOn,out.sound.settingsOn,out.sound.masterRestored]){
+    if(state.bgmBtn!=='true' || state.bgmSel!=='1' || state.stBgm!==1 || state.bgmDisabled || state.on!=='1' || state.stSound!==1) errors.push('BGM on sync failed: '+JSON.stringify(state));
+  }
   // donate: footer button opens the chooser (KakaoPay first in ko), KakaoPay shows the QR view, back/close work; en lists Ko-fi first
   await evalJs(`document.querySelector('#langSel button[data-lang=\"ko\"]').click(); document.querySelector('#donateBtn').click()`); await sleep(150);
   out.donate = await evalJs(`(() => { const q=s=>document.querySelector(s); return {open:q('#donateDlg').open, first:q('#donateOptions [data-opt]').dataset.opt, chooseShown:!q('#donateChoose').hidden}; })()`);
@@ -158,6 +177,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   for(const l of ['en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);
     out[l] = await snap();
+    if(out[l].bgmTitle!==({ko:'배경음 켜기/끄기',en:'BGM on/off',ja:'BGMのオン/オフ'})[l]) errors.push('BGM tooltip translation failed: '+l);
     out[l].stored = await evalJs(`JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).lang`);
   }
   // Opening support during countdown (en) or measurement (ja) must never save/submit a result.
@@ -279,6 +299,15 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(!tc.ui || tc.compat!=='CSS1Compat' || tc.width!==390 || tc.scrollW>390 || tc.shown!=='block' || tc.sel!=='true' || tc.pad.w<150 || tc.b2.w<56 || tc.pad.y<tc.stage.y+tc.stage.h*0.5 || tc.badge!=='👆 터치 대기' || tc.hint.y<tc.stage.y+tc.stage.h*0.46-1 || tc.hint.y+tc.hint.h>tc.touchTop+0.5
      || tc.after.title!=='초풍!' || tc.after.src!=='👆 터치' || !/^→[0-9f]* ★[0-9]+f ↓[0-9]+f ↘[0-9]+f/.test(tc.after.chips) || !tc.after.knob.startsWith('translate(calc(-50% + 0px)') || tc.after.dir!=='' || tc.desktop.ui || tc.desktop.shown!=='none')
     errors.push('touch controls check failed: '+JSON.stringify(tc));
+  const shotDir=path.join(__dirname,'../.sandbox/bgm-toggle');fs.mkdirSync(shotDir,{recursive:true});
+  for(const width of [1366,390]){
+    await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===390});
+    await sleep(250);
+    const layout=await evalJs(`(() => {const r=s=>{const b=document.querySelector(s).getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,height:b.height};};return {btn:r('#bgmBtn'),lang:r('#langSel'),scroll:document.documentElement.scrollWidth};})()`);
+    if(layout.btn.right>width || layout.btn.x<0 || layout.scroll>width || layout.btn.height!==45 || layout.btn.right>layout.lang.x || Math.abs((layout.btn.y+layout.btn.height/2)-(layout.lang.y+layout.lang.height/2))>2) errors.push('BGM header layout failed: '+JSON.stringify({width,...layout}));
+    const shot=await send('Page.captureScreenshot',{format:'png'});
+    fs.writeFileSync(path.join(shotDir,`header-${width}.png`),Buffer.from(shot.result.data,'base64'));
+  }
   out.errors = errors;
   console.log(JSON.stringify(out,null,1));
   b.close(); srv.close(); rmTmp();

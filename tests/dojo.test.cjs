@@ -23,7 +23,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -498,9 +498,9 @@ test('app and worker agree on the leaderboard contract (boards, windows, detail 
 
 /* ---- sound / streak popup / movement (2026-09-12) ---- */
 test('sound settings: defaults, invalid saves fall back, valid saves survive, sliders write the store',()=>{
-  const a=boot();assert.equal(a.store.sound,1);assert.equal(a.store.bgmVol,100);assert.equal(a.store.sfxVol,100);assert.equal(a.snd.ok,false);
-  const b=boot({v:4,sound:2,bgmVol:'50',sfxVol:150});assert.equal(b.store.sound,1);assert.equal(b.store.bgmVol,100);assert.equal(b.store.sfxVol,100);
-  const c=boot({v:4,sound:0,bgmVol:0,sfxVol:35});assert.equal(c.store.sound,0);assert.equal(c.store.bgmVol,0);assert.equal(c.store.sfxVol,35);
+  const a=boot();assert.equal(a.store.sound,1);assert.equal(a.store.bgm,1);assert.equal(a.store.bgmVol,100);assert.equal(a.store.sfxVol,100);assert.equal(a.snd.ok,false);
+  const b=boot({v:4,sound:2,bgm:2,bgmVol:'50',sfxVol:150});assert.equal(b.store.sound,1);assert.equal(b.store.bgm,1);assert.equal(b.store.bgmVol,100);assert.equal(b.store.sfxVol,100);
+  const c=boot({v:4,sound:0,bgm:0,bgmVol:0,sfxVol:35});assert.equal(c.store.sound,0);assert.equal(c.store.bgm,0);assert.equal(c.store.bgmVol,0);assert.equal(c.store.sfxVol,35);
   assert.equal(c.get('sfxVol').disabled,true);assert.equal(c.get('sfxVolOut').textContent,'35%');
   a.get('sfxVol').value='35';a.get('sfxVol').input();assert.equal(a.store.sfxVol,35);assert.equal(a.get('sfxVolOut').textContent,'35%');
   a.get('bgmVol').value='abc';a.get('bgmVol').input();assert.equal(a.store.bgmVol,0);
@@ -725,6 +725,26 @@ class AudioStub {
   play(){this.paused=false;return Promise.resolve();}
   pause(){this.paused=true;}
 }
+test('header BGM toggle preserves SFX and trials, restores music and the master',()=>{
+  const a=boot(undefined,undefined,{Audio:AudioStub});a.unlockAudio();
+  assert.equal(a.snd.bgm.paused,false);
+  a.setMode('wave10');a.startTrial();
+  const trial=JSON.stringify(a.trial), session=JSON.stringify(a.session);
+  a.get('bgmBtn').click();
+  assert.equal(a.store.bgm,0);assert.equal(a.store.sound,1);
+  assert.equal(a.snd.bgm.paused,true);assert.equal(a.get('bgmVol').disabled,true);
+  a.playSfx('wave');a.playSfx('ewgf');
+  for(const name of ['wave','ewgf']) assert.ok(a.snd.pool[name].some(v=>!v.paused));
+  a.get('bgmBtn').click();
+  assert.equal(a.store.bgm,1);assert.equal(a.snd.bgm.paused,false);assert.equal(a.get('bgmVol').disabled,false);
+  assert.equal(JSON.stringify(a.trial),trial);assert.equal(JSON.stringify(a.session),session);
+  a.store.sound=0;a.bgmSync();a.store.sfxVol=35;
+  a.get('bgmBtn').click();
+  assert.equal(a.store.sound,1);assert.equal(a.store.bgm,1);assert.equal(a.store.sfxVol,35);
+  assert.equal(a.snd.bgm.paused,false);
+  a.setBgm(0);assert.equal(a.snd.bgm.paused,true);
+  a.setBgm(1);assert.equal(a.snd.bgm.paused,false);
+});
 test('active SFX follow volume immediately and mute stops every voice',()=>{
   const a=boot(undefined,undefined,{Audio:AudioStub});a.unlockAudio();
   a.playSfx('wave');a.playSfx('ewgf');

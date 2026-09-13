@@ -5,15 +5,15 @@
 ## 스크립트 구성 (위에서 아래 순서)
 
 ```
-설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,touch,sound,bgmVol,sfxVol,keys,records,nick,…,life,ach,pendingRewards,fit} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save()
+설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,touch,sound,bgm,bgmVol,sfxVol,keys,records,nick,…,life,ach,pendingRewards,fit} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save()
 소리      SND{bgm,wave,ewgf} 파일명 · snd{ok(typeof Audio),unlocked,bgm,pool,idx,lock,release} · 부트 때는 아무것도 만들지 않음(테스트 vm·og 생성이 미디어를 안 건드림)
           unlockAudio(): 첫 keydown/pointerdown/패드 버튼에서 1회 → 효과음 풀(이름당 Audio 3개, 라운드로빈) 생성 + bgmSync()
-          bgmSync(): sound && bgmVol>0 && unlocked && !hidden이면 Web Locks(mishima-dojo-bgm) 획득 후 bgm 지연 생성·volume·play(). 같은 브라우저·사이트에서 한 창만 재생. 숨김/끄기/pagehide 시 대기 취소·pause·권한 반환, pageshow/visibilitychange/focus/blur에서 동기화. Web Locks 미지원은 hasFocus 조건으로 대체. NotAllowedError만 unlocked=false로 다음 제스처에 재시도(AbortError는 무시)
+          bgmSync(): sound && bgm && bgmVol>0 && unlocked && !hidden이면 Web Locks(mishima-dojo-bgm) 획득 후 bgm 지연 생성·volume·play(). 같은 브라우저·사이트에서 한 창만 재생. 숨김/끄기/pagehide 시 대기 취소·pause·권한 반환, pageshow/visibilitychange/focus/blur에서 동기화. Web Locks 미지원은 hasFocus 조건으로 대체. NotAllowedError만 unlocked=false로 다음 제스처에 재시도(AbortError는 무시)
           sfxSync(): 모든 기존 효과음 보이스에 볼륨 적용, 끄기/0%는 pause·재생 위치 초기화. 설정 진입은 endTrial(true)·resetInput() 후 showModal로 측정·입력 잔여 상태 정리
-          playSfx(name): fx.crouchDash → 'wave', fx.ewgf → 'ewgf'. 설정 #soundSel(segSel) · #bgmVol/#sfxVol range(input → store·save, sfx change → 미리듣기) · renderSound()는 부트·변경 시
+          playSfx(name): fx.crouchDash → 'wave', fx.ewgf → 'ewgf'. 설정 #soundSel(segSel, 마스터) · #bgmSel/#bgmBtn → setBgm(on)(배경음만 끄기, 켜면 마스터도 켜기) · #bgmVol/#sfxVol range(input → store·save, sfx change → 미리듣기) · renderSound()는 부트·변경 시 슬라이더·두 설정 토글·헤더 효과 상태(sound && bgm)를 동기화
 i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[key,...args]|클로저 → 텍스트 · displayFont()
           ui{result,coach,trend,seg,padId}: 마지막 표시 내용을 키/클로저로 보관 → setLang → renderAll()
-          정적 마크업은 data-i18n / data-i18n-html / data-i18n-aria 속성으로 applyStatic()이 채운다
+          정적 마크업은 data-i18n / data-i18n-html / data-i18n-aria / data-i18n-title 속성으로 applyStatic()이 채운다
 세션      session{dashes,bestChain,bestDps,tries,hits,offsetSum,offsetCount,cycles,attempts,log}
 입력      keydown/keyup → held Set → kbVector() → recomputeDir() · pollPad() 4ms(판정 시각은 gamepad.timestamp, 실제 방향·버튼 변화에서만 padLastT 갱신) → padDir/padBtn · 터치 오버레이 → touchDir/touchPress (아래 "터치" 줄)
 터치      html.touch-ui(applyTouchUI: store.touch 'auto'|'on'|'off', auto = (pointer:coarse) && maxTouchPoints>0, 미디어 쿼리 change에 재적용) → #touch 오버레이(스테이지 하단 46%, 데스크톱은 display:none) · #tpad 원형 슬라이드 패드: 첫 포인터가 setPointerCapture, 중심 대비 벡터 → touchVec(x,y,t): 반지름 22%(TOUCH_DEAD) 안은 N, 밖은 atan2를 45° 섹터로 반올림해 8방향 → touchDir → recomputeDir(t,'touch')(kbDir+padDir+touchDir 합) · #tbtns 2×2(1 2 / 3 4, 포인터 별도) pointerdown → touchPress(n,t): modalOpen이면 무시, unlockAudio, onButton · resetInput()이 touchDir·노브를 지움(touchRelease) · 판정·상태 머신은 손대지 않음 · 시각은 e.timeStamp(키보드와 같은 클록, pointermove가 한 프레임 늦게 와도 실제 시각) · 노브 좌표는 단위원으로 클램프(캡처된 손가락이 패드 밖으로 나가도 노브는 안에) · 패드 라벨은 glyphFor(2P 미러) · 모달이 열리면 pointermove도 무시, openShare가 resetInput() 후 showModal · 대기 배지는 touchOn이면 src.waitTouch · touch-ui면 frame()의 바닥 gy가 H*0.80 → H*0.46(발과 오버레이 사이 띠에 힌트 2줄이 들어갈 자리), .stage 비율 4/5(max-height 72vh, 가로 모드는 16/9), .hud-hint는 오버레이 바로 위 바닥 띠(bottom:calc(46% + 3px), 가로 모드는 한 줄 말줄임), #touch는 container-type:size라 패드 폭·버튼 칸이 오버레이 높이(cqh)로 제한됨 · 문서 기본 태그(<!doctype html>·<html lang="ko">·charset·viewport)는 2026-09-12 터치 작업 때 추가(그 전엔 쿼크 모드, 폰에서 980px로 렌더)
