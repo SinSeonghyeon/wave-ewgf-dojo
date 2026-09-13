@@ -12,7 +12,7 @@
 - 주소 모음: 저장소 https://github.com/SinSeonghyeon/wave-ewgf-dojo · 백엔드 Worker https://mishima-dojo-board.mishima-dojo.workers.dev · 후원 Ko-fi https://ko-fi.com/misimadojo (en/ja) · 카카오페이 송금 링크 https://qr.kakaopay.com/Ej8EBCpJu (ko, 휴대폰 전용) · 문의 이메일 tlstjdgus3@gmail.com (푸터 mailto·README·LICENSE) — 코드의 `BOARD_URL`/`DONATE`와 같아야 한다.
 - 테스트: `node --test tests/dojo.test.cjs tests/board.test.cjs` (Node 22.13+, 의존성 없음. 가짜 D1이 `node:sqlite`를 쓴다) · `node tests/smoke-chrome.js` (로컬 Chrome/Edge 헤드리스, CDP).
 - 개발 도구: `tools/` (커밋 대상). `tools/cdp.js`는 헤드리스 브라우저 공용 모듈, `tools/make-og.js`는 `og.png` 재생성. 앱 자체는 여전히 `index.html` 하나다.
-- 백엔드: `worker/` (Cloudflare Worker + D1: 주간 순위·방문자 수·한마디 게시판). 배포는 `npx wrangler deploy`(`worker/README.md`). 앱은 `fetch`로만 호출하며 `index.html`의 `BOARD_URL`이 비어 있으면 백엔드 UI 전체가 숨겨진다.
+- 백엔드: `worker/` (Cloudflare Worker + D1: 누적 순위·방문자 수·한마디 게시판). 배포는 `npx wrangler deploy`(`worker/README.md`). 앱은 `fetch`로만 호출하며 `index.html`의 `BOARD_URL`이 비어 있으면 백엔드 UI 전체가 숨겨진다.
 - 사용자: 한국어. 철권 플레이어. C++·Unity 경험, 웹은 익숙하지 않음. 설명은 간결하게, 용어는 격투게임 표기(6N23, d/f, 저스트) 그대로.
 
 ## 문서 라우팅
@@ -28,7 +28,7 @@
 1. 웨이브 표기는 `6N23 6 N 6N23 6 N …`. 3 직후 6은 후딜레이 캔슬용이고 다음 대시는 별도의 시작 6이 필요하다. 캔슬 6 없이 다음 6N23이 오면 "캔슬 6 누락", 캔슬 6을 시작 6으로 겸용하면 "시작 6 누락".
 2. 초풍 판정 폭 기본값은 0.7f(±12ms, "보통"). 선택지는 0.5f·0.7f·0.9f뿐. 1f 이상 옵션은 두지 않는다.
 3. 철권 공식 캐릭터 이름·그림·음원을 쓰지 않는다. 자체 SD 도트와 자체 제작 리소스만. (수익화 시 IP 리스크 회피)
-4. 단일 파일, 외부 라이브러리 없음. 차트는 직접 SVG 문자열. 런타임 외부 자원은 Google Fonts와 백엔드 Worker(`worker/`: 주간 순위·방문자 수·한마디, `fetch`만 사용, `BOARD_URL`이 비면 UI 숨김. 2026-09-12 사용자 결정)뿐. 다른 엔드포인트를 늘리려면 먼저 묻는다. 검색용 랜딩 `/en/index.html`·`/ja/index.html`(2026-09-13 사용자 요청)은 JS 없는 정적 HTML 두 장이고 앱 본체는 여전히 `index.html` 하나다. 랜딩은 `../?lang=en|ja`로 앱을 열며 hreflang 4종(ko/en/ja/x-default)은 세 페이지와 `sitemap.xml`이 같아야 한다(테스트가 잡는다). 랜딩 문구도 결정 3(공식 캐릭터 이름 금지)을 따른다.
+4. 단일 파일, 외부 라이브러리 없음. 차트는 직접 SVG 문자열. 런타임 외부 자원은 Google Fonts와 백엔드 Worker(`worker/`: 누적 순위·방문자 수·한마디, `fetch`만 사용, `BOARD_URL`이 비면 UI 숨김. 2026-09-12 사용자 결정)뿐. 다른 엔드포인트를 늘리려면 먼저 묻는다. 검색용 랜딩 `/en/index.html`·`/ja/index.html`(2026-09-13 사용자 요청)은 JS 없는 정적 HTML 두 장이고 앱 본체는 여전히 `index.html` 하나다. 랜딩은 `../?lang=en|ja`로 앱을 열며 hreflang 4종(ko/en/ja/x-default)은 세 페이지와 `sitemap.xml`이 같아야 한다(테스트가 잡는다). 랜딩 문구도 결정 3(공식 캐릭터 이름 금지)을 따른다.
 5. 다크 단일 테마. 색 토큰은 `:root`에만 정의.
 6. 앱 이름은 "미시마 도장". 영어 Mishima Dojo, 일본어 三島道場.
 7. 사용자에게 보이는 모든 문자열은 `I18N` 사전(ko/en/ja)을 거친다. 새 문자열은 세 언어에 같은 키로 추가하고, 동적 문구는 `[key, ...args]` 배열이나 클로저로 저장해 언어 전환 시 다시 그린다. 테스트가 키 누락을 잡는다.
