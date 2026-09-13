@@ -50,13 +50,17 @@
   .wrap{width:100%;display:flex;flex-direction:column;gap:18px}
 
   /* header */
+  /* one row when it fits: the brand keeps its two-line tagline width, the mode list takes the slack and scrolls sideways instead of wrapping (6 modes since 2026-09-13); the right block wraps under first, then the modes take a full row (phones) */
   .top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:14px}
-  .brand{display:flex;align-items:center;gap:14px}
+  .brand{display:flex;align-items:center;gap:14px;flex:0 1 auto;min-width:0}
+  .brand>div{min-width:0}
   .brand .kanji{font-family:var(--display);font-size:44px;line-height:1;color:var(--accent);text-shadow:0 0 18px rgba(76,201,255,.55);width:52px;height:52px;display:grid;place-items:center;border:2px solid var(--accent-deep);border-radius:6px;background:var(--accent-soft)}
   .brand h1{font-family:var(--display);font-weight:400;font-size:30px;line-height:1;margin:0;letter-spacing:.5px}
-  .brand p{margin:4px 0 0;color:var(--muted);font-size:12.5px;letter-spacing:.3px}
-  .modes{display:flex;gap:6px;flex-wrap:wrap}
-  .modes button{background:var(--panel);color:var(--ink2);border:1px solid var(--line);border-radius:4px;padding:8px 13px;font-weight:500;letter-spacing:.2px}
+  .brand p{margin:4px 0 0;color:var(--muted);font-size:12.5px;letter-spacing:.3px;word-break:keep-all;max-width:300px} /* the tagline always folds into two lines so the mode list can sit next to it (2026-09-13 user request) */
+  .modes{display:flex;gap:6px;flex:1 1 240px;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:var(--line2) transparent;padding:3px 3px 8px;margin:-3px -3px -8px} /* a visible thin scrollbar says there is more (user choice over edge fades); padding keeps the focus ring inside the scroll box */
+  .modes::-webkit-scrollbar{height:6px}
+  .modes::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+  .modes button{flex:0 0 auto;white-space:nowrap;background:var(--panel);color:var(--ink2);border:1px solid var(--line);border-radius:4px;padding:8px 13px;font-weight:500;letter-spacing:.2px}
   .modes button[aria-selected="true"]{background:var(--accent);color:#04202f;border-color:var(--accent);font-weight:700}
   .modes button:hover:not([aria-selected="true"]){border-color:var(--line2);color:var(--ink)}
   .src{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px dashed var(--line2);border-radius:4px;padding:6px 10px}
@@ -335,8 +339,9 @@
   @media (prefers-reduced-motion:reduce){.key.listen{animation:none}}
   html[lang="ja"]{--display:'Dela Gothic One','Noto Sans JP',system-ui,sans-serif;--body:'Noto Sans JP','Hiragino Sans','Yu Gothic',system-ui,sans-serif}
   html[lang="en"]{--body:'Noto Sans KR',system-ui,-apple-system,'Segoe UI',sans-serif}
+  html[lang="en"] .brand p{max-width:350px} /* the English tagline needs a little more to stay on two lines */
   html[lang="ja"] .brand h1{font-size:28px}
-  .top-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+  .top-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-left:auto} /* stays on the right when it wraps to its own row */
   .lang{display:inline-flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden}
   .lang button{background:transparent;border:0;color:var(--muted);padding:6px 9px;font-size:12px;font-family:var(--mono)}
   .lang button+button{border-left:1px solid var(--line2)}
@@ -2290,7 +2295,8 @@ function renderKeys(){
   $('keys').innerHTML = Object.keys(KEYLABEL).map(k => `<button class="key${listening===k?' listen':''}" data-k="${k}"><small>${KEYLABEL[k]}</small><b>${listening===k?escapeHTML(T('set.keyListen')):pretty(store.keys[k])}</b></button>`).join('');
   $('keys').querySelectorAll('.key').forEach(b => b.addEventListener('click', () => { listening = b.dataset.k; renderKeys(); }));
 }
-$('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+$('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { setMode(b.dataset.mode); if(b.scrollIntoView) b.scrollIntoView({block:'nearest', inline:'nearest'}); })); // a half-hidden tab slides fully into the scrolling list
+$('modes').addEventListener('wheel', e => { const m = e.currentTarget; if(e.deltaX || !e.deltaY || m.scrollWidth <= m.clientWidth) return; m.scrollLeft += e.deltaY; e.preventDefault(); }, {passive:false}); // a plain mouse wheel over the list scrolls it sideways
 $('dStart').addEventListener('click', startTrial);
 $('dReset').addEventListener('click', () => {
   endTrial(true); clearShare(); resetInput();
