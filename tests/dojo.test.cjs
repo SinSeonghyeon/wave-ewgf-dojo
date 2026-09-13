@@ -310,7 +310,19 @@ test('static head carries the SEO and Open Graph tags that crawlers read without
   assert.ok(head.includes('<meta property="og:image:width" content="1200">'));assert.ok(head.includes('<meta property="og:image:height" content="630">'));
   assert.ok(head.includes('<meta name="twitter:card" content="summary_large_image">'));
   const bg=html.match(/:root\{[^}]*--bg:(#[0-9A-Fa-f]{6})/)[1];assert.ok(head.includes(`<meta name="theme-color" content="${bg}">`));
-  for(const banned of ['<script','http://']) assert.equal(head.includes(banned),false,'head must not contain '+banned);
+  assert.equal(head.includes('http://'),false,'head must not contain http://');
+  // exactly two script tags in the whole file, in this order: the head JSON-LD data block (no code) and the single inline app script — no <script src>, no module (single file, no libraries)
+  assert.deepEqual(html.match(/<script\b[^>]*>/g),['<script type="application/ld+json">','<script>'],'only the JSON-LD data block and one inline app script');
+  const ldm=head.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);assert.ok(ldm,'the JSON-LD block sits in the head');
+  const ld=JSON.parse(ldm[1]);
+  assert.equal(ld['@type'],'WebApplication');assert.equal(ld.url,url);assert.equal(ld.image,url+'og.png');assert.equal(ld.isAccessibleForFree,true);
+  assert.deepEqual(ld.inLanguage,['ko','en','ja']);assert.ok(ld.name.includes(a.T('app.title')));
+  assert.equal(ld.description,head.match(/<meta name="description" content="([^"]*)">/)[1],'JSON-LD description is the meta description, not a third copy');
+  // robots.txt / sitemap.xml are static crawler files at the site root: they must exist and carry the same canonical URL as SITE_URL
+  const root=f=>fs.readFileSync(require('node:path').join(__dirname,'..',f),'utf8');
+  assert.ok(root('robots.txt').includes(`Sitemap: ${url}sitemap.xml`),'robots.txt points at the sitemap on the canonical host');
+  const sm=root('sitemap.xml');assert.deepEqual(sm.match(/<loc>[^<]*<\/loc>/g),[`<loc>${url}</loc>`],'sitemap lists the canonical URL once');
+  assert.doesNotMatch(sm,/<lastmod>|<changefreq>/,'no hand-maintained lastmod/changefreq (nothing regenerates them; Google ignores changefreq and distrusts stale lastmod)');
   assert.match(html,/document\.title = T\('app\.docTitle'\)/);
 });
 
@@ -767,7 +779,6 @@ test('donate: three buttons open a chooser; KakaoPay first in ko, Ko-fi first el
   assert.equal(a.get('donateOpen').href,'https://qr.kakaopay.com/Ej8EBCpJu');assert.equal(a.get('donateQr').src,'donate-kakao.png');
   a.get('donateBack').click();assert.equal(a.get('donateChoose').hidden,false);
   assert.ok(fs.existsSync(require('node:path').join(__dirname,'..','donate-kakao.png')),'QR image exists');
-  assert.equal((html.match(/<script/g)||[]).length,1,'still a single inline script');
 });
 
 test('touch pad: dead zone is neutral, 45° sectors map to 8 directions, and a rolled f,N,d,df + 2 judges as EWGF through the normal path',()=>{

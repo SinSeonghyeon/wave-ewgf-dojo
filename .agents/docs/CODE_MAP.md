@@ -1,6 +1,6 @@
 # CODE_MAP — `index.html` 구조
 
-단일 파일. 순서대로 `<title>`·SEO/OG 메타(정적, 한/영 병기)·폰트 링크 → `<style>` → 마크업 → `<script>`(IIFE) 하나. 시간 기준 `FRAME = 1000/60`. 키보드는 `event.timeStamp`, 패드는 `gamepad.timestamp`(기기 갱신 시각, 0/NaN/과거값이면 폴링 시각 `performance.now()`로 폴백, `padLastT`로 단조 유지 — 2026-09-13: 바쁜 프레임에 4ms 타이머가 밀려 동시 입력이 1f 벌어지던 것을 제거).
+단일 파일. 순서대로 `<title>`·SEO/OG 메타(정적, 한/영 병기)·JSON-LD `WebApplication` 데이터 블록(`<script type="application/ld+json">`, 코드 아님. 2026-09-13)·폰트 링크 → `<style>` → 마크업 → `<script>`(IIFE) 하나. 루트 `robots.txt`·`sitemap.xml`(`<loc>` 하나, lastmod 없음)·`googlec1d8aba57474fdc5.html`(Search Console 소유권 확인, 지우지 말 것)은 검색엔진용 정적 파일. 시간 기준 `FRAME = 1000/60`. 키보드는 `event.timeStamp`, 패드는 `gamepad.timestamp`(기기 갱신 시각, 0/NaN/과거값이면 폴링 시각 `performance.now()`로 폴백, `padLastT`로 단조 유지 — 2026-09-13: 바쁜 프레임에 4ms 타이머가 밀려 동시 입력이 1f 벌어지던 것을 제거).
 
 ## 스크립트 구성 (위에서 아래 순서)
 
