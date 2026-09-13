@@ -15,6 +15,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
       getBoundingClientRect(){return {width:800,height:360};},getContext(){return {setTransform(){}};}};
   }
   const get=id=>{if(!elements.has(id)) elements.set(id,element()); return elements.get(id);};
+  get('jackpot').hidden=true;
   for(const id of ['setDlg','donateDlg','fitDlg']) get(id).showModal=function(){this.open=true;};
   const context=vm.createContext({performance:{now:()=>now},document:{getElementById:get,querySelectorAll:()=>[],hasFocus:()=>true,hidden:false},
     navigator:{getGamepads:()=>pads},localStorage:{getItem:()=>saved===undefined?null:JSON.stringify(saved),setItem(){}},
@@ -22,7 +23,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,jackpotQ,jackpotNext,owned,renderFit};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -54,7 +55,8 @@ test('daily gift updates attendance before the minute timer at KST midnight',()=
   const a=boot(undefined,undefined,{Date:ClockDate});a.dailyGift();
   wall+=2000;a.dailyGift();
   assert.equal(a.store.life.days,2);assert.equal(a.store.life.giftDay,'2026-09-14');
-  assert.equal(a.jackpotQ.at(-1).day,2);a.dailyGift();assert.equal(a.store.life.days,2);
+  assert.equal(a.store.pendingRewards.at(-1).day,2);a.dailyGift();assert.equal(a.store.life.days,2);
+  assert.equal(new Set(a.store.pendingRewards.filter(j=>j.kind==='daily').map(j=>j.id)).size,2,'unclaimed daily gifts are excluded from the next day pool');
 });
 
 test('deferring an active reward also stops its synthesized chime',()=>{
@@ -64,33 +66,33 @@ test('deferring an active reward also stops its synthesized chime',()=>{
     createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){disconnected++;}};}
     createOscillator(){return {frequency:{},connect(){},start(){},stop(){}};}
   }
-  const a=boot({v:4,fx:0},undefined,{AudioContext});a.setMode('wave10');a.dailyGift();
+  const a=boot({v:4,fx:0},undefined,{AudioContext});a.setMode('wave10');a.dailyGift();a.claimRewards();
   assert.equal(a.get('jackpot').dataset.phase,'reveal');assert.equal(disconnected,0);
   a.startTrial();assert.equal(disconnected,1);assert.equal(a.get('jackpot').hidden,true);
 });
 
-test('active reward is deferred at every phase, translated and discarded by data reset',()=>{
+test('active reward is closed at every phase, translated and discarded by data reset',()=>{
   for(const phase of ['egg','white','reveal','out']) for(const target of ['trial','settings','wardrobe','donate']){
-    const a=boot();a.setMode('wave10');a.dailyGift();
+    const a=boot();a.setMode('wave10');a.dailyGift();a.claimRewards();
     const step=()=>{for(const [id,fn] of [...a.timers]){a.timers.delete(id);fn();}};
     if(phase!=='egg') step();if(phase==='reveal'||phase==='out') step();
     if(phase==='out') a.get('jpOk').click();
     assert.equal(a.get('jackpot').dataset.phase,phase);
-    const item=a.get('jpItem').textContent;
     if(target==='trial') a.startTrial();
     else a.get({settings:'setOpen',wardrobe:'fitOpen',donate:'donateTop'}[target]).click();
     assert.equal(a.get('jackpot').hidden,true,phase+' '+target);
     step();assert.equal(a.get('jackpot').hidden,true,'stale callbacks cannot reveal');
     if(target==='trial') a.endTrial(true);
     else a.get({settings:'setDlg',wardrobe:'fitDlg',donate:'donateDlg'}[target]).open=false;
-    a.jackpotNext();
-    if(phase!=='out') assert.equal(a.get('jpItem').textContent,item,'same deferred reward returns');
+    a.renderRewards();
+    assert.equal(a.get('jackpot').hidden,true,'interrupted reveal never resumes automatically');
+    assert.ok(Object.keys(a.store.ach).length>0,'claimed reward stays owned');
   }
-  const a=boot();a.dailyGift();const id=a.DAILY_IDS.find(id=>a.store.ach[id]);
+  const a=boot();a.dailyGift();a.claimRewards();const id=a.DAILY_IDS.find(id=>a.store.ach[id]);
   for(const lang of ['ko','ja','en']){a.setLang(lang);assert.equal(a.get('jpItem').textContent,a.T('item.'+id));assert.equal(a.get('jpTitle').textContent,a.T('fit.dailyTitle',1));}
   a.get('dataReset').click();
   for(let n=0;n<3;n++) for(const [id,fn] of [...a.timers]){a.timers.delete(id);fn();}
-  assert.equal(a.get('jackpot').hidden,true);assert.equal(a.jackpotQ.length,0);
+  assert.equal(a.get('jackpot').hidden,true);assert.equal(a.store.pendingRewards.length,0);
 });
 test('default window and legacy or invalid saved windows use Normal 12ms',()=>{
   for(const saved of [undefined,{v:3,window:8},{v:4},{v:4,window:100},{v:4,window:'12'}]){
@@ -907,45 +909,47 @@ test('wardrobe: lifetime counters grow with dashes, EWGFs and strikes, survive a
   assert.equal(a.store.life.days,1,'boot counts the first visit day');assert.equal(a.store.life.dashes,0);
   dash(a,1000);a.onButton(2,1060);
   assert.equal(a.store.life.dashes,1);assert.equal(a.store.life.ewgf,1);assert.equal(a.store.life.tries,1);assert.equal(a.store.life.maxStreak,1);
-  assert.ok(a.store.ach.red_top,'first EWGF unlocks the crimson top');assert.equal(a.store.ach.red_head,undefined,'10 dashes not yet');
-  assert.equal(a.jackpotQ.length,0,'free practice, no dialog: the reveal started at once');assert.equal(a.get('jackpot').hidden,false);assert.equal(a.get('jpItem').textContent,'Crimson Dobok Top');
+  assert.ok(a.pendingReward('red_top'),'first EWGF reserves the crimson top');assert.equal(a.store.ach.red_head,undefined,'10 dashes not yet');
+  assert.equal(a.store.pendingRewards.length,1);assert.equal(a.get('jackpot').hidden,true);assert.equal(a.owned('red_top'),false);assert.equal(a.setFit('top','red_top'),false);a.claimRewards();assert.equal(a.get('jpItem').textContent,'Crimson Dobok Top');
   a.get('dReset').click();assert.equal(a.store.life.ewgf,1,'session reset keeps lifetime counters');assert.equal(a.session.hits,0);
   for(let i=0;i<9;i++){const t=3000+i*1000;a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}
-  assert.equal(a.store.life.dashes,10);assert.ok(a.store.ach.red_head,'10 dashes → headband');assert.equal(a.store.life.maxChain,1);
-  assert.deepEqual(J(a.jackpotQ.map(j=>j.id)),['red_head'],'queued behind the reveal still playing');
+  assert.equal(a.store.life.dashes,10);assert.ok(a.pendingReward('red_head'),'10 dashes → pending headband');assert.equal(a.store.life.maxChain,1);
+  assert.deepEqual(J(a.store.pendingRewards.map(j=>j.id)),['red_head'],'queued behind the reveal still playing');
   const before=a.store.ach.red_top;dash(a,20000);a.onButton(2,20060);assert.equal(a.store.ach.red_top,before,'an unlock is never rewritten');
   // strikes count too, and the 0.5f window feeds its own counter
   a.onDir('f',30000);a.onDir('n',30020);a.onDir('f',30040);a.onButton(2,30100);assert.equal(a.store.life.tongbal,1);
-  dash(a,31000);a.onButton(4,31070);assert.equal(a.store.life.hellsweep,1);assert.ok(a.store.ach.red_arms,'one of each strike → wrist wraps');
+  dash(a,31000);a.onButton(4,31070);assert.equal(a.store.life.hellsweep,1);assert.ok(a.pendingReward('red_arms'),'one of each strike → pending wrist wraps');
   a.store.window=8;dash(a,32000);a.onButton(2,32060);assert.equal(a.store.life.tightEwgf,1);assert.equal(a.store.life.ewgf,3);
   assert.equal(a.session.tries,2,'session stats untouched by the wardrobe (reset above, then two EWGF attempts)');
 });
-test('wardrobe: donate button is an achievement; a reveal waits while a dialog is open and plays when it closes; trials hold it for the result flash',()=>{
+test('wardrobe: donate and trials reserve rewards; closing dialogs and trials never claims automatically',()=>{
   const a=boot({v:4,lang:'ko'});
   a.get('donateTop').click();
-  assert.equal(a.store.life.donate,1);assert.ok(a.store.ach.bowl_head);assert.deepEqual(J(a.jackpotQ.map(j=>j.id)),['bowl_head'],'held: the donate dialog is open');
+  assert.equal(a.store.life.donate,1);assert.ok(a.pendingReward('bowl_head'));a.claimRewards();assert.equal(a.owned('bowl_head'),false);assert.deepEqual(J(a.store.pendingRewards.map(j=>j.id)),['bowl_head'],'held: the donate dialog is open');
   a.get('donateDlg').open=false;a.get('donateDlg').close();for(const [id,fn] of [...a.timers]){a.timers.delete(id);fn();}
-  assert.equal(a.jackpotQ.length,0,'played after the dialog closed');assert.equal(a.get('jpTitle').textContent,'업적 달성!');assert.equal(a.get('jpAch').textContent,'후원 생각이 있었군요..!?');assert.equal(a.get('jpItem').textContent,'밥그릇 투구');
+  assert.equal(a.store.pendingRewards.length,1);assert.equal(a.get('jackpot').hidden,true);a.claimRewards();assert.equal(a.store.pendingRewards.length,0);assert.equal(a.get('jpTitle').textContent,'업적 달성!');assert.equal(a.get('jpAch').textContent,'후원 생각이 있었군요..!?');assert.equal(a.get('jpItem').textContent,'밥그릇 투구');
   for(let n=0;n<4;n++) for(const [id,fn] of [...a.timers]){a.timers.delete(id);fn();} // egg → white → reveal
   assert.equal(a.get('jackpot').dataset.phase,'reveal','the card waits for 확인');a.get('jpOk').click();assert.equal(a.get('jackpot').dataset.phase,'out');for(const [id,fn] of [...a.timers]){a.timers.delete(id);fn();}assert.equal(a.get('jackpot').hidden,true);
   // a finished rush30 unlocks the foot guards but the reveal waits 2.3s behind the result
   const b=boot({v:4,lang:'en'});b.setMode('rush30');b.startTrial();const cd=b.timers.get(b.trial.cdTimer);b.time(4000);cd();cd();cd();
-  b.time(34100);b.trialTick(34100);assert.equal(b.trial.running,false);assert.equal(b.store.life.trials.rush30,1);assert.ok(b.store.ach.red_shoes);
-  assert.deepEqual(J(b.jackpotQ.map(j=>j.id)),['red_shoes'],'held during the result flash');
-  b.timers.delete(b.trial.openTimer); // the result card draws on a canvas this harness does not have
-  for(const [id,fn] of [...b.timers]){b.timers.delete(id);fn();}
-  assert.equal(b.jackpotQ.length,0,'released by the hold timer');assert.equal(b.get('jpItem').textContent,'Foot Guards');
+  b.time(34100);b.trialTick(34100);assert.equal(b.trial.running,false);assert.equal(b.store.life.trials.rush30,1);assert.ok(b.pendingReward('red_shoes'));
+  assert.deepEqual(J(b.store.pendingRewards.map(j=>j.id)),['red_shoes'],'held during the result flash');
+  const openTimer=b.trial.openTimer; // the result card draws on a canvas this harness does not have
+  for(const [id,fn] of [...b.timers]) if(id!==openTimer){b.timers.delete(id);fn();} // let the fixed hold expire while card preparation remains pending
+  b.renderRewards();assert.equal(b.get('rewardOpen').disabled,true);b.claimRewards();assert.equal(b.store.pendingRewards.length,1,'the pending result dialog still blocks claiming after the fixed hold');
+  b.timers.delete(openTimer);b.trial.openTimer=null;b.renderRewards();
+  assert.equal(b.get('rewardOpen').disabled,false);assert.equal(b.get('jackpot').hidden,true);b.claimRewards();assert.equal(b.store.pendingRewards.length,0);assert.equal(b.get('jpItem').textContent,'Foot Guards');
   // a cancelled trial (mode switch) releases a held reveal on the next tick without a result
   const c=boot();c.store.life.dashes=9;c.setMode('wave10');c.startTrial();const cd2=c.timers.get(c.trial.cdTimer);c.time(4000);cd2();cd2();cd2();
-  dash(c,4100);assert.ok(c.store.ach.red_head);assert.equal(c.jackpotQ.length,1,'held during the trial');
-  c.setMode('free');for(const [id,fn] of [...c.timers]){c.timers.delete(id);fn();}assert.equal(c.jackpotQ.length,0);
+  dash(c,4100);assert.ok(c.pendingReward('red_head'));c.claimRewards();assert.equal(c.owned('red_head'),false);assert.equal(c.store.pendingRewards.length,1,'held during the trial');
+  c.setMode('free');for(const [id,fn] of [...c.timers]){c.timers.delete(id);fn();}assert.equal(c.store.pendingRewards.length,1);assert.equal(c.get('jackpot').hidden,true);c.claimRewards();assert.equal(c.store.pendingRewards.length,0);
 });
 test('wardrobe: saved progress is validated on load, an unowned outfit falls back to base, and setFit refuses locked items',()=>{
   const a=boot({v:4,visitDay:'2000-01-01',life:{dashes:'x',ewgf:-1,tongbal:7,days:2,giftDay:'2026-09-01',trials:{rush30:1,bogus:3}},ach:{red_top:1,bogus:2,red_head:'x',daily_arms_blue:5},fit:{top:'red_top',head:'red_head',arms:'daily_arms_blue',legs:'nope',skin:42}});
   assert.equal(a.store.life.dashes,0);assert.equal(a.store.life.ewgf,0);assert.equal(a.store.life.tongbal,7);assert.equal(a.store.life.giftDay,'2026-09-01');
   assert.deepEqual(J(a.store.life.trials),{wave10:0,ewgf20:0,combo10:0,rush30:1,bd10:0},'an old save gains the bd10 counter at 0');
-  assert.deepEqual(J(Object.keys(a.store.ach).sort()),['daily_arms_blue','red_shoes','red_skin','red_top'],'bogus and non-numeric dropped; rush30 finish and day 3 unlocked at boot');
-  assert.equal(a.store.life.days,3,'a new KST day counts');
+  assert.deepEqual(J(Object.keys(a.store.ach).sort()),['daily_arms_blue','red_top'],'only existing owned items restored');
+  assert.equal(a.store.life.days,3,'a new KST day counts');assert.deepEqual(J(a.store.pendingRewards.map(j=>j.id).sort()),['red_shoes','red_skin']);
   assert.deepEqual(J(a.store.fit),{head:'base',top:'red_top',arms:'daily_arms_blue',legs:'base',shoes:'base',skin:'base'});
   assert.equal(a.setFit('legs','devil_legs'),false);assert.equal(a.store.fit.legs,'base');
   assert.equal(a.setFit('top','base'),true);assert.equal(a.store.fit.top,'base');assert.equal(a.setFit('top','red_top'),true);
@@ -973,7 +977,7 @@ test('wardrobe: items, achievements and strings agree (25 achievements = 25 item
 test('wardrobe: the daily gift is one random unowned item per KST day on the first gesture, never twice, nothing once the pool is empty',()=>{
   let a=boot(undefined,undefined,{Math:Object.assign(Object.create(Math),{random:()=>0})});
   assert.equal(a.store.life.giftDay,'');a.unlockAudio();
-  assert.equal(a.store.life.giftDay,kstToday());assert.ok(a.store.ach.daily_head_blue,'random()=0 → the first daily item');assert.equal(a.get('jpItem').textContent,'Blue Dye');assert.match(a.get('jpTitle').textContent,/^Day 1 /);
+  assert.equal(a.store.life.giftDay,kstToday());assert.ok(a.pendingReward('daily_head_blue'));assert.equal(a.owned('daily_head_blue'),false);a.claimRewards();assert.ok(a.store.ach.daily_head_blue,'random()=0 → the first daily item');assert.equal(a.get('jpItem').textContent,'Blue Dye');assert.match(a.get('jpTitle').textContent,/^Day 1 /);
   a.unlockAudio();assert.equal(Object.keys(a.store.ach).filter(id=>id.startsWith('daily_')).length,1,'same day: nothing more');
   a=boot({v:4,visitDay:kstToday(),life:{days:4,giftDay:kstToday()},ach:{daily_head_blue:1}},undefined,{Math:Object.assign(Object.create(Math),{random:()=>0})});
   assert.equal(a.store.life.days,4,'same day again: not counted');assert.equal(a.dailyGift(),null,'already given today');
@@ -988,11 +992,11 @@ test('wardrobe dialog: opens from the stage button, cancels a trial, lists chips
   a.get('fitOpen').click();assert.equal(a.get('fitDlg').open,true);assert.equal(a.trial.cdTimer,null,'countdown cancelled');
   assert.match(a.get('fitSlots').innerHTML,/data-id="red_top"[^>]*aria-disabled="true"/);assert.match(a.get('fitSlots').innerHTML,/🔒 붉은 도복 상의/);assert.match(a.get('fitSlots').innerHTML,/data-id="base" aria-pressed="true"/);
   assert.match(a.get('fitAch').innerHTML,/달성 0 \/ 25/);assert.match(a.get('fitAch').innerHTML,/첫 초풍<\/b><span class="d">초풍 1회 성공<\/span><span class="p">0 \/ 1<\/span><span class="i">보상: 붉은 도복 상의/);
-  assert.match(a.get('fitAch').innerHTML,/특별/);assert.match(a.get('fitAch').innerHTML,/출석 선물<\/h3><div class="fit-chips">(<span class="fit-chip daily">[^<]*<\/span>)?<span class="fit-chip daily locked">\?<\/span>/,'the day gift may have landed on the first chip');
+  assert.match(a.get('fitAch').innerHTML,/특별/);assert.match(a.get('fitAch').innerHTML,/수령 대기/);
   a.get('fitDlg').open=false;a.get('fitDlg').close();dash(a,5000);a.onButton(2,5060);
-  a.get('fitOpen').click();assert.match(a.get('fitSlots').innerHTML,/class="fit-chip" data-slot="top" data-id="red_top" aria-pressed="false">붉은 도복 상의/);
+  a.claimRewards();a.get('fitOpen').click();assert.match(a.get('fitSlots').innerHTML,/class="fit-chip" data-slot="top" data-id="red_top" aria-pressed="false">붉은 도복 상의/);
   assert.match(a.get('fitAch').innerHTML,/달성 1 \/ 25/);assert.match(a.get('fitAch').innerHTML,/class="ach-row done"><b>✓ 첫 초풍/);
-  a.setLang('en');assert.match(a.get('fitSlots').innerHTML,/Bare chest/);assert.match(a.get('fitAch').innerHTML,/1 \/ 25 unlocked/);assert.match(a.get('fitAch').innerHTML,/First EWGF/);
+  a.setLang('en');assert.match(a.get('fitSlots').innerHTML,/Bare chest/);assert.match(a.get('fitAch').innerHTML,/1 \/ 25 achieved/);assert.match(a.get('fitAch').innerHTML,/First EWGF/);
   assert.equal(a.get('fitDaily').textContent,'Daily gifts 1 / 12 · one on the first visit each day','the wardrobe button was the first gesture of the day: one gift');
   a.get('fitSlots').click({target:{closest:()=>({dataset:{slot:'top',id:'red_top'}})}});assert.equal(a.store.fit.top,'red_top');
   assert.match(a.get('fitSlots').innerHTML,/data-id="red_top" aria-pressed="true"/);
@@ -1209,4 +1213,45 @@ test('search text: about block, hreflang set, ?lang= override and the /en/ /ja/ 
   saves=[];replaced=[];
   const c=boot(undefined,undefined,env('?lang=xx',saves,replaced));assert.equal(c.store.lang,'ko');assert.deepEqual(saves,[]);assert.deepEqual(replaced,[],'junk leaves the URL alone');
   const d=boot({v:4,lang:'en'},undefined,{location:{search:'',pathname:'/',hash:''},URLSearchParams});assert.equal(d.store.lang,'en');
+});
+
+test('rewards: pending items survive reload, exclude duplicates, and claim as one saved batch',()=>{
+  let saved;
+  const a=boot(undefined,undefined,{localStorage:{getItem:()=>null,setItem:(k,v)=>saved=JSON.parse(v)}});
+  a.dailyGift();a.store.life.ewgf=1;a.checkAch();a.checkAch();
+  assert.equal(a.store.pendingRewards.length,2);assert.equal(Object.keys(a.store.ach).length,0);
+  assert.equal(a.get('rewardCount').textContent,'2');assert.equal(a.get('rewardOpen').disabled,false);
+  assert.equal(a.get('rewardToast').textContent,'2 rewards arrived!');assert.equal(a.get('jackpot').hidden,true);
+  const b=boot(saved);assert.deepEqual(J(b.store.pendingRewards),saved.pendingRewards);
+  const ids=b.store.pendingRewards.map(j=>j.id);b.get('rewardOpen').click();b.get('rewardOpen').click();
+  assert.equal(b.store.pendingRewards.length,0);for(const id of ids) assert.equal(b.owned(id),true);
+  assert.match(b.get('jpAch').textContent,/\+1 more/);assert.equal(b.get('rewardOpen').disabled,true);
+  b.store.life.dashes=10;b.checkAch();assert.equal(b.store.pendingRewards.length,1);b.claimRewards();assert.equal(b.owned('red_head'),false);
+  b.get('setOpen').click();b.get('setDlg').open=false;b.get('setDlg').close();b.renderRewards();
+  assert.equal(b.get('jackpot').hidden,true);assert.equal(b.store.pendingRewards.length,1);
+  a.claimRewards();assert.equal(saved.pendingRewards.length,0);for(const id of ids) assert.ok(saved.ach[id]);
+  const c=boot(saved);assert.equal(c.store.pendingRewards.length,0);assert.equal(c.get('jackpot').hidden,true);
+});
+
+test('rewards: saved queue validation, pending outfits, reset and static translated notices',()=>{
+  const j={id:'red_top',kind:'ach',at:1,day:1};
+  const a=boot({v:4,fx:0,visitDay:kstToday(),life:{days:1},ach:{red_head:1},fit:{top:'red_top'},pendingRewards:[j,j,null,{...j,id:'red_head'},{...j,id:'bogus'},{...j,kind:'daily'},{...j,id:'red_arms',at:-1},{...j,id:'red_legs',day:1.5}]});
+  assert.deepEqual(J(a.store.pendingRewards),[j]);assert.equal(a.store.fit.top,'base');assert.equal(a.setFit('top','red_top'),false);
+  a.renderFit();assert.match(a.get('fitAch').innerHTML,/Unclaimed/);
+  a.dailyGift();assert.equal(a.get('rewardOpen').dataset.motion,'false');
+  for(const lang of ['ko','ja','en']){a.setLang(lang);assert.equal(a.get('rewardToast').textContent,a.T('reward.daily'));}
+  for(const [id,fn] of [...a.timers]){a.timers.delete(id);fn();}
+  assert.equal(a.get('rewardToast').hidden,true);assert.equal(a.get('jackpot').hidden,true);
+  a.get('dataReset').click();assert.equal(a.store.pendingRewards.length,0);assert.equal(a.get('rewardCount').hidden,true);
+});
+
+test('reward toast batches arrivals, flies to the chest without claiming and cancels on reset',()=>{
+  const a=boot(), toast=a.get('rewardToast');let flight, cancelled=0;
+  toast.animate=(frames,options)=>{assert.equal(options.duration,550);assert.match(frames[1].transform,/scale\(\.12\)/);return flight={cancel(){cancelled++;}};};
+  const step=()=>{for(const [id,fn] of [...a.timers]){a.timers.delete(id);fn();}};
+  a.dailyGift();a.store.life.ewgf=1;a.checkAch();assert.equal(toast.textContent,'2 rewards arrived!');step();
+  assert.ok(flight);flight.onfinish();assert.equal(toast.hidden,true);assert.equal(a.get('rewardOpen').dataset.arrival,'true');
+  assert.equal(a.store.pendingRewards.length,2);assert.equal(Object.keys(a.store.ach).length,0);assert.equal(a.get('jackpot').hidden,true);
+  step();assert.equal(a.get('rewardOpen').dataset.arrival,'false');
+  a.store.life.dashes=10;a.checkAch();step();a.get('dataReset').click();assert.equal(cancelled,2);assert.equal(toast.hidden,true);assert.equal(a.store.pendingRewards.length,0);
 });

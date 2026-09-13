@@ -96,40 +96,33 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await evalJs(`document.querySelector('#setClose').click()`); await sleep(100);
   out.sound.dlgClosed = !(await evalJs(`document.querySelector('#setDlg').open`));
   if(!out.sound.dlgOpen || !out.sound.dlgClosed) errors.push('settings dialog check failed: '+JSON.stringify(out.sound));
-  // wardrobe + achievements (4-9): the stage button opens the dialog (input paused), the donate click above unlocked the rice bowl → wearable, the preview changes, the achievement tab lists 25 rows, the jackpot overlay exists (the EWGF above may land as a WGF under headless key timing, so the top is not relied on)
-  console.log('Smoke: wardrobe and reward presentation');
-  await evalJs(`document.querySelector('#fitOpen').click()`); await sleep(250);
-  out.fit = await evalJs(`(() => { const q=s=>document.querySelector(s); const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1'));
-    return {open:q('#fitDlg').open, wear:!q('#fitWear').hidden, achHidden:q('#fitAch').hidden, chips:document.querySelectorAll('#fitSlots .fit-chip').length, locked:document.querySelectorAll('#fitSlots .fit-chip.locked').length,
-      bowl:q('#fitSlots [data-id="bowl_head"]').className, before:q('#fitPreview').toDataURL().length, life:st.life, ach:Object.keys(st.ach), daily:q('#fitDaily').textContent}; })()`);
-  await tap('KeyD',20); await sleep(100); out.fit.inputsWhileOpen = await evalJs(`document.querySelector('#rTitle').textContent`);
-  await evalJs(`document.querySelector('#fitSlots [data-id="bowl_head"]').click()`); await sleep(100);
-  out.fit.after = await evalJs(`(() => { const q=s=>document.querySelector(s); return {pressed:q('#fitSlots [data-id="bowl_head"]').getAttribute('aria-pressed'), preview:q('#fitPreview').toDataURL().length, stored:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).fit.head}; })()`);
-  await evalJs(`document.querySelector('#fitTabs [data-view="ach"]').click()`); await sleep(100);
-  out.fit.tab = await evalJs(`(() => { const q=s=>document.querySelector(s); return {wearHidden:q('#fitWear').hidden, achShown:!q('#fitAch').hidden, wearDisplay:getComputedStyle(q('#fitWear')).display, rows:document.querySelectorAll('#fitAch .ach-row').length, done:document.querySelectorAll('#fitAch .ach-row.done').length, count:q('#fitAch .ach-count').textContent}; })()`);
-  await evalJs(`document.querySelector('#fitClose').click()`); await sleep(100);
-  out.fit.closed = !(await evalJs(`document.querySelector('#fitDlg').open`));
-  out.fit.jackpot = await evalJs(`(() => { const j=document.querySelector('#jackpot'); return {exists:!!j, display:getComputedStyle(j).display, title:document.querySelector('#jpTitle').textContent, item:document.querySelector('#jpItem').textContent, box:!!document.querySelector('#jpBox'), white:!!document.querySelector('#jackpot .jp-white')}; })()`);
-  // the reveals queued behind the dialogs play now: egg → white → card over a dimmed stage; the card stays until 확인, and the next queued reveal follows
+  console.log('Smoke: wardrobe and manual reward claiming');
+  const preReward = await evalJs(`(() => { const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1'));return {pending:st.pendingRewards.length,bowl:!!st.ach.bowl_head,hidden:document.querySelector('#jackpot').hidden,count:document.querySelector('#rewardCount').textContent}; })()`);
+  if(preReward.pending<2 || preReward.bowl || !preReward.hidden || +preReward.count!==preReward.pending) errors.push('rewards must wait for claim: '+JSON.stringify(preReward));
+  await evalJs(`document.querySelector('#fitOpen').click()`);
+  const pendingFit = await evalJs(`(() => { const b=document.querySelector('#fitSlots [data-id="bowl_head"]'); b.click(); return {locked:b.getAttribute('aria-disabled'),waiting:b.textContent,head:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).fit.head}; })()`);
+  if(pendingFit.locked!=='true' || pendingFit.head==='bowl_head' || !pendingFit.waiting.includes('Unclaimed')) errors.push('unclaimed outfit is wearable: '+JSON.stringify(pendingFit));
+  await evalJs(`document.querySelector('#fitClose').click()`); await sleep(150);
+  if(!(await evalJs(`document.querySelector('#jackpot').hidden`))) errors.push('dialog close auto-opened a reward');
+  // Keyboard activation, same path as clicking the chest.
+  await evalJs(`document.querySelector('#rewardOpen').focus()`);
+  await send('Input.dispatchKeyEvent',{type:'keyDown',code:'Enter',key:'Enter',text:'\r',windowsVirtualKeyCode:13});
+  await send('Input.dispatchKeyEvent',{type:'keyUp',code:'Enter',key:'Enter',windowsVirtualKeyCode:13});
   for(let i=0;i<30;i++){ if((await evalJs(`document.querySelector('#jackpot').dataset.phase`))==='reveal') break; await sleep(100); }
-  out.fit.reveal = await evalJs(`(() => { const j=document.querySelector('#jackpot'), ok=document.querySelector('#jpOk'); return {phase:j.dataset.phase, dim:getComputedStyle(j).backgroundColor, okEvents:getComputedStyle(ok).pointerEvents, okText:ok.textContent, focused:document.activeElement===ok, petals:document.querySelector('#jpFall').width>0}; })()`);
-  await sleep(600); out.fit.stays = await evalJs(`document.querySelector('#jackpot').dataset.phase`);
-  out.fit.translated = await evalJs(`(() => { document.querySelector('#langSel button[data-lang="ko"]').click(); return {title:document.querySelector('#jpTitle').textContent,item:document.querySelector('#jpItem').textContent}; })()`);
-  if(!/[가-힣]/.test(out.fit.translated.title) || !/[가-힣]/.test(out.fit.translated.item)) errors.push('active reward translation failed');
-  await evalJs(`document.querySelector('#langSel button[data-lang="en"]').click(); document.querySelector('#modes button[data-mode="wave10"]').click(); document.querySelector('#dStart').click()`);
-  await sleep(3300);
-  out.fit.held = await evalJs(`document.querySelector('#jackpot').hidden`);
-  if(!out.fit.held) errors.push('active reward overlaps measurement');
-  await evalJs(`document.querySelector('#modes button[data-mode="free"]').click()`);
-  await sleep(2300);
-  if(await evalJs(`document.querySelector('#jackpot').dataset.phase!=='reveal'`)) errors.push('deferred reward did not resume');
-  for(let i=0;i<4;i++){ await evalJs(`document.querySelector('#jpOk').click()`); await sleep(1000); const ph = await evalJs(`document.querySelector('#jackpot').dataset.phase`); if(i===0) out.fit.afterOk = ph; if(ph!=='reveal'){ for(let k=0;k<30 && (await evalJs(`!document.querySelector('#jackpot').hidden`));k++){ if((await evalJs(`document.querySelector('#jackpot').dataset.phase`))==='reveal') break; await sleep(100); } } if(await evalJs(`document.querySelector('#jackpot').hidden`)) break; }
-  out.fit.drained = await evalJs(`document.querySelector('#jackpot').hidden`);
-  if(!out.fit.open || !out.fit.wear || !out.fit.achHidden || out.fit.chips!==43 || out.fit.locked<20 || out.fit.life.tries<1 || out.fit.life.donate<1 || out.fit.life.days!==1 || !out.fit.ach.includes('bowl_head') || !out.fit.ach.some(id=>id.startsWith('daily_')) || /locked/.test(out.fit.bowl)
-     || !/1 \/ 12/.test(out.fit.daily) || out.fit.inputsWhileOpen!==out.sound.pausedWhileOpen || out.fit.after.pressed!=='true' || out.fit.after.stored!=='bowl_head' || out.fit.after.preview===out.fit.before
-     || !out.fit.tab.wearHidden || !out.fit.tab.achShown || out.fit.tab.wearDisplay!=='none' || out.fit.tab.rows!==25 || out.fit.tab.done<1 || !/1 \/ 25|2 \/ 25/.test(out.fit.tab.count) || !out.fit.closed
-     || !out.fit.jackpot.exists || !out.fit.jackpot.box || !out.fit.jackpot.white || !out.fit.jackpot.item
-     || out.fit.reveal.phase!=='reveal' || !out.fit.reveal.dim.startsWith('rgba(4, 8, 14') || out.fit.reveal.okEvents!=='auto' || !/^(확인|OK)$/.test(out.fit.reveal.okText) || !out.fit.reveal.focused || !out.fit.reveal.petals || out.fit.stays!=='reveal' || out.fit.afterOk==='reveal' || !out.fit.drained) errors.push('wardrobe check failed: '+JSON.stringify(out.fit));
+  out.fit = {};
+  out.fit.reveal = await evalJs(`(() => { const j=document.querySelector('#jackpot'), ok=document.querySelector('#jpOk'), st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')); return {phase:j.dataset.phase,dim:getComputedStyle(j).backgroundColor,focused:document.activeElement===ok,pending:st.pendingRewards.length,bowl:!!st.ach.bowl_head,extra:document.querySelector('#jpAch').textContent}; })()`);
+  await sleep(600);out.fit.stays=await evalJs(`document.querySelector('#jackpot').dataset.phase`);
+  for(const lang of ['ko','ja','en']){
+    await evalJs(`document.querySelector('#langSel button[data-lang="${lang}"]').click()`);
+    if(!(await evalJs(`document.querySelector('#jpItem').textContent.length>0`))) errors.push('reward translation missing: '+lang);
+  }
+  await evalJs(`document.querySelector('#jpOk').click()`);await sleep(1000);
+  if(!(await evalJs(`document.querySelector('#jackpot').hidden && document.querySelector('#rewardOpen').disabled`))) errors.push('claim should finish with an empty chest');
+  if(out.fit.reveal.phase!=='reveal' || !out.fit.reveal.focused || out.fit.reveal.pending || !out.fit.reveal.bowl || !out.fit.reveal.extra.includes('more') || out.fit.stays!=='reveal') errors.push('manual reward reveal failed: '+JSON.stringify(out.fit));
+  await evalJs(`document.querySelector('#fitOpen').click()`); await sleep(100);
+  out.fit.wardrobe = await evalJs(`(() => { const b=document.querySelector('#fitSlots [data-id="bowl_head"]'), c=document.querySelector('#fitPreview'), before=c.toDataURL();b.click();document.querySelector('#fitTabs [data-view="ach"]').click();return {head:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).fit.head,changed:c.toDataURL()!==before,rows:document.querySelectorAll('#fitAch .ach-row').length,done:document.querySelectorAll('#fitAch .ach-row.done').length}; })()`);
+  if(out.fit.wardrobe.head!=='bowl_head' || !out.fit.wardrobe.changed || out.fit.wardrobe.rows!==25 || out.fit.wardrobe.done<1) errors.push('claimed wardrobe check failed: '+JSON.stringify(out.fit.wardrobe));
+  await evalJs(`document.querySelector('#fitClose').click()`);
   await evalJs(`document.querySelector('#soundSel button[data-sound=\"0\"]').click()`); await sleep(100);
   await evalJs(`const s=document.querySelector('#sfxVol'); s.value=30; s.dispatchEvent(new Event('input')); s.dispatchEvent(new Event('change'))`); await sleep(100);
   out.sound.off = await soundSnap();
@@ -253,6 +246,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   const tc = await evalJs(`(() => { const r = s => { const x = document.querySelector(s).getBoundingClientRect(); return {x:x.x, y:x.y, w:x.width, h:x.height}; };
     return {ui:document.documentElement.classList.contains('touch-ui'), compat:document.compatMode, width:innerWidth, scrollW:document.documentElement.scrollWidth, shown:getComputedStyle(${q('#touch')}).display,
       stage:r('#stageBox'), pad:r('#tpad'), b2:r('#tbtns [data-btn="2"]'), note:${q('.touch-note')}.textContent, sel:${q('#touchSel [data-touch="auto"]')}.getAttribute('aria-pressed'), badge:${q('#srcBadge')}.textContent, hint:r('#hudHint'), touchTop:r('#touch').y}; })()`);
+  tc.reward = await evalJs(`(() => { const el=document.querySelector('#rewardOpen'), r=el.getBoundingClientRect(), fit=document.querySelector('#fitOpen').getBoundingClientRect(); return {hit:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2).closest('#rewardOpen')===el,top:r.top,bottom:r.bottom,fitBottom:fit.bottom}; })()`);
+  if(!tc.reward.hit || tc.reward.top<tc.reward.fitBottom || tc.reward.bottom>tc.touchTop) errors.push('portrait reward button overlap: '+JSON.stringify(tc.reward));
   const pc = {x:tc.pad.x+tc.pad.w/2, y:tc.pad.y+tc.pad.h/2}, R = tc.pad.w/2;
   const tp = (x,y,id) => ({x, y, id, radiusX:6, radiusY:6, force:1});
   const touch = (type, pts) => send('Input.dispatchTouchEvent',{type, touchPoints:pts});
@@ -269,8 +264,9 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:2,mobile:true});
   await b.navigate(fileUrl(page), 1500);
   tc.land = await evalJs(`(() => { const r = s => { const x = document.querySelector(s).getBoundingClientRect(); return {x:x.x, y:x.y, w:x.width, h:x.height, r:x.right, b:x.bottom}; };
-    return {stage:r('#stageBox'), touch:r('#touch'), note:r('.touch-note'), pad:r('#tpad'), btns:r('#tbtns'), hint:r('#hudHint'), hintShown:getComputedStyle(${q('#hudHint')}).display, hintText:${q('#hudHint')}.textContent}; })()`);
+    return {reward:r('#rewardOpen'), fit:r('#fitOpen'), stage:r('#stageBox'), touch:r('#touch'), note:r('.touch-note'), pad:r('#tpad'), btns:r('#tbtns'), hint:r('#hudHint'), hintShown:getComputedStyle(${q('#hudHint')}).display, hintText:${q('#hudHint')}.textContent}; })()`);
   const L = tc.land, inside = (a, o) => a.y>=o.y-0.5 && a.b<=o.b+0.5 && a.x>=o.x-0.5 && a.r<=o.r+0.5;
+  if(L.reward.y<L.fit.b || L.reward.b>L.touch.y || !inside(L.reward,L.stage)) errors.push('landscape reward button overlap: '+JSON.stringify(L));
   if(!(L.stage.w>L.stage.h) || !inside(L.pad,L.touch) || !inside(L.btns,L.touch) || L.pad.y<L.note.b-0.5 || L.btns.y<L.note.b-0.5 || L.pad.r>L.btns.x || L.pad.w<80 || L.btns.w<80
      || L.hintShown==='none' || L.hint.b>L.touch.y+0.5 || L.hint.y<L.stage.y+L.stage.h*0.46-1 || !L.hintText) errors.push('touch landscape layout check failed: '+JSON.stringify(L));
   await send('Emulation.setEmulatedMedia',{features:[{name:'pointer',value:'fine'},{name:'hover',value:'hover'}]});

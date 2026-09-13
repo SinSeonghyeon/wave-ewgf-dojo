@@ -96,6 +96,8 @@
 
 - [x] 1P/2P 선택을 설정 밖으로 이동 (2026-09-13). 스테이지 설정 버튼 바로 왼쪽에 상시 배치, 좁은 화면에서 타이머 겹침 방지.
 
+- [x] 4-10. 보물상자 수동 일괄 수령·보상 토스트 (2026-09-14). 업적·출석 보상은 미수령으로 저장하고 옷장 아래 상자를 누르면 전부 지급·기존 팝업 1회. 작은 알림이 상자로 축소 이동하고 금빛 맥동·개수 배지로 안내. 새로고침 복원·중복 예약 방지·미수령 착용 차단·세 언어·효과 끄기 대응. 설계 결정 15.
+
 ## 진행 로그
 
 - 2026-09-13: 한마디 좋아요/싫어요(사용자 요청, 결정 18). 워커: `votes(post_id,key,v,created_at)` PK(post_id,key), `POST /vote {nick,token,id,v:1|-1|0}`(멱등 "설정", 400 id/v·403 auth·404 post·429 `VOTE_LIMIT` 30/분), `/posts`가 `LEFT JOIN`으로 `up`/`down` 집계, 관리자 글 삭제 시 표도 삭제. 앱: `store.votes` 캐시(로더 검증·목록 밖 정리·닉 변경 시 비움), `voteBtn`/`postVote`/`live.voting`, `.post-votes` 알약 버튼, `posts.like/dislike/voteFast/voteFail` ×3. 테스트: board 1개·dojo 1개 추가 + 스모크(좋아요→취소→싫어요, DB 행 확인). 식별을 닉+토큰으로 한 이유: 서버에 브라우저 ID가 없고 새 식별자보다 어뷰징에 덜 약함(닉 생성 10/분). "내 표" 조회 API를 두지 않은 이유: `/posts?nick=`식이면 남의 표를 볼 수 있어서. **워커 스키마 적용·재배포는 사용자 작업**(worker/README.md 순서).
@@ -159,3 +161,7 @@
 - [x] 2026-09-13: 검색 텍스트. 앱 맨 아래 접이식 소개·판정·모드·FAQ(`about.*`, 세 언어, "철권8" 키워드 포함) + `/en/`·`/ja/` 정적 랜딩 페이지 + hreflang + `?lang=` 파라미터 + sitemap 3 URL. 제목은 그대로(사용자 결정: 키워드는 접이식 문단에). 남은 사용자 작업: 푸시 후 Search Console에서 sitemap 재제출, `/en/`·`/ja/` URL 검사로 색인 요청.
 - 2026-09-13: 검색 텍스트 코드 리뷰 반영(8건). `?lang=`이 URL에 남아 새로고침마다 설정에서 바꾼 언어를 덮고 저장도 안 되던 것 → 한 번만 적용·즉시 save()·`window.history.replaceState`로 제거(`LANGS` 위로 끌어올려 공유). en/ja FAQ가 앱에 없는 라벨("missing starting 6", 開始6)을 인용 → `r.noCancel.title`/`fault.cancel_as_start.title`("Missing start 6", 始動6)과 "결과 창"으로 통일. ja 소개·랜딩의 모드 이름(風神ステップ10秒·ステップ最風10回) → 앱 버튼과 같은 ウェーブ10秒·ウェーブ最風10回. 랜딩 한국어 링크 `../` → `../?lang=ko`. `about.links`는 라벨만 사전, 링크는 정적(innerHTML 제거), `.copy` → `.note`. 랜딩 폰트 weight 500 제거·gstatic preconnect·미로드 JetBrains Mono·미사용 `--line2` 정리. CODE_MAP의 `<loc>` 하나 문구 수정. 테스트: 금지 캐릭터명 목록 3벌 → `BANNED` 하나, sitemap `xhtml:link` 4종 비교, canonical 1개, about.*/랜딩의 모드·결함 라벨이 실제 사전값과 같은지, `?lang=` 저장·URL 제거 확인.
 - 2026-09-14: 순위 초기화 폐지(사용자 결정, AGENTS.md 19). 워커 `seasonKey()`=`'all'`로 저장·조회, `/top`·`/submit`·`/`·`/scores` 응답에서 week/start/end 제거·`season` 추가, `weekBounds` 제거(`weekKey`는 되살리기용으로 유지), `GET /scores?week=` 제거. `migrate-2026-09-14-alltime.sql`(주간 행 → 닉·보드당 최고 1건, week='all', 멱등)을 워커 테스트가 가짜 D1에서 두 번 실행해 검증. 앱: `#boardWeek`→`#boardInfo`(참가 수만), `board.week` 키 삭제, 문구에서 주간/이번 주 제거(ko/en/ja + 랜딩 en/ja + README), 웨이브 상위 띠는 만료 대신 `board.at`+`WAVE_TTL` 10분 배경 재조회(실패 시 마지막 값 유지). 관리자 도구 `top <board>`에서 week 인자 제거. 단위 테스트 89개 통과. **워커 재배포 → 마이그레이션은 사용자 작업**(worker/README.md 절차).
+
+- 2026-09-14: 자동 코스튬 팝업을 보물상자 수동 수령으로 변경. `store.pendingRewards`에 예약·저장, 클릭 시 전체 해금 후 대표 + 외 N개 연출. 측정·대화상자 종료 시 자동 재생 제거. 업적/출석/여러 보상 토스트 → 상자로 이동, 모바일에서는 1P/2P와 겹치지 않게 위치 조정. AGENTS·CODE_MAP·README 갱신. 단위 92개·전체 브라우저 스모크 통과(JS 오류 0). 별도 보상 브라우저 검사도 통과(저장 복원·이동 연출·키보드 수령·모바일 세로/가로·동작 줄이기). 최초 스모크의 Enter 전송 누락으로 수령 단계가 실패했으나 CDP 키 이벤트에 text를 추가해 최종 통과.
+
+- 2026-09-14: 리뷰 P2 반영. 결과 카드 준비가 2.3초 보류보다 길어져도 `trial.openTimer`가 남아 있는 동안 보물상자 수령을 막아, 시작된 보상 연출이 결과 창에 의해 폐기되지 않게 했다. 느린 카드 준비 타이밍 회귀 테스트 추가.
