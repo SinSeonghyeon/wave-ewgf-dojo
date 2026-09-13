@@ -8,6 +8,10 @@
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#0B0E13">
 <link rel="canonical" href="https://mishimaryu.com/">
+<link rel="alternate" hreflang="ko" href="https://mishimaryu.com/">
+<link rel="alternate" hreflang="en" href="https://mishimaryu.com/en/">
+<link rel="alternate" hreflang="ja" href="https://mishimaryu.com/ja/">
+<link rel="alternate" hreflang="x-default" href="https://mishimaryu.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="미시마 도장 · Mishima Dojo">
 <meta property="og:title" content="미시마 도장 | 철권 초풍·웨이브 대시 연습 (Mishima Dojo EWGF Trainer)">
@@ -272,6 +276,18 @@
   footer{color:var(--faint);font-size:12px;border-top:1px solid var(--line);padding-top:12px}
   footer p{margin:0 0 10px}
   footer .copy{color:var(--faint);font-size:11.5px}
+  .about{border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink2);font-size:13px}
+  .about summary{cursor:pointer;padding:10px 14px;font-weight:700;color:var(--ink);list-style:none}
+  .about summary::-webkit-details-marker{display:none}
+  .about summary::before{content:'▸ ';color:var(--accent)}
+  .about[open] summary::before{content:'▾ '}
+  .about-body{padding:0 14px 12px;display:grid;gap:10px}
+  .about-body h3{margin:6px 0 0;font-size:13.5px;color:var(--ink)}
+  .about-body p,.about-body dl{margin:0}
+  .about-body dl{display:grid;gap:6px}
+  .about-body dt{font-weight:700;color:var(--ink)}
+  .about-body dd{margin:0 0 4px}
+  .about-body a{color:var(--accent)}
   .donate{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
   .donate-share{margin:12px 0 0}
   .donate-btn{background:transparent;color:var(--gold);border:1px solid var(--gold);border-radius:4px;padding:6px 12px;font-size:12.5px;font-weight:700;cursor:pointer}
@@ -560,6 +576,27 @@
     </div>
   </section>
 
+  <details class="about" id="about">
+    <summary data-i18n="about.summary">미시마 도장은 어떤 사이트인가요? (소개 · 판정 방식 · 자주 묻는 질문)</summary>
+    <div class="about-body">
+      <h3 data-i18n="about.what.h">철권8 초풍·웨이브 대시 연습 도구</h3>
+      <p data-i18n="about.what.p">미시마 도장은 철권(철권8) 미시마류의 핵심 입력인 초풍신권(EWGF, 6N23+2)과 웨이브 대시(풍신 스텝 연속, 6N23 6 N 6N23 6 N …)를 브라우저에서 연습하는 무료 도구입니다. 설치 없이 키보드·게임패드·레버리스(히트박스)로 바로 쓸 수 있고, 게임을 켜지 않아도 입력만으로 판정합니다. 비공식 팬 제작이며, 게임 자체를 건드리는 매크로나 치트가 아닙니다.</p>
+      <h3 data-i18n="about.judge.h">판정 방식</h3>
+      <p data-i18n="about.judge.p">입력 하나하나의 시각을 밀리초 단위로 기록해 1프레임(16.67ms) 기준으로 판정합니다. 초풍은 3(d/f)이 들어간 순간과 버튼 2를 누른 순간의 차이를 재서, 판정 폭(0.5f·0.7f·0.9f, 기본 0.7f = ±12ms) 안이면 초풍, 늦으면 풍신권, 빠르면 실패로 표시하고 몇 ms 빠르거나 늦었는지 알려 줍니다. 웨이브는 6 → N → 2 → 3 순서와 캔슬 6·시작 6 누락을 잡아 연속 횟수와 초당 대시 수를 셉니다. 브라우저 입력 시각의 정밀도(약 4ms) 때문에 실제 게임 판정과는 약간의 오차가 있습니다.</p>
+      <h3 data-i18n="about.modes.h">측정 모드와 주간 순위</h3>
+      <p data-i18n="about.modes.p">자유 연습 외에 웨이브 10초, 초풍 20회, 웨이브 초풍 10회, 더미 격파 30초, 백대시 10초 측정 모드가 있습니다. 결과는 초풍 버튼 타이밍 분포와 웨이브 속도 추이로 그려지고, 닉네임을 정하면 주간 순위에 올려 다른 플레이어와 비교하고 상위 %에 따른 등급(SS~D)을 받습니다. 결과 카드는 이미지로 저장해 공유할 수 있습니다.</p>
+      <h3 data-i18n="about.faq.h">자주 묻는 질문</h3>
+      <dl>
+        <dt data-i18n="about.q1">초풍이 자꾸 풍신권으로 나가요.</dt><dd data-i18n="about.a1">버튼 2가 3(d/f)보다 늦은 경우입니다. 결과에 표시되는 ms 값을 보면서, 3을 다 넣고 누르는 게 아니라 2(d)에서 3(d/f)으로 굴리는 순간에 버튼 2를 누른다고 생각하세요.</dd>
+        <dt data-i18n="about.q2">웨이브가 자꾸 끊겨요.</dt><dd data-i18n="about.a2">대부분 3 뒤의 캔슬 6이 빠지거나, 캔슬 6을 다음 대시의 시작 6으로 겸용해서 N이 빠진 경우입니다. 결과 창에 "캔슬 6 누락", "시작 6 누락"으로 원인이 표시됩니다.</dd>
+        <dt data-i18n="about.q3">스틱(레버)이나 휴대폰도 되나요?</dt><dd data-i18n="about.a3">브라우저가 게임패드로 인식하는 컨트롤러면 설정에서 방향과 버튼을 모두 다시 지정할 수 있습니다. 키보드와 레버리스는 확인했고, 레버는 기기에 따라 다를 수 있으니 안 되면 문의해 주세요. 휴대폰은 터치 컨트롤이 뜨지만 정밀도는 낮습니다.</dd>
+        <dt data-i18n="about.q4">기록은 어디에 저장되나요?</dt><dd data-i18n="about.a4">설정과 기록은 이 브라우저에만 저장됩니다. 주간 순위에 올린 점수와 닉네임만 서버에 보관합니다.</dd>
+        <dt data-i18n="about.q5">무료인가요?</dt><dd data-i18n="about.a5">전부 무료이고 광고가 없습니다. 후원으로 운영합니다.</dd>
+      </dl>
+      <p class="note"><span data-i18n="about.links">소개 페이지</span>: <a href="en/" hreflang="en">English</a> · <a href="ja/" hreflang="ja">日本語</a></p>
+    </div>
+  </details>
+
   <footer>
     <p data-i18n="footer">표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.</p>
     <p class="copy" data-i18n="footer.copy">© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.</p>
@@ -699,6 +736,7 @@ function setFit(slot, id){ if(!ITEMS[slot] || !ITEMS[slot][id] || !owned(id)) re
 
 /* ---------- persistent settings ---------- */
 const STORE = 'wave-ewgf-dojo-v1';
+const LANGS = ['ko','en','ja'];
 const detectLang = () => { const l = (typeof navigator!=='undefined' && navigator.language || '').toLowerCase(); return l.startsWith('ko')?'ko':l.startsWith('ja')?'ja':'en'; };
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
@@ -713,7 +751,7 @@ function validKey(slot, code){
 try{
   const s = JSON.parse(localStorage.getItem(STORE)||'null');
   if(s && typeof s==='object'){
-    if(['ko','en','ja'].includes(s.lang)) store.lang=s.lang;
+    if(LANGS.includes(s.lang)) store.lang=s.lang;
     if(s.v>=4 && WINDOWS.includes(s.window)) store.window=s.window;
     if([1,-1].includes(s.side)) store.side=s.side;
     if([0,1].includes(s.fx)) store.fx=s.fx;
@@ -746,9 +784,12 @@ try{
 const save = () => { try{ localStorage.setItem(STORE, JSON.stringify(store)); }catch(e){} };
 let saveTimer = null; // saveSoon: lifetime counters change on every dash/attempt; the synchronous localStorage write waits 1.5s so it never sits in the input path
 const saveSoon = () => { if(saveTimer) return; saveTimer = setTimeout(() => { saveTimer = null; save(); }, 1500); };
+if(typeof location!=='undefined'){ // /en/ and /ja/ landing pages open the app with ?lang=: a one-shot command — saved like the settings toggle, then dropped from the URL so a later toggle survives reload/bookmark
+  const q = new URLSearchParams(location.search).get('lang');
+  if(LANGS.includes(q)){ store.lang = q; save(); try{ window.history.replaceState(null, '', location.pathname + location.hash); }catch(e){} } // window.history: this IIFE declares its own `history` array below
+}
 
 /* ---------- i18n ---------- */
-const LANGS = ['ko','en','ja'];
 const LOCALE = {ko:'ko-KR', en:'en-US', ja:'ja-JP'};
 const I18N = {
 ko:{
@@ -948,6 +989,25 @@ ko:{
   'og.footer':'판정 폭 0.5f · 0.7f · 0.9f · 타이밍 히스토그램 · 측정 모드 · 공유 카드',
   'footer':'표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.',
   'footer.copy':'© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.', 'footer.contact':'문의',
+  'about.summary':'미시마 도장은 어떤 사이트인가요? (소개 · 판정 방식 · 자주 묻는 질문)',
+  'about.what.h':'철권8 초풍·웨이브 대시 연습 도구',
+  'about.what.p':'미시마 도장은 철권(철권8) 미시마류의 핵심 입력인 초풍신권(EWGF, 6N23+2)과 웨이브 대시(풍신 스텝 연속, 6N23 6 N 6N23 6 N …)를 브라우저에서 연습하는 무료 도구입니다. 설치 없이 키보드·게임패드·레버리스(히트박스)로 바로 쓸 수 있고, 게임을 켜지 않아도 입력만으로 판정합니다. 비공식 팬 제작이며, 게임 자체를 건드리는 매크로나 치트가 아닙니다.',
+  'about.judge.h':'판정 방식',
+  'about.judge.p':'입력 하나하나의 시각을 밀리초 단위로 기록해 1프레임(16.67ms) 기준으로 판정합니다. 초풍은 3(d/f)이 들어간 순간과 버튼 2를 누른 순간의 차이를 재서, 판정 폭(0.5f·0.7f·0.9f, 기본 0.7f = ±12ms) 안이면 초풍, 늦으면 풍신권, 빠르면 실패로 표시하고 몇 ms 빠르거나 늦었는지 알려 줍니다. 웨이브는 6 → N → 2 → 3 순서와 캔슬 6·시작 6 누락을 잡아 연속 횟수와 초당 대시 수를 셉니다. 브라우저 입력 시각의 정밀도(약 4ms) 때문에 실제 게임 판정과는 약간의 오차가 있습니다.',
+  'about.modes.h':'측정 모드와 주간 순위',
+  'about.modes.p':'자유 연습 외에 웨이브 10초, 초풍 20회, 웨이브 초풍 10회, 더미 격파 30초, 백대시 10초 측정 모드가 있습니다. 결과는 초풍 버튼 타이밍 분포와 웨이브 속도 추이로 그려지고, 닉네임을 정하면 주간 순위에 올려 다른 플레이어와 비교하고 상위 %에 따른 등급(SS~D)을 받습니다. 결과 카드는 이미지로 저장해 공유할 수 있습니다.',
+  'about.faq.h':'자주 묻는 질문',
+  'about.q1':'초풍이 자꾸 풍신권으로 나가요.',
+  'about.a1':'버튼 2가 3(d/f)보다 늦은 경우입니다. 결과에 표시되는 ms 값을 보면서, 3을 다 넣고 누르는 게 아니라 2(d)에서 3(d/f)으로 굴리는 순간에 버튼 2를 누른다고 생각하세요.',
+  'about.q2':'웨이브가 자꾸 끊겨요.',
+  'about.a2':'대부분 3 뒤의 캔슬 6이 빠지거나, 캔슬 6을 다음 대시의 시작 6으로 겸용해서 N이 빠진 경우입니다. 결과 창에 "캔슬 6 누락", "시작 6 누락"으로 원인이 표시됩니다.',
+  'about.q3':'스틱(레버)이나 휴대폰도 되나요?',
+  'about.a3':'브라우저가 게임패드로 인식하는 컨트롤러면 설정에서 방향과 버튼을 모두 다시 지정할 수 있습니다. 키보드와 레버리스는 확인했고, 레버는 기기에 따라 다를 수 있으니 안 되면 문의해 주세요. 휴대폰은 터치 컨트롤이 뜨지만 정밀도는 낮습니다.',
+  'about.q4':'기록은 어디에 저장되나요?',
+  'about.a4':'설정과 기록은 이 브라우저에만 저장됩니다. 주간 순위에 올린 점수와 닉네임만 서버에 보관합니다.',
+  'about.q5':'무료인가요?',
+  'about.a5':'전부 무료이고 광고가 없습니다. 후원으로 운영합니다.',
+  'about.links':'소개 페이지',
 },
 en:{
   'app.title':'Mishima Dojo',
@@ -1144,6 +1204,25 @@ en:{
   'og.footer':'Windows 0.5f · 0.7f · 0.9f · timing histogram · trials · share cards',
   'footer':'Notation: 6 = forward (f), N = neutral, 2 = down (d), 3 = down-forward (d/f), button 2 = right punch (RP). Wave = 6N23 6 N 6N23 6 N … (the 6 after 3 cancels the recovery). 1 frame = 16.67ms. Unofficial fan-made practice tool.',
   'footer.copy':'© 2026 Seonghyeon Shin. All rights reserved. No copying, modification or redistribution of the source, artwork or audio.', 'footer.contact':'Contact',
+  'about.summary':'What is Mishima Dojo? (About · how judging works · FAQ)',
+  'about.what.h':'Free Tekken 8 EWGF and wave dash trainer',
+  'about.what.p':'Mishima Dojo is a free browser tool for the two inputs every Mishima-style character in Tekken (Tekken 8) lives on: the Electric Wind God Fist (EWGF, f,N,d,d/f+2, written 6N23+2 here) and the wave dash (crouch dash chains, 6N23 6 N 6N23 6 N …). Nothing to install: it works with a keyboard, gamepad or hitbox/leverless, and it judges your inputs without the game running. It is an unofficial fan-made tool, not a macro or a cheat, and it never touches the game.',
+  'about.judge.h':'How judging works',
+  'about.judge.p':'Every key or button press is timestamped in milliseconds and graded against one frame (16.67 ms). For the EWGF it measures the gap between the moment d/f registers and the moment you press 2: inside the window (0.5f, 0.7f or 0.9f, default 0.7f = ±12 ms) it is an EWGF, late is a plain WGF, early is a fail, and either way you see the offset in ms. For the wave dash it checks the f → N → d → d/f order, catches a missing cancel f and a missing starting f, and counts chain length and dashes per second. Browser input timing is about 4 ms precise, so expect small differences from the real game.',
+  'about.modes.h':'Timed modes and the weekly leaderboard',
+  'about.modes.p':'Besides free practice there are Wave 10s, EWGF ×20, Wave EWGF ×10, Dummy Rush 30s and Backdash 10s. Results are charted as a button-timing histogram and a wave speed trend. Pick a nickname to post to the weekly leaderboard, compare with other players and get a tier (SS to D) from your top percentage. Result cards can be saved as images for sharing.',
+  'about.faq.h':'FAQ',
+  'about.q1':'My EWGF keeps coming out as a normal WGF.',
+  'about.a1':'Your 2 is landing after d/f. Watch the ms offset in the result and press 2 as you roll from d into d/f, not after d/f is fully in.',
+  'about.q2':'My wave dash keeps breaking.',
+  'about.a2':'Usually the cancel f after d/f is missing, or that f is reused as the next dash\'s starting f so the neutral never registers. The result panel names the fault ("Missing cancel 6", "Missing start 6").',
+  'about.q3':'Does it work with a stick or on a phone?',
+  'about.a3':'Any controller the browser recognises as a gamepad can have its directions and buttons remapped in settings. Keyboard and leverless are confirmed; sticks vary by device, so get in touch if yours reads wrong. Phones get touch controls, with lower precision.',
+  'about.q4':'Where is my data stored?',
+  'about.a4':'Settings and records stay in this browser. Only leaderboard scores and nicknames are kept on the server.',
+  'about.q5':'Is it free?',
+  'about.a5':'Completely free, no ads. It runs on donations.',
+  'about.links':'Intro pages',
 },
 ja:{
   'app.title':'三島道場',
@@ -1340,6 +1419,25 @@ ja:{
   'og.footer':'判定幅 0.5f · 0.7f · 0.9f · タイミング分布 · 測定モード · 共有カード',
   'footer':'表記: 6 = 前, N = ニュートラル, 2 = 下, 3 = 斜め下前, ボタン2 = 右パンチ(RP)。ウェーブ = 6N23 6 N 6N23 6 N … (3の後の6が硬直キャンセル)。1フレーム = 16.67ms基準。非公式ファン製作の練習ツールです。',
   'footer.copy':'© 2026 Seonghyeon Shin. All rights reserved. ソース・画像・音声の複製、改変、再配布を禁止します。', 'footer.contact':'お問い合わせ',
+  'about.summary':'三島道場とは？（紹介・判定の仕組み・よくある質問）',
+  'about.what.h':'鉄拳8 最風・風神ステップ練習ツール',
+  'about.what.p':'三島道場は、鉄拳（鉄拳8）の三島系キャラの要となる最速風神拳（最風、6N23+2）と風神ステップ連続（ウェーブ、6N23 6 N 6N23 6 N …）をブラウザで練習できる無料ツールです。インストール不要で、キーボード・パッド・レバーレス（ヒットボックス）にそのまま対応し、ゲームを起動しなくても入力だけで判定します。非公式のファン製作で、ゲーム本体に触れるマクロやチートではありません。',
+  'about.judge.h':'判定の仕組み',
+  'about.judge.p':'入力ひとつひとつの時刻をミリ秒単位で記録し、1フレーム（16.67ms）を基準に判定します。最風は3（斜め下前）が入った瞬間とボタン2を押した瞬間の差を測り、判定幅（0.5f・0.7f・0.9f、既定 0.7f = ±12ms）内なら最風、遅ければ風神拳、早ければ失敗と表示し、何ms早い・遅いかを示します。ウェーブは 6 → N → 2 → 3 の順序とキャンセル6・始動6の抜けを検出し、連続回数と1秒あたりのステップ数を数えます。ブラウザの入力時刻の精度（約4ms）の都合で、実際のゲームの判定とはわずかな差があります。',
+  'about.modes.h':'計測モードと週間ランキング',
+  'about.modes.p':'自由練習のほかに、ウェーブ10秒・最風20回・ウェーブ最風10回・ダミー撃破30秒・バックダッシュ10秒の計測モードがあります。結果はボタンタイミング分布とステップ速度の推移としてグラフ化され、ニックネームを決めると週間ランキングに登録して他のプレイヤーと比較し、上位%に応じたランク（SS〜D）が付きます。結果カードは画像として保存・共有できます。',
+  'about.faq.h':'よくある質問',
+  'about.q1':'最風がいつも風神拳になります。',
+  'about.a1':'ボタン2が3より遅い場合です。結果に表示されるmsを見ながら、3を入れ切ってから押すのではなく、2（下）から3（斜め下前）へ倒す瞬間にボタン2を押すつもりで試してください。',
+  'about.q2':'ウェーブがすぐ途切れます。',
+  'about.a2':'多くは3の後のキャンセル6が抜けているか、キャンセル6を次のステップの始動6と兼ねてNが抜けている場合です。結果欄に「キャンセル6抜け」「始動6抜け」と原因が表示されます。',
+  'about.q3':'レバーやスマホでも使えますか？',
+  'about.a3':'ブラウザがゲームパッドとして認識するコントローラーなら、設定で方向とボタンをすべて割り当て直せます。キーボードとレバーレスは確認済みで、レバーは機器によって異なるため、動かない場合はお問い合わせください。スマホではタッチ操作が表示されますが精度は低めです。',
+  'about.q4':'記録はどこに保存されますか？',
+  'about.a4':'設定と記録はこのブラウザにのみ保存されます。サーバーに保管するのは週間ランキングに登録したスコアとニックネームだけです。',
+  'about.q5':'無料ですか？',
+  'about.a5':'すべて無料で広告もありません。支援で運営しています。',
+  'about.links':'紹介ページ',
 },
 };
 const T = (key, ...args) => {

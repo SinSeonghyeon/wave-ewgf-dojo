@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const html = fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
+const BANNED = /데빌진|화랑|카즈야|헤이하치|진 카자마|Jin\b|Hwoarang|Kazuya|Heihachi|Devil Jin|仁|風間|カズヤ|平八|ファラン|デビル/; // official character names (design decision 3); 三島 alone is the app's own name (三島道場), so the item/bd tests add it themselves
 function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls (default: none, every call fails inside its try/catch)
   let now=1000, pads=[];
   const elements=new Map(), events={}, timers=new Map(); let next=1;
@@ -321,7 +322,7 @@ test('static head carries the SEO and Open Graph tags that crawlers read without
   // robots.txt / sitemap.xml are static crawler files at the site root: they must exist and carry the same canonical URL as SITE_URL
   const root=f=>fs.readFileSync(require('node:path').join(__dirname,'..',f),'utf8');
   assert.ok(root('robots.txt').includes(`Sitemap: ${url}sitemap.xml`),'robots.txt points at the sitemap on the canonical host');
-  const sm=root('sitemap.xml');assert.deepEqual(sm.match(/<loc>[^<]*<\/loc>/g),[`<loc>${url}</loc>`],'sitemap lists the canonical URL once');
+  const sm=root('sitemap.xml');assert.deepEqual(sm.match(/<loc>[^<]*<\/loc>/g),[`<loc>${url}</loc>`,`<loc>${url}en/</loc>`,`<loc>${url}ja/</loc>`],'sitemap lists the app and the two landing pages once each');
   assert.doesNotMatch(sm,/<lastmod>|<changefreq>/,'no hand-maintained lastmod/changefreq (nothing regenerates them; Google ignores changefreq and distrusts stale lastmod)');
   assert.match(html,/document\.title = T\('app\.docTitle'\)/);
 });
@@ -963,7 +964,7 @@ test('wardrobe: items, achievements and strings agree (25 achievements = 25 item
     if(it.set && it.set!=='daily') assert.equal(id,it.set+'_'+s,'set items are named set_slot'); }
     assert.equal(DAILY_IDS.filter(id=>ITEM_SLOT[id]===s).length,2,s+': two daily gifts'); assert.equal(ids.filter(id=>ITEM_SLOT[id]===s&&ITEMS[s][id].set).length,4,s+': four set items'); }
   for(const a of Object.values(ACH)){ assert.ok(a.target>0); assert.equal(typeof a.stat({dashes:0,ewgf:0,tries:0,tongbal:0,hellsweep:0,maxChain:0,maxStreak:0,tightEwgf:0,days:0,donate:0,giftDay:'',trials:{wave10:0,ewgf20:0,combo10:0,rush30:0}}),'number'); }
-  const banned=/데빌진|화랑|카즈야|헤이하치|진 카자마|Jin\b|Hwoarang|Kazuya|Heihachi|Devil Jin|仁|風間|三島|カズヤ|平八|ファラン|デビル/;
+  const banned=new RegExp(BANNED.source+'|三島');
   for(const l of ['ko','en','ja']){ const D=I18N[l];
     for(const s of SLOTS){ assert.equal(typeof D['slot.'+s],'string',l+' slot.'+s); assert.equal(typeof D['item.base.'+s],'string',l+' item.base.'+s); }
     for(const id of Object.keys(ITEM_SLOT)) assert.equal(typeof D['item.'+id],'string',l+' item.'+id);
@@ -1055,7 +1056,7 @@ test('backdash sets: distance by cancel frame, set speed grades from BD.TIERS, c
   // a chain of 3+ leaves a summary log line when it breaks; the dictionaries name no official character
   const b=boot({v:4,lang:'en'});let p=bdOut(b,1000);for(let i=0;i<3;i++) p=bdSet(b,p,BD.MOVE_F);assert.equal(b.bd.chain,4);b.onDir('n',p+fr(12));
   assert.equal(JSON.stringify(b.session.log[1].res),'["bd.chain.end",4]');assert.equal(b.session.log[0].res[0],'bd.f.noCancel.title');
-  const banned=/데빌진|화랑|카즈야|헤이하치|Jin\b|Hwoarang|Kazuya|Heihachi|仁|風間|三島|カズヤ|平八|ファラン/;
+  const banned=new RegExp(BANNED.source+'|三島');
   for(const l of ['ko','en','ja']){b.setLang(l);for(const k of Object.keys(b.I18N[l])) if(/^(bd\.|mode\.bd10|hint\.bd10|tier\.\d\.bd10)/.test(k)) assert.doesNotMatch(String(b.T(k,3,2,1,0)),banned,l+' '+k);}
 });
 
@@ -1155,4 +1156,58 @@ test('review fixes (2026-09-13): one 4N4 pairing rule, provisional no-cancel met
   assert.deepEqual(Object.keys(a.store.records),[...a.BOARDS]);assert.deepEqual(Object.keys(a.store.life.trials),[...a.BOARDS]);
   const b=boot(undefined,undefined,{confirm:()=>true});b.get('dataReset').click();assert.deepEqual(Object.keys(b.store.records),[...b.BOARDS]);assert.deepEqual(Object.keys(b.store.life.trials),[...b.BOARDS]);
   const adm=fs.readFileSync(require('node:path').join(__dirname,'../tools/board-admin.js'),'utf8');for(const id of a.BOARDS) assert.ok(adm.includes("['"+id+"', '"),'board-admin.js lists '+id);
+});
+
+test('search text: about block, hreflang set, ?lang= override and the /en/ /ja/ landing pages',()=>{
+  const path=require('node:path');
+  const a=boot({v:4,lang:'ko'});
+  const u=a.SITE_URL, alt={ko:u,en:u+'en/',ja:u+'ja/','x-default':u};
+  const MODES=['mode.wave10.name','mode.ewgf20.name','mode.combo10.name','mode.rush30.name','mode.bd10.name'];
+  const pages={'index.html':html};
+  for(const l of ['en','ja']) pages[l+'/index.html']=fs.readFileSync(path.join(__dirname,'..',l,'index.html'),'utf8');
+  for(const [name,page] of Object.entries(pages)){
+    const head=page.slice(0,page.indexOf('<style>'));
+    for(const [l,h] of Object.entries(alt)) assert.ok(head.includes(`<link rel="alternate" hreflang="${l}" href="${h}">`),name+' hreflang '+l);
+    assert.equal((head.match(/rel="canonical"/g)||[]).length,1,name+' has exactly one canonical');
+    assert.equal(head.includes('http://'),false,name+' head must not contain http://');
+  }
+  // landing pages: static, script-free, canonical to themselves, open the app in their language (and ko on request), no official character names (design decision 3), mode names as the app shows them
+  for(const l of ['en','ja']){
+    const page=pages[l+'/index.html'];
+    assert.ok(page.includes(`<html lang="${l}">`),l+' lang attribute');
+    assert.ok(page.includes(`<link rel="canonical" href="${alt[l]}">`),l+' canonical');
+    assert.equal((page.match(/<script/g)||[]).length,0,l+' landing page has no script');
+    assert.ok(page.includes(`href="../?lang=${l}"`),l+' start button opens the app in '+l);
+    assert.ok(page.includes('href="../?lang=ko"'),l+' Korean link asks for ko instead of the saved language');
+    assert.ok(page.includes('https://ko-fi.com/misimadojo')&&page.includes('mailto:tlstjdgus3@gmail.com'),l+' donate + contact match the app');
+    assert.doesNotMatch(page,BANNED,l+' landing page uses no official character names');
+    assert.ok(page.includes(u+'og.png'),l+' og image');
+    for(const k of MODES) assert.ok(page.includes(a.I18N[l][k]),l+' landing names the mode as the app does: '+a.I18N[l][k]);
+  }
+  // sitemap: the three URLs, each carrying the same four hreflang alternates as the page heads (decision 4)
+  const sitemap=fs.readFileSync(path.join(__dirname,'..','sitemap.xml'),'utf8');
+  assert.ok(sitemap.includes('xmlns:xhtml="http://www.w3.org/1999/xhtml"'),'sitemap declares the xhtml namespace for hreflang links');
+  const blocks=sitemap.match(/<url>[\s\S]*?<\/url>/g)||[];
+  const locOf=b=>b.match(/<loc>([^<]*)<\/loc>/)[1];
+  assert.deepEqual(blocks.map(locOf),[alt.ko,alt.en,alt.ja],'sitemap lists the app and the two landing pages once each');
+  for(const b of blocks){ const links={}; for(const m of b.matchAll(/<xhtml:link rel="alternate" hreflang="([^"]+)" href="([^"]+)"\/>/g)) links[m[1]]=m[2]; assert.deepEqual(links,alt,'sitemap hreflang set for '+locOf(b)); }
+  // about block: crawlable Korean text in the markup equals the ko dictionary, sits before the footer; every about.* key exists in all three languages and quotes real labels
+  const keys=Object.keys(a.I18N.ko).filter(k=>k.startsWith('about.'));
+  assert.ok(keys.length>=19,'about.* keys present');
+  for(const k of keys) assert.ok(html.includes(`data-i18n="${k}">${a.T(k)}<`),k+' static text matches the ko dictionary');
+  const about=html.indexOf('<details class="about" id="about">');assert.ok(about>0&&about<html.indexOf('<footer>'),'about block sits right above the footer');
+  for(const l of ['ko','en','ja']){ const D=a.I18N[l];
+    for(const k of keys){ assert.equal(typeof D[k],'string',l+' '+k); assert.doesNotMatch(D[k],BANNED,l+' '+k+' uses no official character names'); }
+    assert.match(D['about.what.p'],/8/,l+' about text names Tekken 8');
+    for(const k of MODES) assert.ok(D['about.modes.p'].includes(D[k]),l+' about.modes.p names the mode as the app does: '+D[k]);
+    for(const k of ['r.noCancel.title','fault.cancel_as_start.title']) assert.ok(D['about.a2'].includes(D[k]),l+' about.a2 quotes the real fault label: '+D[k]);
+  }
+  // ?lang= is a one-shot command: it beats the saved language, is saved at once and removed from the URL; junk is ignored. visitDay=today keeps bumpVisitDay from saving on its own.
+  const env=(search,saves,replaced)=>({location:{search,pathname:'/',hash:''},URLSearchParams,window:{history:{replaceState:(s,t,url)=>replaced.push(url)}},
+    localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko',visitDay:kstToday()}),setItem:(k,v)=>saves.push(JSON.parse(v).lang)}});
+  let saves=[],replaced=[];
+  const b=boot(undefined,undefined,env('?lang=ja',saves,replaced));assert.equal(b.store.lang,'ja');assert.deepEqual(saves,['ja'],'saved at once');assert.deepEqual(replaced,['/'],'parameter dropped from the URL');
+  saves=[];replaced=[];
+  const c=boot(undefined,undefined,env('?lang=xx',saves,replaced));assert.equal(c.store.lang,'ko');assert.deepEqual(saves,[]);assert.deepEqual(replaced,[],'junk leaves the URL alone');
+  const d=boot({v:4,lang:'en'},undefined,{location:{search:'',pathname:'/',hash:''},URLSearchParams});assert.equal(d.store.lang,'en');
 });
