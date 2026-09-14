@@ -48,7 +48,10 @@ async function showBoard(board) {
 async function showPosts() {
   const j = await call('GET', '/posts');
   console.log(`\n한마디 · 최신 ${j.rows.length}개`);
-  j.rows.forEach((p, i) => console.log(String(i + 1).padStart(4) + ')', pad(p.nick, 14), when(p.created_at), p.text));
+  j.rows.forEach((p, i) => {
+    console.log(String(i + 1).padStart(4) + ')', pad(p.nick, 14), when(p.created_at), p.text);
+    for (const r of p.replies || []) console.log('       ↳', pad(r.nick, 14), when(r.created_at), r.text);
+  });
   if (!j.rows.length) console.log('  (글 없음)');
   return j.rows;
 }

@@ -2,7 +2,7 @@
 // Launches headless Chrome over CDP (tools/cdp.js, no npm deps), loads index.html, feeds a 6N23+2 via keyboard,
 // switches ko/en/ja, runs a wave10 trial in ja, opens the share card, then exercises the backend UI against the real worker/index.js
 // handler served over local http with tests/fake-d1.js (first-run nickname gate incl. a taken name, auto-submit + result card with the
-// tier banner after each trial, shoutbox post, nickname change, visit counter, ko re-render) and fails if any JS error was logged.
+// tier banner after each trial, shoutbox post/reply/reaction, nickname change, visit counter, ko re-render) and fails if any JS error was logged.
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -71,6 +71,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   const key = async (code, type='keydown') => send('Input.dispatchKeyEvent',{type: type==='keydown'?'keyDown':'keyUp', code, key: code.replace('Key','').toLowerCase(), windowsVirtualKeyCode: code.charCodeAt(code.length-1)});
   const tap = async (code, hold=20) => { await key(code); await sleep(hold); await key(code,'keyup'); };
   const q = s => `document.querySelector('${s}')`;
+  const waitFor = async (selector, ms=4000) => { const until=Date.now()+ms; while(Date.now()<until){ if(await evalJs(`!!${q(selector)}`)) return; await sleep(100); } throw new Error('Timed out waiting for '+selector+'; postMsg='+(await evalJs(`${q('#postMsg')}?.textContent`))); };
   // nickname gate (first visit): modal open, game keys ignored while it is up, Escape does not close it, a taken name is refused, a free one starts the app
   out.gate = {open:await evalJs(`${q('#nickDlg')}.open`), closeHidden:await evalJs(`${q('#nickClose')}.hidden`), laterHidden:await evalJs(`${q('#nickLater')}.hidden`), btn:await evalJs(`({hidden:${q('#nickBtn')}.hidden, text:${q('#nickBtn')}.textContent})`)};
   await tap('KeyD',20); await sleep(150); out.gate.inputsWhileOpen = await evalJs(`document.querySelectorAll('#inputs .chip').length`);
@@ -263,20 +264,24 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.board.ewgfTab = await evalJs(`({empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, pressed:${q('#boardTabs button[data-board="ewgf20"]')}.getAttribute('aria-pressed')})`);
   // shoutbox: empty → post one line under the claimed nickname → shows; change the nickname through the header button → label follows
   out.posts = {empty:await evalJs(`${q('#postList .empty')}?.textContent`)};
-  await evalJs(`${q('#postText')}.value='  스모크   테스트 글 '; ${q('#postSend')}.click()`); await sleep(1000);
+  await evalJs(`${q('#postText')}.value='  스모크   테스트 글 '; ${q('#postSend')}.click()`); await waitFor('#postList .vote[data-v="1"]');
   out.posts.after = await evalJs(`({msg:${q('#postMsg')}.textContent, text:${q('#postText')}.value, items:[...document.querySelectorAll('#postList .post')].map(p=>[p.querySelector('b').textContent, p.querySelector('p').textContent])})`);
   // like → count 1 and marked as mine (server row under my nick) → like again cancels → dislike
   const voteState = () => evalJs(`[...document.querySelectorAll('#postList .vote')].map(b=>b.textContent+':'+b.getAttribute('aria-pressed'))`);
   await evalJs(`${q('#postList .vote[data-v="1"]')}.click()`); await sleep(600); out.posts.like = {ui:await voteState(), db:db.votes.map(v => [v.post_id, v.key, v.v])};
   await evalJs(`${q('#postList .vote[data-v="1"]')}.click()`); await sleep(600); out.posts.unlike = {ui:await voteState(), db:db.votes.length};
   await evalJs(`${q('#postList .vote[data-v="-1"]')}.click()`); await sleep(600); out.posts.dislike = {ui:await voteState(), db:db.votes.map(v => [v.post_id, v.key, v.v]), msg:await evalJs(`${q('#postMsg')}.textContent`)};
+  // open the inline reply form and add one reply; it should remain nested under the original post
+  await evalJs(`${q('#postList .reply-open')}.click()`); await waitFor('#postList .reply-form input');
+  await evalJs(`${q('#postList .reply-form input')}.value='  스모크   답글 '; ${q('#postList .reply-form')}.requestSubmit()`); await waitFor('#postList .reply');
+  out.posts.reply = await evalJs(`({msg:${q('#postMsg')}.textContent, count:${q('#postList .reply-open')}.textContent, replies:[...document.querySelectorAll('#postList .reply')].map(r=>[r.querySelector('b').textContent,r.querySelector('p').textContent]), form:!!${q('#postList .reply-form')}})`);
   await evalJs(`${q('#nickBtn')}.click()`); await sleep(150);
   out.nick2 = {open:await evalJs(`${q('#nickDlg')}.open`), closeHidden:await evalJs(`${q('#nickClose')}.hidden`), prefilled:await evalJs(`${q('#nickInput')}.value`)};
   await evalJs(`${q('#nickInput')}.value='스모크2'; ${q('#nickSubmit')}.click()`); await sleep(800);
   out.nick2.after = await evalJs(`({open:${q('#nickDlg')}.open, btn:${q('#nickBtn')}.textContent, postNick:${q('#postNickLabel')}.textContent, me:${q('#boardMe')}.textContent})`);
   await evalJs(`${q('#langSel button[data-lang="ko"]')}.click()`); await sleep(300);
   out.ko2 = await evalJs(`({title:${q('#boardCard h2')}.textContent, empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, rank:${q('#dRank')}.textContent, visits:${q('#visits')}.textContent, postsTitle:${q('#postsCard h2')}.textContent, nickBtn:${q('#nickBtn')}.textContent})`);
-  out.db = {scores:db.rows.map(r => ({board:r.board, nick:r.nick, score:r.score, tie:r.tie, win:r.win, week:r.week})), posts:db.posts.map(p => [p.nick, p.text]), visits:db.visits, nicks:db.db.prepare('SELECT key,nick FROM nicks ORDER BY key').all().map(r => [r.key, r.nick])};
+  out.db = {scores:db.rows.map(r => ({board:r.board, nick:r.nick, score:r.score, tie:r.tie, win:r.win, week:r.week})), posts:db.posts.map(p => [p.nick, p.text]), replies:db.replies.map(r => [r.post_id,r.nick,r.text]), visits:db.visits, nicks:db.db.prepare('SELECT key,nick FROM nicks ORDER BY key').all().map(r => [r.key, r.nick])};
   const bd = out.board, auto = bd.auto;
   if(bd.tabs.length!==5 || !/rush30|Dummy Rush/.test(bd.tabs[3]||'') || !/bd10|Backdash/.test(bd.tabs[4]||'')) errors.push('leaderboard tabs check failed: '+JSON.stringify(bd.tabs));
   if(bd.cardHidden || bd.postsHidden || !/rank 1 of 1 · top 100%/.test(bd.rank) || !bd.retryHidden || bd.info!=='1 entries' || !/rank 1 of 1 · top 100%/.test(bd.me) || !bd.meRow || bd.rows.length!==1 || bd.rows[0][1]!=='스모크 테스트' || bd.rows[0][0]!=='1' || !/^Today 1 · total 1 visits$/.test(bd.visits)) errors.push('leaderboard check failed: '+JSON.stringify(bd));
@@ -285,9 +290,10 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(!out.posts.empty || out.posts.after.msg!=='' || out.posts.after.text!=='' || JSON.stringify(out.posts.after.items)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']])) errors.push('shoutbox check failed: '+JSON.stringify(out.posts));
   const votes = {like:JSON.stringify(out.posts.like), unlike:JSON.stringify(out.posts.unlike), dislike:JSON.stringify(out.posts.dislike)};
   if(votes.like!==JSON.stringify({ui:['👍 1:true','👎 0:false'], db:[[1,'스모크 테스트',1]]}) || votes.unlike!==JSON.stringify({ui:['👍 0:false','👎 0:false'], db:0}) || votes.dislike!==JSON.stringify({ui:['👍 0:false','👎 1:true'], db:[[1,'스모크 테스트',-1]], msg:''})) errors.push('post votes check failed: '+JSON.stringify(votes));
+  if(out.posts.reply.msg!=='' || !/Replies 1/.test(out.posts.reply.count) || JSON.stringify(out.posts.reply.replies)!==JSON.stringify([['스모크 테스트','스모크 답글']]) || out.posts.reply.form) errors.push('post reply check failed: '+JSON.stringify(out.posts.reply));
   if(!out.nick2.open || out.nick2.closeHidden || out.nick2.prefilled!=='스모크 테스트' || out.nick2.after.open || !/스모크2/.test(out.nick2.after.btn) || out.nick2.after.postNick!=='스모크2' || !/No entry from you/.test(out.nick2.after.me)) errors.push('nickname change check failed: '+JSON.stringify(out.nick2));
   if(out.ko2.title!=='순위' || !/아직 기록이 없습니다/.test(out.ko2.empty||'') || !/등록한 기록이 없습니다/.test(out.ko2.me) || !/최고 기록 유지 · 1위 \/ 1명 · 상위 100%/.test(out.ko2.rank) || !/^오늘 방문 1 · 누적 1$/.test(out.ko2.visits) || out.ko2.postsTitle!=='한마디' || out.ko2.nickBtn!=='닉네임 · 스모크2') errors.push('backend ko re-render check failed: '+JSON.stringify(out.ko2));
-  if(out.db.scores.length!==1 || out.db.scores[0].board!=='wave10' || out.db.scores[0].week!=='all' || out.db.scores[0].nick!=='스모크 테스트' || out.db.scores[0].win!==12 || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
+  if(out.db.scores.length!==1 || out.db.scores[0].board!=='wave10' || out.db.scores[0].week!=='all' || out.db.scores[0].nick!=='스모크 테스트' || out.db.scores[0].win!==12 || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']]) || JSON.stringify(out.db.replies)!==JSON.stringify([[1,'스모크 테스트','스모크 답글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
      || JSON.stringify(out.db.nicks)!==JSON.stringify([['스모크 테스트','스모크 테스트'],['스모크2','스모크2'],['점유됨','점유됨']])) errors.push('backend storage check failed: '+JSON.stringify(out.db));
   for(const s of JSON.stringify([out.gate, bd, out.posts, out.nick2, out.ko2, out.trialEnd]).match(/\b(board|mode|share|rec|posts|nick|tier)\.[a-zA-Z0-9.]+/g)||[]) errors.push('raw i18n key leaked into backend UI: '+s);
   // touch controls: three direction buttons feed the normal path; down+right forms d/f

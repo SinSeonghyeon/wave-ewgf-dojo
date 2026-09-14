@@ -23,7 +23,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,takeResultDonate,practiceInput,practiceTick,DONATE_ACTIVE_MS,touchKeys,touchPress,applyTouchUI,applyTouchLayout,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,replySend,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,takeResultDonate,practiceInput,practiceTick,DONATE_ACTIVE_MS,touchKeys,touchPress,applyTouchUI,applyTouchLayout,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -551,6 +551,31 @@ test('post votes: cancel/switch through an idempotent set, validated local cache
   a=boot({v:4,lang:'ko',window:12,votes:{'7':1}},b.fetch); assert.deepEqual(JSON.parse(JSON.stringify(a.store.votes)),{});
   // old worker without counts: buttons still render with 0
   a.live.posts=[{id:7,nick:'x',text:'hi',created_at:1}]; a.renderPosts(); assert.match(a.get('postList').innerHTML,/>👍 0<[\s\S]*>👎 0</);
+});
+
+test('post replies: render many, submit one level deep, keep text on failure, close on success, and gate by nickname',async()=>{
+  const tok='ab'.repeat(24), rows=replies=>[{id:7,nick:'original',text:'question',created_at:1,up:0,down:0,replies}];
+  let b=backend(), a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch);
+  b.answer('/posts','GET',{rows:rows([{id:1,post_id:7,nick:'one',text:'first',created_at:2},{id:2,post_id:7,nick:'two',text:'second',created_at:3}])}); await b.flush();
+  let html=a.get('postList').innerHTML; assert.match(html,/답글 2/); assert.ok(html.indexOf('first')<html.indexOf('second'),'replies render oldest first');
+  a.live.replyTo=7; a.live.replyText='draft'; a.renderPosts(); html=a.get('postList').innerHTML;
+  assert.match(html,/class="reply-form" data-id="7"/); assert.match(html,/value="draft"/); assert.match(html,/placeholder="답글 쓰기 \(200자\)"/);
+  a.postVote(7,1); await b.flush(); a.replySend(7,'must wait'); await b.flush();
+  assert.equal(b.calls.filter(x=>x.url.includes('/reply')).length,0,'a reply cannot race a vote snapshot');
+  assert.match(a.get('postList').innerHTML,/class="reply-form"[\s\S]*<input[^>]* disabled/);
+  b.answer('/vote','POST',{ok:true,id:7,mine:1,rows:rows([{id:1,post_id:7,nick:'one',text:'first',created_at:2},{id:2,post_id:7,nick:'two',text:'second',created_at:3}])}); await b.flush();
+  a.replySend(7,' hello   reply '); await b.flush(); let c=b.find('/reply','POST');
+  assert.deepEqual(c.body,{nick:'me',token:tok,id:7,text:'hello reply'}); assert.equal(a.live.replying,true); assert.match(a.get('postMsg').textContent,/답글 보내는 중/);
+  const votesBefore=b.calls.filter(x=>x.url.includes('/vote')).length; a.postVote(7,-1); await b.flush();
+  assert.equal(b.calls.filter(x=>x.url.includes('/vote')).length,votesBefore,'a vote cannot race a reply snapshot');
+  b.answer('/reply','POST',{ok:true,id:3,postId:7,rows:rows([{id:3,post_id:7,nick:'me',text:'hello reply',created_at:4}])}); await b.flush();
+  assert.equal(a.live.replying,false); assert.equal(a.live.replyTo,0); assert.equal(a.live.replyText,''); assert.match(a.get('postList').innerHTML,/hello reply/); assert.doesNotMatch(a.get('postList').innerHTML,/reply-form/);
+  a.live.replyTo=7; a.replySend(7,'retry me'); await b.flush(); b.answer('/reply','POST',{error:'rate'},429); await b.flush();
+  assert.equal(a.live.replyText,'retry me'); assert.equal(a.live.replyTo,7); assert.equal(a.get('postMsg').textContent,'너무 빠릅니다. 1분에 3개까지 남길 수 있습니다.');
+  a.setLang('ja'); assert.match(a.get('postList').innerHTML,/返信 1件/); assert.match(a.get('postList').innerHTML,/キャンセル/);
+  a.replySend(7,'gone'); await b.flush(); b.answer('/reply','POST',{error:'post'},404); await b.flush(); assert.ok(b.find('/posts','GET'),'a deleted parent reloads the list');
+  b=backend(); a=boot({v:4,lang:'ko',window:12},b.fetch); const before=b.calls.length; a.get('nickDlg').showModal=function(){this.open=true;};
+  a.replySend(7,'hi'); await b.flush(); assert.equal(b.calls.length,before); assert.equal(a.get('nickDlg').open,true);
 });
 
 test('app and worker agree on the leaderboard contract (boards, windows, detail fields)',async()=>{

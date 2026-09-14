@@ -17,6 +17,7 @@ const claim = async (w, env, nick, now = NOW) => { const r = await post('/nick',
 const owned = (w, env) => { const tokens = {}; return {
   async submit(over = {}, now = NOW) { const e = entry(over); tokens[e.nick] ??= (await claim(w, env, e.nick, now)).token; return submit({...e, token: tokens[e.nick]}, now)(w, env); },
   async post(body, now = NOW, headers = {}) { tokens[body.nick] ??= (await claim(w, env, body.nick, now)).token; return post('/posts', {...body, token: tokens[body.nick]}, now, headers)(w, env); },
+  async reply(body, now = NOW, headers = {}) { tokens[body.nick] ??= (await claim(w, env, body.nick, now)).token; return post('/reply', {...body, token: tokens[body.nick]}, now, headers)(w, env); },
   tokens}; };
 const ch = code => String.fromCharCode(code);
 
@@ -182,6 +183,71 @@ test('posts: newest first, capped at 50, validated, rate-limited per IP when the
   assert.deepEqual(d, {ok: true, deleted: 1}); assert.equal(env.DB.posts.length, 55); assert.equal(env.DB.posts.some(p => p.id === 1), false);
   assert.deepEqual(await (await w.handle(req('/posts/1', {method: 'DELETE', headers: {authorization: 'Bearer s3cret'}}), admin, NOW)).json(), {ok: true, deleted: 0});
   assert.equal((await w.handle(req('/posts/abc', {method: 'DELETE', headers: {authorization: 'Bearer s3cret'}}), admin, NOW)).status, 404);
+});
+
+test('replies: many one-level replies per post, oldest first, validated, share the post rate limit, and vanish with the parent', async () => {
+  const w = await worker(); const env = {DB: fakeD1()}; const me = owned(w, env);
+  await me.post({nick: 'alpha', text: 'parent'});
+  await me.post({nick: 'alpha', text: 'other'}, NOW + 1);
+  let r = await me.reply({nick: 'alpha', id: 1, text: ' first\n reply '}, NOW + 2); let j = await r.json();
+  assert.equal(j.ok, true); assert.equal(j.id, 1); assert.equal(j.postId, 1);
+  r = await me.reply({nick: 'Bravo', id: 1, text: 'second'}, NOW + 3); j = await r.json();
+  await me.reply({nick: 'alpha', id: 1, text: 'third'}, NOW + 4);
+  const rows = (await (await w.handle(req('/posts'), env, NOW)).json()).rows;
+  assert.deepEqual(rows.map(p => [p.id, p.replies.length]), [[2, 0], [1, 3]]);
+  assert.deepEqual(rows[1].replies.map(x => [x.id, x.post_id, x.nick, x.text, x.created_at]), [
+    [1, 1, 'alpha', 'first reply', NOW + 2], [2, 1, 'Bravo', 'second', NOW + 3], [3, 1, 'alpha', 'third', NOW + 4],
+  ]);
+  const tok = me.tokens.alpha;
+  for (const [k, body] of Object.entries({id: {nick: 'alpha', token: tok, id: '1', text: 'x'}, 'id zero': {nick: 'alpha', token: tok, id: 0, text: 'x'}, nick: {nick: 'a', token: tok, id: 1, text: 'x'}, text: {nick: 'alpha', token: tok, id: 1, text: ' '}, 'text long': {nick: 'alpha', token: tok, id: 1, text: 'x'.repeat(201)}})) {
+    r = await post('/reply', body)(w, env); assert.equal(r.status, 400, k); assert.equal((await r.json()).error, k.split(' ')[0], k);
+  }
+  r = await post('/reply', null)(w, env); assert.equal(r.status, 400); assert.deepEqual(await r.json(), {error: 'body'});
+  r = await post('/reply', {nick: 'alpha', token: 'nope', id: 1, text: 'x'})(w, env); assert.equal(r.status, 403);
+  r = await post('/reply', {nick: 'alpha', token: tok, id: 999, text: 'x'})(w, env); assert.equal(r.status, 404); assert.deepEqual(await r.json(), {error: 'post'});
+  const keys = []; const limited = {DB: env.DB, POST_LIMIT: {async limit({key}) { keys.push(key); return {success: keys.length <= 1}; }}};
+  assert.equal((await post('/reply', {nick: 'alpha', token: tok, id: 1, text: 'limited one'}, NOW, {'cf-connecting-ip': '203.0.113.8'})(w, limited)).status, 200);
+  assert.equal((await post('/posts', {nick: 'alpha', token: tok, text: 'limited two'}, NOW, {'cf-connecting-ip': '203.0.113.8'})(w, limited)).status, 429, 'posts and replies share the same limiter bucket');
+  assert.deepEqual(keys, ['post:203.0.113.8', 'post:203.0.113.8']);
+  const admin = {DB: env.DB, ADMIN_TOKEN: 's3cret'};
+  assert.deepEqual(await (await w.handle(req('/posts/1', {method: 'DELETE', headers: {authorization: 'Bearer s3cret'}}), admin, NOW)).json(), {ok: true, deleted: 1});
+  assert.equal(env.DB.replies.length, 0); assert.deepEqual((await (await w.handle(req('/posts'), env, NOW)).json()).rows.map(p => p.id), [2]);
+});
+
+test('replies: listing uses the fetched parent ids when a newer post arrives between its two reads', async () => {
+  const w = await worker(), db = fakeD1(), env = {DB: db}, me = owned(w, env);
+  const token = (await claim(w, env, 'alpha')).token; me.tokens.alpha = token;
+  const insert = db.db.prepare('INSERT INTO posts (nick,text,created_at) VALUES (?,?,?)');
+  for (let id = 1; id <= 51; id++) insert.run('alpha', 'post ' + id, NOW + id);
+  assert.equal((await me.reply({nick: 'alpha', id: 2, text: 'edge reply'}, NOW + 100)).status, 200);
+  let slipped = false;
+  const racing = {DB: {prepare(sql) {
+    if (!slipped && sql.startsWith('SELECT id,post_id,nick,text,created_at FROM replies')) {
+      slipped = true; insert.run('alpha', 'post 52', NOW + 52);
+    }
+    return db.prepare(sql);
+  }}};
+  const rows = (await (await w.handle(req('/posts'), racing, NOW)).json()).rows;
+  assert.equal(slipped, true); assert.deepEqual(rows.map(p => p.id), Array.from({length: 50}, (_, i) => 51 - i));
+  assert.equal(rows.at(-1).id, 2); assert.deepEqual(rows.at(-1).replies.map(r => r.text), ['edge reply']);
+});
+
+test('replies: parent deletion immediately before the atomic insert returns 404 without an orphan', async () => {
+  const w = await worker(), db = fakeD1(), env = {DB: db}, me = owned(w, env);
+  await me.post({nick: 'alpha', text: 'parent'}); const token = me.tokens.alpha;
+  let raced = false;
+  const racing = {DB: {prepare(sql) {
+    const statement = db.prepare(sql);
+    if (!sql.startsWith('INSERT INTO replies')) return statement;
+    let args;
+    return {bind(...values) { args = values; return this; }, async run() {
+      raced = true; db.db.prepare('DELETE FROM posts WHERE id=?').run(args[0]);
+      return statement.bind(...args).run();
+    }};
+  }}};
+  const r = await post('/reply', {nick: 'alpha', token, id: 1, text: 'too late'})(w, racing);
+  assert.equal(raced, true); assert.equal(r.status, 404); assert.deepEqual(await r.json(), {error: 'post'});
+  assert.equal(db.replies.length, 0);
 });
 
 test('votes: one per nick per post, idempotent set, switch, cancel, validated, rate-limited, gone with the post', async () => {
