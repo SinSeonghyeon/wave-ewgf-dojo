@@ -258,36 +258,42 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(out.db.scores.length!==1 || out.db.scores[0].board!=='wave10' || out.db.scores[0].week!=='all' || out.db.scores[0].nick!=='스모크 테스트' || out.db.scores[0].win!==12 || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
      || JSON.stringify(out.db.nicks)!==JSON.stringify([['스모크 테스트','스모크 테스트'],['스모크2','스모크2'],['점유됨','점유됨']])) errors.push('backend storage check failed: '+JSON.stringify(out.db));
   for(const s of JSON.stringify([out.gate, bd, out.posts, out.nick2, out.ko2, out.trialEnd]).match(/\b(board|mode|share|rec|posts|nick|tier)\.[a-zA-Z0-9.]+/g)||[]) errors.push('raw i18n key leaked into backend UI: '+s);
-  // touch controls (4-4): phone emulation shows the overlay, a rolled f,N,d,df + 2 on the on-screen pad judges as EWGF through the normal path, desktop hides it again
+  // touch controls: three direction buttons feed the normal path; down+right forms d/f
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
   await send('Emulation.setEmulatedMedia',{features:[{name:'pointer',value:'coarse'},{name:'hover',value:'none'}]});
   await b.navigate(fileUrl(page), 1800);
   const tc = await evalJs(`(() => { const r = s => { const x = document.querySelector(s).getBoundingClientRect(); return {x:x.x, y:x.y, w:x.width, h:x.height}; };
     return {ui:document.documentElement.classList.contains('touch-ui'), compat:document.compatMode, width:innerWidth, scrollW:document.documentElement.scrollWidth, shown:getComputedStyle(${q('#touch')}).display,
-      stage:r('#stageBox'), pad:r('#tpad'), b2:r('#tbtns [data-btn="2"]'), note:${q('.touch-note')}.textContent, sel:${q('#touchSel [data-touch="auto"]')}.getAttribute('aria-pressed'), badge:${q('#srcBadge')}.textContent, hint:r('#hudHint'), touchTop:r('#touch').y}; })()`);
+      stage:r('#stageBox'), dirs:r('#tdirs'), btns:r('#tbtns'), left:r('#tdirs [data-dir="left"]'), down:r('#tdirs [data-dir="down"]'), right:r('#tdirs [data-dir="right"]'), b2:r('#tbtns [data-btn="2"]'), note:${q('.touch-note')}.textContent, sel:${q('#touchSel [data-touch="auto"]')}.getAttribute('aria-pressed'), badge:${q('#srcBadge')}.textContent, hint:r('#hudHint'), touchTop:r('#touch').y,
+      tune:[${q('#touchSize')}.value,${q('#touchX')}.value,${q('#touchY')}.value]}; })()`);
   tc.reward = await evalJs(`(() => { const el=document.querySelector('#rewardOpen'), r=el.getBoundingClientRect(), fit=document.querySelector('#fitOpen').getBoundingClientRect(); return {hit:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2).closest('#rewardOpen')===el,top:r.top,bottom:r.bottom,fitBottom:fit.bottom}; })()`);
   if(!tc.reward.hit || tc.reward.top<tc.reward.fitBottom || tc.reward.bottom>tc.touchTop) errors.push('portrait reward button overlap: '+JSON.stringify(tc.reward));
-  const pc = {x:tc.pad.x+tc.pad.w/2, y:tc.pad.y+tc.pad.h/2}, R = tc.pad.w/2;
+  const center = r => ({x:r.x+r.w/2,y:r.y+r.h/2}), rc=center(tc.right), dc=center(tc.down);
   const tp = (x,y,id) => ({x, y, id, radiusX:6, radiusY:6, force:1});
   const touch = (type, pts) => send('Input.dispatchTouchEvent',{type, touchPoints:pts});
-  await touch('touchStart',[tp(pc.x+R*0.7, pc.y, 1)]); await sleep(40);           // f
-  await touch('touchMove',[tp(pc.x+R*0.05, pc.y, 1)]); await sleep(30);           // N (dead zone)
-  await touch('touchMove',[tp(pc.x, pc.y+R*0.7, 1)]); await sleep(30);            // d
-  await touch('touchStart',[tp(pc.x+R*0.55, pc.y+R*0.55, 1), tp(tc.b2.x+tc.b2.w/2, tc.b2.y+tc.b2.h/2, 2)]); await sleep(40); // df + 2 in one dispatch
-  await touch('touchEnd',[tp(pc.x+R*0.55, pc.y+R*0.55, 1)]); await sleep(30); await touch('touchEnd',[]); await sleep(300);
+  await touch('touchStart',[tp(rc.x,rc.y,1)]); await sleep(40);                    // f
+  await touch('touchEnd',[]); await sleep(30);                                    // N
+  await touch('touchStart',[tp(dc.x,dc.y,1)]); await sleep(30);                    // d
+  await touch('touchStart',[tp(dc.x,dc.y,1),tp(rc.x,rc.y,2),tp(tc.b2.x+tc.b2.w/2,tc.b2.y+tc.b2.h/2,3)]); await sleep(40); // d/f + 2
+  await touch('touchEnd',[]); await sleep(300);
   // the reward card must sit above the touch overlay so 확인 is tappable on a phone (the card is centred, so its button lands in the pad zone)
-  tc.jpHit = await evalJs(`(() => { const j=document.querySelector('#jackpot'), ok=document.querySelector('#jpOk'); j.hidden=false; j.dataset.phase='reveal'; const r=ok.getBoundingClientRect(); const el=document.elementFromPoint(r.x+r.width/2, r.y+r.height/2); const pad=document.elementFromPoint(${pc.x}, ${pc.y}); j.hidden=true; delete j.dataset.phase; return {hit:el===ok, hitId:el&&el.id, inTouchZone:r.y+r.height/2>${tc.touchTop}, padStillReachable:!!pad&&!!pad.closest('#tpad')}; })()`);
+  tc.jpHit = await evalJs(`(() => { const j=document.querySelector('#jackpot'), ok=document.querySelector('#jpOk'); j.hidden=false; j.dataset.phase='reveal'; const r=ok.getBoundingClientRect(); const el=document.elementFromPoint(r.x+r.width/2, r.y+r.height/2); const pad=document.elementFromPoint(${rc.x}, ${rc.y}); j.hidden=true; delete j.dataset.phase; return {hit:el===ok, hitId:el&&el.id, inTouchZone:r.y+r.height/2>${tc.touchTop}, padStillReachable:!!pad&&!!pad.closest('#tdirs')}; })()`);
   tc.after = await evalJs(`({chips:[...document.querySelectorAll('#inputs .chip')].map(c => c.textContent.replace(/\\s+/g,'')).join(' '), title:${q('#rTitle')}.textContent, src:${q('#srcBadge')}.textContent,
-    knob:${q('#tknob')}.style.transform, dir:${q('#tdir')}.textContent, log:${q('#logBody')}.textContent.slice(0,60)})`);
+    active:document.querySelectorAll('#tdirs button.on').length, log:${q('#logBody')}.textContent.slice(0,60)})`);
+  // The default must remain usable even at the narrow supported viewport. A user-requested enlargement is intentionally not width-clamped.
+  await send('Emulation.setDeviceMetricsOverride',{width:320,height:700,deviceScaleFactor:2,mobile:true});
+  await b.navigate(fileUrl(page), 1500);
+  tc.narrow = await evalJs(`(() => { const r = s => { const x=document.querySelector(s).getBoundingClientRect(); return {x:x.x,w:x.width,r:x.right}; }; return {dirs:r('#tdirs'),btns:r('#tbtns')}; })()`);
+  tc.narrowCustom = await evalJs(`(() => { const s=document.querySelector('#touchSize'); s.value='140'; s.dispatchEvent(new Event('input',{bubbles:true})); const d=document.querySelector('#tdirs').getBoundingClientRect(), b=document.querySelector('#tbtns').getBoundingClientRect(); const out={size:getComputedStyle(document.querySelector('#tdirs')).getPropertyValue('--touch-dir-size').trim(),dirs:{x:d.x,w:d.width,r:d.right},btns:{x:b.x,w:b.width,r:b.right}}; s.value='100'; s.dispatchEvent(new Event('input',{bubbles:true})); return out; })()`);
   // rotated phone: the stage widens to 16/9, pad and buttons stay inside the overlay (below the note, no overlap between them) and the mode hint sits just above it
   await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:2,mobile:true});
   await b.navigate(fileUrl(page), 1500);
   tc.land = await evalJs(`(() => { const r = s => { const x = document.querySelector(s).getBoundingClientRect(); return {x:x.x, y:x.y, w:x.width, h:x.height, r:x.right, b:x.bottom}; };
-    return {reward:r('#rewardOpen'), fit:r('#fitOpen'), stage:r('#stageBox'), touch:r('#touch'), note:r('.touch-note'), pad:r('#tpad'), btns:r('#tbtns'), hint:r('#hudHint'), hintShown:getComputedStyle(${q('#hudHint')}).display, hintText:${q('#hudHint')}.textContent}; })()`);
+    return {reward:r('#rewardOpen'), fit:r('#fitOpen'), stage:r('#stageBox'), touch:r('#touch'), note:r('.touch-note'), dirs:r('#tdirs'), btns:r('#tbtns'), hint:r('#hudHint'), hintShown:getComputedStyle(${q('#hudHint')}).display, hintText:${q('#hudHint')}.textContent}; })()`);
   const L = tc.land, inside = (a, o) => a.y>=o.y-0.5 && a.b<=o.b+0.5 && a.x>=o.x-0.5 && a.r<=o.r+0.5;
   if(L.reward.y<L.fit.b || L.reward.b>L.touch.y || !inside(L.reward,L.stage)) errors.push('landscape reward button overlap: '+JSON.stringify(L));
-  if(!(L.stage.w>L.stage.h) || !inside(L.pad,L.touch) || !inside(L.btns,L.touch) || L.pad.y<L.note.b-0.5 || L.btns.y<L.note.b-0.5 || L.pad.r>L.btns.x || L.pad.w<80 || L.btns.w<80
+  if(!(L.stage.w>L.stage.h) || !inside(L.dirs,L.touch) || !inside(L.btns,L.touch) || L.dirs.y<L.note.b-0.5 || L.btns.y<L.note.b-0.5 || L.dirs.r>L.btns.x || L.dirs.w<140 || L.btns.w<80
      || L.hintShown==='none' || L.hint.b>L.touch.y+0.5 || L.hint.y<L.stage.y+L.stage.h*0.46-1 || !L.hintText) errors.push('touch landscape layout check failed: '+JSON.stringify(L));
   await send('Emulation.setEmulatedMedia',{features:[{name:'pointer',value:'fine'},{name:'hover',value:'hover'}]});
   await send('Emulation.setTouchEmulationEnabled',{enabled:false});
@@ -296,8 +302,9 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   tc.desktop = await evalJs(`({ui:document.documentElement.classList.contains('touch-ui'), shown:getComputedStyle(${q('#touch')}).display})`);
   out.touch = tc;
   if(!tc.jpHit.hit) errors.push('reward 확인 button is covered by the touch overlay: '+JSON.stringify(tc.jpHit));
-  if(!tc.ui || tc.compat!=='CSS1Compat' || tc.width!==390 || tc.scrollW>390 || tc.shown!=='block' || tc.sel!=='true' || tc.pad.w<150 || tc.b2.w<56 || tc.pad.y<tc.stage.y+tc.stage.h*0.5 || tc.badge!=='👆 터치 대기' || tc.hint.y<tc.stage.y+tc.stage.h*0.46-1 || tc.hint.y+tc.hint.h>tc.touchTop+0.5
-     || tc.after.title!=='초풍!' || tc.after.src!=='👆 터치' || !/^→[0-9f]* ★[0-9]+f ↓[0-9]+f ↘[0-9]+f/.test(tc.after.chips) || !tc.after.knob.startsWith('translate(calc(-50% + 0px)') || tc.after.dir!=='' || tc.desktop.ui || tc.desktop.shown!=='none')
+  if(!tc.ui || tc.compat!=='CSS1Compat' || tc.width!==390 || tc.scrollW>390 || tc.shown!=='block' || tc.sel!=='true' || tc.dirs.w<160 || tc.dirs.x+tc.dirs.w>tc.btns.x || tc.right.w<46 || tc.b2.w<56 || tc.dirs.y<tc.stage.y+tc.stage.h*0.5 || tc.badge!=='👆 터치 대기' || tc.hint.y<tc.stage.y+tc.stage.h*0.46-1 || tc.hint.y+tc.hint.h>tc.touchTop+0.5 || JSON.stringify(tc.tune)!=='["100","0","0"]'
+     || tc.narrow.dirs.r>tc.narrow.btns.x || tc.narrowCustom.size!=='62px'
+     || tc.after.title!=='초풍!' || tc.after.src!=='👆 터치' || !/^→[0-9f]* ★[0-9]+f ↓[0-9]+f ↘[0-9]+f/.test(tc.after.chips) || tc.after.active!==0 || tc.desktop.ui || tc.desktop.shown!=='none')
     errors.push('touch controls check failed: '+JSON.stringify(tc));
   const shotDir=path.join(__dirname,'../.sandbox/bgm-toggle');fs.mkdirSync(shotDir,{recursive:true});
   for(const width of [1366,390]){
