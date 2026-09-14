@@ -37,15 +37,25 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   // Point a scratch copy of the app at the local worker (BOARD_URL is a const in the shipped file; the copy is never committed).
   const src = fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   if(!/const BOARD_URL = '[^']*';/.test(src)) throw new Error('BOARD_URL constant not found in index.html');
-  dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html');
-  fs.writeFileSync(page, src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`));
+  const noticeMatch = src.match(/const NOTICES = \[\s*\{id:'([^']+)'/);
+  if(!noticeMatch) throw new Error('latest notice id not found in index.html');
+  const latestNoticeId = noticeMatch[1];
+  dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html'), returningPage = path.join(dir,'returning.html');
+  const scratchSrc = src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`);
+  fs.writeFileSync(page, scratchSrc); fs.writeFileSync(returningPage, scratchSrc);
   for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','donate-kakao.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
   try{ fs.rmSync(path.join(os.tmpdir(),'dojo-smoke-profile'),{recursive:true,force:true}); }catch(e){} // fresh localStorage every run (a navigation at the end of the run flushes it to disk)
   const b = await launch({port:9333, profile:'dojo-smoke-profile'});
   browser = b;
   console.log('Smoke: browser connected');
   const {send, evalJs, errors} = b;
-  await b.navigate(fileUrl(page));
+  const waitFor = async (expr, timeout=5000) => {
+    const until=Date.now()+timeout;
+    while(Date.now()<until){ try{ if(await evalJs(expr)) return; }catch(e){ if(!/Execution context was destroyed|Cannot find context/.test(String(e))) throw e; } await sleep(100); }
+    throw new Error('browser condition timed out: '+expr);
+  };
+  await b.navigate(fileUrl(page), 0);
+  await waitFor(`location.pathname.endsWith('/index.html') && !!document.querySelector('#noticeDlg') && !!document.querySelector('#nickDlg')`);
   const out = {};
   const snap = async () => evalJs(`(() => {
     const q=s=>document.querySelector(s); const css=getComputedStyle(document.documentElement);
@@ -73,6 +83,23 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   { const i = errors.findIndex(e => /status of 409/.test(e)); if(i>=0) errors.splice(i,1); } // Chrome logs the intentional 'taken' 409 as a resource error
   if(!out.gate.open || !out.gate.closeHidden || !out.gate.laterHidden || out.gate.btn.hidden || !out.gate.btn.text || /·/.test(out.gate.btn.text) || out.gate.inputsWhileOpen!==0 || !out.gate.afterEscape || !out.gate.short || !out.gate.taken.msg || out.gate.taken.msg===out.gate.short || !out.gate.taken.open
      || out.gate.after.open || !/스모크 테스트/.test(out.gate.after.btn) || out.gate.after.postNick!=='스모크 테스트' || out.gate.after.stored.nick!=='스모크 테스트' || !/^[0-9a-f]{48}$/.test(out.gate.after.stored.token)) errors.push('nickname gate check failed: '+JSON.stringify(out.gate));
+  // announcements: unread badge → modal patch notes → browser-local read marker, with no automatic popup
+  await waitFor(`!!document.querySelector('#noticeBadge') && !!document.querySelector('#noticeDlg')`);
+  out.notice = await evalJs(`(() => { const q=s=>document.querySelector(s); return {badge:!q('#noticeBadge').hidden,open:q('#noticeDlg').open}; })()`);
+  out.notice.latest = latestNoticeId;
+  await evalJs(`document.querySelector('#noticeOpen').click()`); await sleep(100);
+  Object.assign(out.notice, await evalJs(`(() => { const q=s=>document.querySelector(s),st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1'));return {afterOpen:q('#noticeDlg').open,items:q('#noticeList').children.length,title:q('#noticeList h3').textContent,seen:st.noticeSeen,badgeAfter:!q('#noticeBadge').hidden}; })()`));
+  await evalJs(`document.querySelector('#noticeClose').click()`); await sleep(50); out.notice.closed = !(await evalJs(`document.querySelector('#noticeDlg').open`));
+  if(!out.notice.latest || !out.notice.badge || out.notice.open || !out.notice.afterOpen || out.notice.items<1 || !out.notice.title || out.notice.seen!==out.notice.latest || out.notice.badgeAfter || !out.notice.closed) errors.push('announcement check failed: '+JSON.stringify(out.notice));
+  // On a later visit, an unread latest id opens once after boot; the nickname gate is skipped because this is now a returning browser.
+  await evalJs(`const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1'));st.noticeSeen='';localStorage.setItem('wave-ewgf-dojo-v1',JSON.stringify(st))`);
+  await b.navigate(fileUrl(returningPage), 0);
+  await waitFor(`location.pathname.endsWith('/returning.html') && !!document.querySelector('#noticeDlg')`);
+  await waitFor(`document.querySelector('#noticeDlg').open`, 3000);
+  out.notice.returning = await evalJs(`({open:document.querySelector('#noticeDlg').open,seen:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).noticeSeen,nickOpen:document.querySelector('#nickDlg').open})`);
+  out.notice.returning.latest = latestNoticeId;
+  await evalJs(`document.querySelector('#noticeClose').click()`);
+  if(!out.notice.returning.latest || !out.notice.returning.open || out.notice.returning.seen!==out.notice.returning.latest || out.notice.returning.nickOpen) errors.push('returning visitor announcement failed: '+JSON.stringify(out.notice.returning));
   // simulate a few inputs via keyboard events to populate result/coach/log, then switch languages
   await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(5); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(300);
   out.afterInput = await snap();

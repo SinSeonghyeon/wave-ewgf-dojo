@@ -170,6 +170,15 @@
   .nick-btn:hover{border-style:solid}
   /* first-run nickname gate (modal; Escape is blocked until a nickname exists) */
   dialog.nick{width:min(460px,calc(100vw - 32px))}
+  dialog.notices{width:min(680px,calc(100vw - 32px));max-height:min(80vh,720px)}
+  .notice-list{display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;padding-right:4px}
+  .notice-item{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+  .notice-item:first-child{border-color:var(--accent-deep)}
+  .notice-meta{display:flex;align-items:center;gap:8px;color:var(--muted);font-family:var(--mono);font-size:11.5px}
+  .notice-kind{padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+  .notice-item h3{margin:7px 0 5px;font-size:17px;color:var(--ink)}
+  .notice-item p{margin:0;color:var(--ink2);line-height:1.6}
+  .notice-item ul{margin:8px 0 0;padding-left:20px;color:var(--muted);line-height:1.7}
   .donate-qr{display:block;width:200px;height:200px;margin:14px auto 4px;padding:8px;box-sizing:content-box;background:#fff;border-radius:8px}
   #donateDlg .nick-form{justify-content:center} #donateDlg .btn{text-decoration:none}
   #donateDlg .donate-contact{margin:16px 0 0;text-align:center;font-size:12px;color:var(--muted)}
@@ -377,6 +386,9 @@
   html[lang="en"] .brand p{max-width:350px} /* the English tagline needs a little more to stay on two lines */
   html[lang="ja"] .brand h1{font-size:28px}
   .top-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-left:auto} /* stays on the right when it wraps to its own row */
+  .notice-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;height:45px;padding:0 11px;border:1px solid var(--line2);border-radius:4px;background:transparent;color:var(--ink2);cursor:pointer}
+  .notice-btn:hover,.notice-btn:focus-visible{color:var(--accent);border-color:var(--accent)}
+  .notice-new{position:absolute;right:-5px;top:-8px;padding:1px 5px;border-radius:999px;background:var(--red);color:#fff;font-family:var(--mono);font-size:8px;font-weight:700;line-height:15px;letter-spacing:.4px;box-shadow:0 0 0 2px var(--bg)}
   .bgm-btn{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:45px;height:45px;padding:0;border:1px solid var(--line2);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer}
   .bgm-btn[aria-pressed="false"]{color:var(--muted)}
   .bgm-btn .off{display:none}
@@ -408,6 +420,7 @@
       <button role="tab" data-mode="bd10" aria-selected="false" data-i18n="mode.bd10.name">백대시 10초</button>
     </nav>
     <div class="top-right">
+      <button class="notice-btn" id="noticeOpen" type="button" data-i18n-aria="notice.open" data-i18n-title="notice.open" aria-label="공지사항 열기"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span data-i18n="notice.button">공지</span><span class="notice-new" id="noticeBadge" data-i18n="notice.new">NEW</span></button>
       <button class="bgm-btn" id="bgmBtn" type="button" aria-pressed="true" data-i18n-aria="bgm.aria" data-i18n-title="bgm.aria" aria-label="배경음 켜기/끄기"><svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4 6 8H3v8h3l5 4z"/><g class="on"><path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/></g><g class="off"><path d="m16 9 6 6m0-6-6 6"/></g></svg></button>
       <div class="lang" id="langSel" role="group" aria-label="Language"><button data-lang="ko" aria-pressed="true">한국어</button><button data-lang="en" aria-pressed="false">EN</button><button data-lang="ja" aria-pressed="false">日本語</button></div>
       <div class="src" id="srcBadge">⌨ 키보드 대기</div>
@@ -506,6 +519,12 @@
       </dialog>
     </aside>
   </main>
+
+  <dialog class="share notices" id="noticeDlg" aria-labelledby="noticeTitle">
+    <div class="set-head"><h2 id="noticeTitle" data-i18n="notice.title">공지사항</h2><button class="btn ghost" id="noticeClose" type="button" data-i18n="share.close">닫기</button></div>
+    <p class="note" data-i18n="notice.sub">미시마 도장의 업데이트와 패치 노트입니다.</p>
+    <div class="notice-list" id="noticeList"></div>
+  </dialog>
 
   <dialog class="share" id="shareDlg" aria-labelledby="shareTitle">
     <h2 id="shareTitle" data-i18n="share.title">결과 공유 카드</h2>
@@ -758,6 +777,14 @@ const lookOf = f => Object.fromEntries(SLOTS.map(s => [s, ITEMS[s][f[s]] || ITEM
 function currentLook(){ return lookCache || (lookCache = lookOf(store.fit)); }
 function setFit(slot, id){ if(!ITEMS[slot] || !ITEMS[slot][id] || !owned(id)) return false; store.fit[slot] = id; lookCache = null; save(); renderFit(); return true; }
 
+/* ---------- announcements ---------- */
+// Newest first. For each patch, add one entry and the matching notice.<id> strings to all three I18N dictionaries.
+// The latest id is the read marker saved in this browser; no backend or deployment-time request is involved.
+const NOTICES = [
+  {id:'2026-09-15-notices', date:'2026-09-15', kind:'notice.kind.update', title:'notice.20260915.title', summary:'notice.20260915.summary', items:['notice.20260915.1','notice.20260915.2','notice.20260915.3']},
+];
+const NOTICE_LATEST = NOTICES[0]?.id || '';
+
 /* ---------- persistent settings ---------- */
 const STORE = 'wave-ewgf-dojo-v1';
 const LANGS = ['ko','en','ja'];
@@ -765,7 +792,7 @@ const detectLang = () => { const l = (typeof navigator!=='undefined' && navigato
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgm:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault()};
+let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgm:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault()};
 const owned = id => id==='base' || !!store.ach[id]; // store.ach = unlock record (achievement items and daily gifts alike): id → time
 const pendingReward = id => store.pendingRewards.some(j => j.id===id);
 const earned = id => owned(id) || pendingReward(id);
@@ -774,9 +801,11 @@ function validKey(slot, code){
   const arrows = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
   return typeof code==='string' && /^[A-Za-z][A-Za-z0-9]{0,39}$/.test(code) && (!arrows[code] || arrows[code]===slot);
 }
+let hadStore = false; // true only when storage existed before this page boot; bumpVisitDay() creates it later on a first visit
 try{
   const s = JSON.parse(localStorage.getItem(STORE)||'null');
   if(s && typeof s==='object'){
+    hadStore = true;
     if(LANGS.includes(s.lang)) store.lang=s.lang;
     if(s.v>=4 && WINDOWS.includes(s.window)) store.window=s.window;
     if([1,-1].includes(s.side)) store.side=s.side;
@@ -789,6 +818,7 @@ try{
     if(typeof s.nick==='string' && nickOk(s.nick)) store.nick=s.nick;
     if(store.nick && typeof s.nickToken==='string' && /^[0-9a-f]{48}$/.test(s.nickToken)) store.nickToken=s.nickToken; // proves the nickname is ours (POST /nick); a token without a nickname is dropped
     if(typeof s.visitDay==='string' && /^\d{4}-\d\d-\d\d$/.test(s.visitDay)) store.visitDay=s.visitDay; // last KST day this browser was counted
+    if(typeof s.noticeSeen==='string' && NOTICES.some(n => n.id===s.noticeSeen)) store.noticeSeen=s.noticeSeen; // newest announcement this browser has opened; unknown/removed ids show NEW again
     if(store.nick && s.votes && typeof s.votes==='object') for(const id of Object.keys(s.votes)) if(/^\d{1,12}$/.test(id) && [1,-1].includes(s.votes[id])) store.votes[id]=s.votes[id]; // my like(1)/dislike(-1) per post id: render-only cache (the server enforces one vote per nick); votes belong to the nickname, so none without one
     const keys = {...store.keys};
     for(const k of Object.keys(keys)) if(validKey(k,s.keys?.[k])) keys[k]=s.keys[k];
@@ -827,6 +857,9 @@ const I18N = {
 ko:{
   'app.title':'미시마 도장',
   'app.tagline':'미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정',
+  'notice.button':'공지', 'notice.open':'공지사항 열기', 'notice.new':'NEW', 'notice.title':'공지사항', 'notice.sub':'미시마 도장의 업데이트와 패치 노트입니다.', 'notice.kind.update':'업데이트',
+  'notice.20260915.title':'공지사항 기능 추가', 'notice.20260915.summary':'앞으로 업데이트 내용을 앱 안에서 바로 확인할 수 있습니다.',
+  'notice.20260915.1':'헤더의 종 버튼을 누르면 패치 노트가 열립니다.', 'notice.20260915.2':'새 공지가 있으면 버튼에 NEW 배지가 표시됩니다.', 'notice.20260915.3':'공지 내용은 한국어·영어·일본어를 지원합니다.',
   'modes.aria':'연습 모드', 'stage.aria':'연습 스테이지', 'stage.canvasAria':'SD 캐릭터 연출 화면', 'inputs.aria':'입력 기록', 'coach.aria':'코치 패널', 'stats.aria':'이번 세션 기록', 'records.aria':'기록',
   'src.wait':'⌨ 키보드 대기', 'src.waitTouch':'👆 터치 대기', 'src.kb':'⌨ 키보드', 'src.pad':'🎮 게임패드', 'src.touch':'👆 터치',
   'mode.free.name':'자유 연습', 'mode.free.desc':'제한 없이 웨이브와 초풍을 섞어 연습합니다. 모든 입력이 기록됩니다.',
@@ -1045,6 +1078,9 @@ ko:{
 en:{
   'app.title':'Mishima Dojo',
   'app.tagline':'Mishima-style input trainer · Judges 6N23 6 N 6N23 … wave dashes and 6N23+2 EWGF frame by frame',
+  'notice.button':'News', 'notice.open':'Open announcements', 'notice.new':'NEW', 'notice.title':'Announcements', 'notice.sub':'Updates and patch notes for Mishima Dojo.', 'notice.kind.update':'Update',
+  'notice.20260915.title':'Announcements added', 'notice.20260915.summary':'You can now check the latest changes without leaving the app.',
+  'notice.20260915.1':'Press the bell in the header to open the patch notes.', 'notice.20260915.2':'A NEW badge appears when an unread announcement is available.', 'notice.20260915.3':'Announcements are available in Korean, English, and Japanese.',
   'modes.aria':'Practice mode', 'stage.aria':'Practice stage', 'stage.canvasAria':'SD character stage', 'inputs.aria':'Input history', 'coach.aria':'Coach panel', 'stats.aria':'Session stats', 'records.aria':'Records',
   'src.wait':'⌨ Keyboard ready', 'src.waitTouch':'👆 Touch ready', 'src.kb':'⌨ Keyboard', 'src.pad':'🎮 Gamepad', 'src.touch':'👆 Touch',
   'mode.free.name':'Free practice', 'mode.free.desc':'Mix wave dashes and EWGFs freely. Every input is recorded.',
@@ -1261,6 +1297,9 @@ en:{
 ja:{
   'app.title':'三島道場',
   'app.tagline':'三島流入力トレーナー · 6N23 6 N 6N23 … のウェーブと 6N23+2 の最風をフレーム単位で判定',
+  'notice.button':'お知らせ', 'notice.open':'お知らせを開く', 'notice.new':'NEW', 'notice.title':'お知らせ', 'notice.sub':'三島道場のアップデートとパッチノートです。', 'notice.kind.update':'アップデート',
+  'notice.20260915.title':'お知らせ機能を追加', 'notice.20260915.summary':'アプリ内で最新の変更内容を確認できるようになりました。',
+  'notice.20260915.1':'ヘッダーのベルを押すとパッチノートが開きます。', 'notice.20260915.2':'未読のお知らせがある場合はNEWバッジを表示します。', 'notice.20260915.3':'お知らせは韓国語・英語・日本語に対応しています。',
   'modes.aria':'練習モード', 'stage.aria':'練習ステージ', 'stage.canvasAria':'SDキャラクター演出画面', 'inputs.aria':'入力履歴', 'coach.aria':'コーチパネル', 'stats.aria':'セッション記録', 'records.aria':'記録',
   'src.wait':'⌨ キーボード待機', 'src.waitTouch':'👆 タッチ待機', 'src.kb':'⌨ キーボード', 'src.pad':'🎮 ゲームパッド', 'src.touch':'👆 タッチ',
   'mode.free.name':'自由練習', 'mode.free.desc':'制限なしでウェーブと最風を混ぜて練習します。すべての入力が記録されます。',
@@ -1607,7 +1646,7 @@ function kbVector(){
   kbDir = { x:(rt?1:0)-(lf?1:0), y:(up?1:0)-(dn?1:0) };
 }
 const mappedCodes = () => new Set([...Object.values(store.keys),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
-const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open || $('donateDlg').open || $('fitDlg').open; // nickname gate / result card / settings / donate QR: game input is paused (called at pad-poll rate, so no DOM query)
+const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open || $('donateDlg').open || $('fitDlg').open || $('noticeDlg').open; // any dialog pauses game input (called at pad-poll rate, so no DOM query)
 let listening = null; // key remap slot
 addEventListener('keydown', e => {
   if(listening){
@@ -2505,6 +2544,43 @@ $('shareTweet').addEventListener('click', () => {
   try{ window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(shareModel.tweet), '_blank', 'noopener'); }catch(e){}
 });
 
+/* ---------- announcements: static patch notes in this file, with a browser-local read marker ---------- */
+function renderNotices(){
+  $('noticeBadge').hidden = !NOTICE_LATEST || store.noticeSeen===NOTICE_LATEST;
+  $('noticeList').innerHTML = NOTICES.map(n => {
+    const date = new Intl.DateTimeFormat(LOCALE[store.lang], {year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(n.date+'T12:00:00Z'));
+    return `<article class="notice-item"><div class="notice-meta"><time datetime="${n.date}">${escapeHTML(date)}</time><span class="notice-kind">${escapeHTML(T(n.kind))}</span></div><h3>${escapeHTML(T(n.title))}</h3><p>${escapeHTML(T(n.summary))}</p><ul>${n.items.map(k => `<li>${escapeHTML(T(k))}</li>`).join('')}</ul></article>`;
+  }).join('');
+}
+function openNotices(){
+  const d = $('noticeDlg'); if(typeof d.showModal!=='function' || d.open || modalOpen()) return false;
+  endTrial(true); resetInput(); renderNotices(); d.showModal(); jackpotPause();
+  if(NOTICE_LATEST && store.noticeSeen!==NOTICE_LATEST){ store.noticeSeen = NOTICE_LATEST; save(); renderNotices(); }
+  noticeAutoPending = false; if(noticeAutoTimer) clearTimeout(noticeAutoTimer); noticeAutoTimer = null;
+  return true;
+}
+$('noticeOpen').addEventListener('click', openNotices);
+$('noticeClose').addEventListener('click', () => $('noticeDlg').close());
+$('noticeDlg').addEventListener('close', () => setTimeout(renderRewards, 0));
+
+// Returning visitors see each new latest announcement once. A first visit only gets the NEW badge,
+// avoiding a second modal immediately after the nickname gate. Busy UI is retried without interrupting play or results.
+let noticeAutoPending = hadStore && !!NOTICE_LATEST && store.noticeSeen!==NOTICE_LATEST;
+let noticeAutoTimer = null, noticeAutoQueued = false;
+function noticeAutoSchedule(delay=500){
+  if(!noticeAutoPending || store.noticeSeen===NOTICE_LATEST || noticeAutoTimer || noticeAutoQueued) return;
+  noticeAutoQueued = true;
+  requestAnimationFrame(() => { noticeAutoQueued = false; if(noticeAutoPending && !noticeAutoTimer) noticeAutoTimer = setTimeout(noticeAutoTry, delay); });
+}
+function noticeAutoTry(){
+  noticeAutoTimer = null;
+  if(!noticeAutoPending || store.noticeSeen===NOTICE_LATEST){ noticeAutoPending = false; return false; }
+  if(document.hidden) return false;
+  if(modalOpen() || trial.running || !!trial.cdTimer || !!trial.openTimer || jackpotBusy || jackpotHold){ noticeAutoSchedule(750); return false; }
+  return openNotices();
+}
+addEventListener('visibilitychange', () => { if(!document.hidden) noticeAutoSchedule(); });
+
 /* ---------- backend: ranking (cumulative, no reset — 2026-09-14 user decision), visit counter, shoutbox (Cloudflare Worker in worker/; see worker/README.md) ---------- */
 const BOARD_URL = 'https://mishima-dojo-board.mishima-dojo.workers.dev'; // Cloudflare Worker in worker/ (no trailing slash). Empty → all backend UI hidden.
 /* ---------- donate (PLAN 2-3): plain external link per language, no scripts. Empty → footer row hidden for that language. ---------- */
@@ -2927,7 +3003,7 @@ function renderAll(){
   setCoach(ui.coach); setTrend(ui.trend); renderSeg(ui.seg);
   renderBests(); renderLog(); renderHist(); renderWave();
   $('shareMsg').textContent = msg(ui.shareMsg); if($('shareDlg').open) renderShare();
-  renderBoard(); renderTrialRank(); renderVisits(); renderPosts(); if(BOARD_URL) renderNick(); renderDonate(); if($('fitDlg').open) renderFit();
+  renderBoard(); renderTrialRank(); renderVisits(); renderPosts(); if(BOARD_URL) renderNick(); renderDonate(); renderNotices(); if($('fitDlg').open) renderFit();
   if(trial.running) trialTick(performance.now());
 }
 function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); renderAll(); }
@@ -3397,7 +3473,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 /* ---------- boot ---------- */
-renderAll(); setMode('free'); renderHistory(); updateStats(); bumpVisitDay(); backendInit();
+renderAll(); setMode('free'); renderHistory(); updateStats(); bumpVisitDay(); backendInit(); noticeAutoSchedule();
 world.camX = world.charX - W*0.32;
 requestAnimationFrame(frame);
 })();

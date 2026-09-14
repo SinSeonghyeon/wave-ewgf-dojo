@@ -16,14 +16,14 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
   }
   const get=id=>{if(!elements.has(id)) elements.set(id,element()); return elements.get(id);};
   get('jackpot').hidden=true;
-  for(const id of ['setDlg','donateDlg','fitDlg']) get(id).showModal=function(){this.open=true;};
+  for(const id of ['setDlg','donateDlg','fitDlg','noticeDlg']) get(id).showModal=function(){this.open=true;};
   const context=vm.createContext({performance:{now:()=>now},document:{getElementById:get,querySelectorAll:()=>[],hasFocus:()=>true,hidden:false},
     navigator:{getGamepads:()=>pads},localStorage:{getItem:()=>saved===undefined?null:JSON.stringify(saved),setItem(){}},
     matchMedia:()=>({matches:false}),devicePixelRatio:1,requestAnimationFrame(){},
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -223,6 +223,29 @@ test('every dictionary key exists in all three languages',()=>{
 test('the three dictionaries share exactly the same key set',()=>{
   const {I18N}=boot();const ko=Object.keys(I18N.ko).sort();
   for(const l of ['en','ja']) assert.deepEqual(Object.keys(I18N[l]).sort(),ko,'keys differ in '+l);
+});
+test('announcements render in every language and persist the latest read marker',()=>{
+  let saved;
+  const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
+  assert.ok(a.NOTICES.length);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/공지사항 기능 추가/);
+  a.setMode('wave10');a.startTrial();a.openNotices();
+  assert.equal(a.get('noticeDlg').open,true);assert.equal(a.trial.cdTimer,null,'opening an announcement cancels a countdown');
+  assert.equal(a.store.noticeSeen,a.NOTICE_LATEST);assert.equal(saved.noticeSeen,a.NOTICE_LATEST);assert.equal(a.get('noticeBadge').hidden,true);
+  a.setLang('ja');assert.match(a.get('noticeList').innerHTML,/お知らせ機能を追加/);
+  const read=boot({v:4,noticeSeen:a.NOTICE_LATEST});assert.equal(read.get('noticeBadge').hidden,true);
+  const invalid=boot({v:4,noticeSeen:'removed-notice'});assert.equal(invalid.store.noticeSeen,'');assert.equal(invalid.get('noticeBadge').hidden,false);
+});
+test('announcement dates are formatted as date-only values in UTC',()=>{
+  let options;
+  function DateTimeFormat(locale,opts){options=opts;return {format:()=> 'fixed date'};}
+  const a=boot(undefined,undefined,{Intl:{DateTimeFormat}});
+  assert.equal(options.timeZone,'UTC');assert.match(a.get('noticeList').innerHTML,/fixed date/);
+});
+test('a new announcement auto-opens once for returning browsers, but not on their first visit or during play',()=>{
+  const first=boot();assert.equal(first.hadStore,false);assert.equal(first.noticeAutoTry(),false);assert.equal(!!first.get('noticeDlg').open,false);
+  const returning=boot({v:4});assert.equal(returning.hadStore,true);assert.equal(returning.noticeAutoTry(),true);assert.equal(returning.get('noticeDlg').open,true);assert.equal(returning.store.noticeSeen,returning.NOTICE_LATEST);
+  const busy=boot({v:4});busy.setMode('wave10');busy.startTrial();assert.equal(busy.noticeAutoTry(),false);assert.equal(!!busy.get('noticeDlg').open,false);assert.notEqual(busy.trial.cdTimer,null,'automatic notice never cancels an active countdown');
+  const read=boot({v:4,noticeSeen:returning.NOTICE_LATEST});assert.equal(read.noticeAutoTry(),false);assert.equal(!!read.get('noticeDlg').open,false);
 });
 test('histBins puts offsets on the window boundary inside and just outside in the late bin',()=>{
   const a=boot();const bins=a.histBins([{off:0},{off:-12},{off:12},{off:13},{off:null}],12);
