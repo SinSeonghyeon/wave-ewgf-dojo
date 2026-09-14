@@ -13,6 +13,7 @@ module.exports = function fakeD1() {
     db,
     get rows() { return plain(db.prepare('SELECT * FROM scores ORDER BY id').all()); },
     get posts() { return plain(db.prepare('SELECT * FROM posts ORDER BY id').all()); },
+    get replies() { return plain(db.prepare('SELECT * FROM replies ORDER BY id').all()); },
     get bans() { return plain(db.prepare('SELECT * FROM bans ORDER BY created_at').all()); },
     get votes() { return plain(db.prepare('SELECT * FROM votes ORDER BY post_id, key').all()); },
     get visits() { return plain(db.prepare('SELECT * FROM visits ORDER BY day').all()); },

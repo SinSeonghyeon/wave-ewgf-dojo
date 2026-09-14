@@ -14,7 +14,7 @@ database_name = "mishima-dojo-board"
 # id of the live D1 (from `npx wrangler d1 create mishima-dojo-board`). Replace only when rebuilding on a new account.
 database_id = "c0d67c02-7449-4a4e-9d56-60ef07f3418e"
 
-# Per-IP limit for POST /posts (3 per minute). Optional: the Worker skips the check when the binding is absent.
+# Per-IP combined limit for POST /posts and POST /reply (3 per minute). Optional: the Worker skips the check when the binding is absent.
 [[ratelimits]]
 name = "POST_LIMIT"
 namespace_id = "1001"

@@ -161,9 +161,17 @@
   .post b{font-size:13px;color:var(--ink)} .post time{font-family:var(--mono);font-size:11px;color:var(--faint);margin-left:8px}
   .post p{margin:3px 0 0;font-size:13.5px;line-height:1.5;color:var(--ink2);overflow-wrap:anywhere}
   .post-votes{display:flex;gap:6px;margin-top:6px}
-  .post .vote{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;min-height:28px;font-family:var(--mono);font-size:12px;cursor:pointer}
+  .post-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .post .vote,.post .reply-open{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;min-height:28px;font-family:var(--mono);font-size:12px;cursor:pointer}
   .post .vote[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
-  .post .vote:disabled{opacity:.5;cursor:default}
+  .post .vote:disabled,.post .reply-open:disabled{opacity:.5;cursor:default}
+  .reply-list{margin:8px 0 0 14px;padding-left:10px;border-left:2px solid var(--line)}
+  .reply{padding:6px 0}.reply+.reply{border-top:1px solid var(--line)}
+  .reply b{font-size:12px;color:var(--accent)} .reply time{font-size:10.5px}
+  .reply p{font-size:13px;margin-top:2px}
+  .reply-form{display:flex;gap:6px;margin:8px 0 0 14px;padding-left:10px}
+  .reply-form input{min-width:0;flex:1;background:var(--bg);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:6px 9px;font-size:13px}
+  .reply-form .btn{padding:5px 10px;font-size:12px}
   .visits{font-family:var(--mono);font-size:11.5px;color:var(--faint);flex-basis:100%;text-align:right}
   .visits:empty{display:none}
   .nick-btn{background:transparent;color:var(--accent);border:1px dashed var(--accent-deep);border-radius:4px;padding:6px 10px;font-family:var(--mono);font-size:12px}
@@ -1011,6 +1019,8 @@ ko:{
   'posts.textBad':'내용은 1~200자로 입력하세요.', 'posts.tooFast':'너무 빠릅니다. 1분에 3개까지 남길 수 있습니다.',
   'posts.loadFail':'글을 불러올 수 없습니다. 잠시 후 다시 시도하세요.', 'posts.sendFail':'글을 남기지 못했습니다. 잠시 후 다시 시도하세요.',
   'posts.like':'좋아요', 'posts.dislike':'싫어요', 'posts.voteFast':'너무 빠릅니다. 잠시 후 다시 눌러 주세요.', 'posts.voteFail':'반응을 남기지 못했습니다. 잠시 후 다시 시도하세요.',
+  'posts.reply':n=>'답글 '+n, 'posts.replyPh':'답글 쓰기 (200자)', 'posts.replySend':'등록', 'posts.replyCancel':'취소', 'posts.replying':'답글 보내는 중…',
+  'posts.replyFail':'답글을 남기지 못했습니다. 잠시 후 다시 시도하세요.',
   'card.session':'이번 세션 통계', 'card.rate':'초풍 성공률', 'card.hits':'성공 / 시도', 'card.dps':'대시/초', 'card.bestDps':'최고 대시/초', 'card.dashes':'총 대시',
   'card.chain':'최고 연속 대시', 'card.tries':'초풍 시도', 'card.mean':'평균 버튼 오프셋', 'card.window':w=>'초풍 판정 폭 '+w,
   'card.hist':'버튼 타이밍 분포 (d/f 기준, 프레임)', 'card.wave':'웨이브 속도 (대시/초)', 'card.noData':'아직 기록이 없습니다',
@@ -1227,6 +1237,8 @@ en:{
   'posts.textBad':'Text must be 1–200 characters.', 'posts.tooFast':'Too fast. Up to 3 posts per minute.',
   'posts.loadFail':'Could not load posts. Try again later.', 'posts.sendFail':'Could not post. Try again later.',
   'posts.like':'Like', 'posts.dislike':'Dislike', 'posts.voteFast':'Too fast. Try again in a moment.', 'posts.voteFail':'Could not save your reaction. Try again later.',
+  'posts.reply':n=>'Replies '+n, 'posts.replyPh':'Write a reply (200 chars)', 'posts.replySend':'Reply', 'posts.replyCancel':'Cancel', 'posts.replying':'Sending reply…',
+  'posts.replyFail':'Could not post the reply. Try again later.',
   'card.session':'This session', 'card.rate':'EWGF success rate', 'card.hits':'Hits / tries', 'card.dps':'dashes/s', 'card.bestDps':'Best dashes/s', 'card.dashes':'Total dashes',
   'card.chain':'Best dash chain', 'card.tries':'EWGF tries', 'card.mean':'Avg button offset', 'card.window':w=>'EWGF window '+w,
   'card.hist':'Button timing (frames from d/f)', 'card.wave':'Wave speed (dashes/s)', 'card.noData':'No data yet',
@@ -1443,6 +1455,8 @@ ja:{
   'posts.textBad':'本文は1～200文字で入力してください。', 'posts.tooFast':'速すぎます。1分に3件まで投稿できます。',
   'posts.loadFail':'投稿を読み込めません。しばらくしてからもう一度お試しください。', 'posts.sendFail':'投稿できませんでした。しばらくしてからもう一度お試しください。',
   'posts.like':'いいね', 'posts.dislike':'よくないね', 'posts.voteFast':'速すぎます。少し待ってからもう一度押してください。', 'posts.voteFail':'リアクションを送れませんでした。しばらくしてからもう一度お試しください。',
+  'posts.reply':n=>'返信 '+n+'件', 'posts.replyPh':'返信を書く (200文字)', 'posts.replySend':'返信', 'posts.replyCancel':'キャンセル', 'posts.replying':'返信を送信中…',
+  'posts.replyFail':'返信できませんでした。しばらくしてからもう一度お試しください。',
   'card.session':'今回のセッション', 'card.rate':'最風成功率', 'card.hits':'成功 / 試行', 'card.dps':'ダッシュ/秒', 'card.bestDps':'最高ダッシュ/秒', 'card.dashes':'総ダッシュ',
   'card.chain':'最高連続ダッシュ', 'card.tries':'最風試行', 'card.mean':'平均ボタンオフセット', 'card.window':w=>'最風判定幅 '+w,
   'card.hist':'ボタンタイミング分布 (3基準、フレーム)', 'card.wave':'ウェーブ速度 (ダッシュ/秒)', 'card.noData':'まだ記録がありません',
@@ -2675,7 +2689,7 @@ $('fitReset').addEventListener('click', () => { for(const s of SLOTS) store.fit[
 
 const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per start-mode trial; must match worker/index.js BOARDS and #boardTabs
 const board = { tab:'wave10', data:{}, at:{}, msg:'', seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise) · at: Date.now() of each board's last response (waveRefresh refetches wave10 after WAVE_TTL)
-const live = { visits:null, posts:null, postsMsg:'', posting:false, voting:false, visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // voting: a POST /vote is in flight (one at a time, every vote button disabled meanwhile)
+const live = { visits:null, posts:null, postsMsg:'', posting:false, voting:false, replying:false, postsSeq:0, replyTo:0, replyText:'', visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // post mutations share one busy gate; postsSeq keeps an older list load from replacing a newer response
 // nickLater: the gate offers "practise without ranking" after the server itself failed · nickLost: a 403 arrived while the result card was up
 const TIERS = [1, 10, 20, 50, 70]; // upper bounds of "top N%" for grades SS S A B C (tier 0..4); anything above is D (tier 5). Titles: tier.N.title, comments: tier.N.<mode>
 // Grade for the result banner. Tiny boards count as ten players so 1st of 1 lands on S (top 10%), not SS — and 1st of 1 is never "D" at top 100%.
@@ -2847,39 +2861,46 @@ function renderVisits(){ const v = live.visits; $('visits').textContent = v ? T(
 // shoutbox: nickname + one line, newest first; the nickname field doubles as the ranking nickname editor
 function setPostsMsg(m){ live.postsMsg = m; $('postMsg').textContent = msg(m); }
 const postTime = t => new Date(t).toLocaleString(LOCALE[store.lang], {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
+const postsMutating = () => live.posting || live.voting || live.replying;
 async function postsLoad(){
-  if(!BOARD_URL) return;
-  try{ setPosts((await boardFetch('/posts')).rows); if(live.postsMsg && live.postsMsg[0]==='posts.loadFail') setPostsMsg(''); }
-  catch(e){ if(!live.posts) setPostsMsg(['posts.loadFail']); }
-  renderPosts();
+  if(!BOARD_URL || postsMutating()) return;
+  const seq = ++live.postsSeq;
+  try{ const rows = (await boardFetch('/posts')).rows; if(seq!==live.postsSeq) return; setPosts(rows); if(live.postsMsg && live.postsMsg[0]==='posts.loadFail') setPostsMsg(''); }
+  catch(e){ if(seq===live.postsSeq && !live.posts) setPostsMsg(['posts.loadFail']); }
+  if(seq===live.postsSeq) renderPosts();
 }
-function setPosts(rows){ // every /posts, /posts POST and /vote answer lands here: posts that fell off the 50-row list are never shown again, so my votes on them are forgotten too
+function setPosts(rows){ // every post/reply/vote answer lands here: posts that fell off the 50-row list are never shown again, so my votes on them are forgotten too
   live.posts = rows;
   const keep = new Set((rows||[]).map(p => String(p.id)));
+  if(live.replyTo && !keep.has(String(live.replyTo))){ live.replyTo = 0; live.replyText = ''; }
   let n = 0; for(const id of Object.keys(store.votes)) if(!keep.has(id)){ delete store.votes[id]; n++; }
   if(n) save();
 }
-function voteBtn(p, v){ // 👍/👎 pill with the count; aria-pressed marks my own vote (store.votes), disabled while any vote request is in flight
+function voteBtn(p, v){ // 👍/👎 pill with the count; aria-pressed marks my own vote (store.votes), disabled while any post mutation is in flight
   const label = T(v===1 ? 'posts.like' : 'posts.dislike'), mine = (store.votes[p.id]||0)===v;
-  return `<button type="button" class="vote" data-id="${p.id}" data-v="${v}" aria-pressed="${mine}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}"${live.voting ? ' disabled' : ''}>${v===1 ? '👍' : '👎'} ${(v===1 ? p.up : p.down)|0}</button>`;
+  return `<button type="button" class="vote" data-id="${p.id}" data-v="${v}" aria-pressed="${mine}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}"${postsMutating() ? ' disabled' : ''}>${v===1 ? '👍' : '👎'} ${(v===1 ? p.up : p.down)|0}</button>`;
 }
 function renderPosts(){
   if(!BOARD_URL) return;
   const rows = live.posts, text = $('postText');
-  text.placeholder = T('posts.ph'); $('postSend').disabled = live.posting; $('postMsg').textContent = msg(live.postsMsg);
+  text.placeholder = T('posts.ph'); $('postSend').disabled = postsMutating(); $('postMsg').textContent = msg(live.postsMsg);
   $('postList').innerHTML = !rows ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('posts.empty'))}</div>` :
-    rows.map(p => `<div class="post"><b>${escapeHTML(p.nick)}</b><time>${escapeHTML(postTime(p.created_at))}</time><p>${escapeHTML(p.text)}</p><div class="post-votes">${voteBtn(p,1)}${voteBtn(p,-1)}</div></div>`).join('');
+    rows.map(p => { const replies = Array.isArray(p.replies) ? p.replies : [];
+      const list = replies.length ? `<div class="reply-list">${replies.map(r => `<div class="reply"><b>${escapeHTML(r.nick)}</b><time>${escapeHTML(postTime(r.created_at))}</time><p>${escapeHTML(r.text)}</p></div>`).join('')}</div>` : '';
+      const busy = postsMutating(), form = live.replyTo===p.id ? `<form class="reply-form" data-id="${p.id}"><input maxlength="200" autocomplete="off" aria-label="${escapeHTML(T('posts.replyPh'))}" placeholder="${escapeHTML(T('posts.replyPh'))}" value="${escapeHTML(live.replyText)}"${busy?' disabled':''}><button class="btn" type="submit"${busy?' disabled':''}>${escapeHTML(T('posts.replySend'))}</button><button class="btn ghost reply-cancel" type="button"${busy?' disabled':''}>${escapeHTML(T('posts.replyCancel'))}</button></form>` : '';
+      return `<div class="post"><b>${escapeHTML(p.nick)}</b><time>${escapeHTML(postTime(p.created_at))}</time><p>${escapeHTML(p.text)}</p><div class="post-actions"><div class="post-votes">${voteBtn(p,1)}${voteBtn(p,-1)}</div><button type="button" class="reply-open" data-id="${p.id}"${busy?' disabled':''}>↳ ${escapeHTML(T('posts.reply', replies.length))}</button></div>${list}${form}</div>`;
+    }).join('');
 }
 // like/dislike (2026-09-13): the server keeps one vote per (post, nickname) and takes an idempotent "set to v" (1 / -1 / 0 = none), so pressing my
 // current vote sends 0 (cancel) and the other button switches. store.votes mirrors the server's `mine` answer; a stale cache is corrected, never double-counted.
 async function postVote(id, v){
-  if(!BOARD_URL || live.voting || !Number.isInteger(id) || ![1,-1].includes(v)) return;
+  if(!BOARD_URL || postsMutating() || !Number.isInteger(id) || ![1,-1].includes(v)) return;
   if(!hasNick()) return openNick();
   const want = (store.votes[id]||0)===v ? 0 : v, nick = store.nick; // the answer is only ours while the nickname is still the one that voted (boardSubmit has the same guard)
-  live.voting = true; renderPosts();
+  live.voting = true; const seq = ++live.postsSeq; renderPosts();
   try{
     const r = await boardFetch('/vote', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, id, v:want})});
-    setPosts(r.rows);
+    if(seq===live.postsSeq) setPosts(r.rows);
     if(nickKey(store.nick)===nickKey(nick)){ if(r.mine) store.votes[id] = r.mine; else delete store.votes[id]; save(); }
     if(live.postsMsg && /^posts\.vote/.test(live.postsMsg[0])) setPostsMsg('');
   }catch(err){
@@ -2889,14 +2910,38 @@ async function postVote(id, v){
   }
   live.voting = false; renderPosts();
 }
-$('postList').addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('button.vote'); if(b) postVote(+b.dataset.id, +b.dataset.v); });
+$('postList').addEventListener('click', ev => {
+  const vote = ev.target.closest && ev.target.closest('button.vote'); if(vote) return postVote(+vote.dataset.id, +vote.dataset.v);
+  const open = ev.target.closest && ev.target.closest('button.reply-open');
+  if(open){ if(!hasNick()) return openNick(); live.replyTo = live.replyTo===+open.dataset.id ? 0 : +open.dataset.id; live.replyText = ''; return renderPosts(); }
+  if(ev.target.closest && ev.target.closest('button.reply-cancel')){ live.replyTo = 0; live.replyText = ''; renderPosts(); }
+});
+$('postList').addEventListener('input', ev => { if(ev.target.closest && ev.target.closest('.reply-form')) live.replyText = ev.target.value; });
+async function replySend(id, raw){
+  if(!BOARD_URL || postsMutating() || !Number.isInteger(id)) return;
+  if(!hasNick()) return openNick();
+  const nick = store.nick, text = String(raw||'').replace(/\s+/g,' ').trim();
+  if(!text || [...text].length>200) return setPostsMsg(['posts.textBad']);
+  live.replying = true; const seq = ++live.postsSeq; live.replyText = text; setPostsMsg(['posts.replying']); renderPosts();
+  try{
+    const rows = (await boardFetch('/reply', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, id, text})})).rows;
+    if(seq===live.postsSeq) setPosts(rows);
+    live.replyTo = 0; live.replyText = ''; setPostsMsg('');
+  }catch(err){
+    setPostsMsg([err.message==='rate' ? 'posts.tooFast' : err.message==='text' ? 'posts.textBad' : 'posts.replyFail']);
+    if(err.message==='auth') lostNick();
+    if(err.message==='post'){ live.replyTo = 0; live.replyText = ''; live.replying = false; return postsLoad(); }
+  }
+  live.replying = false; renderPosts();
+}
+$('postList').addEventListener('submit', ev => { const f = ev.target.closest && ev.target.closest('form.reply-form'); if(!f) return; ev.preventDefault(); replySend(+f.dataset.id, f.querySelector('input').value); });
 async function postSend(){
-  if(!BOARD_URL || live.posting) return;
+  if(!BOARD_URL || postsMutating()) return;
   if(!hasNick()) return openNick();
   const nick = store.nick, text = $('postText').value.replace(/\s+/g,' ').trim();
   if(!text || [...text].length>200) return setPostsMsg(['posts.textBad']);
-  live.posting = true; setPostsMsg(['posts.sending']); renderPosts();
-  try{ setPosts((await boardFetch('/posts', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, text})})).rows); $('postText').value = ''; setPostsMsg(''); }
+  live.posting = true; const seq = ++live.postsSeq; setPostsMsg(['posts.sending']); renderPosts();
+  try{ const rows = (await boardFetch('/posts', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, text})})).rows; if(seq===live.postsSeq) setPosts(rows); $('postText').value = ''; setPostsMsg(''); }
   catch(err){ setPostsMsg([err.message==='rate' ? 'posts.tooFast' : err.message==='text' ? 'posts.textBad' : 'posts.sendFail']); if(err.message==='auth') lostNick(); }
   live.posting = false; renderPosts();
 }
