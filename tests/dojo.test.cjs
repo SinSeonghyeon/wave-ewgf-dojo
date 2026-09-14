@@ -23,7 +23,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchKeys,touchPress,applyTouchUI,applyTouchLayout,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,takeResultDonate,practiceInput,practiceTick,DONATE_ACTIVE_MS,touchKeys,touchPress,applyTouchUI,applyTouchLayout,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -57,6 +57,34 @@ test('daily gift updates attendance before the minute timer at KST midnight',()=
   assert.equal(a.store.life.days,2);assert.equal(a.store.life.giftDay,'2026-09-14');
   assert.equal(a.store.pendingRewards.at(-1).day,2);a.dailyGift();assert.equal(a.store.life.days,2);
   assert.equal(new Set(a.store.pendingRewards.filter(j=>j.kind==='daily').map(j=>j.id)).size,2,'unclaimed daily gifts are excluded from the next day pool');
+});
+
+test('donation prompts are capped daily and an active header nudge defers across blocking UI',()=>{
+  let wall=Date.parse('2026-09-15T03:00:00Z');
+  class ClockDate extends Date { constructor(...args){super(...(args.length?args:[wall]));} static now(){return wall;} }
+  const a=boot({v:4,lang:'ko'},undefined,{Date:ClockDate});a.get('nickDlg').open=false;
+  assert.equal(a.takeResultDonate(false),false);
+  assert.equal(a.takeResultDonate(true),true);
+  assert.equal(a.takeResultDonate(true),false,'a second personal best on the same KST day is quiet');
+  a.practiceInput();
+  for(let ms=2000;ms<=601000;ms+=1000){ a.time(ms); if(ms%20000===0) a.practiceInput(); a.practiceTick(ms); }
+  assert.equal(a.store.donatePlayMs,a.DONATE_ACTIVE_MS);
+  assert.equal(a.get('donateBubble').hidden,false);
+  assert.equal(a.get('donateNudge').dataset.active,'true');
+  a.setMode('wave10');a.startTrial();
+  assert.equal(a.get('donateNudge').dataset.active,'false','a countdown immediately hides the active nudge');
+  assert.equal(a.store.donateNudgeDay,'','blocking UI does not consume the day');
+  a.endTrial(true);a.time(602000);
+  assert.equal(a.practiceTick(602000),true,'the deferred nudge returns after the countdown is cancelled');
+  assert.equal(a.practiceTick(603000),false,'the visible nudge is still capped for the rest of its KST day');
+});
+
+test('dirty practice time is persisted on pagehide before its 30-second checkpoint',()=>{
+  let saved;
+  const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
+  a.get('nickDlg').open=false;a.practiceInput();a.time(12000);a.practiceTick(12000);
+  assert.equal(a.store.donatePlayMs,1000);a.events.pagehide();
+  assert.equal(saved.donatePlayMs,1000);
 });
 
 test('deferring an active reward also stops its synthesized chime',()=>{
@@ -424,8 +452,10 @@ test('trial end submits only with a claimed nickname (token); a failed submit sh
   for(const l of ['ko','en','ja']){card.setLang(l);for(const mode of card.BOARDS)for(let i=0;i<6;i++)assert.notEqual(card.T('tier.'+i+'.'+mode),'tier.'+i+'.'+mode,l+' '+mode+' '+i);}
   card.setLang('ko');const banner=card.get('shareTierMsg');
   await card.openShare().catch(()=>{}); // the banner is filled synchronously; the canvas draw rejects in this harness (no 2d context)
+  assert.equal(card.trial.result.personalBest,true);assert.equal(card.get('donateShare').hidden,false,'the first personal best gets today\'s result prompt');
   assert.equal(card.get('shareTier').textContent,'S');assert.equal(card.get('shareRank').className,'share-rank t1');assert.equal(banner.textContent,card.T('tier.1.wave10'));
   card.trial.result.submit={state:'done',rank:40,total:42,improved:true};await card.openShare().catch(()=>{});
+  assert.equal(card.get('donateShare').hidden,false,'a duplicate opening keeps the prompt claimed for this result');
   assert.equal(card.get('shareTier').textContent,'D');assert.equal(banner.textContent,'사람이... 맞으시죠? 6N23 6 N, 다시 갑시다.');
   card.trial.result.submit={state:'busy'};assert.equal(card.buildCard(card.shareSource()).rankText,'');
 });
@@ -829,13 +859,14 @@ test('BGM cancels queued requests and interrupted play can resume',async()=>{
   b.store.sound=1;b.bgmSync();assert.equal(b.snd.bgm.paused,false);
 });
 
-test('donate: three buttons open a chooser; KakaoPay first in ko, Ko-fi first elsewhere; KakaoPay shows the QR view',()=>{
+test('donate: header/footer stay visible while the result prompt waits for a daily personal best; chooser orders and opens both methods',()=>{
   const a=boot({v:4,lang:'ko'});
   for(const l of ['ko','en','ja']){
     a.setLang(l);const h=a.get('donateOptions').innerHTML, kakao=h.indexOf('data-opt="kakao"'), kofi=h.indexOf('data-opt="kofi"');
     assert.ok(kakao>=0&&kofi>=0,l+' both options');assert.equal(kakao<kofi,l==='ko',l+' order');
     assert.ok(h.includes('href="https://ko-fi.com/'),l+' ko-fi https link');assert.doesNotMatch(h,/donate.[a-zA-Z]+</,l+' no raw keys');
-    for(const id of ['donate','donateShare','donateTop']) assert.equal(a.get(id).hidden,false,l+' '+id+' visible');
+    for(const id of ['donate','donateTop']) assert.equal(a.get(id).hidden,false,l+' '+id+' visible');
+    assert.equal(a.get('donateShare').hidden,true,l+' result prompt hidden without a personal best');
   }
   for(const id of ['donateTop','donateShareBtn','donateBtn']) assert.ok(html.includes('id="'+id+'" type="button"'),id+' is a button');
   assert.ok(html.indexOf('id="donateShareBtn"')>html.indexOf('id="shareDlg"')&&html.indexOf('id="donateShareBtn"')<html.indexOf('id="donateDlg"'),'result-dialog button lives inside #shareDlg (not on the canvas)');
