@@ -159,6 +159,11 @@ test('top list is capped at 10 while total and my rank keep counting below the l
   const empty = await (await w.handle(req('/top?board=ewgf20'), env, NOW)).json(); assert.equal(empty.cut10, null, 'empty board has no boundary');
   const few = {DB: fakeD1()}; const m2 = owned(w, few); for (const s of [4.5, 6.2, 5.1]) await m2.submit({nick: 'n' + s, score: s, tie: 1});
   assert.equal((await (await w.handle(req('/top?board=wave10'), few, NOW)).json()).cut10, 6.2, 'under ten players the boundary is 1st place, like the app grades');
+  const before = env.DB.queries.length;
+  await w.handle(req('/top?board=wave10&nick=slow'), env, NOW);
+  const scoreReads = env.DB.queries.slice(before).filter(sql => /FROM scores/.test(sql));
+  assert.equal(scoreReads.length, 1, 'one leaderboard request performs one ranked score scan');
+  assert.match(scoreReads[0], /WITH ranked AS/);
 });
 
 test('visits: POST counts one visit for the KST day, GET only reads, total sums all days', async () => {
@@ -186,6 +191,7 @@ test('posts: newest first, capped at 50, validated, rate-limited per IP when the
   for (let i = 2; i <= 55; i++) await me.post({nick: 'p' + i, text: 'msg ' + i}, NOW + i);
   const list = await (await w.handle(req('/posts'), env, NOW)).json();
   assert.equal(list.rows.length, 50); assert.equal(list.rows[0].text, 'msg 55'); assert.equal(list.rows[49].text, 'msg 6');
+  assert.match(env.DB.queries.filter(sql => /FROM latest p/.test(sql)).at(-1), /WITH latest AS[\s\S]*LIMIT 50[\s\S]*LEFT JOIN votes/,'posts are limited before vote aggregation');
   assert.equal(env.DB.posts.length, 55, 'rows below the cap are kept, only the listing is capped');
   // rate limit binding: consulted with the client IP, 429 when it says no, skipped when absent
   const keys = []; const limited = {DB: env.DB, POST_LIMIT: {async limit({key}) { keys.push(key); return {success: keys.length <= 1}; }}};
@@ -382,6 +388,8 @@ test('http surface: CORS preflight, health, 400/404/413 and 500 without leaking 
   for (const res of [pre, health, badJson]) assert.equal(res.headers.get('access-control-allow-origin'), ORIGIN);
   const boom = await w.default.fetch(req('/top?board=wave10'), {DB: {prepare() { throw new Error('db down'); }}});
   assert.equal(boom.status, 500); const j = await boom.json(); assert.equal(j.error, 'server'); assert.equal(j.message, 'db down'); assert.equal(j.stack, undefined);
+  const quota = await w.default.fetch(req('/top?board=wave10'), {DB: {prepare() { throw new Error("Exceeded D1's free tier daily row read limit"); }}});
+  assert.equal(quota.status, 503); assert.deepEqual(await quota.json(), {error: 'quota'});
 });
 
 test('origin lock: only allowed origins get CORS headers and may POST; * opens it for tests; DELETE stays token-only', async () => {

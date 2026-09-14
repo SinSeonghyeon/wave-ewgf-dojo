@@ -618,10 +618,11 @@
     </div>
     <div class="card posts-card" id="postsCard" hidden>
       <h2 data-i18n="posts.title">한마디</h2>
-      <p class="sub" data-i18n="posts.sub">건의·질문·잡담 무엇이든 · 최신 50개 · 1분마다 새로 고침</p>
+      <p class="sub" data-i18n="posts.sub">건의·질문·잡담 무엇이든 · 최신 50개 · 버튼으로 새로고침</p>
       <form class="posts-form" id="postForm"><b class="post-nick" id="postNickLabel"></b><input class="text" id="postText" maxlength="200" autocomplete="off" data-i18n-aria="posts.ph" aria-label="하고 싶은 말 (200자)"><button class="btn" id="postSend" type="submit" data-i18n="posts.send">남기기</button></form>
       <div class="card-msg" id="postMsg"></div>
       <div class="posts" id="postList"></div>
+      <div class="card-actions"><button class="btn ghost" id="postsRefresh" type="button" data-i18n="posts.refresh">새로고침</button></div>
     </div>
     <div class="card chart" id="histCard">
       <h2 data-i18n="hist.title">초풍 버튼 타이밍 분포</h2>
@@ -1087,9 +1088,10 @@ ko:{
   'tier.5.wave10':'사람이... 맞으시죠? 6N23 6 N, 다시 갑시다.', 'tier.5.ewgf20':'사람이... 맞으시죠? 풍신권도 기술입니다. 다시.', 'tier.5.combo10':'사람이... 맞으시죠? 웨이브 3회 뒤 초풍, 다시.', 'tier.5.rush30':'사람이... 맞으시죠? 더미는 도망가지 않습니다. 다시.',
   'tier.0.bd10':'사람이 아니군요!? 화면 끝까지 물러났습니다.', 'tier.1.bd10':'훌륭합니다! 이 백대시는 아무도 못 따라잡아요!', 'tier.2.bd10':'상급 백대시. 상대 러시가 허공을 칩니다.', 'tier.3.bd10':'백대시 좀 타시네요? 캔슬 타이밍만 다듬으면 됩니다.', 'tier.4.bd10':'손이 풀리는 중. 1에서 4로 더 빨리 굴리세요.', 'tier.5.bd10':'사람이... 맞으시죠? 414 N, 다시 갑시다.',
   'board.note':'상위 10명 · 닉네임당 최고 기록 1건 · 초기화 없이 계속 쌓입니다 · 닉네임과 기록만 저장됩니다',
-  'visits':(d,t)=>'오늘 방문 '+d+' · 누적 '+t, 'posts.title':'한마디', 'posts.sub':'건의·질문·잡담 무엇이든 · 최신 50개 · 1분마다 새로 고침',
+  'visits':(d,t)=>'오늘 방문 '+d+' · 누적 '+t, 'posts.title':'한마디', 'posts.sub':'건의·질문·잡담 무엇이든 · 최신 50개 · 버튼으로 새로고침',
   'posts.ph':'하고 싶은 말 (200자)', 'posts.send':'남기기', 'posts.sending':'보내는 중…', 'posts.empty':'아직 글이 없습니다. 첫 글을 남겨 보세요.',
-  'posts.textBad':'내용은 1~200자로 입력하세요.', 'posts.tooFast':'너무 빠릅니다. 1분에 3개까지 남길 수 있습니다.',
+  'posts.refresh':'새로고침', 'posts.refreshing':'불러오는 중…',
+  'posts.textBad':'내용은 1~200자로 입력하세요.', 'posts.tooFast':'너무 빠릅니다. 1분에 3개까지 남길 수 있습니다.', 'posts.quota':'오늘 무료 서버 사용량을 다 써서 한마디를 이용할 수 없습니다. 더 좋은 서버를 쓰려면 후원이 절실합니다 ㅜㅜ',
   'posts.loadFail':'글을 불러올 수 없습니다. 잠시 후 다시 시도하세요.', 'posts.sendFail':'글을 남기지 못했습니다. 잠시 후 다시 시도하세요.',
   'posts.like':'좋아요', 'posts.dislike':'싫어요', 'posts.voteFast':'너무 빠릅니다. 잠시 후 다시 눌러 주세요.', 'posts.voteFail':'반응을 남기지 못했습니다. 잠시 후 다시 시도하세요.',
   'posts.reply':n=>'답글 '+n, 'posts.replyPh':'답글 쓰기 (200자)', 'posts.replySend':'등록', 'posts.replyCancel':'취소', 'posts.replying':'답글 보내는 중…',
@@ -1317,9 +1319,10 @@ en:{
   'tier.5.wave10':'You are... human, right? 6N23 6 N, once more.', 'tier.5.ewgf20':'You are... human, right? A WGF is still a move. Again.', 'tier.5.combo10':'You are... human, right? Three waves, then EWGF. Again.', 'tier.5.rush30':'You are... human, right? The dummies are not running away. Again.',
   'tier.0.bd10':'Are you even human!? Backed off the edge of the screen.', 'tier.1.bd10':'Superb! Nobody is catching that backdash!', 'tier.2.bd10':'Advanced backdash. Their rush hits thin air.', 'tier.3.bd10':'Riding the backdash now. Just polish the cancel timing.', 'tier.4.bd10':'Hands are waking up. Roll from 1 into 4 sooner.', 'tier.5.bd10':'You are... human, right? 414 N, once more.',
   'board.note':'Top 10 · one best per nickname · never resets · only your nickname and result are stored',
-  'visits':(d,t)=>'Today '+d+' · total '+t+' visits', 'posts.title':'Shoutbox', 'posts.sub':'Requests, questions, anything · latest 50 · refreshes every minute',
+  'visits':(d,t)=>'Today '+d+' · total '+t+' visits', 'posts.title':'Shoutbox', 'posts.sub':'Requests, questions, anything · latest 50 · refresh with the button',
   'posts.ph':'Say something (200 chars)', 'posts.send':'Post', 'posts.sending':'Sending…', 'posts.empty':'No posts yet. Be the first.',
-  'posts.textBad':'Text must be 1–200 characters.', 'posts.tooFast':'Too fast. Up to 3 posts per minute.',
+  'posts.refresh':'Refresh', 'posts.refreshing':'Loading…',
+  'posts.textBad':'Text must be 1–200 characters.', 'posts.tooFast':'Too fast. Up to 3 posts per minute.', 'posts.quota':'We used up today’s free server allowance, so the shoutbox is unavailable. Support would help us move to a better server ㅜㅜ',
   'posts.loadFail':'Could not load posts. Try again later.', 'posts.sendFail':'Could not post. Try again later.',
   'posts.like':'Like', 'posts.dislike':'Dislike', 'posts.voteFast':'Too fast. Try again in a moment.', 'posts.voteFail':'Could not save your reaction. Try again later.',
   'posts.reply':n=>'Replies '+n, 'posts.replyPh':'Write a reply (200 chars)', 'posts.replySend':'Reply', 'posts.replyCancel':'Cancel', 'posts.replying':'Sending reply…',
@@ -1547,9 +1550,10 @@ ja:{
   'tier.5.wave10':'人間…ですよね？6N23 6 N、もう一度。', 'tier.5.ewgf20':'人間…ですよね？風神拳も技です。もう一度。', 'tier.5.combo10':'人間…ですよね？ウェーブ3回のあと最風、もう一度。', 'tier.5.rush30':'人間…ですよね？ダミーは逃げません。もう一度。',
   'tier.0.bd10':'人間じゃないですね!? 画面の端まで下がりました。', 'tier.1.bd10':'見事です！このバックダッシュには誰も追いつけません！', 'tier.2.bd10':'上級バックダッシュ。相手のラッシュが空を切ります。', 'tier.3.bd10':'バックダッシュ乗れてますね？あとはキャンセルのタイミングだけ。', 'tier.4.bd10':'手が温まってきました。1から4へもっと早く。', 'tier.5.bd10':'人間…ですよね？414 N、もう一度。',
   'board.note':'上位10人 · ニックネームごとにベスト1件 · リセットなしで積み上がります · 保存されるのはニックネームと記録だけです',
-  'visits':(d,t)=>'今日の訪問 '+d+' · 累計 '+t, 'posts.title':'ひとこと', 'posts.sub':'要望・質問・雑談なんでも · 最新50件 · 1分ごとに更新',
+  'visits':(d,t)=>'今日の訪問 '+d+' · 累計 '+t, 'posts.title':'ひとこと', 'posts.sub':'要望・質問・雑談なんでも · 最新50件 · ボタンで更新',
   'posts.ph':'言いたいこと (200文字)', 'posts.send':'投稿', 'posts.sending':'送信中…', 'posts.empty':'まだ投稿がありません。最初の一言をどうぞ。',
-  'posts.textBad':'本文は1～200文字で入力してください。', 'posts.tooFast':'速すぎます。1分に3件まで投稿できます。',
+  'posts.refresh':'更新', 'posts.refreshing':'読み込み中…',
+  'posts.textBad':'本文は1～200文字で入力してください。', 'posts.tooFast':'速すぎます。1分に3件まで投稿できます。', 'posts.quota':'今日の無料サーバー枠を使い切ったため、ひとことを利用できません。より良いサーバーにするにはご支援が切実に必要です ㅜㅜ',
   'posts.loadFail':'投稿を読み込めません。しばらくしてからもう一度お試しください。', 'posts.sendFail':'投稿できませんでした。しばらくしてからもう一度お試しください。',
   'posts.like':'いいね', 'posts.dislike':'よくないね', 'posts.voteFast':'速すぎます。少し待ってからもう一度押してください。', 'posts.voteFail':'リアクションを送れませんでした。しばらくしてからもう一度お試しください。',
   'posts.reply':n=>'返信 '+n+'件', 'posts.replyPh':'返信を書く (200文字)', 'posts.replySend':'返信', 'posts.replyCancel':'キャンセル', 'posts.replying':'返信を送信中…',
@@ -2896,32 +2900,18 @@ $('fitReset').addEventListener('click', () => { for(const s of SLOTS) store.fit[
 ['setDlg','donateDlg','fitDlg'].forEach(id => $(id).addEventListener('close', () => setTimeout(renderRewards, 0))); // refresh claiming availability (#shareDlg/#nickDlg: their own close handlers)
 
 const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per start-mode trial; must match worker/index.js BOARDS and #boardTabs
-const board = { tab:'wave10', data:{}, at:{}, msg:'', seq:0, deleting:false, submitting:false, loadAfterDelete:false, submitAfterDelete:false }; // score writes are serial: delete waits for submit, submit waits for delete; loads requested during delete resume afterwards
-const live = { visits:null, posts:null, postsMsg:'', posting:false, voting:false, replying:false, postsSeq:0, replyTo:0, replyText:'', visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // post mutations share one busy gate; postsSeq keeps an older list load from replacing a newer response
+const board = { tab:'wave10', data:{}, msg:'', seq:0, deleting:false, submitting:false, loadAfterDelete:false, submitAfterDelete:false }; // score writes are serial: delete waits for submit, submit waits for delete; loads requested during delete resume afterwards
+const live = { visits:null, posts:null, postsMsg:'', postsLoading:false, posting:false, voting:false, replying:false, postsSeq:0, replyTo:0, replyText:'', visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // post mutations share one busy gate; postsSeq keeps an older list load from replacing a newer response
 // nickLater: the gate offers "practise without ranking" after the server itself failed · nickLost: a 403 arrived while the result card was up
 const TIERS = [1, 10, 20, 50, 70]; // upper bounds of "top N%" for grades SS S A B C (tier 0..4); anything above is D (tier 5). Titles: tier.N.title, comments: tier.N.<mode>
 // Grade for the result banner. Tiny boards count as ten players so 1st of 1 lands on S (top 10%), not SS — and 1st of 1 is never "D" at top 100%.
 function tierOf(rank, total){ const p = pctTop(rank, Math.max(total, 10)); const i = TIERS.findIndex(t => p<=t); return i<0 ? 5 : i; }
 const pctTop = (rank, total) => Math.max(1, Math.ceil(rank / Math.max(1,total) * 100)); // "top N%" — 1st of 1 is top 100%
 // Wave chart top band: the wave10 top-10% score (cut10 from /top or /submit), null until the board answers → WAVE_TOP_DEFAULT.
-// The board never resets (2026-09-14), so a cut only moves when someone submits: the cached value stays in use and the periodic waveRefresh refetches it once it is WAVE_TTL old.
-const WAVE_TOP_DEFAULT = 5, WAVE_TTL = 10*60e3;
-const boardSet = (t, d) => { board.data[t] = d; board.at[t] = Date.now(); };
-const waveFresh = () => !!board.data.wave10 && Date.now() - (board.at.wave10||0) < WAVE_TTL;
+// The board never resets (2026-09-14). Keep the last cut until an initial/manual board load or a score mutation returns a newer one; no background D1 polling.
+const WAVE_TOP_DEFAULT = 5;
+const boardSet = (t, d) => { board.data[t] = d; };
 const waveTop = () => { const d = board.data.wave10; return !!d && Number.isFinite(d.cut10) && d.cut10>0 ? d.cut10 : null; };
-let waveRefreshing = false;
-async function waveRefresh(){
-  const cached = board.data.wave10;
-  if(!BOARD_URL || waveFresh() || waveRefreshing) return;
-  waveRefreshing = true;
-  const nick = store.nick, token = store.nickToken;
-  try{
-    const d = await boardFetch('/top?board=wave10'+(hasNick() ? '&nick='+encodeURIComponent(nick) : ''));
-    // A manual load, submission or nickname change takes precedence over this background request.
-    if(nick===store.nick && token===store.nickToken && board.data.wave10===cached){ boardSet('wave10', d); renderWave(); renderBoard(); }
-  }catch(e){} // keep the last value and retry on the next periodic refresh
-  finally{ waveRefreshing = false; }
-}
 const waveTopText = cut => cut==null ? T('wave.topFixed') : T('wave.top', cut.toFixed(1));
 const waveYMax = top => Math.max(8, Math.ceil(top)+1); // keep the band on the chart when the cut climbs past 8 dashes/s
 const waveGrid = yMax => { const g = []; for(let v=2; v<=yMax; v+=2) g.push(v); return g; };
@@ -3095,11 +3085,11 @@ function setPostsMsg(m){ live.postsMsg = m; $('postMsg').textContent = msg(m); }
 const postTime = t => new Date(t).toLocaleString(LOCALE[store.lang], {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
 const postsMutating = () => live.posting || live.voting || live.replying;
 async function postsLoad(){
-  if(!BOARD_URL || postsMutating()) return;
-  const seq = ++live.postsSeq;
-  try{ const rows = (await boardFetch('/posts')).rows; if(seq!==live.postsSeq) return; setPosts(rows); if(live.postsMsg && live.postsMsg[0]==='posts.loadFail') setPostsMsg(''); }
-  catch(e){ if(seq===live.postsSeq && !live.posts) setPostsMsg(['posts.loadFail']); }
-  if(seq===live.postsSeq) renderPosts();
+  if(!BOARD_URL || postsMutating() || live.postsLoading) return;
+  live.postsLoading = true; const seq = ++live.postsSeq; renderPosts();
+  try{ const rows = (await boardFetch('/posts')).rows; if(seq===live.postsSeq){ setPosts(rows); if(live.postsMsg && ['posts.loadFail','posts.quota'].includes(live.postsMsg[0])) setPostsMsg(''); } }
+  catch(e){ if(seq===live.postsSeq && !live.posts) setPostsMsg([e.message==='quota' ? 'posts.quota' : 'posts.loadFail']); }
+  finally{ live.postsLoading = false; renderPosts(); }
 }
 function setPosts(rows){ // every post/reply/vote answer lands here: posts that fell off the 50-row list are never shown again, so my votes on them are forgotten too
   live.posts = rows;
@@ -3114,12 +3104,14 @@ function voteBtn(p, v){ // 👍/👎 pill with the count; aria-pressed marks my 
 }
 function renderPosts(){
   if(!BOARD_URL) return;
-  const rows = live.posts, text = $('postText');
+  const rows = live.posts, text = $('postText'), busy = postsMutating();
   text.placeholder = T('posts.ph'); $('postSend').disabled = postsMutating(); $('postMsg').textContent = msg(live.postsMsg);
+  $('postsRefresh').disabled = busy || live.postsLoading;
+  $('postsRefresh').textContent = T(live.postsLoading ? 'posts.refreshing' : 'posts.refresh');
   $('postList').innerHTML = !rows ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('posts.empty'))}</div>` :
     rows.map(p => { const replies = Array.isArray(p.replies) ? p.replies : [];
       const list = replies.length ? `<div class="reply-list">${replies.map(r => `<div class="reply"><b>${escapeHTML(r.nick)}</b><time>${escapeHTML(postTime(r.created_at))}</time><p>${escapeHTML(r.text)}</p></div>`).join('')}</div>` : '';
-      const busy = postsMutating(), form = live.replyTo===p.id ? `<form class="reply-form" data-id="${p.id}"><input maxlength="200" autocomplete="off" aria-label="${escapeHTML(T('posts.replyPh'))}" placeholder="${escapeHTML(T('posts.replyPh'))}" value="${escapeHTML(live.replyText)}"${busy?' disabled':''}><button class="btn" type="submit"${busy?' disabled':''}>${escapeHTML(T('posts.replySend'))}</button><button class="btn ghost reply-cancel" type="button"${busy?' disabled':''}>${escapeHTML(T('posts.replyCancel'))}</button></form>` : '';
+      const form = live.replyTo===p.id ? `<form class="reply-form" data-id="${p.id}"><input maxlength="200" autocomplete="off" aria-label="${escapeHTML(T('posts.replyPh'))}" placeholder="${escapeHTML(T('posts.replyPh'))}" value="${escapeHTML(live.replyText)}"${busy?' disabled':''}><button class="btn" type="submit"${busy?' disabled':''}>${escapeHTML(T('posts.replySend'))}</button><button class="btn ghost reply-cancel" type="button"${busy?' disabled':''}>${escapeHTML(T('posts.replyCancel'))}</button></form>` : '';
       return `<div class="post"><b>${escapeHTML(p.nick)}</b><time>${escapeHTML(postTime(p.created_at))}</time><p>${escapeHTML(p.text)}</p><div class="post-actions"><div class="post-votes">${voteBtn(p,1)}${voteBtn(p,-1)}</div><button type="button" class="reply-open" data-id="${p.id}"${busy?' disabled':''}>↳ ${escapeHTML(T('posts.reply', replies.length))}</button></div>${list}${form}</div>`;
     }).join('');
 }
@@ -3178,12 +3170,13 @@ async function postSend(){
   live.posting = false; renderPosts();
 }
 $('postForm').addEventListener('submit', ev => { ev.preventDefault(); postSend(); });
+$('postsRefresh').addEventListener('click', postsLoad);
 function backendInit(){
   $('boardCard').hidden = $('postsCard').hidden = !BOARD_URL;
   if(!BOARD_URL) return;
   boardLoad(); postsLoad(); visitsLoad(); renderNick();
   if(!hasNick()){ openNick(); if(store.nick) claimNick(store.nick); } // first visit → gate; a nickname saved before tokens existed is claimed as-is
-  setInterval(() => { if(document.hidden) return; waveRefresh(); postsLoad(); bumpVisitDay(); visitsLoad(); }, 60000); // background tabs stay quiet
+  setInterval(() => { if(document.hidden) return; bumpVisitDay(); if(live.visitPending) visitsLoad(); }, 60000); // no recurring D1 reads; only count a KST day crossed by an already-open tab
 }
 
 /* ---------- language ---------- */

@@ -1027,39 +1027,32 @@ test('wave chart top band and coach tempo follow the wave10 top-10% cut (cut10),
 });
 
 
-test('wave cut never expires (no board reset): the periodic refresh refetches it once it is 10 minutes old, keeps the last value on failure and never changes tabs',async()=>{
-  let wall=Date.parse('2026-09-14T03:00:00Z');
-  const b=backend(),a=boot({v:4,lang:'ko'},b.fetch,{Date:class extends Date{static now(){return wall;}}});
-  b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:8.5});await b.flush();
-  const refresh=[...a.timers.values()].find(fn=>String(fn).includes('waveRefresh()'));
-  assert.ok(refresh);a.board.tab='rush30';
-  dash(a);for(const t of [1100,1300]){a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}
-  assert.equal(a.waveTop(),8.5);
-  refresh();assert.equal(b.find('/top?board=wave10'),undefined,'fresh data needs no refetch');
-  wall+=10*60e3-1;refresh();assert.equal(b.find('/top?board=wave10'),undefined,'still fresh just under the TTL');
-  wall+=1;assert.equal(a.waveTop(),8.5,'a stale cut stays in use: nothing to fall back to, the board never reset');
-  refresh();assert.ok(b.find('/top?board=wave10'),'stale → background refetch');assert.match(a.get('waveChart').innerHTML,/상위 10% \(8\.5 이상\)/,'the band stays while the request is pending');
-  const count=b.calls.filter(c=>c.url.includes('/top?board=wave10')).length;
-  refresh();assert.equal(b.calls.filter(c=>c.url.includes('/top?board=wave10')).length,count,'only one background request in flight');
-  b.answer('/top?board=wave10','GET',{},500);await b.flush();assert.equal(a.waveTop(),8.5,'a failed refetch keeps the last value');
-  refresh();b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:6.2});await b.flush();
-  assert.equal(a.waveTop(),6.2);assert.equal(a.board.tab,'rush30');
-  assert.match(a.get('waveChart').innerHTML,/상위 10% \(6\.2 이상\)/);
-  assert.equal(a.buildCard(a.shareSource()).chart.top,6.2);
-  refresh();assert.equal(b.find('/top?board=wave10'),undefined,'fresh again after the answer');
+test('backend does no recurring D1 reads; shoutbox refresh is explicit and the last wave cut stays cached',async()=>{
+  const b=backend(),a=boot({v:4,lang:'ko'},b.fetch);
+  b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:8.5});
+  b.answer('/posts','GET',{rows:[]}); b.answer('/visits','POST',{day:'x',today:1,total:1}); await b.flush();
+  const before=b.calls.length, periodic=[...a.timers.values()].find(fn=>String(fn).includes('bumpVisitDay()'));
+  assert.ok(periodic,'the local KST-day rollover timer remains');
+  for(let i=0;i<20;i++) periodic();
+  assert.equal(b.calls.length,before,'the timer does not poll rankings, posts or visits during the same KST day');
+  assert.equal(a.waveTop(),8.5,'the last successful cut remains cached until a user action or submission updates it');
+  assert.equal(a.get('postsRefresh').disabled,false); assert.equal(a.get('postsRefresh').textContent,'새로고침');
+  a.get('postsRefresh').click(); await b.flush();
+  assert.equal(b.calls.filter(c=>c.url.endsWith('/posts')).length,2,'the refresh button performs exactly one new posts request');
+  assert.equal(a.get('postsRefresh').disabled,true); assert.equal(a.get('postsRefresh').textContent,'불러오는 중…');
+  a.get('postsRefresh').click(); await b.flush();
+  assert.equal(b.calls.filter(c=>c.url.endsWith('/posts')).length,2,'repeat clicks are ignored while loading');
+  b.answer('/posts','GET',{rows:[]}); await b.flush();
+  assert.equal(a.get('postsRefresh').disabled,false); assert.equal(a.get('postsRefresh').textContent,'새로고침');
+  a.setLang('en'); assert.equal(a.get('postsRefresh').textContent,'Refresh');
 });
-
-test('background wave refresh preserves newer board data and ignores nickname changes',async()=>{
-  for(const change of ['data','nick']){
-    const b=backend(),a=boot({v:4,lang:'ko'},b.fetch);
-    b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:8.5});await b.flush();a.board.at.wave10=0; // stale → the next refresh refetches
-    const refresh=[...a.timers.values()].find(fn=>String(fn).includes('waveRefresh()'));
-    refresh();
-    if(change==='data')a.board.data.wave10={...topRes('x'),cut10:7};
-    else a.store.nick='new';
-    b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:6});await b.flush();
-    assert.equal(a.waveTop(),change==='data'?7:8.5,'the late response is dropped; the last good cut stays (no reset to fall back to)');
-  }
+test('shoutbox explains only a real D1 quota failure in plain language',async()=>{
+  const b=backend(),a=boot({v:4,lang:'ko'},b.fetch);
+  b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:8.5});
+  b.answer('/posts','GET',{error:'quota'},503); b.answer('/visits','POST',{day:'x',today:1,total:1}); await b.flush();
+  assert.equal(a.get('postMsg').textContent,'오늘 무료 서버 사용량을 다 써서 한마디를 이용할 수 없습니다. 더 좋은 서버를 쓰려면 후원이 절실합니다 ㅜㅜ');
+  a.get('postsRefresh').click(); await b.flush(); b.answer('/posts','GET',{rows:[]}); await b.flush();
+  assert.equal(a.get('postMsg').textContent,'','a later successful refresh clears the quota notice');
 });
 /* ---------- 옷장·업적 (wardrobe + achievements, 4-9) ---------- */
 const J=x=>JSON.parse(JSON.stringify(x));

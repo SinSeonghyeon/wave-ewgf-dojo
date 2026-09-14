@@ -126,21 +126,23 @@ const ROW = 'id,nick,score,tie,detail,win,created_at';
 // pass the ban filter (`OR nick=?`), so a banned player gets the board they would see unbanned; see the header comment.
 async function top(db, board, season, nick) {
   const where = `${SCOPE} AND (${VISIBLE} OR nick=?)`, args = [season, board, nick || ''];
-  const {results} = await db.prepare(`SELECT ${ROW} ${where} ${BY_RANK} LIMIT ${TOP}`).bind(...args).all();
-  const total = await db.prepare(`SELECT COUNT(*) AS n ${where}`).bind(...args).first('n');
-  const rows = rankRows(results.map(parseRow));
-  // Score you need to sit in the top 10% (the app shades the wave chart with it). Boards under ten players count as ten, like the app's grades: 1st place's score.
-  const cut10 = total ? await db.prepare(`SELECT score ${where} ${BY_RANK} LIMIT 1 OFFSET ?`).bind(...args, Math.ceil(Math.max(total, 10) / 10) - 1).first('score') : null;
-  let me = null;
-  if (nick) {
-    const mine = await db.prepare(`SELECT ${ROW} ${SCOPE} AND nick=?`).bind(season, board, nick).first();
-    if (mine) {
-      me = parseRow(mine);
-      const listed = rows.find(r => r.id === me.id);
-      me.rank = listed ? listed.rank : 1 + (await db.prepare(`SELECT COUNT(*) AS n ${where} AND (score>? OR (score=? AND tie>?))`).bind(...args, me.score, me.score, me.tie).first('n') || 0);
-    }
-  }
-  return {season, board, total: total || 0, rows, me, cut10: cut10 ?? null};
+  // One ranked scan replaces the old top/count/cut/mine/rank query chain. `pos` picks the display rows and the
+  // top-10% boundary while RANK preserves shared places for equal score+tie. This is the main D1 rows-read control.
+  const {results} = await db.prepare(`WITH ranked AS (
+    SELECT ${ROW}, RANK() OVER (ORDER BY score DESC, tie DESC) AS rank,
+      ROW_NUMBER() OVER (${BY_RANK}) AS pos, COUNT(*) OVER () AS total
+    ${where}
+  ) SELECT * FROM ranked
+    WHERE pos<=? OR nick=? OR pos=MAX(1,CAST((total+9)/10 AS INTEGER))
+    ORDER BY pos`).bind(...args, TOP, nick || '').all();
+  const total = Number(results[0]?.total || 0);
+  const cutPos = Math.max(1, Math.ceil(total / 10));
+  const picked = results.map(parseRow);
+  const rows = picked.filter(r => r.pos <= TOP).map(({pos, total: _total, ...r}) => r);
+  const mine = nick ? picked.find(r => r.nick === nick) || null : null;
+  const cut = picked.find(r => r.pos === cutPos);
+  if (mine) { delete mine.pos; delete mine.total; }
+  return {season, board, total, rows, me: mine, cut10: cut?.score ?? null};
 }
 
 async function visits(db, now, hit) {
@@ -152,8 +154,11 @@ async function visits(db, now, hit) {
 }
 
 async function posts(db) { // up/down = like/dislike counts from `votes`; replies are one level deep and oldest first
-  const {results} = await db.prepare('SELECT p.id,p.nick,p.text,p.created_at, COALESCE(SUM(v.v=1),0) AS up, COALESCE(SUM(v.v=-1),0) AS down ' +
-    `FROM posts p LEFT JOIN votes v ON v.post_id=p.id GROUP BY p.id ORDER BY p.id DESC LIMIT ${POSTS}`).all();
+  // Limit parents before joining votes: old posts and their reactions must not be scanned for every refresh.
+  const {results} = await db.prepare(`WITH latest AS (
+      SELECT id,nick,text,created_at FROM posts ORDER BY id DESC LIMIT ${POSTS}
+    ) SELECT p.id,p.nick,p.text,p.created_at, COALESCE(SUM(v.v=1),0) AS up, COALESCE(SUM(v.v=-1),0) AS down
+      FROM latest p LEFT JOIN votes v ON v.post_id=p.id GROUP BY p.id ORDER BY p.id DESC`).all();
   const ids = results.map(post => post.id); // use exactly the parent snapshot above: a new post between the two SELECTs must not move the 50th parent out of the reply query
   const replies = ids.length ? (await db.prepare(`SELECT id,post_id,nick,text,created_at FROM replies WHERE post_id IN (${ids.map(() => '?').join(',')}) ORDER BY id ASC`).bind(...ids).all()).results : [];
   const byPost = new Map();
@@ -300,6 +305,10 @@ async function admin(request, env, url, path, method, now) {
 export default {
   async fetch(request, env) {
     try { return await handle(request, env); }
-    catch (e) { return withCors(json({error: 'server', message: String(e && e.message || e)}, 500), request, env); }
+    catch (e) {
+      const message = String(e && e.message || e);
+      if (/exceeded D1's free tier daily row (?:read|write) limit/i.test(message)) return withCors(json({error: 'quota'}, 503), request, env);
+      return withCors(json({error: 'server', message}, 500), request, env);
+    }
   },
 };

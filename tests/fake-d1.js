@@ -8,9 +8,11 @@ const SCHEMA = fs.readFileSync(path.join(__dirname, '../worker/schema.sql'), 'ut
 
 module.exports = function fakeD1() {
   const db = new DatabaseSync(':memory:');
+  const queries = [];
   db.exec(SCHEMA);
   return {
     db,
+    queries,
     get rows() { return plain(db.prepare('SELECT * FROM scores ORDER BY id').all()); },
     get posts() { return plain(db.prepare('SELECT * FROM posts ORDER BY id').all()); },
     get replies() { return plain(db.prepare('SELECT * FROM replies ORDER BY id').all()); },
@@ -18,6 +20,7 @@ module.exports = function fakeD1() {
     get votes() { return plain(db.prepare('SELECT * FROM votes ORDER BY post_id, key').all()); },
     get visits() { return plain(db.prepare('SELECT * FROM visits ORDER BY day').all()); },
     prepare(sql) {
+      queries.push(sql);
       let args = [];
       const st = {
         bind(...a) { args = a; return st; },
