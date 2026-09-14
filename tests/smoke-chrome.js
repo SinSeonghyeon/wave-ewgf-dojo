@@ -110,7 +110,11 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.sound.headerOff = await soundSnap();
   await evalJs(`document.querySelector('#bgmBtn').click()`);
   out.sound.headerOn = await soundSnap();
-  await evalJs(`document.querySelector('#setOpen').click(); document.querySelector('#bgmSel button[data-bgm="0"]').click()`);
+  await evalJs(`document.querySelector('#setOpen').click()`);
+  await evalJs(`document.querySelector('#bgmSel button[data-bgm="0"]').click()`);
+  await evalJs(`(() => { const b=document.querySelector('#keys .key-bind[data-k="right"][data-alt="1"]'); if(!b) throw new Error('alternate key slot missing: '+document.querySelector('#keys').innerHTML); b.click(); })()`);
+  await tap('KeyO');
+  out.altKey = await evalJs(`({text:document.querySelector('#keys .key-bind[data-k="right"][data-alt="1"] b').textContent,stored:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).altKeys.right})`);
   out.sound.settingsOff = await soundSnap();
   await evalJs(`document.querySelector('#setClose').click()`);
   await b.navigate(fileUrl(page), 700);
@@ -176,8 +180,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(5); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(400);
   out.sound.on = await soundSnap();
   // f,N,f double tap → dash visual in a real browser (no judging change)
-  await tap('KeyD',20); await sleep(40); await tap('KeyD',20); await sleep(100);
-  out.dash = await evalJs(`document.querySelector('#rTitle').textContent`);
+  await tap('KeyO',20); await sleep(40); await tap('KeyO',20); await sleep(100);
+  out.altUse = await evalJs(`[...document.querySelectorAll('#inputs .chip .g')].slice(-4).map(x=>x.textContent).join('')`);
   // f,f+2 and 6N23+4 in free practice, then a rush30 trial: a crouch dash scores, the HUD shows points, leaving the mode clears it without a record (2026-09-13)
   await sleep(700); await tap('KeyD',20); await sleep(40); await key('KeyD'); await sleep(30); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await sleep(300);
   out.moves = {tongbal: await evalJs(`${q('#rTitle')}.textContent`)};
@@ -200,6 +204,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
      || !/^\d+\.\d$/.test(out.moves.bdEnd.timer) || out.moves.bdLeft.score!=='' || out.moves.bdLeft.records!==0) errors.push('bd10 check failed: '+JSON.stringify({bd:out.moves.bd, bdEnd:out.moves.bdEnd, bdLeft:out.moves.bdLeft}));
   if(!/f,f\+2|통발|66\+2/.test(out.moves.tongbal) || !/Hell Sweep|나락|奈落/.test(out.moves.sweep.title) || !/Move/.test(out.moves.sweep.log) || out.moves.rush.score!=='1 PTS' || !/^1 /.test(out.moves.rush.prog) || !/^\d+\.\d$/.test(out.moves.rush.timer)
      || !/6N23\+4/.test(out.moves.rush.hint) || out.moves.rush.modes!==6 || out.moves.left.score!=='' || out.moves.left.records!==0) errors.push('f,f+2 / hell sweep / rush30 check failed: '+JSON.stringify(out.moves));
+  if(out.altKey.text!=='O' || out.altKey.stored!=='KeyO' || out.altUse!=='→★→★') errors.push('alternate key binding failed: '+JSON.stringify({altKey:out.altKey,use:out.altUse}));
   if(out.sound.off.on!=='0' || out.sound.off.stSound!==0 || out.sound.off.stSfx!==30 || !out.sound.off.disabled || out.sound.on.on!=='1' || out.sound.on.disabled) errors.push('sound settings check failed: '+JSON.stringify(out.sound));
   for(const l of ['en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);
