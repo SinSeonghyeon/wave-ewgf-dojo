@@ -9,7 +9,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
   let now=1000, pads=[];
   const elements=new Map(), events={}, timers=new Map(); let next=1;
   function element(){
-    return {textContent:'',innerHTML:'',style:{},dataset:{},children:[],clientWidth:800,
+    return {textContent:'',innerHTML:'',style:{setProperty(k,v){this[k]=v;}},dataset:{},children:[],clientWidth:800,clientHeight:360,offsetWidth:180,offsetHeight:55,
       classList:{add(){},toggle(){}},setAttribute(){},addEventListener(type,fn){this[type]=fn;},
       querySelectorAll(){return [];},querySelector(){return element();},
       getBoundingClientRect(){return {width:800,height:360};},getContext(){return {setTransform(){}};}};
@@ -23,7 +23,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchKeys,touchPress,applyTouchUI,applyTouchLayout,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -827,70 +827,58 @@ test('donate: three buttons open a chooser; KakaoPay first in ko, Ko-fi first el
   assert.ok(fs.existsSync(require('node:path').join(__dirname,'..','donate-kakao.png')),'QR image exists');
 });
 
-test('touch pad: dead zone is neutral, 45° sectors map to 8 directions, and a rolled f,N,d,df + 2 judges as EWGF through the normal path',()=>{
+test('three touch direction buttons combine down+side into diagonals and feed the normal EWGF path',()=>{
   const a=boot();
-  assert.equal(a.touchVec(0.1,0.15,1000),'n');            // inside the dead zone
-  assert.equal(a.touchVec(1,0,1000),'f');
-  assert.equal(a.touchVec(0,0,1020),'n');
-  assert.equal(a.touchVec(0.3,-0.9,1040),'d');            // 18° off straight down stays d (sector edge is 22.5°)
-  assert.equal(a.touchVec(0.7,-0.7,1060),'df');
+  assert.equal(a.touchKeys([],990),'n');
+  assert.equal(a.touchKeys(['right'],1000),'f');
+  assert.equal(a.touchKeys([],1020),'n');
+  assert.equal(a.touchKeys(['down'],1040),'d');
+  assert.equal(a.touchKeys(['down','right'],1060),'df');
   a.touchPress(2,1064);
   assert.equal(a.session.attempts.length,1);
   assert.equal(a.session.attempts[0].kind,'ewgf');
   assert.equal(a.session.attempts[0].off,4);
   assert.equal(a.get('srcBadge').textContent,a.T('src.touch'));
-  assert.equal(a.touchVec(-1,0,1100),'b');
-  assert.equal(a.touchVec(0.5,0.5,1120),'uf');
-  assert.equal(a.touchVec(-0.4,-0.9,1140),'db');
+  assert.equal(a.touchKeys(['left'],1100),'b');
+  assert.equal(a.touchKeys(['down','left'],1140),'db');
+  assert.equal(a.touchKeys(['left','right'],1160),'n','opposite horizontal buttons cancel each other');
   const p2=boot({v:4,side:-1});                            // 2P: screen right is back
-  assert.equal(p2.touchVec(1,0,1000),'b');
+  assert.equal(p2.touchKeys(['right'],1000),'b');
 });
 
 test('touch input pauses behind modals and is cleared by blur; the setting survives reload only with valid values',()=>{
   const a=boot();
-  a.touchVec(1,0,1000);a.touchVec(0,0,1020);a.touchVec(0,-1,1040);a.touchVec(0.7,-0.7,1060);
+  a.touchKeys(['right'],1000);a.touchKeys([],1020);a.touchKeys(['down'],1040);a.touchKeys(['down','right'],1060);
   a.get('setDlg').showModal(); a.touchPress(2,1064);
   assert.equal(a.session.attempts.length,0);              // button ignored while settings are open
   a.get('setDlg').open=false;
-  a.touchVec(1,0,2000); a.events.blur();                  // blur resets every source, including the on-screen pad
+  a.touchKeys(['right'],2000); a.events.blur();            // blur resets every source, including the on-screen buttons
   assert.equal(a.cd.state,0);
-  assert.equal(a.touchVec(1,0,3000),'f'); assert.equal(a.cd.state,1);
+  assert.equal(a.touchKeys(['right'],3000),'f'); assert.equal(a.cd.state,1);
   assert.equal(boot().store.touch,'auto');
   assert.equal(boot({v:4,touch:'on'}).store.touch,'on');
   assert.equal(boot({v:4,touch:'off'}).store.touch,'off');
   assert.equal(boot({v:4,touch:'yes'}).store.touch,'auto');
+  const tuned=boot({v:4,touchSize:130,touchX:65,touchY:35});
+  assert.equal(tuned.store.touchSize,130);assert.equal(tuned.store.touchX,65);assert.equal(tuned.store.touchY,35);
+  tuned.get('touchSize').value='120';tuned.get('touchSize').input();tuned.get('touchX').value='40';tuned.get('touchX').input();tuned.get('touchY').value='60';tuned.get('touchY').input();
+  assert.equal(tuned.store.touchSize,120);assert.equal(tuned.store.touchX,40);assert.equal(tuned.store.touchY,60);assert.equal(tuned.get('touchSizeOut').textContent,'120%');
+  assert.match(tuned.get('tdirs').style.left,/px$/);assert.match(tuned.get('tdirs').style.bottom,/px$/);
+  for(const bad of [{touchSize:131},{touchX:-5},{touchY:101},{touchSize:'100'}]){ const b=boot({v:4,...bad}); assert.equal(b.store.touchSize,100);assert.equal(b.store.touchX,0);assert.equal(b.store.touchY,0); }
   assert.doesNotThrow(()=>{const b=boot({v:4,touch:'on'}); b.applyTouchUI();});
   assert.match(html,/<meta name="viewport" content="width=device-width/);
   assert.match(html,/^<!doctype html>\s*(<!--[\s\S]*?-->\s*)?<html lang="ko">/i);
 });
 
-test('touch UI: idle badge says touch, the pad label follows 2P facing, and reset clears the label before the finger lifts',()=>{
+test('touch UI: idle badge follows the active input type and blur clears held direction buttons',()=>{
   const on=boot({v:4,touch:'on',lang:'ko'});
   assert.equal(on.get('srcBadge').textContent,'👆 터치 대기');
   on.setLang('en');assert.equal(on.get('srcBadge').textContent,'👆 Touch ready');
   assert.equal(boot({v:4,lang:'en'}).get('srcBadge').textContent,'⌨ Keyboard ready');
-  const p2=boot({v:4,side:-1});                            // 2P: a thumb pushed to screen right is back, and the pad arrow must point right like the chip strip
-  const rect=()=>({left:0,top:0,width:200,height:200}), ev=(id,x,y,t)=>({pointerId:id,clientX:100+x*100,clientY:100-y*100,timeStamp:t,preventDefault(){}}); // pad-relative x,y in -1..1, +y up
-  p2.get('tpad').getBoundingClientRect=rect;
-  p2.get('tpad').pointerdown(ev(1,1,0,1000));
-  assert.equal(p2.get('tdir').textContent,'→');
-  assert.equal(p2.session.attempts.length,0);
-  p2.get('tpad').pointermove(ev(1,0,1,1020));             // up
-  assert.equal(p2.get('tdir').textContent,'↑');
-  p2.get('tpad').pointermove(ev(1,5,0,1040));             // far outside the pad: clamped, still back, knob within the pad radius
-  assert.equal(p2.get('tdir').textContent,'→');
-  assert.match(p2.get('tknob').style.transform,/\+ 248\.0px\)/);  // 400·0.62 (clientWidth 800 → R 400), not 5×
-  p2.events.blur();                                         // app switch while the thumb is down
-  assert.equal(p2.get('tdir').textContent,'');
-  assert.equal(p2.cd.state,0);
-  p2.get('tpad').pointerup(ev(1,5,0,1060));                // the eventual lift is ignored (pad no longer owned) and changes nothing
-  assert.equal(p2.get('tdir').textContent,'');
-  const a=boot();                                          // a modal opened while the thumb is down: moves stop feeding onDir until the finger lifts
-  a.get('tpad').getBoundingClientRect=rect;
-  a.get('tpad').pointerdown(ev(1,1,0,1000));assert.equal(a.cd.state,1);
-  a.get('setDlg').showModal();
-  a.get('tpad').pointermove(ev(1,0,-1,1020));
-  assert.equal(a.session.attempts.length,0);assert.equal(a.cd.state,1);
+  const p2=boot({v:4,side:-1});
+  p2.touchKeys(['right'],1000);assert.equal(p2.cd.state,0,'screen right is back for 2P');
+  p2.events.blur();assert.equal(p2.touchKeys([],1020),'n');assert.equal(p2.cd.state,0);
+  assert.match(html,/id="tdirs"[\s\S]*data-dir="left"[\s\S]*data-dir="down"[\s\S]*data-dir="right"/);
 });
 
 test('wave chart top band and coach tempo follow the wave10 top-10% cut (cut10), falling back to 5 dashes/s',()=>{

@@ -96,11 +96,9 @@
   .touch{display:none;position:absolute;left:0;right:0;bottom:0;height:46%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;container-type:size}   /* size container: pad/buttons are capped by the overlay height (cqh) so they never rise above it */
   html.touch-ui .touch{display:block}
   .touch-note{position:absolute;left:0;right:0;top:0;margin:0;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);text-shadow:0 1px 0 #000;pointer-events:none}
-  .tpad{position:absolute;left:14px;bottom:14px;width:min(46vw,200px);width:min(46vw,200px,100cqh - 34px);aspect-ratio:1;border-radius:50%;background:rgba(20,26,35,.55);border:1px solid var(--line2)}
-  .tpad-ring{position:absolute;inset:39%;border-radius:50%;border:1px dashed var(--line2);pointer-events:none}
-  .tpad-knob{position:absolute;left:50%;top:50%;width:38%;height:38%;border-radius:50%;background:rgba(76,201,255,.22);border:2px solid var(--accent);transform:translate(-50%,-50%);pointer-events:none;box-sizing:border-box}
-  .tpad.on .tpad-knob{background:rgba(76,201,255,.45)}
-  .tpad-dir{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink);text-shadow:0 1px 0 #000;pointer-events:none}
+  .tdirs{position:absolute;left:14px;bottom:14px;display:grid;grid-template-columns:repeat(3,var(--touch-dir-size,55px));gap:8px}
+  .tdirs button{width:var(--touch-dir-size,55px);height:var(--touch-dir-size,55px);padding:0;border:1px solid var(--line2);border-radius:12px;background:rgba(20,26,35,.72);color:var(--ink);font-family:var(--mono);font-size:25px;font-weight:700;touch-action:none;-webkit-tap-highlight-color:transparent}
+  .tdirs button.on{background:rgba(76,201,255,.42);border-color:var(--accent);box-shadow:0 0 12px rgba(76,201,255,.25)}
   .tbtns{position:absolute;right:14px;bottom:14px;display:grid;grid-template-columns:repeat(2,clamp(56px,17vw,64px));grid-template-columns:repeat(2,min(clamp(56px,17vw,64px),50cqh - 22px));gap:10px}
   .tbtns button{aspect-ratio:1;border-radius:50%;border:1px solid var(--line2);font-family:var(--mono);font-size:22px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;padding:0;touch-action:none;-webkit-tap-highlight-color:transparent}
   .tbtns button small{font-size:9px;letter-spacing:1px;opacity:.7}
@@ -449,7 +447,7 @@
         </div>
         <div class="touch" id="touch" data-i18n-aria="touch.aria" aria-label="터치 컨트롤">
           <p class="touch-note" data-i18n="touch.note">터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)</p>
-          <div class="tpad" id="tpad" data-i18n-aria="touch.padAria" aria-label="방향 패드 — 손가락을 굴려 입력"><div class="tpad-ring"></div><div class="tpad-knob" id="tknob"></div><span class="tpad-dir" id="tdir"></span></div>
+          <div class="tdirs" id="tdirs" role="group" data-i18n-aria="touch.padAria" aria-label="방향 버튼 — 아래와 좌우를 함께 눌러 대각선 입력"><button type="button" data-dir="left" data-i18n-aria="touch.left" aria-label="왼쪽">←</button><button type="button" data-dir="down" data-i18n-aria="touch.down" aria-label="아래">↓</button><button type="button" data-dir="right" data-i18n-aria="touch.right" aria-label="오른쪽">→</button></div>
           <div class="tbtns" id="tbtns"><button type="button" class="b1" data-btn="1">1<small>LP</small></button><button type="button" class="b2" data-btn="2">2<small>RP</small></button><button type="button" class="b3" data-btn="3">3<small>LK</small></button><button type="button" class="b4" data-btn="4">4<small>RK</small></button></div>
         </div>
       </div>
@@ -499,6 +497,12 @@
             <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div class="row"><label class="t" data-i18n="set.touch">터치 컨트롤</label>
             <div class="segc" id="touchSel"><button data-touch="auto" aria-pressed="true" data-i18n="set.touchAuto">자동 (터치 기기)</button><button data-touch="on" aria-pressed="false" data-i18n="set.on">켜기</button><button data-touch="off" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" for="touchSize" data-i18n="set.touchSize">방향 버튼 크기</label>
+            <div class="range"><input type="range" id="touchSize" min="70" max="140" step="5" value="100"><output id="touchSizeOut">100%</output></div></div>
+          <div class="row"><label class="t" for="touchX" data-i18n="set.touchX">방향 버튼 가로 위치</label>
+            <div class="range"><input type="range" id="touchX" min="0" max="100" step="5" value="0"><output id="touchXOut">0%</output></div></div>
+          <div class="row"><label class="t" for="touchY" data-i18n="set.touchY">방향 버튼 세로 위치</label>
+            <div class="range"><input type="range" id="touchY" min="0" max="100" step="5" value="0"><output id="touchYOut">0%</output></div></div>
           <div class="row"><label class="t" data-i18n="set.sound">소리</label>
             <div class="segc" id="soundSel"><button data-sound="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-sound="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div class="row"><label class="t" data-i18n="set.bgm">배경음</label><div class="segc" id="bgmSel"><button data-bgm="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-bgm="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
@@ -792,7 +796,7 @@ const detectLang = () => { const l = (typeof navigator!=='undefined' && navigato
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgm:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault()};
+let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', touchSize:100, touchX:0, touchY:0, sound:1, bgm:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault()};
 const owned = id => id==='base' || !!store.ach[id]; // store.ach = unlock record (achievement items and daily gifts alike): id → time
 const pendingReward = id => store.pendingRewards.some(j => j.id===id);
 const earned = id => owned(id) || pendingReward(id);
@@ -811,6 +815,9 @@ try{
     if([1,-1].includes(s.side)) store.side=s.side;
     if([0,1].includes(s.fx)) store.fx=s.fx;
     if(['auto','on','off'].includes(s.touch)) store.touch=s.touch;
+    if(Number.isInteger(s.touchSize) && s.touchSize>=70 && s.touchSize<=140 && s.touchSize%5===0) store.touchSize=s.touchSize;
+    if(Number.isInteger(s.touchX) && s.touchX>=0 && s.touchX<=100 && s.touchX%5===0) store.touchX=s.touchX;
+    if(Number.isInteger(s.touchY) && s.touchY>=0 && s.touchY<=100 && s.touchY%5===0) store.touchY=s.touchY;
     if([0,1].includes(s.sound)) store.sound=s.sound;
     if([0,1].includes(s.bgm)) store.bgm=s.bgm;
     if(Number.isInteger(s.bgmVol) && s.bgmVol>=0 && s.bgmVol<=100) store.bgmVol=s.bgmVol;
@@ -882,7 +889,7 @@ ko:{
   'set.window':'초풍 판정 폭', 'set.win8':'저스트 0.5f', 'set.win12':'보통 0.7f', 'set.win15':'관대 0.9f',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'캐릭터 방향', 'set.side1':'1P (→ 가 앞)', 'set.side2':'2P (← 가 앞)',
   'set.fx':'연출 (흔들림·플래시)', 'set.on':'켜기', 'set.off':'끄기',
-  'set.touch':'터치 컨트롤', 'set.touchAuto':'자동 (터치 기기)', 'touch.note':'터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)', 'touch.aria':'터치 컨트롤', 'touch.padAria':'방향 패드 — 손가락을 굴려 입력',
+  'set.touch':'터치 컨트롤', 'set.touchAuto':'자동 (터치 기기)', 'set.touchSize':'방향 버튼 크기', 'set.touchX':'방향 버튼 가로 위치', 'set.touchY':'방향 버튼 세로 위치', 'touch.note':'터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)', 'touch.aria':'터치 컨트롤', 'touch.padAria':'방향 버튼 — 아래와 좌우를 함께 눌러 대각선 입력', 'touch.left':'왼쪽', 'touch.down':'아래', 'touch.right':'오른쪽',
   'set.keys':'키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)', 'set.keyListen':'키 입력…',
   'set.keyConflict':'이미 사용 중이거나 방향키와 충돌하는 키입니다. 다른 키를 누르세요. Esc로 취소합니다.',
   'set.pad':'게임패드', 'set.padNone':'연결 안 됨 · 패드 아무 버튼이나 누르면 감지', 'set.padOn':'연결됨 · ',
@@ -1103,7 +1110,7 @@ en:{
   'set.window':'EWGF window', 'set.win8':'Just 0.5f', 'set.win12':'Normal 0.7f', 'set.win15':'Lenient 0.9f',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'Facing', 'set.side1':'1P (→ is forward)', 'set.side2':'2P (← is forward)',
   'set.fx':'Effects (shake · flash)', 'set.on':'On', 'set.off':'Off',
-  'set.touch':'Touch controls', 'set.touchAuto':'Auto (touch devices)', 'touch.note':'Touch is less precise than a keyboard (good for spotting trends)', 'touch.aria':'Touch controls', 'touch.padAria':'Direction pad — roll your thumb to input',
+  'set.touch':'Touch controls', 'set.touchAuto':'Auto (touch devices)', 'set.touchSize':'Direction button size', 'set.touchX':'Direction button horizontal position', 'set.touchY':'Direction button vertical position', 'touch.note':'Touch is less precise than a keyboard (good for spotting trends)', 'touch.aria':'Touch controls', 'touch.padAria':'Direction buttons — press down and a side together for diagonals', 'touch.left':'Left', 'touch.down':'Down', 'touch.right':'Right',
   'set.keys':'Key bindings — click a slot, then press a key (arrow keys ↑↓←→ always work)', 'set.keyListen':'press key…',
   'set.keyConflict':'That key is already in use or conflicts with the arrow keys. Press another key. Esc cancels.',
   'set.pad':'Gamepad', 'set.padNone':'Not connected · press any pad button to detect', 'set.padOn':'Connected · ',
@@ -1322,7 +1329,7 @@ ja:{
   'set.window':'最風判定幅', 'set.win8':'ジャスト 0.5f', 'set.win12':'普通 0.7f', 'set.win15':'甘め 0.9f',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'キャラの向き', 'set.side1':'1P (→が前)', 'set.side2':'2P (←が前)',
   'set.fx':'演出 (揺れ・フラッシュ)', 'set.on':'オン', 'set.off':'オフ',
-  'set.touch':'タッチ操作', 'set.touchAuto':'自動 (タッチ端末)', 'touch.note':'タッチ入力はキーボードより判定精度が低めです (傾向の把握向け)', 'touch.aria':'タッチ操作', 'touch.padAria':'方向パッド — 指を転がして入力',
+  'set.touch':'タッチ操作', 'set.touchAuto':'自動 (タッチ端末)', 'set.touchSize':'方向ボタンの大きさ', 'set.touchX':'方向ボタンの横位置', 'set.touchY':'方向ボタンの縦位置', 'touch.note':'タッチ入力はキーボードより判定精度が低めです (傾向の把握向け)', 'touch.aria':'タッチ操作', 'touch.padAria':'方向ボタン — 下と左右を同時に押して斜め入力', 'touch.left':'左', 'touch.down':'下', 'touch.right':'右',
   'set.keys':'キー設定 — 枠を押してから使いたいキーを入力 (矢印キー↑↓←→は常に使用可)', 'set.keyListen':'キー入力…',
   'set.keyConflict':'すでに使用中か矢印キーと衝突するキーです。別のキーを押してください。Escでキャンセル。',
   'set.pad':'ゲームパッド', 'set.padNone':'未接続 · パッドのボタンを押すと検出', 'set.padOn':'接続済み · ',
@@ -1721,36 +1728,45 @@ function pollPad(){
 }
 setInterval(pollPad, 4);
 
-/* ---------- touch controls (phones/tablets). Presentation only: the pad feeds recomputeDir like a gamepad and the buttons call onButton, so judging is identical. ---------- */
-const TOUCH_DEAD = 0.22;                                  // inside this fraction of the pad radius the stick is neutral
+/* ---------- touch controls (phones/tablets). Presentation only: three direction buttons feed recomputeDir like a gamepad and the attack buttons call onButton. ---------- */
 const touchMQ = typeof matchMedia==='function' ? matchMedia('(pointer:coarse)') : null;
 let touchOn = false;                                      // html.touch-ui is on (also lifts the stage floor so the fighter sits above the overlay)
 const touchAuto = () => !!(touchMQ && touchMQ.matches && typeof navigator!=='undefined' && navigator.maxTouchPoints>0);
+function applyTouchLayout(){
+  const box=$('touch'), dirs=$('tdirs'); if(!box || !dirs) return;
+  const attacks=$('tbtns'), inset=14, gap=8, base=clamp((typeof innerWidth==='number' ? innerWidth : 390)*.13,44,54);
+  const attackLeft=attacks?.offsetLeft||box.clientWidth-inset;
+  let size=clamp(Math.round(base*store.touchSize/100),34,76);
+  if(store.touchSize===100) size=Math.min(size,Math.max(34,Math.floor((attackLeft-inset-gap*2)/3))); // default alone guarantees no overlap; explicit user sizing may trade space for larger buttons
+  dirs.style.setProperty('--touch-dir-size',size+'px');
+  const note=$('touch').querySelector('.touch-note'), top=(note?.offsetHeight||13)+6;
+  const maxX=Math.max(0,attackLeft-gap-dirs.offsetWidth-inset), maxY=Math.max(0,box.clientHeight-dirs.offsetHeight-top-inset);
+  dirs.style.left=(inset+maxX*store.touchX/100).toFixed(1)+'px';
+  dirs.style.bottom=(inset+maxY*store.touchY/100).toFixed(1)+'px';
+}
 function applyTouchUI(){
   touchOn = store.touch==='on' || (store.touch==='auto' && touchAuto());
   const root = document.documentElement; if(root && root.classList) root.classList.toggle('touch-ui', touchOn);
-  if(!touchOn && (touchDir.x||touchDir.y)){ touchDir={x:0,y:0}; recomputeDir(performance.now()); }
   if(!lastSrc) srcBadge.textContent = T(touchOn ? 'src.waitTouch' : 'src.wait');
-  touchRelease(); resize();
+  touchRelease(); resize(); applyTouchLayout();
 }
 if(touchMQ && touchMQ.addEventListener) touchMQ.addEventListener('change', () => { if(store.touch==='auto') applyTouchUI(); });
-function touchVec(x, y, t){                               // x,y: pad-relative, -1..1, +y up. Returns the resulting direction (tests).
-  let nx=0, ny=0;
-  if(Math.hypot(x,y)>=TOUCH_DEAD){ const s = Math.round(Math.atan2(y,x)/(Math.PI/4))*(Math.PI/4); nx=Math.round(Math.cos(s)); ny=Math.round(Math.sin(s)); } // 8 sectors of 45°, edges at 22.5°
+const touchHeld=new Set(), touchPointers=new Map();
+function touchKeys(keys, t){                              // keys: physical left/down/right held at once; down+side produces a diagonal
+  touchHeld.clear(); for(const k of keys) if(['left','down','right'].includes(k)) touchHeld.add(k);
+  const nx=(touchHeld.has('right')?1:0)-(touchHeld.has('left')?1:0), ny=touchHeld.has('down')?-1:0;
   if(nx!==touchDir.x || ny!==touchDir.y){ touchDir={x:nx,y:ny}; recomputeDir(t,'touch'); }
+  $('tdirs').querySelectorAll('[data-dir]').forEach(b => b.classList.toggle('on',touchHeld.has(b.dataset.dir)));
+  if(touchHeld.size && lastSrc!=='touch') setSrc('touch');
   return curDir;
 }
 function touchPress(n, t){ if(modalOpen()) return; unlockAudio(); onButton(n,t); if(lastSrc!=='touch') setSrc('touch'); }
-const tpad = $('tpad'), tknob = $('tknob'), tdir = $('tdir'), tbtns = $('tbtns');
-let tpadId = null;                                        // pointer that owns the pad (the first finger; buttons use their own pointers)
-function touchKnob(x, y){ const R = (tpad.clientWidth||0)/2; tknob.style.transform = `translate(calc(-50% + ${(x*R*0.62).toFixed(1)}px), calc(-50% + ${(-y*R*0.62).toFixed(1)}px))`; tdir.textContent = curDir==='n' ? '' : glyphFor(curDir); tpad.classList.toggle('on', tpadId!==null); }
-function touchRelease(){ tpadId=null; touchKnob(0,0); tbtns.querySelectorAll('button').forEach(b => b.classList.remove('on')); }
-function tpadVec(e){ const r = tpad.getBoundingClientRect(); const R = r.width/2 || 1; let x = (e.clientX-(r.left+R))/R, y = -(e.clientY-(r.top+R))/R; const m = Math.hypot(x,y); if(m>1){ x/=m; y/=m; } return [x,y]; } // clamped to the unit circle: a captured finger may leave the pad, the knob must not
+const tdirs = $('tdirs'), tbtns = $('tbtns');
+function touchRelease(){ touchPointers.clear(); touchKeys([],performance.now()); tbtns.querySelectorAll('button').forEach(b => b.classList.remove('on')); }
 const evT = e => e.timeStamp || performance.now();      // same clock as keydown; a pointermove can be delivered a frame late, its own timestamp is when it happened
-tpad.addEventListener('pointerdown', e => { if(tpadId!==null || modalOpen()) return; e.preventDefault(); tpadId=e.pointerId; try{ tpad.setPointerCapture(e.pointerId); }catch(x){} unlockAudio(); const [x,y]=tpadVec(e); touchVec(x,y,evT(e)); touchKnob(x,y); });
-tpad.addEventListener('pointermove', e => { if(e.pointerId!==tpadId || modalOpen()) return; const [x,y]=tpadVec(e); touchVec(x,y,evT(e)); touchKnob(x,y); });
-const tpadEnd = e => { if(e.pointerId!==tpadId) return; tpadId=null; touchVec(0,0,evT(e)); touchKnob(0,0); };
-tpad.addEventListener('pointerup', tpadEnd); tpad.addEventListener('pointercancel', tpadEnd);
+tdirs.addEventListener('pointerdown', e => { const b=e.target.closest&&e.target.closest('[data-dir]'); if(!b || modalOpen()) return; e.preventDefault(); touchPointers.set(e.pointerId,b.dataset.dir); try{ b.setPointerCapture(e.pointerId); }catch(x){} unlockAudio(); touchKeys(touchPointers.values(),evT(e)); });
+const tdirEnd=e => { if(!touchPointers.has(e.pointerId)) return; touchPointers.delete(e.pointerId); touchKeys(touchPointers.values(),evT(e)); };
+tdirs.addEventListener('pointerup',tdirEnd); tdirs.addEventListener('pointercancel',tdirEnd);
 const tbtnOf = e => e.target && e.target.closest ? e.target.closest('[data-btn]') : null;
 tbtns.addEventListener('pointerdown', e => { const b = tbtnOf(e); if(!b) return; e.preventDefault(); b.classList.add('on'); touchPress(+b.dataset.btn, evT(e)); });
 ['pointerup','pointercancel'].forEach(ev => tbtns.addEventListener(ev, e => { const b = tbtnOf(e); if(b) b.classList.remove('on'); }));
@@ -2449,6 +2465,11 @@ function segSel(id, attr, cb){
 }
 segSel('winSel','win', v => { store.window=+v; save(); renderHist(); });
 segSel('touchSel','touch', v => { store.touch=v; save(); applyTouchUI(); });
+function renderTouchSettings(){
+  for(const k of ['touchSize','touchX','touchY']){ $(k).value=store[k]; $(k+'Out').textContent=store[k]+'%'; }
+  applyTouchLayout();
+}
+for(const k of ['touchSize','touchX','touchY']) $(k).addEventListener('input', () => { store[k]=+$(k).value; save(); renderTouchSettings(); });
 segSel('sideSel','side', v => { endTrial(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); });
 segSel('fxSel','fx', v => { store.fx=+v; save(); rewardNoticeClear(); renderRewards(); });
 segSel('langSel','lang', v => { setLang(v); });
@@ -2998,7 +3019,7 @@ function applyStatic(){
 }
 function renderAll(){
   renderJackpot(); renderRewards();
-  applyStatic(); renderMode(); renderPadStatus(); renderKeys();
+  applyStatic(); renderMode(); renderPadStatus(); renderKeys(); renderTouchSettings();
   showResult(ui.result.cls, ui.result.kind, ui.result.title, ui.result.sub);
   setCoach(ui.coach); setTrend(ui.trend); renderSeg(ui.seg);
   renderBests(); renderLog(); renderHist(); renderWave();
@@ -3011,7 +3032,7 @@ function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); render
 const canvas = $('stage'), ctx = canvas.getContext('2d');
 let W=800, H=360, dpr=1;
 function resize(){ const r = $('stageBox').getBoundingClientRect(); dpr = Math.min(2, devicePixelRatio||1); W = Math.max(320, r.width); H = Math.max(160, r.height); canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); renderHistory(); }
-addEventListener('resize', resize); resize(); applyTouchUI();
+addEventListener('resize', () => { resize(); applyTouchLayout(); }); resize(); applyTouchUI(); renderTouchSettings();
 
 const world = { charX:120, camX:0, dummyX:460, dummy:{y:0,vx:0,vy:0,rot:0,hit:0,alive:true,respawn:0,type:null} }; // dummy.type: null = plain bag (any hit knocks it) · 'high'|'mid'|'low' = rush30 target that only the matching move destroys
 const HIT_TYPE = {ewgf:'high', wgf:'high', tongbal:'mid', hellsweep:'low'}; // which dummy each move destroys in rush30
