@@ -243,9 +243,12 @@
   .range output{font-family:var(--mono);font-size:12px;color:var(--ink2);min-width:3.4em;text-align:right;font-variant-numeric:tabular-nums}
   .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .key{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:6px 4px;text-align:center;color:var(--ink2)}
-  .key small{display:block;font-size:10.5px;color:var(--muted);font-family:var(--mono)}
-  .key b{font-family:var(--mono);font-size:13px}
-  .key.listen{border-color:var(--accent);color:var(--accent);animation:blink 1s infinite}
+  .key small{display:block;font-size:10.5px;color:var(--muted);font-family:var(--mono);margin-bottom:4px}
+  .key-pair{display:flex;gap:3px}
+  .key-bind{min-width:0;flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:4px 2px;color:var(--ink2)}
+  .key-bind b{font-family:var(--mono);font-size:12px}
+  .key-bind.alt.empty b{color:var(--muted);font-family:var(--body);font-size:11px}
+  .key-bind.listen{border-color:var(--accent);color:var(--accent);animation:blink 1s infinite}
   @keyframes blink{50%{opacity:.5}}
   .note{font-size:12px;color:var(--muted);line-height:1.5}
   .note code{font-family:var(--mono);color:var(--ink2);font-size:11.5px}
@@ -371,7 +374,7 @@
   .jp-item{font-family:var(--display);font-size:22px;line-height:1.1;color:var(--accent);text-shadow:0 0 12px rgba(76,201,255,.6),0 2px 0 #000;text-align:center}
   .jp-hint{margin-top:3px;text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--gold);text-shadow:0 1px 0 #000}
   @media (prefers-reduced-motion:reduce){.jp-rays,.jp-title,.jp-card,.jp-box{animation:none!important}}
-  @media (prefers-reduced-motion:reduce){.key.listen{animation:none}}
+  @media (prefers-reduced-motion:reduce){.key-bind.listen{animation:none}}
   html[lang="ja"]{--display:'Dela Gothic One','Noto Sans JP',system-ui,sans-serif;--body:'Noto Sans JP','Hiragino Sans','Yu Gothic',system-ui,sans-serif}
   html[lang="en"]{--body:'Noto Sans KR',system-ui,-apple-system,'Segoe UI',sans-serif}
   html[lang="en"] .brand p{max-width:350px} /* the English tagline needs a little more to stay on two lines */
@@ -495,8 +498,9 @@
             <div class="range"><input type="range" id="sfxVol" min="0" max="100" step="5" value="100"><output id="sfxVolOut">100%</output></div></div>
           <p class="note" data-i18n="set.soundNote">배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).</p>
           <div>
-            <label class="t" data-i18n="set.keys">키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
+            <label class="t" data-i18n="set.keys">키 설정 — 동작마다 기본·보조 키를 하나씩 지정 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
             <div class="keys" id="keys"></div>
+            <p class="note" data-i18n="set.keyRemove">보조 키를 지우려면 Delete 또는 Backspace</p>
           </div>
           <div class="row"><label class="t" data-i18n="set.pad">게임패드</label><span class="note" id="padStatus"></span></div>
           <p class="note" data-i18n-html="set.padNote"></p>
@@ -765,7 +769,7 @@ const detectLang = () => { const l = (typeof navigator!=='undefined' && navigato
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgm:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault()};
+let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgm:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, altKeys:{up:'',down:'',left:'',right:'',b1:'',b2:'',b3:'',b4:''}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault()};
 const owned = id => id==='base' || !!store.ach[id]; // store.ach = unlock record (achievement items and daily gifts alike): id → time
 const pendingReward = id => store.pendingRewards.some(j => j.id===id);
 const earned = id => owned(id) || pendingReward(id);
@@ -793,6 +797,11 @@ try{
     const keys = {...store.keys};
     for(const k of Object.keys(keys)) if(validKey(k,s.keys?.[k])) keys[k]=s.keys[k];
     if(new Set(Object.values(keys)).size===Object.keys(keys).length) store.keys=keys;
+    const usedKeys = new Set(Object.values(store.keys));
+    for(const k of Object.keys(store.altKeys)){
+      const code = s.altKeys?.[k];
+      if(validKey(k,code) && !usedKeys.has(code)){ store.altKeys[k]=code; usedKeys.add(code); }
+    }
     for(const m of Object.keys(store.records)){
       if(Array.isArray(s.records?.[m])) store.records[m]=s.records[m].filter(r =>
         r && Number.isFinite(r.score) && Number.isFinite(r.date) &&
@@ -850,7 +859,8 @@ ko:{
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'캐릭터 방향', 'set.side1':'1P (→ 가 앞)', 'set.side2':'2P (← 가 앞)',
   'set.fx':'연출 (흔들림·플래시)', 'set.on':'켜기', 'set.off':'끄기',
   'set.touch':'터치 컨트롤', 'set.touchAuto':'자동 (터치 기기)', 'touch.note':'터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)', 'touch.aria':'터치 컨트롤', 'touch.padAria':'방향 패드 — 손가락을 굴려 입력',
-  'set.keys':'키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)', 'set.keyListen':'키 입력…',
+  'set.keys':'키 설정 — 동작마다 기본·보조 키를 하나씩 지정 (방향키 ↑↓←→ 는 항상 사용 가능)', 'set.keyListen':'키 입력…', 'set.keyAdd':'+ 추가', 'set.keyPrimary':'기본 키', 'set.keyAlt':'보조 키',
+  'set.keyRemove':'보조 키를 지우려면 Delete 또는 Backspace',
   'set.keyConflict':'이미 사용 중이거나 방향키와 충돌하는 키입니다. 다른 키를 누르세요. Esc로 취소합니다.',
   'set.pad':'게임패드', 'set.padNone':'연결 안 됨 · 패드 아무 버튼이나 누르면 감지', 'set.padOn':'연결됨 · ',
   'set.padNote':'패드 기본 배치: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>, 십자키·왼쪽 스틱 모두 방향으로 인식. 브라우저 입력은 약 4ms 단위로 읽히므로 실제 게임보다 오차가 조금 있습니다. 기본 판정은 0.7프레임(보통)이며, 실제 게임에 맞추려면 저스트 0.5f로 좁히세요.',
@@ -1068,7 +1078,8 @@ en:{
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'Facing', 'set.side1':'1P (→ is forward)', 'set.side2':'2P (← is forward)',
   'set.fx':'Effects (shake · flash)', 'set.on':'On', 'set.off':'Off',
   'set.touch':'Touch controls', 'set.touchAuto':'Auto (touch devices)', 'touch.note':'Touch is less precise than a keyboard (good for spotting trends)', 'touch.aria':'Touch controls', 'touch.padAria':'Direction pad — roll your thumb to input',
-  'set.keys':'Key bindings — click a slot, then press a key (arrow keys ↑↓←→ always work)', 'set.keyListen':'press key…',
+  'set.keys':'Key bindings — assign one primary and one alternate key per action (arrow keys ↑↓←→ always work)', 'set.keyListen':'press key…', 'set.keyAdd':'+ add', 'set.keyPrimary':'Primary key', 'set.keyAlt':'Alternate key',
+  'set.keyRemove':'Press Delete or Backspace to clear an alternate key',
   'set.keyConflict':'That key is already in use or conflicts with the arrow keys. Press another key. Esc cancels.',
   'set.pad':'Gamepad', 'set.padNone':'Not connected · press any pad button to detect', 'set.padOn':'Connected · ',
   'set.padNote':'Default pad layout: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>; d-pad and left stick both count as direction. Browser input is polled at roughly 4ms, so expect slight deviation from the real game. The default window is 0.7 frames (normal); narrow it to Just 0.5f to match the real game.',
@@ -1284,7 +1295,8 @@ ja:{
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'キャラの向き', 'set.side1':'1P (→が前)', 'set.side2':'2P (←が前)',
   'set.fx':'演出 (揺れ・フラッシュ)', 'set.on':'オン', 'set.off':'オフ',
   'set.touch':'タッチ操作', 'set.touchAuto':'自動 (タッチ端末)', 'touch.note':'タッチ入力はキーボードより判定精度が低めです (傾向の把握向け)', 'touch.aria':'タッチ操作', 'touch.padAria':'方向パッド — 指を転がして入力',
-  'set.keys':'キー設定 — 枠を押してから使いたいキーを入力 (矢印キー↑↓←→は常に使用可)', 'set.keyListen':'キー入力…',
+  'set.keys':'キー設定 — 各操作にメイン・サブキーを1つずつ設定 (矢印キー↑↓←→は常に使用可)', 'set.keyListen':'キー入力…', 'set.keyAdd':'+ 追加', 'set.keyPrimary':'メインキー', 'set.keyAlt':'サブキー',
+  'set.keyRemove':'サブキーを消すにはDeleteまたはBackspace',
   'set.keyConflict':'すでに使用中か矢印キーと衝突するキーです。別のキーを押してください。Escでキャンセル。',
   'set.pad':'ゲームパッド', 'set.padNone':'未接続 · パッドのボタンを押すと検出', 'set.padOn':'接続済み · ',
   'set.padNote':'パッド初期配置: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>、十字キー・左スティックとも方向として認識。ブラウザ入力は約4ms単位で読まれるため、実機よりわずかに誤差があります。初期判定は0.7フレーム(普通)です。実機に合わせるならジャスト0.5fに狭めてください。',
@@ -1602,31 +1614,41 @@ function recomputeDir(t, src){
 }
 function kbVector(){
   const k = store.keys;
-  const up = held.has(k.up)||held.has('ArrowUp'), dn = held.has(k.down)||held.has('ArrowDown');
-  const lf = held.has(k.left)||held.has('ArrowLeft'), rt = held.has(k.right)||held.has('ArrowRight');
+  const a = store.altKeys;
+  const up = held.has(k.up)||held.has(a.up)||held.has('ArrowUp'), dn = held.has(k.down)||held.has(a.down)||held.has('ArrowDown');
+  const lf = held.has(k.left)||held.has(a.left)||held.has('ArrowLeft'), rt = held.has(k.right)||held.has(a.right)||held.has('ArrowRight');
   kbDir = { x:(rt?1:0)-(lf?1:0), y:(up?1:0)-(dn?1:0) };
 }
-const mappedCodes = () => new Set([...Object.values(store.keys),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
+const mappedCodes = () => new Set([...Object.values(store.keys),...Object.values(store.altKeys).filter(Boolean),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
+const buttonForCode = code => {
+  for(let n=1;n<=4;n++) if(code===store.keys['b'+n] || code===store.altKeys['b'+n]) return n;
+  return 0;
+};
+const buttonHeld = n => held.has(store.keys['b'+n]) || (!!store.altKeys['b'+n] && held.has(store.altKeys['b'+n]));
 const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open || $('donateDlg').open || $('fitDlg').open; // nickname gate / result card / settings / donate QR: game input is paused (called at pad-poll rate, so no DOM query)
-let listening = null; // key remap slot
+let listening = null; // key remap target: {slot, alt}
 addEventListener('keydown', e => {
   if(listening){
     e.preventDefault();
     if(e.code==='Escape'){ listening=null; renderKeys(); return; }
-    if(!validKey(listening,e.code) || Object.entries(store.keys).some(([k,v])=>k!==listening && v===e.code)){
+    if(listening.alt && (e.code==='Delete' || e.code==='Backspace')){
+      store.altKeys[listening.slot]=''; listening=null; resetInput(); save(); renderKeys(); return;
+    }
+    const allKeys = [...Object.entries(store.keys).map(([slot,code])=>({slot,alt:false,code})), ...Object.entries(store.altKeys).map(([slot,code])=>({slot,alt:true,code}))];
+    if(!validKey(listening.slot,e.code) || allKeys.some(x=>x.code===e.code && (x.slot!==listening.slot || x.alt!==listening.alt))){
       setCoach(['set.keyConflict']); return;
     }
-    store.keys[listening]=e.code; listening=null; resetInput(); save(); renderKeys(); return;
+    store[listening.alt?'altKeys':'keys'][listening.slot]=e.code; listening=null; resetInput(); save(); renderKeys(); return;
   }
   if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if(modalOpen()) return;
   if(!mappedCodes().has(e.code)) return;
   e.preventDefault(); unlockAudio();
   if(e.repeat || held.has(e.code)) return;
+  const button = buttonForCode(e.code), alreadyPressed = button && buttonHeld(button);
   held.add(e.code);
   const t = e.timeStamp || performance.now();
-  const k = store.keys;
-  if(e.code===k.b1) onButton(1,t); else if(e.code===k.b2) onButton(2,t); else if(e.code===k.b3) onButton(3,t); else if(e.code===k.b4) onButton(4,t);
+  if(button){ if(!alreadyPressed) onButton(button,t); }
   else { kbVector(); recomputeDir(t,'kb'); }
   if(lastSrc!=='kb') setSrc('kb');
 });
@@ -2446,8 +2468,10 @@ renderSound();
 const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK'};
 const pretty = c => c.replace(/^Key|^Digit|^Numpad/, m=>m==='Numpad'?'Num':'').replace('Arrow','');
 function renderKeys(){
-  $('keys').innerHTML = Object.keys(KEYLABEL).map(k => `<button class="key${listening===k?' listen':''}" data-k="${k}"><small>${KEYLABEL[k]}</small><b>${listening===k?escapeHTML(T('set.keyListen')):pretty(store.keys[k])}</b></button>`).join('');
-  $('keys').querySelectorAll('.key').forEach(b => b.addEventListener('click', () => { listening = b.dataset.k; renderKeys(); }));
+  const active = (k,alt) => listening && listening.slot===k && listening.alt===alt;
+  const bind = (k,alt) => { const code=store[alt?'altKeys':'keys'][k], on=active(k,alt), name=KEYLABEL[k]+' · '+T(alt?'set.keyAlt':'set.keyPrimary'); return `<button type="button" class="key-bind${alt?' alt':''}${!code?' empty':''}${on?' listen':''}" data-k="${k}" data-alt="${alt?1:0}" aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"><b>${on?escapeHTML(T('set.keyListen')):code?pretty(code):escapeHTML(T('set.keyAdd'))}</b></button>`; };
+  $('keys').innerHTML = Object.keys(KEYLABEL).map(k => `<div class="key"><small>${KEYLABEL[k]}</small><div class="key-pair">${bind(k,false)}${bind(k,true)}</div></div>`).join('');
+  $('keys').querySelectorAll('.key-bind').forEach(b => b.addEventListener('click', () => { listening = {slot:b.dataset.k,alt:b.dataset.alt==='1'}; renderKeys(); }));
 }
 $('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { setMode(b.dataset.mode); if(b.scrollIntoView) b.scrollIntoView({block:'nearest', inline:'nearest'}); })); // a half-hidden tab slides fully into the scrolling list
 $('modes').addEventListener('wheel', e => { const m = e.currentTarget; if(e.deltaX || !e.deltaY || m.scrollWidth <= m.clientWidth) return; m.scrollLeft += e.deltaY; e.preventDefault(); }, {passive:false}); // a plain mouse wheel over the list scrolls it sideways

@@ -187,6 +187,26 @@ test('invalid saved types fall back safely and stored text is escaped',()=>{
   assert.equal(a.store.side,1);assert.equal(a.store.window,12);assert.equal(a.store.keys.up,'KeyW');
   assert.equal(a.store.records.ewgf20.length,0);assert.ok(a.get('bests').innerHTML.includes('&lt;img src=x&gt;'));
 });
+test('each keyboard action accepts one alternate key and old saves keep their primary keys',()=>{
+  const ev=(code,timeStamp=1000)=>({code,timeStamp,target:{tagName:'DIV'},preventDefault(){}});
+  const a=boot({v:4,keys:{right:'KeyD'},altKeys:{right:'KeyO',b2:'KeyP',b3:'KeyP',up:4}});
+  assert.equal(a.store.keys.right,'KeyD');assert.equal(a.store.altKeys.right,'KeyO');
+  assert.equal(a.store.altKeys.b3,'','a duplicate alternate is dropped');assert.equal(a.store.altKeys.up,'','an invalid alternate is dropped');
+  a.events.keydown(ev('KeyD'));a.events.keydown(ev('KeyO',1010));a.events.keyup(ev('KeyD',1020));
+  assert.equal(a.cd.state,1,'releasing the primary keeps right held through the alternate');
+  a.events.keyup(ev('KeyO',1030));assert.equal(a.cd.state,2,'releasing both produces neutral');
+  a.events.keydown(ev('KeyS',1040));a.events.keydown(ev('KeyO',1060));a.events.keydown(ev('KeyP',1060));
+  assert.equal(a.session.attempts.at(-1).kind,'ewgf','alternate direction and button follow the normal judging path');
+  a.events.keydown(ev('KeyI',1061));
+  assert.equal(a.session.attempts.length,1,'primary + alternate for one held button produces one logical press');
+  a.events.keyup(ev('KeyP',1070));a.events.keydown(ev('KeyP',1080));
+  assert.equal(a.session.attempts.length,1,'re-pressing either binding while its partner is held stays suppressed');
+  a.events.keyup(ev('KeyI',1090));a.events.keyup(ev('KeyP',1090));
+  a.events.keydown(ev('KeyI',1100));a.events.keydown(ev('KeyP',1101));
+  assert.equal(a.session.attempts.length,2,'alternate after its held primary is also one logical press');
+  a.events.keyup(ev('KeyI',1110));a.events.keyup(ev('KeyP',1110));
+  assert.match(a.get('keys').innerHTML,/data-k="right" data-alt="0"[\s\S]*data-k="right" data-alt="1"[\s\S]*>O</);
+});
 test('blur clears unfinished input and cancels trial',()=>{
   const a=boot();a.setMode('wave10');a.startTrial();dash(a);a.events.blur();
   assert.equal(a.cd.state,0);assert.equal(a.cd.chain,0);assert.equal(a.trial.cdTimer,null);
