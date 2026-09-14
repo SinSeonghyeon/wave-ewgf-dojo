@@ -1049,7 +1049,7 @@ test('backend does no recurring D1 reads; shoutbox refresh is explicit and the l
 test('shoutbox explains only a real D1 quota failure in plain language',async()=>{
   const b=backend(),a=boot({v:4,lang:'ko'},b.fetch);
   b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:8.5});
-  b.answer('/posts','GET',{error:'quota'},503); b.answer('/visits','POST',{day:'x',today:1,total:1}); await b.flush();
+  b.answer('/posts','GET',{error:'server',message:"Exceeded D1's free tier daily row read limit"},500); b.answer('/visits','POST',{day:'x',today:1,total:1}); await b.flush();
   assert.equal(a.get('postMsg').textContent,'오늘 무료 서버 사용량을 다 써서 한마디를 이용할 수 없습니다. 더 좋은 서버를 쓰려면 후원이 절실합니다 ㅜㅜ');
   a.get('postsRefresh').click(); await b.flush(); b.answer('/posts','GET',{rows:[]}); await b.flush();
   assert.equal(a.get('postMsg').textContent,'','a later successful refresh clears the quota notice');

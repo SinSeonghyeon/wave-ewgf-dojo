@@ -2982,7 +2982,10 @@ async function boardFetch(path, init){
   const signal = typeof AbortSignal!=='undefined' && AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined; // a hung request must not pin busy flags (gate, submit, post) forever
   const res = await fetch(BOARD_URL + path, {signal, ...init, headers});
   const j = await res.json().catch(() => null);
-  if(!res.ok || !j) throw new Error((j && j.error) || ('http '+res.status));
+  // The pre-2026-09-15 Worker reports D1 quota exhaustion as {error:'server',message:'Exceeded D1...'}.
+  // Recognise it until every deployment is on the explicit 503 {error:'quota'} contract.
+  const quota = j && /exceeded D1's free tier daily row (?:read|write) limit/i.test(String(j.message||''));
+  if(!res.ok || !j) throw new Error(quota ? 'quota' : (j && j.error) || ('http '+res.status));
   return j;
 }
 function renderBoard(){
