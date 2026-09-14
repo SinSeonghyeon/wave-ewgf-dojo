@@ -7,10 +7,12 @@
 | `POST /nick` | 닉네임 등록 `{nick}` → `{ok,nick,token}`. 대소문자·전각을 무시하고 유일. 이미 있으면 409 `taken`. 토큰은 브라우저가 보관하고 아래 등록·게시에 붙인다 |
 | `GET /top?board=wave10[&nick=]` | 상위 10 + 참가 수 + (nick이 있으면) 내 행과 순위 `me` + `cut10`(상위 10% 경계 점수. 10명 미만은 10명으로 계산해 1위 점수, 빈 보드는 null. 앱은 wave10의 값으로 웨이브 차트 상위 띠를 그린다) |
 | `POST /submit` | 기록 등록(`token` 필수, 틀리면 403 `auth`). 닉네임당 보드마다 1행(초기화 없음, 2026-09-14): 더 좋으면 교체, 아니면 유지(`improved:false`) |
+| `DELETE /score` | 본인 기록 삭제 `{board,nick,token}`. 닉네임+토큰 소유권을 검증하고 현재 보드의 본인 행만 지운 뒤 갱신된 `/top` 모양을 돌려준다 |
 | `GET /visits` · `POST /visits` | 오늘(KST)·누적 방문 수. POST는 오늘에 1을 더한다(앱이 브라우저당 하루 1회만 보냄) |
-| `GET /posts` · `POST /posts` | 한마디 최신 50개(행마다 좋아요 `up`·싫어요 `down` 수) · 작성(`{nick,token,text}`, 200자, IP당 1분 3개) |
+| `GET /posts` · `POST /posts` | 한마디 최신 50개(행마다 좋아요 `up`·싫어요 `down` 수와 오래된 순 `replies[]`) · 작성(`{nick,token,text}`, 200자) |
+| `POST /reply` | 원글에 1단계 대댓글 작성(`{nick,token,id,text}`, 200자, 여러 개 가능) → `{ok,id,postId,rows}`. 원글과 합쳐 IP당 1분 3개(`POST_LIMIT`) |
 | `POST /vote` | 글에 좋아요/싫어요(`{nick,token,id,v}`, v = 1 좋아요 · -1 싫어요 · 0 취소). 닉네임당 글 하나에 표 1개(`votes` PK), 같은 값을 다시 보내도 중복되지 않는 "설정" 방식. 응답 `{ok,id,mine,rows}`. 400 `id`/`v`, 403 `auth`, 404 `post`, 429 `rate`(IP당 1분 30개, `VOTE_LIMIT`) |
-| `DELETE /posts/:id` | 관리자 삭제(그 글의 표도 함께 지움). 헤더 `authorization: Bearer <ADMIN_TOKEN>` |
+| `DELETE /posts/:id` | 관리자 삭제(그 글의 표와 대댓글도 함께 지움). 헤더 `authorization: Bearer <ADMIN_TOKEN>` |
 | `GET /scores?board=` | 관리자. 그 보드의 **모든** 행을 id·차단 표시(`banned`)와 함께 |
 | `DELETE /scores/:id` | 관리자. 기록 한 행 영구 삭제 |
 | `GET /ban` · `POST /ban {nick}` · `DELETE /ban?nick=` | 관리자. 섀도 밴 목록·추가·해제(아래 "순위 조작 대응") |
@@ -56,6 +58,19 @@ npx wrangler@latest deploy
 ```
 
 확인: `/posts` 응답의 행에 `"up":0,"down":0`이 보이면 새 워커다.
+
+2026-09-14 대댓글(`replies` 테이블 + `POST /reply`) 적용 순서 — **스키마 → 워커 배포 → 사이트 푸시**. 새 워커를 테이블보다 먼저 배포하면 `/posts`가 테이블 없음 오류로 잠시 실패하므로 순서를 지킨다.
+
+```powershell
+cd D:\dojo\worker
+npx wrangler d1 execute mishima-dojo-board --remote --file=schema.sql
+# --file이 401(code 10000)로 거부되면 문장 둘을 worker/schema.sql에서 순서대로 직접 실행:
+# npx wrangler d1 execute mishima-dojo-board --remote --command "CREATE TABLE IF NOT EXISTS replies (id INTEGER PRIMARY KEY AUTOINCREMENT, post_id INTEGER NOT NULL, nick TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL)"
+# npx wrangler d1 execute mishima-dojo-board --remote --command "CREATE INDEX IF NOT EXISTS replies_post_id ON replies (post_id, id)"
+npx wrangler@latest deploy
+```
+
+확인: 원글이 있는 `/posts` 응답에 `"replies":[]`가 보이고, 사이트에서 `답글 0`을 눌러 등록한 뒤 배열에 행이 추가되면 끝.
 
 확인: `https://mishima-dojo-board.mishima-dojo.workers.dev/` → `{"ok":true,...}`, `/top?board=wave10` → 순위표 JSON, `/visits`, `/posts`.
 
@@ -106,8 +121,10 @@ workers.dev 서브도메인이 없으면 deploy가 멈춘다. 대시보드 Worke
 - 닉네임: `nicks(key,nick,token)`. key = NFKC 소문자. 계정 대신 토큰(48 hex)으로 소유를 증명한다. 토큰을 잃으면(브라우저 데이터 삭제) 그 닉네임은 다시 못 쓴다 — 해제 API는 일부러 없다. 필요하면 D1에서 직접 `DELETE FROM nicks WHERE key=?`.
 - 닉네임당 보드마다 1행: `INSERT … ON CONFLICT(week,board,nick) DO UPDATE … WHERE 더 좋을 때만`. 순위 = 자기보다 (score, tie)가 높은 기록 수 + 1. 동점은 같은 순위. 응답은 상위 10 + 전체 참가자 수 + 내 행(`me`, 10위 밖이어도 순위 계산).
 - 방문 집계: `visits(day,n)`. 날짜는 KST. 앱이 브라우저당 하루 1회 POST하므로 "사람 수"에 가깝지만 정확한 고유 방문자는 아니다.
-- 한마디: `posts(id,nick,text,created_at)`. 본문은 공백 정리 후 1~200자, 제어·서식(제로폭·양방향·소프트 하이픈 등)·사용자 영역·미할당 문자와 한글 채움 문자·이체자 선택자 금지(`BAD_CHARS`, 앱의 `NICK_BAD`와 같아야 함. 빈칸으로 보이는 닉네임·글을 막기 위함). 레이트 리밋은 `wrangler.toml`의 `POST_LIMIT` 바인딩(IP당 60초 3회, 저장하는 것 없음), 닉네임 등록은 `NICK_LIMIT`(10회), 좋아요/싫어요는 `VOTE_LIMIT`(30회). 바인딩이 없으면(테스트) 검사 생략. 삭제는 `ADMIN_TOKEN`이 설정된 경우에만 가능.
+- 한마디: `posts(id,nick,text,created_at)`, 대댓글: `replies(id,post_id,nick,text,created_at)`(원글당 여러 개, 1단계만, 오래된 순 표시). 본문은 공백 정리 후 1~200자, 제어·서식(제로폭·양방향·소프트 하이픈 등)·사용자 영역·미할당 문자와 한글 채움 문자·이체자 선택자 금지(`BAD_CHARS`, 앱의 `NICK_BAD`와 같아야 함. 빈칸으로 보이는 닉네임·글을 막기 위함). 원글과 대댓글은 `wrangler.toml`의 `POST_LIMIT` 바인딩(IP당 합계 60초 3회, 저장하는 것 없음), 닉네임 등록은 `NICK_LIMIT`(10회), 좋아요/싫어요는 `VOTE_LIMIT`(30회). 바인딩이 없으면(테스트) 검사 생략. 원글 삭제는 그 대댓글과 표도 지우며 `ADMIN_TOKEN`이 설정된 경우에만 가능.
 - 좋아요/싫어요(2026-09-13): `votes(post_id,key,v,created_at)`, PK (post_id,key)라 닉네임당 글 하나에 표 1개. `POST /vote`는 "내 표를 v로 설정"(1/-1/0)이라 재전송·낡은 화면에서 눌러도 두 번 세지지 않는다. `/posts`가 `LEFT JOIN`으로 `up`/`down`을 집계하고, 누가 어디에 표했는지는 어떤 응답에도 나가지 않는다(앱이 자기 표를 localStorage `store.votes`에 기억). 닉을 새로 정하면 다른 key라 다시 표할 수 있다(허용된 한계).
 - 자동 치팅 판정 없음(2026-09-12 사용자 결정). 형식·범위 검사만 한다. 인증·쿠키 없음. 본문 2000자 초과는 413. 매크로 등 순위 조작은 운영자가 섀도 밴(`bans(key,nick,created_at)`, 2026-09-13)으로 대응한다: `top()`의 상위 목록·참가 수·`cut10`·순위 계산은 `VISIBLE`(bans의 표기 + 같은 key로 등록된 표기를 `nicks`와 조인해 제외)로 거르되, 요청한 닉 자신의 행은 `OR nick=?`로 통과시켜 본인은 차단 전과 같은 화면을 본다. `/submit`도 그대로 받는다. 관리자 경로(`/ban`, `/scores`, `DELETE /posts/:id`·`/scores/:id`)는 `admin()` 한 곳에서 출처 검사 전에 처리하며 `ADMIN_TOKEN`만 본다.
-- 무료 한도: 요청 10만/일, D1 쓰기 10만 행/일. 방치해도 정지되지 않는다.
-- 테스트: `node --test tests/board.test.cjs` (`tests/fake-d1.js` = node:sqlite 인메모리에 schema.sql을 그대로 적용한 가짜 D1, Node 22.13+). 스모크 테스트는 같은 핸들러를 로컬 http로 감싸 실제 브라우저에서 등록·조회·게시·방문 집계를 돈다.
+- 무료 한도(계정 전체 합산): D1 읽기 500만 행/일, 쓰기 10만 행/일. 00:00 UTC(09:00 KST)에 초기화된다([공식 요금 문서](https://developers.cloudflare.com/d1/platform/pricing/), [무료 한도 적용 공지](https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/)). Worker 요청 한도와 별개이며, 쿼리가 반환한 행 수가 아니라 스캔한 행 수로 과금된다. 한도 초과를 감지하면 워커는 503 `{error:"quota"}`를 반환하고 앱 한마디 영역은 무료 서버 한도·후원 안내를 보여준다.
+- 관측: 변경 전후 `npx wrangler d1 insights mishima-dojo-board --timePeriod=1d --sort-type=sum --sort-by=reads --sort-direction=DESC --limit=20`로 쿼리별 읽기 행·실행 횟수를 확인한다. 2026-09-15 실제 1일치에서 기존 `/top` 분리 쿼리 4종이 약 560만 행(2,027,017 + 1,626,322 + 1,560,904 + 388,551), `/posts` 약 327,543행, 방문 집계 약 10,492행을 읽어 순위 조회가 한도를 소진했다.
+- 조회 절약 원칙(2026-09-15): `/top`은 window CTE 한 쿼리로 상위 10·참가 수·내 순위·cut10을 함께 계산한다. `/posts`는 최신 50개를 먼저 제한하고 그 글에만 투표를 조인한다. 앱은 한마디·순위 자동 폴링을 하지 않는다(한마디는 최초 로드/새로고침 버튼/변경, 순위는 최초 로드/탭/새로고침/점수 변경). 새 쿼리는 인덱스를 타는 범위 조건과 작은 CTE를 우선하고 Insights로 실제 스캔량을 확인한다.
+- 테스트: `node --test tests/board.test.cjs` (`tests/fake-d1.js` = node:sqlite 인메모리에 schema.sql을 그대로 적용한 가짜 D1, Node 22.13+). 스모크 테스트는 같은 핸들러를 로컬 http로 감싸 실제 브라우저에서 등록·조회·게시·대댓글·방문 집계를 돈다.

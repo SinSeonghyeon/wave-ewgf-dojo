@@ -17,6 +17,7 @@ const claim = async (w, env, nick, now = NOW) => { const r = await post('/nick',
 const owned = (w, env) => { const tokens = {}; return {
   async submit(over = {}, now = NOW) { const e = entry(over); tokens[e.nick] ??= (await claim(w, env, e.nick, now)).token; return submit({...e, token: tokens[e.nick]}, now)(w, env); },
   async post(body, now = NOW, headers = {}) { tokens[body.nick] ??= (await claim(w, env, body.nick, now)).token; return post('/posts', {...body, token: tokens[body.nick]}, now, headers)(w, env); },
+  async reply(body, now = NOW, headers = {}) { tokens[body.nick] ??= (await claim(w, env, body.nick, now)).token; return post('/reply', {...body, token: tokens[body.nick]}, now, headers)(w, env); },
   tokens}; };
 const ch = code => String.fromCharCode(code);
 
@@ -127,6 +128,24 @@ test('submit keeps one row per nick per board: better results replace, worse one
   assert.equal(env.DB.rows.length, 5); assert.ok(env.DB.rows.every(r => r.week === 'all'), 'every row sits under the season key');
 });
 
+test('score delete authenticates the nickname owner and can remove only that owner\'s row on the selected board', async () => {
+  const w = await worker(); const env = {DB: fakeD1()}; const me = owned(w, env);
+  await me.submit({nick: 'alpha', score: 4.2});
+  await me.submit({nick: 'bravo', score: 5.5});
+  await me.submit({board: 'ewgf20', nick: 'alpha', score: 90, tie: -1, detail: {hits: 18, target: 20, mean: 1}});
+  const del = body => w.handle(req('/score', {method: 'DELETE', body: JSON.stringify(body)}), env, NOW);
+  assert.equal((await del({board: 'wave10', nick: 'alpha', token: me.tokens.bravo})).status, 403, 'another player token cannot delete alpha');
+  assert.equal(env.DB.rows.length, 3);
+  const gone = await (await del({board: 'wave10', nick: 'ALPHA', token: me.tokens.alpha})).json();
+  assert.equal(gone.ok, true); assert.equal(gone.deleted, 1); assert.equal(gone.me, null); assert.equal(gone.total, 1);
+  assert.deepEqual(gone.rows.map(r => r.nick), ['bravo']);
+  assert.deepEqual(env.DB.rows.map(r => [r.board, r.nick]), [['wave10', 'bravo'], ['ewgf20', 'alpha']], 'another player and another board are untouched');
+  const again = await (await del({board: 'wave10', nick: 'alpha', token: me.tokens.alpha})).json();
+  assert.equal(again.deleted, 0, 'repeating a delete is harmless');
+  assert.equal((await del({board: 'free', nick: 'alpha', token: me.tokens.alpha})).status, 400);
+  assert.equal((await del({board: 'wave10', nick: 'a', token: me.tokens.alpha})).status, 400);
+});
+
 test('top list is capped at 10 while total and my rank keep counting below the list', async () => {
   const w = await worker(); const env = {DB: fakeD1()}; const me = owned(w, env);
   for (let i = 0; i < 15; i++) await me.submit({nick: 'p' + i, score: i / 10, tie: 0});
@@ -140,6 +159,11 @@ test('top list is capped at 10 while total and my rank keep counting below the l
   const empty = await (await w.handle(req('/top?board=ewgf20'), env, NOW)).json(); assert.equal(empty.cut10, null, 'empty board has no boundary');
   const few = {DB: fakeD1()}; const m2 = owned(w, few); for (const s of [4.5, 6.2, 5.1]) await m2.submit({nick: 'n' + s, score: s, tie: 1});
   assert.equal((await (await w.handle(req('/top?board=wave10'), few, NOW)).json()).cut10, 6.2, 'under ten players the boundary is 1st place, like the app grades');
+  const before = env.DB.queries.length;
+  await w.handle(req('/top?board=wave10&nick=slow'), env, NOW);
+  const scoreReads = env.DB.queries.slice(before).filter(sql => /FROM scores/.test(sql));
+  assert.equal(scoreReads.length, 1, 'one leaderboard request performs one ranked score scan');
+  assert.match(scoreReads[0], /WITH ranked AS/);
 });
 
 test('visits: POST counts one visit for the KST day, GET only reads, total sums all days', async () => {
@@ -167,6 +191,7 @@ test('posts: newest first, capped at 50, validated, rate-limited per IP when the
   for (let i = 2; i <= 55; i++) await me.post({nick: 'p' + i, text: 'msg ' + i}, NOW + i);
   const list = await (await w.handle(req('/posts'), env, NOW)).json();
   assert.equal(list.rows.length, 50); assert.equal(list.rows[0].text, 'msg 55'); assert.equal(list.rows[49].text, 'msg 6');
+  assert.match(env.DB.queries.filter(sql => /FROM latest p/.test(sql)).at(-1), /WITH latest AS[\s\S]*LIMIT 50[\s\S]*LEFT JOIN votes/,'posts are limited before vote aggregation');
   assert.equal(env.DB.posts.length, 55, 'rows below the cap are kept, only the listing is capped');
   // rate limit binding: consulted with the client IP, 429 when it says no, skipped when absent
   const keys = []; const limited = {DB: env.DB, POST_LIMIT: {async limit({key}) { keys.push(key); return {success: keys.length <= 1}; }}};
@@ -182,6 +207,71 @@ test('posts: newest first, capped at 50, validated, rate-limited per IP when the
   assert.deepEqual(d, {ok: true, deleted: 1}); assert.equal(env.DB.posts.length, 55); assert.equal(env.DB.posts.some(p => p.id === 1), false);
   assert.deepEqual(await (await w.handle(req('/posts/1', {method: 'DELETE', headers: {authorization: 'Bearer s3cret'}}), admin, NOW)).json(), {ok: true, deleted: 0});
   assert.equal((await w.handle(req('/posts/abc', {method: 'DELETE', headers: {authorization: 'Bearer s3cret'}}), admin, NOW)).status, 404);
+});
+
+test('replies: many one-level replies per post, oldest first, validated, share the post rate limit, and vanish with the parent', async () => {
+  const w = await worker(); const env = {DB: fakeD1()}; const me = owned(w, env);
+  await me.post({nick: 'alpha', text: 'parent'});
+  await me.post({nick: 'alpha', text: 'other'}, NOW + 1);
+  let r = await me.reply({nick: 'alpha', id: 1, text: ' first\n reply '}, NOW + 2); let j = await r.json();
+  assert.equal(j.ok, true); assert.equal(j.id, 1); assert.equal(j.postId, 1);
+  r = await me.reply({nick: 'Bravo', id: 1, text: 'second'}, NOW + 3); j = await r.json();
+  await me.reply({nick: 'alpha', id: 1, text: 'third'}, NOW + 4);
+  const rows = (await (await w.handle(req('/posts'), env, NOW)).json()).rows;
+  assert.deepEqual(rows.map(p => [p.id, p.replies.length]), [[2, 0], [1, 3]]);
+  assert.deepEqual(rows[1].replies.map(x => [x.id, x.post_id, x.nick, x.text, x.created_at]), [
+    [1, 1, 'alpha', 'first reply', NOW + 2], [2, 1, 'Bravo', 'second', NOW + 3], [3, 1, 'alpha', 'third', NOW + 4],
+  ]);
+  const tok = me.tokens.alpha;
+  for (const [k, body] of Object.entries({id: {nick: 'alpha', token: tok, id: '1', text: 'x'}, 'id zero': {nick: 'alpha', token: tok, id: 0, text: 'x'}, nick: {nick: 'a', token: tok, id: 1, text: 'x'}, text: {nick: 'alpha', token: tok, id: 1, text: ' '}, 'text long': {nick: 'alpha', token: tok, id: 1, text: 'x'.repeat(201)}})) {
+    r = await post('/reply', body)(w, env); assert.equal(r.status, 400, k); assert.equal((await r.json()).error, k.split(' ')[0], k);
+  }
+  r = await post('/reply', null)(w, env); assert.equal(r.status, 400); assert.deepEqual(await r.json(), {error: 'body'});
+  r = await post('/reply', {nick: 'alpha', token: 'nope', id: 1, text: 'x'})(w, env); assert.equal(r.status, 403);
+  r = await post('/reply', {nick: 'alpha', token: tok, id: 999, text: 'x'})(w, env); assert.equal(r.status, 404); assert.deepEqual(await r.json(), {error: 'post'});
+  const keys = []; const limited = {DB: env.DB, POST_LIMIT: {async limit({key}) { keys.push(key); return {success: keys.length <= 1}; }}};
+  assert.equal((await post('/reply', {nick: 'alpha', token: tok, id: 1, text: 'limited one'}, NOW, {'cf-connecting-ip': '203.0.113.8'})(w, limited)).status, 200);
+  assert.equal((await post('/posts', {nick: 'alpha', token: tok, text: 'limited two'}, NOW, {'cf-connecting-ip': '203.0.113.8'})(w, limited)).status, 429, 'posts and replies share the same limiter bucket');
+  assert.deepEqual(keys, ['post:203.0.113.8', 'post:203.0.113.8']);
+  const admin = {DB: env.DB, ADMIN_TOKEN: 's3cret'};
+  assert.deepEqual(await (await w.handle(req('/posts/1', {method: 'DELETE', headers: {authorization: 'Bearer s3cret'}}), admin, NOW)).json(), {ok: true, deleted: 1});
+  assert.equal(env.DB.replies.length, 0); assert.deepEqual((await (await w.handle(req('/posts'), env, NOW)).json()).rows.map(p => p.id), [2]);
+});
+
+test('replies: listing uses the fetched parent ids when a newer post arrives between its two reads', async () => {
+  const w = await worker(), db = fakeD1(), env = {DB: db}, me = owned(w, env);
+  const token = (await claim(w, env, 'alpha')).token; me.tokens.alpha = token;
+  const insert = db.db.prepare('INSERT INTO posts (nick,text,created_at) VALUES (?,?,?)');
+  for (let id = 1; id <= 51; id++) insert.run('alpha', 'post ' + id, NOW + id);
+  assert.equal((await me.reply({nick: 'alpha', id: 2, text: 'edge reply'}, NOW + 100)).status, 200);
+  let slipped = false;
+  const racing = {DB: {prepare(sql) {
+    if (!slipped && sql.startsWith('SELECT id,post_id,nick,text,created_at FROM replies')) {
+      slipped = true; insert.run('alpha', 'post 52', NOW + 52);
+    }
+    return db.prepare(sql);
+  }}};
+  const rows = (await (await w.handle(req('/posts'), racing, NOW)).json()).rows;
+  assert.equal(slipped, true); assert.deepEqual(rows.map(p => p.id), Array.from({length: 50}, (_, i) => 51 - i));
+  assert.equal(rows.at(-1).id, 2); assert.deepEqual(rows.at(-1).replies.map(r => r.text), ['edge reply']);
+});
+
+test('replies: parent deletion immediately before the atomic insert returns 404 without an orphan', async () => {
+  const w = await worker(), db = fakeD1(), env = {DB: db}, me = owned(w, env);
+  await me.post({nick: 'alpha', text: 'parent'}); const token = me.tokens.alpha;
+  let raced = false;
+  const racing = {DB: {prepare(sql) {
+    const statement = db.prepare(sql);
+    if (!sql.startsWith('INSERT INTO replies')) return statement;
+    let args;
+    return {bind(...values) { args = values; return this; }, async run() {
+      raced = true; db.db.prepare('DELETE FROM posts WHERE id=?').run(args[0]);
+      return statement.bind(...args).run();
+    }};
+  }}};
+  const r = await post('/reply', {nick: 'alpha', token, id: 1, text: 'too late'})(w, racing);
+  assert.equal(raced, true); assert.equal(r.status, 404); assert.deepEqual(await r.json(), {error: 'post'});
+  assert.equal(db.replies.length, 0);
 });
 
 test('votes: one per nick per post, idempotent set, switch, cancel, validated, rate-limited, gone with the post', async () => {
@@ -298,6 +388,8 @@ test('http surface: CORS preflight, health, 400/404/413 and 500 without leaking 
   for (const res of [pre, health, badJson]) assert.equal(res.headers.get('access-control-allow-origin'), ORIGIN);
   const boom = await w.default.fetch(req('/top?board=wave10'), {DB: {prepare() { throw new Error('db down'); }}});
   assert.equal(boom.status, 500); const j = await boom.json(); assert.equal(j.error, 'server'); assert.equal(j.message, 'db down'); assert.equal(j.stack, undefined);
+  const quota = await w.default.fetch(req('/top?board=wave10'), {DB: {prepare() { throw new Error("Exceeded D1's free tier daily row read limit"); }}});
+  assert.equal(quota.status, 503); assert.deepEqual(await quota.json(), {error: 'quota'});
 });
 
 test('origin lock: only allowed origins get CORS headers and may POST; * opens it for tests; DELETE stays token-only', async () => {
@@ -313,6 +405,7 @@ test('origin lock: only allowed origins get CORS headers and may POST; * opens i
   assert.equal((await w.handle(req('/top', {method: 'OPTIONS', headers: foreign}), env, NOW)).status, 403);
   r = await post('/nick', {nick: 'copycat'}, NOW, foreign)(w, env); assert.equal(r.status, 403); assert.equal((await r.json()).error, 'origin');
   r = await post('/visits', {}, NOW, foreign)(w, env); assert.equal(r.status, 403);
+  r = await w.handle(new Request('https://board.test/score', {method: 'DELETE', headers: foreign, body: JSON.stringify({board:'wave10',nick:'copycat',token:'x'})}), env, NOW); assert.equal(r.status, 403);
   // no Origin header at all (curl): POST refused, GET fine
   r = await w.handle(new Request('https://board.test/nick', {method: 'POST', body: JSON.stringify({nick: 'curl'})}), env, NOW); assert.equal(r.status, 403);
   assert.equal((await w.handle(new Request('https://board.test/visits'), env, NOW)).status, 200);

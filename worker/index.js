@@ -3,8 +3,10 @@
 //          GET  /top?board=wave10[&nick=x] → {season,board,total,rows[≤10],me,cut10}   (cut10: score at the top-10% boundary, null on an empty board)
 //          POST /submit {board,nick,token,score,tie,detail,win,lang} → {ok,id,rank,improved} + the /top shape   (403 {error:'auth'} on a bad token)
 //                (one row per nick per board: a worse result leaves the stored best untouched, improved=false)
+//          DELETE /score {board,nick,token} → {ok,deleted} + the /top shape   (the token owner can delete only their own row on that board)
 //          GET  /visits → {day,today,total}   ·   POST /visits → counts one visit for today (KST) and returns the same
-//          GET  /posts → {rows[≤50: {id,nick,text,created_at,up,down}]}   ·   POST /posts {nick,token,text} → {ok,id,rows}   ·   DELETE /posts/:id (Bearer ADMIN_TOKEN, also drops its votes)
+//          GET  /posts → {rows[≤50: {id,nick,text,created_at,up,down,replies[]}]}   ·   POST /posts {nick,token,text} → {ok,id,rows}
+//          POST /reply {nick,token,id,text} → {ok,id,postId,rows} (many one-level replies per post)   ·   DELETE /posts/:id (Bearer ADMIN_TOKEN, also drops votes/replies)
 //          POST /vote {nick,token,id,v: 1|-1|0} → {ok,id,mine,rows}   (2026-09-13: sets the caller's like/dislike on post `id`, 0 clears it; one vote per nick per post;
 //                400 id/v · 403 auth · 404 {error:'post'} · 429 rate via VOTE_LIMIT)
 //          Admin (Bearer ADMIN_TOKEN, no Origin needed):  DELETE /scores/:id → {ok,deleted}   ·   GET /ban → {rows}   ·   POST /ban {nick} → {ok,nick,registered}
@@ -124,21 +126,23 @@ const ROW = 'id,nick,score,tie,detail,win,created_at';
 // pass the ban filter (`OR nick=?`), so a banned player gets the board they would see unbanned; see the header comment.
 async function top(db, board, season, nick) {
   const where = `${SCOPE} AND (${VISIBLE} OR nick=?)`, args = [season, board, nick || ''];
-  const {results} = await db.prepare(`SELECT ${ROW} ${where} ${BY_RANK} LIMIT ${TOP}`).bind(...args).all();
-  const total = await db.prepare(`SELECT COUNT(*) AS n ${where}`).bind(...args).first('n');
-  const rows = rankRows(results.map(parseRow));
-  // Score you need to sit in the top 10% (the app shades the wave chart with it). Boards under ten players count as ten, like the app's grades: 1st place's score.
-  const cut10 = total ? await db.prepare(`SELECT score ${where} ${BY_RANK} LIMIT 1 OFFSET ?`).bind(...args, Math.ceil(Math.max(total, 10) / 10) - 1).first('score') : null;
-  let me = null;
-  if (nick) {
-    const mine = await db.prepare(`SELECT ${ROW} ${SCOPE} AND nick=?`).bind(season, board, nick).first();
-    if (mine) {
-      me = parseRow(mine);
-      const listed = rows.find(r => r.id === me.id);
-      me.rank = listed ? listed.rank : 1 + (await db.prepare(`SELECT COUNT(*) AS n ${where} AND (score>? OR (score=? AND tie>?))`).bind(...args, me.score, me.score, me.tie).first('n') || 0);
-    }
-  }
-  return {season, board, total: total || 0, rows, me, cut10: cut10 ?? null};
+  // One ranked scan replaces the old top/count/cut/mine/rank query chain. `pos` picks the display rows and the
+  // top-10% boundary while RANK preserves shared places for equal score+tie. This is the main D1 rows-read control.
+  const {results} = await db.prepare(`WITH ranked AS (
+    SELECT ${ROW}, RANK() OVER (ORDER BY score DESC, tie DESC) AS rank,
+      ROW_NUMBER() OVER (${BY_RANK}) AS pos, COUNT(*) OVER () AS total
+    ${where}
+  ) SELECT * FROM ranked
+    WHERE pos<=? OR nick=? OR pos=MAX(1,CAST((total+9)/10 AS INTEGER))
+    ORDER BY pos`).bind(...args, TOP, nick || '').all();
+  const total = Number(results[0]?.total || 0);
+  const cutPos = Math.max(1, Math.ceil(total / 10));
+  const picked = results.map(parseRow);
+  const rows = picked.filter(r => r.pos <= TOP).map(({pos, total: _total, ...r}) => r);
+  const mine = nick ? picked.find(r => r.nick === nick) || null : null;
+  const cut = picked.find(r => r.pos === cutPos);
+  if (mine) { delete mine.pos; delete mine.total; }
+  return {season, board, total, rows, me: mine, cut10: cut?.score ?? null};
 }
 
 async function visits(db, now, hit) {
@@ -149,9 +153,17 @@ async function visits(db, now, hit) {
   return {day, today: today || 0, total: total || 0};
 }
 
-async function posts(db) { // up/down = like/dislike counts from `votes` (2026-09-13); the caller's own vote is never returned (the app remembers it)
-  const {results} = await db.prepare('SELECT p.id,p.nick,p.text,p.created_at, COALESCE(SUM(v.v=1),0) AS up, COALESCE(SUM(v.v=-1),0) AS down ' +
-    `FROM posts p LEFT JOIN votes v ON v.post_id=p.id GROUP BY p.id ORDER BY p.id DESC LIMIT ${POSTS}`).all();
+async function posts(db) { // up/down = like/dislike counts from `votes`; replies are one level deep and oldest first
+  // Limit parents before joining votes: old posts and their reactions must not be scanned for every refresh.
+  const {results} = await db.prepare(`WITH latest AS (
+      SELECT id,nick,text,created_at FROM posts ORDER BY id DESC LIMIT ${POSTS}
+    ) SELECT p.id,p.nick,p.text,p.created_at, COALESCE(SUM(v.v=1),0) AS up, COALESCE(SUM(v.v=-1),0) AS down
+      FROM latest p LEFT JOIN votes v ON v.post_id=p.id GROUP BY p.id ORDER BY p.id DESC`).all();
+  const ids = results.map(post => post.id); // use exactly the parent snapshot above: a new post between the two SELECTs must not move the 50th parent out of the reply query
+  const replies = ids.length ? (await db.prepare(`SELECT id,post_id,nick,text,created_at FROM replies WHERE post_id IN (${ids.map(() => '?').join(',')}) ORDER BY id ASC`).bind(...ids).all()).results : [];
+  const byPost = new Map();
+  for (const reply of replies) { const list = byPost.get(reply.post_id) || []; list.push(reply); byPost.set(reply.post_id, list); }
+  for (const post of results) post.replies = byPost.get(post.id) || [];
   return {rows: results};
 }
 
@@ -166,7 +178,7 @@ async function route(request, env, now) {
   const url = new URL(request.url), path = url.pathname.replace(/\/+$/, '') || '/', method = request.method;
   if (method === 'OPTIONS') return new Response(null, {status: originOk(request, env) ? 204 : 403});
   const mod = await admin(request, env, url, path, method, now); if (mod) return mod; // token-only routes, before the origin gate (curl sends no Origin)
-  if (method === 'POST' && !originOk(request, env)) return json({error: 'origin'}, 403);
+  if ((method === 'POST' || (method === 'DELETE' && path === '/score')) && !originOk(request, env)) return json({error: 'origin'}, 403);
   if (path === '/' && method === 'GET') return json({ok: true, service: 'mishima-dojo-board', season: seasonKey(now)});
 
   if (path === '/top' && method === 'GET') {
@@ -199,6 +211,16 @@ async function route(request, env, now) {
     const t = await top(env.DB, e.board, season, e.nick);
     return json({ok: true, id: t.me.id, rank: t.me.rank, improved: t.me.created_at === now, ...t});
   }
+  if (path === '/score' && method === 'DELETE') {
+    const {body, status, error} = await readJson(request); if (error) return json({error}, status);
+    if (!body || typeof body !== 'object') return json({error: 'body'}, 400);
+    const board = body.board; if (!boardSpec(board)) return json({error: 'board'}, 400);
+    if (!cleanNick(body.nick)) return json({error: 'nick'}, 400);
+    const nick = await owner(env.DB, body.nick, body.token); if (!nick) return json({error: 'auth'}, 403);
+    const season = seasonKey(now);
+    const r = await env.DB.prepare('DELETE FROM scores WHERE week=? AND board=? AND nick=?').bind(season, board, nick).run();
+    return json({ok: true, deleted: r.meta.changes || 0, ...await top(env.DB, board, season, nick)});
+  }
 
   if (path === '/visits' && (method === 'GET' || method === 'POST')) return json(await visits(env.DB, now, method === 'POST'));
 
@@ -212,6 +234,18 @@ async function route(request, env, now) {
     if (await limited(env, 'POST_LIMIT', 'post:' + ip(request))) return json({error: 'rate'}, 429);
     const ins = await env.DB.prepare('INSERT INTO posts (nick,text,created_at) VALUES (?,?,?)').bind(nick, text, now).run();
     return json({ok: true, id: ins.meta.last_row_id, ...await posts(env.DB)});
+  }
+  if (path === '/reply' && method === 'POST') {
+    const {body, status, error} = await readJson(request); if (error) return json({error}, status);
+    if (!body || typeof body !== 'object') return json({error: 'body'}, 400);
+    const id = body.id; if (!Number.isInteger(id) || id < 1 || id > 1e12) return json({error: 'id'}, 400);
+    if (!cleanNick(body.nick)) return json({error: 'nick'}, 400);
+    const text = cleanText(body.text, TEXT_MAX); if (!text) return json({error: 'text'}, 400);
+    const nick = await owner(env.DB, body.nick, body.token); if (!nick) return json({error: 'auth'}, 403);
+    if (await limited(env, 'POST_LIMIT', 'post:' + ip(request))) return json({error: 'rate'}, 429);
+    const ins = await env.DB.prepare('INSERT INTO replies (post_id,nick,text,created_at) SELECT ?,?,?,? WHERE EXISTS (SELECT 1 FROM posts WHERE id=?)').bind(id, nick, text, now, id).run();
+    if (!(ins.meta.changes || 0)) return json({error: 'post'}, 404); // parent validation and insertion are one SQLite statement, so admin deletion cannot leave an orphan
+    return json({ok: true, id: ins.meta.last_row_id, postId: id, ...await posts(env.DB)});
   }
   if (path === '/vote' && method === 'POST') { // idempotent "set my vote on post id to v" (1 like, -1 dislike, 0 none): one row per (post, nick), so a stale client cannot double-count
     const {body, status, error} = await readJson(request); if (error) return json({error}, status);
@@ -238,7 +272,10 @@ async function admin(request, env, url, path, method, now) {
   const db = env.DB;
   if (del) {
     const deleted = (await db.prepare(`DELETE FROM ${del[1]} WHERE id=?`).bind(+del[2]).run()).meta.changes || 0;
-    if (del[1] === 'posts') await db.prepare('DELETE FROM votes WHERE post_id=?').bind(+del[2]).run(); // a deleted post takes its votes with it
+    if (del[1] === 'posts') {
+      await db.prepare('DELETE FROM votes WHERE post_id=?').bind(+del[2]).run();
+      await db.prepare('DELETE FROM replies WHERE post_id=?').bind(+del[2]).run(); // a deleted post takes its reactions and replies with it
+    }
     return json({ok: true, deleted});
   }
   if (path === '/ban' && method === 'GET') return json({rows: (await db.prepare('SELECT key,nick,created_at FROM bans ORDER BY created_at DESC').all()).results});
@@ -268,6 +305,10 @@ async function admin(request, env, url, path, method, now) {
 export default {
   async fetch(request, env) {
     try { return await handle(request, env); }
-    catch (e) { return withCors(json({error: 'server', message: String(e && e.message || e)}, 500), request, env); }
+    catch (e) {
+      const message = String(e && e.message || e);
+      if (/exceeded D1's free tier daily row (?:read|write) limit/i.test(message)) return withCors(json({error: 'quota'}, 503), request, env);
+      return withCors(json({error: 'server', message}, 500), request, env);
+    }
   },
 };

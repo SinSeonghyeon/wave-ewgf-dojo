@@ -96,11 +96,9 @@
   .touch{display:none;position:absolute;left:0;right:0;bottom:0;height:46%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;container-type:size}   /* size container: pad/buttons are capped by the overlay height (cqh) so they never rise above it */
   html.touch-ui .touch{display:block}
   .touch-note{position:absolute;left:0;right:0;top:0;margin:0;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);text-shadow:0 1px 0 #000;pointer-events:none}
-  .tpad{position:absolute;left:14px;bottom:14px;width:min(46vw,200px);width:min(46vw,200px,100cqh - 34px);aspect-ratio:1;border-radius:50%;background:rgba(20,26,35,.55);border:1px solid var(--line2)}
-  .tpad-ring{position:absolute;inset:39%;border-radius:50%;border:1px dashed var(--line2);pointer-events:none}
-  .tpad-knob{position:absolute;left:50%;top:50%;width:38%;height:38%;border-radius:50%;background:rgba(76,201,255,.22);border:2px solid var(--accent);transform:translate(-50%,-50%);pointer-events:none;box-sizing:border-box}
-  .tpad.on .tpad-knob{background:rgba(76,201,255,.45)}
-  .tpad-dir{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink);text-shadow:0 1px 0 #000;pointer-events:none}
+  .tdirs{position:absolute;left:14px;bottom:14px;display:grid;grid-template-columns:repeat(3,var(--touch-dir-size,55px));gap:8px}
+  .tdirs button{width:var(--touch-dir-size,55px);height:var(--touch-dir-size,55px);padding:0;border:1px solid var(--line2);border-radius:12px;background:rgba(20,26,35,.72);color:var(--ink);font-family:var(--mono);font-size:25px;font-weight:700;touch-action:none;-webkit-tap-highlight-color:transparent}
+  .tdirs button.on{background:rgba(76,201,255,.42);border-color:var(--accent);box-shadow:0 0 12px rgba(76,201,255,.25)}
   .tbtns{position:absolute;right:14px;bottom:14px;display:grid;grid-template-columns:repeat(2,clamp(56px,17vw,64px));grid-template-columns:repeat(2,min(clamp(56px,17vw,64px),50cqh - 22px));gap:10px}
   .tbtns button{aspect-ratio:1;border-radius:50%;border:1px solid var(--line2);font-family:var(--mono);font-size:22px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;padding:0;touch-action:none;-webkit-tap-highlight-color:transparent}
   .tbtns button small{font-size:9px;letter-spacing:1px;opacity:.7}
@@ -150,6 +148,9 @@
   .board-list td.s small{font-family:var(--body);color:var(--muted);font-size:11.5px;margin-left:6px}
   .board-list td.w{font-family:var(--mono);color:var(--muted);font-size:12px}
   .board-list tr.me td{background:var(--accent-soft)} .board-list tr.me td:not(.s){color:var(--accent)}
+  .board-list td.act{width:1%;padding-left:6px;text-align:right}
+  .board-delete{background:transparent;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:4px 8px;white-space:nowrap;font-size:11px}
+  .board-delete:hover{color:#ff9b9b;border-color:#a8474e}.board-delete:disabled{opacity:.45;cursor:default}
   .board-list tr.sep td{text-align:center;color:var(--faint);padding:2px 0;border-bottom:0}
   .board-list .empty,.posts .empty{color:var(--muted);text-align:center;padding:18px 0;font-size:13px}
   .card-msg{font-family:var(--mono);font-size:12.5px;color:var(--accent);min-height:1.4em;margin-top:6px}
@@ -161,15 +162,32 @@
   .post b{font-size:13px;color:var(--ink)} .post time{font-family:var(--mono);font-size:11px;color:var(--faint);margin-left:8px}
   .post p{margin:3px 0 0;font-size:13.5px;line-height:1.5;color:var(--ink2);overflow-wrap:anywhere}
   .post-votes{display:flex;gap:6px;margin-top:6px}
-  .post .vote{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;min-height:28px;font-family:var(--mono);font-size:12px;cursor:pointer}
+  .post-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .post .vote,.post .reply-open{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;min-height:28px;font-family:var(--mono);font-size:12px;cursor:pointer}
   .post .vote[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
-  .post .vote:disabled{opacity:.5;cursor:default}
+  .post .vote:disabled,.post .reply-open:disabled{opacity:.5;cursor:default}
+  .reply-list{margin:8px 0 0 14px;padding-left:10px;border-left:2px solid var(--line)}
+  .reply{padding:6px 0}.reply+.reply{border-top:1px solid var(--line)}
+  .reply b{font-size:12px;color:var(--accent)} .reply time{font-size:10.5px}
+  .reply p{font-size:13px;margin-top:2px}
+  .reply-form{display:flex;gap:6px;margin:8px 0 0 14px;padding-left:10px}
+  .reply-form input{min-width:0;flex:1;background:var(--bg);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:6px 9px;font-size:13px}
+  .reply-form .btn{padding:5px 10px;font-size:12px}
   .visits{font-family:var(--mono);font-size:11.5px;color:var(--faint);flex-basis:100%;text-align:right}
   .visits:empty{display:none}
   .nick-btn{background:transparent;color:var(--accent);border:1px dashed var(--accent-deep);border-radius:4px;padding:6px 10px;font-family:var(--mono);font-size:12px}
   .nick-btn:hover{border-style:solid}
   /* first-run nickname gate (modal; Escape is blocked until a nickname exists) */
   dialog.nick{width:min(460px,calc(100vw - 32px))}
+  dialog.notices{width:min(680px,calc(100vw - 32px));max-height:min(80vh,720px)}
+  .notice-list{display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;padding-right:4px}
+  .notice-item{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+  .notice-item:first-child{border-color:var(--accent-deep)}
+  .notice-meta{display:flex;align-items:center;gap:8px;color:var(--muted);font-family:var(--mono);font-size:11.5px}
+  .notice-kind{padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+  .notice-item h3{margin:7px 0 5px;font-size:17px;color:var(--ink)}
+  .notice-item p{margin:0;color:var(--ink2);line-height:1.6}
+  .notice-item ul{margin:8px 0 0;padding-left:20px;color:var(--muted);line-height:1.7}
   .donate-qr{display:block;width:200px;height:200px;margin:14px auto 4px;padding:8px;box-sizing:content-box;background:#fff;border-radius:8px}
   #donateDlg .nick-form{justify-content:center} #donateDlg .btn{text-decoration:none}
   #donateDlg .donate-contact{margin:16px 0 0;text-align:center;font-size:12px;color:var(--muted)}
@@ -243,9 +261,12 @@
   .range output{font-family:var(--mono);font-size:12px;color:var(--ink2);min-width:3.4em;text-align:right;font-variant-numeric:tabular-nums}
   .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .key{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:6px 4px;text-align:center;color:var(--ink2)}
-  .key small{display:block;font-size:10.5px;color:var(--muted);font-family:var(--mono)}
-  .key b{font-family:var(--mono);font-size:13px}
-  .key.listen{border-color:var(--accent);color:var(--accent);animation:blink 1s infinite}
+  .key small{display:block;font-size:10.5px;color:var(--muted);font-family:var(--mono);margin-bottom:4px}
+  .key-pair{display:flex;gap:3px}
+  .key-bind{min-width:0;flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:4px 2px;color:var(--ink2)}
+  .key-bind b{font-family:var(--mono);font-size:12px}
+  .key-bind.alt.empty b{color:var(--muted);font-family:var(--body);font-size:11px}
+  .key-bind.listen{border-color:var(--accent);color:var(--accent);animation:blink 1s infinite}
   @keyframes blink{50%{opacity:.5}}
   .note{font-size:12px;color:var(--muted);line-height:1.5}
   .note code{font-family:var(--mono);color:var(--ink2);font-size:11.5px}
@@ -290,8 +311,18 @@
   .about-body a{color:var(--accent)}
   .donate{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
   .donate-share{margin:12px 0 0}
+  .donate-copy{display:flex;flex:1 1 260px;flex-direction:column;line-height:1.5}
+  .donate-copy small{color:var(--faint);font-size:11px}
   .donate-btn{background:transparent;color:var(--gold);border:1px solid var(--gold);border-radius:4px;padding:6px 12px;font-size:12.5px;font-weight:700;cursor:pointer}
   .donate-btn:hover{background:rgba(245,197,66,.12)}
+  .donate-nudge{position:relative}
+  .donate-nudge[data-active="true"] .donate-btn{background:rgba(245,197,66,.14);box-shadow:0 0 14px rgba(245,197,66,.48)}
+  .donate-nudge[data-motion="true"] .donate-btn{animation:donateGlow 1.2s ease-in-out infinite alternate}
+  .donate-bubble{position:absolute;z-index:5;right:0;top:calc(100% + 10px);width:max-content;max-width:min(210px,calc(100vw - 32px));padding:7px 11px;border:1px solid var(--gold);border-radius:12px;background:var(--panel);color:var(--gold);font-size:12px;font-weight:700;box-shadow:0 5px 18px rgba(0,0,0,.35);pointer-events:none}
+  .donate-bubble::before{content:"";position:absolute;right:18px;bottom:100%;border:6px solid transparent;border-bottom-color:var(--gold)}
+  .donate-bubble[hidden]{display:none}
+  @keyframes donateGlow{to{filter:brightness(1.22);box-shadow:0 0 22px rgba(245,197,66,.75)}}
+  @media (prefers-reduced-motion:reduce){.donate-nudge .donate-btn{animation:none!important}}
   .donate-options{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px}
   .donate-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;box-sizing:border-box;background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:10px 14px;color:var(--ink);font-size:14px;font-weight:700;text-align:left;text-decoration:none;cursor:pointer}
   .donate-opt small{color:var(--muted);font-size:12px;font-weight:400}
@@ -371,12 +402,15 @@
   .jp-item{font-family:var(--display);font-size:22px;line-height:1.1;color:var(--accent);text-shadow:0 0 12px rgba(76,201,255,.6),0 2px 0 #000;text-align:center}
   .jp-hint{margin-top:3px;text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--gold);text-shadow:0 1px 0 #000}
   @media (prefers-reduced-motion:reduce){.jp-rays,.jp-title,.jp-card,.jp-box{animation:none!important}}
-  @media (prefers-reduced-motion:reduce){.key.listen{animation:none}}
+  @media (prefers-reduced-motion:reduce){.key-bind.listen{animation:none}}
   html[lang="ja"]{--display:'Dela Gothic One','Noto Sans JP',system-ui,sans-serif;--body:'Noto Sans JP','Hiragino Sans','Yu Gothic',system-ui,sans-serif}
   html[lang="en"]{--body:'Noto Sans KR',system-ui,-apple-system,'Segoe UI',sans-serif}
   html[lang="en"] .brand p{max-width:350px} /* the English tagline needs a little more to stay on two lines */
   html[lang="ja"] .brand h1{font-size:28px}
   .top-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-left:auto} /* stays on the right when it wraps to its own row */
+  .notice-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;height:45px;padding:0 11px;border:1px solid var(--line2);border-radius:4px;background:transparent;color:var(--ink2);cursor:pointer}
+  .notice-btn:hover,.notice-btn:focus-visible{color:var(--accent);border-color:var(--accent)}
+  .notice-new{position:absolute;right:-5px;top:-8px;padding:1px 5px;border-radius:999px;background:var(--red);color:#fff;font-family:var(--mono);font-size:8px;font-weight:700;line-height:15px;letter-spacing:.4px;box-shadow:0 0 0 2px var(--bg)}
   .bgm-btn{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:45px;height:45px;padding:0;border:1px solid var(--line2);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer}
   .bgm-btn[aria-pressed="false"]{color:var(--muted)}
   .bgm-btn .off{display:none}
@@ -408,11 +442,12 @@
       <button role="tab" data-mode="bd10" aria-selected="false" data-i18n="mode.bd10.name">백대시 10초</button>
     </nav>
     <div class="top-right">
+      <button class="notice-btn" id="noticeOpen" type="button" data-i18n-aria="notice.open" data-i18n-title="notice.open" aria-label="공지사항 열기"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span data-i18n="notice.button">공지</span><span class="notice-new" id="noticeBadge" data-i18n="notice.new">NEW</span></button>
       <button class="bgm-btn" id="bgmBtn" type="button" aria-pressed="true" data-i18n-aria="bgm.aria" data-i18n-title="bgm.aria" aria-label="배경음 켜기/끄기"><svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4 6 8H3v8h3l5 4z"/><g class="on"><path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/></g><g class="off"><path d="m16 9 6 6m0-6-6 6"/></g></svg></button>
       <div class="lang" id="langSel" role="group" aria-label="Language"><button data-lang="ko" aria-pressed="true">한국어</button><button data-lang="en" aria-pressed="false">EN</button><button data-lang="ja" aria-pressed="false">日本語</button></div>
       <div class="src" id="srcBadge">⌨ 키보드 대기</div>
       <button class="nick-btn" id="nickBtn" hidden></button>
-      <button class="donate-btn" id="donateTop" type="button" hidden data-i18n="donate.btn">🍚 후원하기 🍚</button>
+      <div class="donate-nudge" id="donateNudge" data-active="false" data-motion="false"><button class="donate-btn" id="donateTop" type="button" hidden data-i18n="donate.btn">🍚 후원하기 🍚</button><div class="donate-bubble" id="donateBubble" role="status" aria-live="polite" hidden data-i18n="donate.bubble">응애… 밥 줘… 🍚</div></div>
       <div class="visits" id="visits"></div>
     </div>
   </header>
@@ -436,7 +471,7 @@
         </div>
         <div class="touch" id="touch" data-i18n-aria="touch.aria" aria-label="터치 컨트롤">
           <p class="touch-note" data-i18n="touch.note">터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)</p>
-          <div class="tpad" id="tpad" data-i18n-aria="touch.padAria" aria-label="방향 패드 — 손가락을 굴려 입력"><div class="tpad-ring"></div><div class="tpad-knob" id="tknob"></div><span class="tpad-dir" id="tdir"></span></div>
+          <div class="tdirs" id="tdirs" role="group" data-i18n-aria="touch.padAria" aria-label="방향 버튼 — 아래와 좌우를 함께 눌러 대각선 입력"><button type="button" data-dir="left" data-i18n-aria="touch.left" aria-label="왼쪽">←</button><button type="button" data-dir="down" data-i18n-aria="touch.down" aria-label="아래">↓</button><button type="button" data-dir="right" data-i18n-aria="touch.right" aria-label="오른쪽">→</button></div>
           <div class="tbtns" id="tbtns"><button type="button" class="b1" data-btn="1">1<small>LP</small></button><button type="button" class="b2" data-btn="2">2<small>RP</small></button><button type="button" class="b3" data-btn="3">3<small>LK</small></button><button type="button" class="b4" data-btn="4">4<small>RK</small></button></div>
         </div>
       </div>
@@ -486,6 +521,12 @@
             <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div class="row"><label class="t" data-i18n="set.touch">터치 컨트롤</label>
             <div class="segc" id="touchSel"><button data-touch="auto" aria-pressed="true" data-i18n="set.touchAuto">자동 (터치 기기)</button><button data-touch="on" aria-pressed="false" data-i18n="set.on">켜기</button><button data-touch="off" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" for="touchSize" data-i18n="set.touchSize">방향 버튼 크기</label>
+            <div class="range"><input type="range" id="touchSize" min="70" max="140" step="5" value="100"><output id="touchSizeOut">100%</output></div></div>
+          <div class="row"><label class="t" for="touchX" data-i18n="set.touchX">방향 버튼 가로 위치</label>
+            <div class="range"><input type="range" id="touchX" min="0" max="100" step="5" value="0"><output id="touchXOut">0%</output></div></div>
+          <div class="row"><label class="t" for="touchY" data-i18n="set.touchY">방향 버튼 세로 위치</label>
+            <div class="range"><input type="range" id="touchY" min="0" max="100" step="5" value="0"><output id="touchYOut">0%</output></div></div>
           <div class="row"><label class="t" data-i18n="set.sound">소리</label>
             <div class="segc" id="soundSel"><button data-sound="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-sound="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div class="row"><label class="t" data-i18n="set.bgm">배경음</label><div class="segc" id="bgmSel"><button data-bgm="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-bgm="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
@@ -495,8 +536,9 @@
             <div class="range"><input type="range" id="sfxVol" min="0" max="100" step="5" value="100"><output id="sfxVolOut">100%</output></div></div>
           <p class="note" data-i18n="set.soundNote">배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).</p>
           <div>
-            <label class="t" data-i18n="set.keys">키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
+            <label class="t" data-i18n="set.keys">키 설정 — 동작마다 기본·보조 키를 하나씩 지정 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
             <div class="keys" id="keys"></div>
+            <p class="note" data-i18n="set.keyRemove">보조 키를 지우려면 Delete 또는 Backspace</p>
           </div>
           <div class="row"><label class="t" data-i18n="set.pad">게임패드</label><span class="note" id="padStatus"></span></div>
           <p class="note" data-i18n-html="set.padNote"></p>
@@ -506,6 +548,12 @@
       </dialog>
     </aside>
   </main>
+
+  <dialog class="share notices" id="noticeDlg" aria-labelledby="noticeTitle">
+    <div class="set-head"><h2 id="noticeTitle" data-i18n="notice.title">공지사항</h2><button class="btn ghost" id="noticeClose" type="button" data-i18n="share.close">닫기</button></div>
+    <p class="note" data-i18n="notice.sub">미시마 도장의 업데이트와 패치 노트입니다.</p>
+    <div class="notice-list" id="noticeList"></div>
+  </dialog>
 
   <dialog class="share" id="shareDlg" aria-labelledby="shareTitle">
     <h2 id="shareTitle" data-i18n="share.title">결과 공유 카드</h2>
@@ -518,7 +566,7 @@
       <button class="btn ghost" id="shareClose" data-i18n="share.close">닫기</button>
     </div>
     <div class="share-msg" id="shareMsg"></div>
-    <p class="donate donate-share" id="donateShare" hidden><span data-i18n="donate.note">여러분의 소중한 후원이 굶고 있는 불쌍한 철찌의 한 끼 밥이 됩니다.</span> <button class="btn ghost donate-btn" id="donateShareBtn" type="button" data-i18n="donate.btn">🍚 후원하기 🍚</button></p>
+    <p class="donate donate-share" id="donateShare" hidden><span class="donate-copy"><span data-i18n="donate.result">개인 최고 기록 달성! 미시마 도장이 도움이 됐다면 1,000원부터 다음 업데이트를 응원해 주세요. 후원금은 도메인·서버 유지와 기능 개발에 사용됩니다.</span><small data-i18n="donate.joke">그리고 굶고 있는 철찌에게 밥 한 끼가 생깁니다.</small></span><button class="btn ghost donate-btn" id="donateShareBtn" type="button" data-i18n="donate.btn">🍚 후원하기 🍚</button></p>
     <p class="note" data-i18n="share.discordNote">디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.</p>
   </dialog>
 
@@ -532,7 +580,7 @@
   <dialog class="share nick" id="donateDlg" aria-labelledby="donateTitle">
     <div id="donateChoose">
       <h2 id="donateTitle" data-i18n="donate.chooseTitle">후원 방법 선택</h2>
-      <p class="note" data-i18n="donate.note">여러분의 소중한 후원이 굶고 있는 불쌍한 철찌의 한 끼 밥이 됩니다.</p>
+      <p class="note donate-copy"><span data-i18n="donate.pitch">미시마 도장이 연습에 도움이 됐다면 1,000원부터 다음 업데이트를 응원해 주세요. 후원금은 도메인·서버 유지와 기능 개발에 사용됩니다.</span><small data-i18n="donate.joke">그리고 굶고 있는 철찌에게 밥 한 끼가 생깁니다.</small></p>
       <div class="donate-options" id="donateOptions"></div>
       <div class="nick-form"><button class="btn ghost" id="donateClose" type="button" data-i18n="share.close">닫기</button></div>
     </div>
@@ -570,10 +618,11 @@
     </div>
     <div class="card posts-card" id="postsCard" hidden>
       <h2 data-i18n="posts.title">한마디</h2>
-      <p class="sub" data-i18n="posts.sub">건의·질문·잡담 무엇이든 · 최신 50개 · 1분마다 새로 고침</p>
+      <p class="sub" data-i18n="posts.sub">건의·질문·잡담 무엇이든 · 최신 50개 · 버튼으로 새로고침</p>
       <form class="posts-form" id="postForm"><b class="post-nick" id="postNickLabel"></b><input class="text" id="postText" maxlength="200" autocomplete="off" data-i18n-aria="posts.ph" aria-label="하고 싶은 말 (200자)"><button class="btn" id="postSend" type="submit" data-i18n="posts.send">남기기</button></form>
       <div class="card-msg" id="postMsg"></div>
       <div class="posts" id="postList"></div>
+      <div class="card-actions"><button class="btn ghost" id="postsRefresh" type="button" data-i18n="posts.refresh">새로고침</button></div>
     </div>
     <div class="card chart" id="histCard">
       <h2 data-i18n="hist.title">초풍 버튼 타이밍 분포</h2>
@@ -625,7 +674,7 @@
     <p data-i18n="footer">표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.</p>
     <p class="copy" data-i18n="footer.copy">© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.</p>
     <p class="copy"><span data-i18n="footer.contact">문의</span>: <a href="mailto:tlstjdgus3@gmail.com">tlstjdgus3@gmail.com</a></p>
-    <p class="donate" id="donate" hidden><span data-i18n="donate.note">여러분의 소중한 후원이 굶고 있는 불쌍한 철찌의 한 끼 밥이 됩니다.</span> <button class="btn ghost donate-btn" id="donateBtn" type="button" data-i18n="donate.btn">🍚 후원하기 🍚</button></p>
+    <p class="donate" id="donate" hidden><span class="donate-copy"><span data-i18n="donate.pitch">미시마 도장이 연습에 도움이 됐다면 1,000원부터 다음 업데이트를 응원해 주세요. 후원금은 도메인·서버 유지와 기능 개발에 사용됩니다.</span><small data-i18n="donate.joke">그리고 굶고 있는 철찌에게 밥 한 끼가 생깁니다.</small></span><button class="btn ghost donate-btn" id="donateBtn" type="button" data-i18n="donate.btn">🍚 후원하기 🍚</button></p>
   </footer>
 </div>
 
@@ -758,6 +807,14 @@ const lookOf = f => Object.fromEntries(SLOTS.map(s => [s, ITEMS[s][f[s]] || ITEM
 function currentLook(){ return lookCache || (lookCache = lookOf(store.fit)); }
 function setFit(slot, id){ if(!ITEMS[slot] || !ITEMS[slot][id] || !owned(id)) return false; store.fit[slot] = id; lookCache = null; save(); renderFit(); return true; }
 
+/* ---------- announcements ---------- */
+// Newest first. For each patch, add one entry and the matching notice.<id> strings to all three I18N dictionaries.
+// The latest id is the read marker saved in this browser; no backend or deployment-time request is involved.
+const NOTICES = [
+  {id:'2026-09-15-notices', date:'2026-09-15', kind:'notice.kind.update', title:'notice.20260915.title', summary:'notice.20260915.summary', items:['notice.20260915.1','notice.20260915.2','notice.20260915.3','notice.20260915.4','notice.20260915.5']},
+];
+const NOTICE_LATEST = NOTICES[0]?.id || '';
+
 /* ---------- persistent settings ---------- */
 const STORE = 'wave-ewgf-dojo-v1';
 const LANGS = ['ko','en','ja'];
@@ -765,7 +822,7 @@ const detectLang = () => { const l = (typeof navigator!=='undefined' && navigato
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgm:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault()};
+let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', touchSize:100, touchX:0, touchY:0, sound:1, bgm:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, altKeys:{up:'',down:'',left:'',right:'',b1:'',b2:'',b3:'',b4:''}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault(), donateResultDay:'', donateNudgeDay:'', donatePlayDay:'', donatePlayMs:0};
 const owned = id => id==='base' || !!store.ach[id]; // store.ach = unlock record (achievement items and daily gifts alike): id → time
 const pendingReward = id => store.pendingRewards.some(j => j.id===id);
 const earned = id => owned(id) || pendingReward(id);
@@ -774,14 +831,19 @@ function validKey(slot, code){
   const arrows = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
   return typeof code==='string' && /^[A-Za-z][A-Za-z0-9]{0,39}$/.test(code) && (!arrows[code] || arrows[code]===slot);
 }
+let hadStore = false; // true only when storage existed before this page boot; bumpVisitDay() creates it later on a first visit
 try{
   const s = JSON.parse(localStorage.getItem(STORE)||'null');
   if(s && typeof s==='object'){
+    hadStore = true;
     if(LANGS.includes(s.lang)) store.lang=s.lang;
     if(s.v>=4 && WINDOWS.includes(s.window)) store.window=s.window;
     if([1,-1].includes(s.side)) store.side=s.side;
     if([0,1].includes(s.fx)) store.fx=s.fx;
     if(['auto','on','off'].includes(s.touch)) store.touch=s.touch;
+    if(Number.isInteger(s.touchSize) && s.touchSize>=70 && s.touchSize<=140 && s.touchSize%5===0) store.touchSize=s.touchSize;
+    if(Number.isInteger(s.touchX) && s.touchX>=0 && s.touchX<=100 && s.touchX%5===0) store.touchX=s.touchX;
+    if(Number.isInteger(s.touchY) && s.touchY>=0 && s.touchY<=100 && s.touchY%5===0) store.touchY=s.touchY;
     if([0,1].includes(s.sound)) store.sound=s.sound;
     if([0,1].includes(s.bgm)) store.bgm=s.bgm;
     if(Number.isInteger(s.bgmVol) && s.bgmVol>=0 && s.bgmVol<=100) store.bgmVol=s.bgmVol;
@@ -789,10 +851,18 @@ try{
     if(typeof s.nick==='string' && nickOk(s.nick)) store.nick=s.nick;
     if(store.nick && typeof s.nickToken==='string' && /^[0-9a-f]{48}$/.test(s.nickToken)) store.nickToken=s.nickToken; // proves the nickname is ours (POST /nick); a token without a nickname is dropped
     if(typeof s.visitDay==='string' && /^\d{4}-\d\d-\d\d$/.test(s.visitDay)) store.visitDay=s.visitDay; // last KST day this browser was counted
+    if(typeof s.noticeSeen==='string' && NOTICES.some(n => n.id===s.noticeSeen)) store.noticeSeen=s.noticeSeen; // newest announcement this browser has opened; unknown/removed ids show NEW again
+    for(const k of ['donateResultDay','donateNudgeDay','donatePlayDay']) if(typeof s[k]==='string' && /^\d{4}-\d\d-\d\d$/.test(s[k])) store[k]=s[k];
+    if(Number.isFinite(s.donatePlayMs) && s.donatePlayMs>=0) store.donatePlayMs=Math.min(s.donatePlayMs, 10*60*1000);
     if(store.nick && s.votes && typeof s.votes==='object') for(const id of Object.keys(s.votes)) if(/^\d{1,12}$/.test(id) && [1,-1].includes(s.votes[id])) store.votes[id]=s.votes[id]; // my like(1)/dislike(-1) per post id: render-only cache (the server enforces one vote per nick); votes belong to the nickname, so none without one
     const keys = {...store.keys};
     for(const k of Object.keys(keys)) if(validKey(k,s.keys?.[k])) keys[k]=s.keys[k];
     if(new Set(Object.values(keys)).size===Object.keys(keys).length) store.keys=keys;
+    const usedKeys = new Set(Object.values(store.keys));
+    for(const k of Object.keys(store.altKeys)){
+      const code = s.altKeys?.[k];
+      if(validKey(k,code) && !usedKeys.has(code)){ store.altKeys[k]=code; usedKeys.add(code); }
+    }
     for(const m of Object.keys(store.records)){
       if(Array.isArray(s.records?.[m])) store.records[m]=s.records[m].filter(r =>
         r && Number.isFinite(r.score) && Number.isFinite(r.date) &&
@@ -827,6 +897,13 @@ const I18N = {
 ko:{
   'app.title':'미시마 도장',
   'app.tagline':'미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정',
+  'notice.button':'공지', 'notice.open':'공지사항 열기', 'notice.new':'NEW', 'notice.title':'공지사항', 'notice.sub':'미시마 도장의 업데이트와 패치 노트입니다.', 'notice.kind.update':'업데이트',
+  'notice.20260915.title':'9월 15일 기능 업데이트', 'notice.20260915.summary':'모바일 조작과 키 설정, 한마디·순위 기능을 다듬고 앱 안 공지를 추가했습니다.',
+  'notice.20260915.1':'화면 위쪽의 종 버튼에서 업데이트 내용을 확인할 수 있으며, 읽지 않은 공지에는 NEW가 표시됩니다.',
+  'notice.20260915.2':'모바일 방향 입력을 ←·↓·→ 독립 버튼으로 바꾸고, 대각선 동시 입력과 크기·위치 저장을 지원합니다.',
+  'notice.20260915.3':'설정에서 방향과 공격 버튼의 보조 키를 하나씩 설정할 수 있습니다.',
+  'notice.20260915.4':'한마디 글마다 여러 답글을 남기고 작성된 순서대로 볼 수 있습니다.',
+  'notice.20260915.5':'순위표의 본인 행에서 현재 보드의 최고 기록만 삭제할 수 있습니다. 닉네임과 브라우저 기록은 유지됩니다.',
   'modes.aria':'연습 모드', 'stage.aria':'연습 스테이지', 'stage.canvasAria':'SD 캐릭터 연출 화면', 'inputs.aria':'입력 기록', 'coach.aria':'코치 패널', 'stats.aria':'이번 세션 기록', 'records.aria':'기록',
   'src.wait':'⌨ 키보드 대기', 'src.waitTouch':'👆 터치 대기', 'src.kb':'⌨ 키보드', 'src.pad':'🎮 게임패드', 'src.touch':'👆 터치',
   'mode.free.name':'자유 연습', 'mode.free.desc':'제한 없이 웨이브와 초풍을 섞어 연습합니다. 모든 입력이 기록됩니다.',
@@ -849,8 +926,9 @@ ko:{
   'set.window':'초풍 판정 폭', 'set.win8':'저스트 0.5f', 'set.win12':'보통 0.7f', 'set.win15':'관대 0.9f',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'캐릭터 방향', 'set.side1':'1P (→ 가 앞)', 'set.side2':'2P (← 가 앞)',
   'set.fx':'연출 (흔들림·플래시)', 'set.on':'켜기', 'set.off':'끄기',
-  'set.touch':'터치 컨트롤', 'set.touchAuto':'자동 (터치 기기)', 'touch.note':'터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)', 'touch.aria':'터치 컨트롤', 'touch.padAria':'방향 패드 — 손가락을 굴려 입력',
-  'set.keys':'키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)', 'set.keyListen':'키 입력…',
+  'set.touch':'터치 컨트롤', 'set.touchAuto':'자동 (터치 기기)', 'set.touchSize':'방향 버튼 크기', 'set.touchX':'방향 버튼 가로 위치', 'set.touchY':'방향 버튼 세로 위치', 'touch.note':'터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)', 'touch.aria':'터치 컨트롤', 'touch.padAria':'방향 버튼 — 아래와 좌우를 함께 눌러 대각선 입력', 'touch.left':'왼쪽', 'touch.down':'아래', 'touch.right':'오른쪽',
+  'set.keys':'키 설정 — 동작마다 기본·보조 키를 하나씩 지정 (방향키 ↑↓←→ 는 항상 사용 가능)', 'set.keyListen':'키 입력…', 'set.keyAdd':'+ 추가', 'set.keyPrimary':'기본 키', 'set.keyAlt':'보조 키',
+  'set.keyRemove':'보조 키를 지우려면 Delete 또는 Backspace',
   'set.keyConflict':'이미 사용 중이거나 방향키와 충돌하는 키입니다. 다른 키를 누르세요. Esc로 취소합니다.',
   'set.pad':'게임패드', 'set.padNone':'연결 안 됨 · 패드 아무 버튼이나 누르면 감지', 'set.padOn':'연결됨 · ',
   'set.padNote':'패드 기본 배치: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>, 십자키·왼쪽 스틱 모두 방향으로 인식. 브라우저 입력은 약 4ms 단위로 읽히므로 실제 게임보다 오차가 조금 있습니다. 기본 판정은 0.7프레임(보통)이며, 실제 게임에 맞추려면 저스트 0.5f로 좁히세요.',
@@ -952,7 +1030,9 @@ ko:{
   'set.sound':'소리', 'set.bgm':'배경음', 'bgm.aria':'배경음 켜기/끄기', 'set.bgmVol':'배경음 볼륨', 'set.sfxVol':'효과음 볼륨', 'set.soundNote':'배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).',
   'share.card':'공유 카드', 'share.session':'세션 카드', 'share.title':'결과 공유 카드', 'share.canvasAria':'결과 공유 카드 미리보기',
   'share.copy':'이미지 복사', 'share.download':'PNG 저장', 'share.tweet':'X(트위터)에 공유', 'share.close':'닫기',
-  'donate.note':'여러분의 소중한 후원이 굶고 있는 불쌍한 철찌의 한 끼 밥이 됩니다.', 'donate.btn':'🍚 후원하기 🍚',
+  'donate.pitch':'미시마 도장이 연습에 도움이 됐다면 1,000원부터 다음 업데이트를 응원해 주세요. 후원금은 도메인·서버 유지와 기능 개발에 사용됩니다.',
+  'donate.result':'개인 최고 기록 달성! 미시마 도장이 도움이 됐다면 1,000원부터 다음 업데이트를 응원해 주세요. 후원금은 도메인·서버 유지와 기능 개발에 사용됩니다.',
+  'donate.joke':'그리고 굶고 있는 철찌에게 밥 한 끼가 생깁니다.', 'donate.bubble':'응애… 밥 줘… 🍚', 'donate.btn':'🍚 후원하기 🍚',
   'donate.chooseTitle':'후원 방법 선택', 'donate.kakao':'카카오페이', 'donate.kakaoSub':'휴대폰 카카오톡 송금 · PC에서는 QR', 'donate.kofi':'Ko-fi', 'donate.kofiSub':'카드 · PayPal', 'donate.back':'뒤로',
   'donate.title':'카카오페이로 후원', 'donate.qrNote':'카카오페이 송금 링크는 휴대폰에서만 열립니다. PC에서는 카카오톡의 QR 스캔으로 아래 코드를 찍어 주세요. 휴대폰으로 보고 있다면 아래 버튼으로 바로 열립니다.',
   'donate.qrAlt':'카카오페이 송금 QR 코드', 'donate.open':'휴대폰에서 카카오페이 열기',
@@ -991,6 +1071,8 @@ ko:{
   'board.loadFail':'순위표를 불러올 수 없습니다. 잠시 후 다시 시도하세요.', 'board.submitFail':'등록에 실패했습니다. 잠시 후 다시 시도하세요.',
   'board.nickBad':'닉네임은 2~12자로 입력하세요.', 'board.done':(r,n,p)=>'등록 완료 · '+r+'위 / '+n+'명 · 상위 '+p+'%',
   'board.kept':(r,n,p)=>'최고 기록 유지 · '+r+'위 / '+n+'명 · 상위 '+p+'%', 'board.me':(r,n,p)=>'내 순위 '+r+'위 / '+n+'명 · 상위 '+p+'%',
+  'board.delete':'삭제', 'board.deleteAria':'내 기록 삭제', 'board.deleteConfirm':'이 순위 기록을 삭제할까요? 삭제한 기록은 되돌릴 수 없습니다.',
+  'board.deleting':'기록 삭제 중…', 'board.deleted':'내 기록을 삭제했습니다.', 'board.deleteFail':'기록을 삭제하지 못했습니다. 잠시 후 다시 시도하세요.',
   'board.meNone':'등록한 기록이 없습니다', 'card.rank':(r,n,p)=>r+'위 / '+n+'명 · 상위 '+p+'%',
   'nick.title':'닉네임 정하기', 'nick.note':'순위와 한마디에 쓰이는 이름입니다. 다른 사람과 겹칠 수 없고 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 새 닉네임을 정해야 합니다.',
   'nick.submit':'시작', 'nick.change':n=>'닉네임 · '+n, 'nick.checking':'확인 중…', 'nick.taken':'이미 사용 중인 닉네임입니다. 다른 이름을 정하세요.',
@@ -1006,11 +1088,14 @@ ko:{
   'tier.5.wave10':'사람이... 맞으시죠? 6N23 6 N, 다시 갑시다.', 'tier.5.ewgf20':'사람이... 맞으시죠? 풍신권도 기술입니다. 다시.', 'tier.5.combo10':'사람이... 맞으시죠? 웨이브 3회 뒤 초풍, 다시.', 'tier.5.rush30':'사람이... 맞으시죠? 더미는 도망가지 않습니다. 다시.',
   'tier.0.bd10':'사람이 아니군요!? 화면 끝까지 물러났습니다.', 'tier.1.bd10':'훌륭합니다! 이 백대시는 아무도 못 따라잡아요!', 'tier.2.bd10':'상급 백대시. 상대 러시가 허공을 칩니다.', 'tier.3.bd10':'백대시 좀 타시네요? 캔슬 타이밍만 다듬으면 됩니다.', 'tier.4.bd10':'손이 풀리는 중. 1에서 4로 더 빨리 굴리세요.', 'tier.5.bd10':'사람이... 맞으시죠? 414 N, 다시 갑시다.',
   'board.note':'상위 10명 · 닉네임당 최고 기록 1건 · 초기화 없이 계속 쌓입니다 · 닉네임과 기록만 저장됩니다',
-  'visits':(d,t)=>'오늘 방문 '+d+' · 누적 '+t, 'posts.title':'한마디', 'posts.sub':'건의·질문·잡담 무엇이든 · 최신 50개 · 1분마다 새로 고침',
+  'visits':(d,t)=>'오늘 방문 '+d+' · 누적 '+t, 'posts.title':'한마디', 'posts.sub':'건의·질문·잡담 무엇이든 · 최신 50개 · 버튼으로 새로고침',
   'posts.ph':'하고 싶은 말 (200자)', 'posts.send':'남기기', 'posts.sending':'보내는 중…', 'posts.empty':'아직 글이 없습니다. 첫 글을 남겨 보세요.',
-  'posts.textBad':'내용은 1~200자로 입력하세요.', 'posts.tooFast':'너무 빠릅니다. 1분에 3개까지 남길 수 있습니다.',
+  'posts.refresh':'새로고침', 'posts.refreshing':'불러오는 중…',
+  'posts.textBad':'내용은 1~200자로 입력하세요.', 'posts.tooFast':'너무 빠릅니다. 1분에 3개까지 남길 수 있습니다.', 'posts.quota':'오늘 무료 서버 사용량을 다 써서 한마디를 이용할 수 없습니다. 더 좋은 서버를 쓰려면 후원이 절실합니다 ㅜㅜ',
   'posts.loadFail':'글을 불러올 수 없습니다. 잠시 후 다시 시도하세요.', 'posts.sendFail':'글을 남기지 못했습니다. 잠시 후 다시 시도하세요.',
   'posts.like':'좋아요', 'posts.dislike':'싫어요', 'posts.voteFast':'너무 빠릅니다. 잠시 후 다시 눌러 주세요.', 'posts.voteFail':'반응을 남기지 못했습니다. 잠시 후 다시 시도하세요.',
+  'posts.reply':n=>'답글 '+n, 'posts.replyPh':'답글 쓰기 (200자)', 'posts.replySend':'등록', 'posts.replyCancel':'취소', 'posts.replying':'답글 보내는 중…',
+  'posts.replyFail':'답글을 남기지 못했습니다. 잠시 후 다시 시도하세요.',
   'card.session':'이번 세션 통계', 'card.rate':'초풍 성공률', 'card.hits':'성공 / 시도', 'card.dps':'대시/초', 'card.bestDps':'최고 대시/초', 'card.dashes':'총 대시',
   'card.chain':'최고 연속 대시', 'card.tries':'초풍 시도', 'card.mean':'평균 버튼 오프셋', 'card.window':w=>'초풍 판정 폭 '+w,
   'card.hist':'버튼 타이밍 분포 (d/f 기준, 프레임)', 'card.wave':'웨이브 속도 (대시/초)', 'card.noData':'아직 기록이 없습니다',
@@ -1045,6 +1130,13 @@ ko:{
 en:{
   'app.title':'Mishima Dojo',
   'app.tagline':'Mishima-style input trainer · Judges 6N23 6 N 6N23 … wave dashes and 6N23+2 EWGF frame by frame',
+  'notice.button':'News', 'notice.open':'Open announcements', 'notice.new':'NEW', 'notice.title':'Announcements', 'notice.sub':'Updates and patch notes for Mishima Dojo.', 'notice.kind.update':'Update',
+  'notice.20260915.title':'September 15 feature update', 'notice.20260915.summary':'We improved mobile controls, key settings, the shoutbox and leaderboards, and added in-app announcements.',
+  'notice.20260915.1':'Check updates from the bell button at the top of the screen. A NEW badge marks unread announcements.',
+  'notice.20260915.2':'Mobile directions now use separate ←, ↓ and → buttons, with diagonal presses and saved size and position settings.',
+  'notice.20260915.3':'In Settings, you can assign one alternate key to every direction and attack action.',
+  'notice.20260915.4':'Each shoutbox post can now have multiple replies, shown in chronological order.',
+  'notice.20260915.5':'Delete your best result for the current board from your own leaderboard row. Your nickname and local records stay intact.',
   'modes.aria':'Practice mode', 'stage.aria':'Practice stage', 'stage.canvasAria':'SD character stage', 'inputs.aria':'Input history', 'coach.aria':'Coach panel', 'stats.aria':'Session stats', 'records.aria':'Records',
   'src.wait':'⌨ Keyboard ready', 'src.waitTouch':'👆 Touch ready', 'src.kb':'⌨ Keyboard', 'src.pad':'🎮 Gamepad', 'src.touch':'👆 Touch',
   'mode.free.name':'Free practice', 'mode.free.desc':'Mix wave dashes and EWGFs freely. Every input is recorded.',
@@ -1067,8 +1159,9 @@ en:{
   'set.window':'EWGF window', 'set.win8':'Just 0.5f', 'set.win12':'Normal 0.7f', 'set.win15':'Lenient 0.9f',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'Facing', 'set.side1':'1P (→ is forward)', 'set.side2':'2P (← is forward)',
   'set.fx':'Effects (shake · flash)', 'set.on':'On', 'set.off':'Off',
-  'set.touch':'Touch controls', 'set.touchAuto':'Auto (touch devices)', 'touch.note':'Touch is less precise than a keyboard (good for spotting trends)', 'touch.aria':'Touch controls', 'touch.padAria':'Direction pad — roll your thumb to input',
-  'set.keys':'Key bindings — click a slot, then press a key (arrow keys ↑↓←→ always work)', 'set.keyListen':'press key…',
+  'set.touch':'Touch controls', 'set.touchAuto':'Auto (touch devices)', 'set.touchSize':'Direction button size', 'set.touchX':'Direction button horizontal position', 'set.touchY':'Direction button vertical position', 'touch.note':'Touch is less precise than a keyboard (good for spotting trends)', 'touch.aria':'Touch controls', 'touch.padAria':'Direction buttons — press down and a side together for diagonals', 'touch.left':'Left', 'touch.down':'Down', 'touch.right':'Right',
+  'set.keys':'Key bindings — assign one primary and one alternate key per action (arrow keys ↑↓←→ always work)', 'set.keyListen':'press key…', 'set.keyAdd':'+ add', 'set.keyPrimary':'Primary key', 'set.keyAlt':'Alternate key',
+  'set.keyRemove':'Press Delete or Backspace to clear an alternate key',
   'set.keyConflict':'That key is already in use or conflicts with the arrow keys. Press another key. Esc cancels.',
   'set.pad':'Gamepad', 'set.padNone':'Not connected · press any pad button to detect', 'set.padOn':'Connected · ',
   'set.padNote':'Default pad layout: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>; d-pad and left stick both count as direction. Browser input is polled at roughly 4ms, so expect slight deviation from the real game. The default window is 0.7 frames (normal); narrow it to Just 0.5f to match the real game.',
@@ -1169,7 +1262,9 @@ en:{
   'set.sound':'Sound', 'set.bgm':'BGM', 'bgm.aria':'BGM on/off', 'set.bgmVol':'BGM volume', 'set.sfxVol':'SFX volume', 'set.soundNote':'BGM starts after your first key press or click (browser autoplay policy).',
   'share.card':'Share card', 'share.session':'Session card', 'share.title':'Result share card', 'share.canvasAria':'Result share card preview',
   'share.copy':'Copy image', 'share.download':'Save PNG', 'share.tweet':'Share on X (Twitter)', 'share.close':'Close',
-  'donate.note':'Your generous support can put a meal on the table for a poor, starving Tekken player.', 'donate.btn':'🍚 Donate 🍚',
+  'donate.pitch':'If Mishima Dojo helps your practice, support the next update from $1. Donations help cover the domain, server, and development.',
+  'donate.result':'New personal best! If Mishima Dojo helped, support the next update from $1. Donations help cover the domain, server, and development.',
+  'donate.joke':'It also feeds one very hungry fighting-game player.', 'donate.bubble':'Tiny dojo hungry… feed me? 🍚', 'donate.btn':'🍚 Donate 🍚',
   'donate.chooseTitle':'Choose how to support', 'donate.kakao':'KakaoPay (Korea)', 'donate.kakaoSub':'KakaoTalk transfer on a phone · QR on PC', 'donate.kofi':'Ko-fi', 'donate.kofiSub':'Card · PayPal', 'donate.back':'Back',
   'donate.title':'Support via KakaoPay', 'donate.qrNote':'The KakaoPay link only opens on a phone. On a PC, scan the code below with the KakaoTalk QR scanner. On a phone, the button below opens it directly.',
   'donate.qrAlt':'KakaoPay transfer QR code', 'donate.open':'Open KakaoPay on your phone',
@@ -1208,6 +1303,8 @@ en:{
   'board.loadFail':'Could not load the ranking. Try again later.', 'board.submitFail':'Submission failed. Try again later.',
   'board.nickBad':'Nickname must be 2–12 characters.', 'board.done':(r,n,p)=>'Submitted · rank '+r+' of '+n+' · top '+p+'%',
   'board.kept':(r,n,p)=>'Your best stands · rank '+r+' of '+n+' · top '+p+'%', 'board.me':(r,n,p)=>'You: rank '+r+' of '+n+' · top '+p+'%',
+  'board.delete':'Delete', 'board.deleteAria':'Delete my result', 'board.deleteConfirm':'Delete this ranking result? This cannot be undone.',
+  'board.deleting':'Deleting result…', 'board.deleted':'Your result was deleted.', 'board.deleteFail':'Could not delete the result. Try again later.',
   'board.meNone':'No entry from you yet', 'card.rank':(r,n,p)=>'Rank '+r+' of '+n+' · top '+p+'%',
   'nick.title':'Pick a nickname', 'nick.note':'Used for the ranking and the shoutbox. It cannot clash with anyone else and is stored in this browser. Clearing browser data means picking a new one.',
   'nick.submit':'Start', 'nick.change':n=>'Nickname · '+n, 'nick.checking':'Checking…', 'nick.taken':'That nickname is taken. Pick another.',
@@ -1222,11 +1319,14 @@ en:{
   'tier.5.wave10':'You are... human, right? 6N23 6 N, once more.', 'tier.5.ewgf20':'You are... human, right? A WGF is still a move. Again.', 'tier.5.combo10':'You are... human, right? Three waves, then EWGF. Again.', 'tier.5.rush30':'You are... human, right? The dummies are not running away. Again.',
   'tier.0.bd10':'Are you even human!? Backed off the edge of the screen.', 'tier.1.bd10':'Superb! Nobody is catching that backdash!', 'tier.2.bd10':'Advanced backdash. Their rush hits thin air.', 'tier.3.bd10':'Riding the backdash now. Just polish the cancel timing.', 'tier.4.bd10':'Hands are waking up. Roll from 1 into 4 sooner.', 'tier.5.bd10':'You are... human, right? 414 N, once more.',
   'board.note':'Top 10 · one best per nickname · never resets · only your nickname and result are stored',
-  'visits':(d,t)=>'Today '+d+' · total '+t+' visits', 'posts.title':'Shoutbox', 'posts.sub':'Requests, questions, anything · latest 50 · refreshes every minute',
+  'visits':(d,t)=>'Today '+d+' · total '+t+' visits', 'posts.title':'Shoutbox', 'posts.sub':'Requests, questions, anything · latest 50 · refresh with the button',
   'posts.ph':'Say something (200 chars)', 'posts.send':'Post', 'posts.sending':'Sending…', 'posts.empty':'No posts yet. Be the first.',
-  'posts.textBad':'Text must be 1–200 characters.', 'posts.tooFast':'Too fast. Up to 3 posts per minute.',
+  'posts.refresh':'Refresh', 'posts.refreshing':'Loading…',
+  'posts.textBad':'Text must be 1–200 characters.', 'posts.tooFast':'Too fast. Up to 3 posts per minute.', 'posts.quota':'We used up today’s free server allowance, so the shoutbox is unavailable. Support would help us move to a better server ㅜㅜ',
   'posts.loadFail':'Could not load posts. Try again later.', 'posts.sendFail':'Could not post. Try again later.',
   'posts.like':'Like', 'posts.dislike':'Dislike', 'posts.voteFast':'Too fast. Try again in a moment.', 'posts.voteFail':'Could not save your reaction. Try again later.',
+  'posts.reply':n=>'Replies '+n, 'posts.replyPh':'Write a reply (200 chars)', 'posts.replySend':'Reply', 'posts.replyCancel':'Cancel', 'posts.replying':'Sending reply…',
+  'posts.replyFail':'Could not post the reply. Try again later.',
   'card.session':'This session', 'card.rate':'EWGF success rate', 'card.hits':'Hits / tries', 'card.dps':'dashes/s', 'card.bestDps':'Best dashes/s', 'card.dashes':'Total dashes',
   'card.chain':'Best dash chain', 'card.tries':'EWGF tries', 'card.mean':'Avg button offset', 'card.window':w=>'EWGF window '+w,
   'card.hist':'Button timing (frames from d/f)', 'card.wave':'Wave speed (dashes/s)', 'card.noData':'No data yet',
@@ -1261,6 +1361,13 @@ en:{
 ja:{
   'app.title':'三島道場',
   'app.tagline':'三島流入力トレーナー · 6N23 6 N 6N23 … のウェーブと 6N23+2 の最風をフレーム単位で判定',
+  'notice.button':'お知らせ', 'notice.open':'お知らせを開く', 'notice.new':'NEW', 'notice.title':'お知らせ', 'notice.sub':'三島道場のアップデートとパッチノートです。', 'notice.kind.update':'アップデート',
+  'notice.20260915.title':'9月15日 機能アップデート', 'notice.20260915.summary':'モバイル操作とキー設定、ひとこと・ランキング機能を改善し、アプリ内のお知らせを追加しました。',
+  'notice.20260915.1':'画面上部のベルボタンから更新内容を確認でき、未読のお知らせにはNEWが表示されます。',
+  'notice.20260915.2':'モバイルの方向入力を←・↓・→の独立ボタンに変更し、斜め同時押しと大きさ・位置の保存に対応しました。',
+  'notice.20260915.3':'設定で方向・攻撃ボタンごとにサブキーを1つ設定できます。',
+  'notice.20260915.4':'ひとことの各投稿に複数の返信を書けるようになり、古い順に表示されます。',
+  'notice.20260915.5':'ランキングの自分の行から、現在のボードのベスト記録だけを削除できます。ニックネームとブラウザ内の記録は残ります。',
   'modes.aria':'練習モード', 'stage.aria':'練習ステージ', 'stage.canvasAria':'SDキャラクター演出画面', 'inputs.aria':'入力履歴', 'coach.aria':'コーチパネル', 'stats.aria':'セッション記録', 'records.aria':'記録',
   'src.wait':'⌨ キーボード待機', 'src.waitTouch':'👆 タッチ待機', 'src.kb':'⌨ キーボード', 'src.pad':'🎮 ゲームパッド', 'src.touch':'👆 タッチ',
   'mode.free.name':'自由練習', 'mode.free.desc':'制限なしでウェーブと最風を混ぜて練習します。すべての入力が記録されます。',
@@ -1283,8 +1390,9 @@ ja:{
   'set.window':'最風判定幅', 'set.win8':'ジャスト 0.5f', 'set.win12':'普通 0.7f', 'set.win15':'甘め 0.9f',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'キャラの向き', 'set.side1':'1P (→が前)', 'set.side2':'2P (←が前)',
   'set.fx':'演出 (揺れ・フラッシュ)', 'set.on':'オン', 'set.off':'オフ',
-  'set.touch':'タッチ操作', 'set.touchAuto':'自動 (タッチ端末)', 'touch.note':'タッチ入力はキーボードより判定精度が低めです (傾向の把握向け)', 'touch.aria':'タッチ操作', 'touch.padAria':'方向パッド — 指を転がして入力',
-  'set.keys':'キー設定 — 枠を押してから使いたいキーを入力 (矢印キー↑↓←→は常に使用可)', 'set.keyListen':'キー入力…',
+  'set.touch':'タッチ操作', 'set.touchAuto':'自動 (タッチ端末)', 'set.touchSize':'方向ボタンの大きさ', 'set.touchX':'方向ボタンの横位置', 'set.touchY':'方向ボタンの縦位置', 'touch.note':'タッチ入力はキーボードより判定精度が低めです (傾向の把握向け)', 'touch.aria':'タッチ操作', 'touch.padAria':'方向ボタン — 下と左右を同時に押して斜め入力', 'touch.left':'左', 'touch.down':'下', 'touch.right':'右',
+  'set.keys':'キー設定 — 各操作にメイン・サブキーを1つずつ設定 (矢印キー↑↓←→は常に使用可)', 'set.keyListen':'キー入力…', 'set.keyAdd':'+ 追加', 'set.keyPrimary':'メインキー', 'set.keyAlt':'サブキー',
+  'set.keyRemove':'サブキーを消すにはDeleteまたはBackspace',
   'set.keyConflict':'すでに使用中か矢印キーと衝突するキーです。別のキーを押してください。Escでキャンセル。',
   'set.pad':'ゲームパッド', 'set.padNone':'未接続 · パッドのボタンを押すと検出', 'set.padOn':'接続済み · ',
   'set.padNote':'パッド初期配置: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>、十字キー・左スティックとも方向として認識。ブラウザ入力は約4ms単位で読まれるため、実機よりわずかに誤差があります。初期判定は0.7フレーム(普通)です。実機に合わせるならジャスト0.5fに狭めてください。',
@@ -1385,7 +1493,9 @@ ja:{
   'set.sound':'サウンド', 'set.bgm':'BGM', 'bgm.aria':'BGMのオン/オフ', 'set.bgmVol':'BGM音量', 'set.sfxVol':'効果音音量', 'set.soundNote':'BGMは最初のキー入力かクリックの後に始まります (ブラウザの自動再生制限)。',
   'share.card':'共有カード', 'share.session':'セッションカード', 'share.title':'結果共有カード', 'share.canvasAria':'結果共有カードのプレビュー',
   'share.copy':'画像をコピー', 'share.download':'PNG保存', 'share.tweet':'X(Twitter)で共有', 'share.close':'閉じる',
-  'donate.note':'皆さまの温かいご支援が、腹を空かせた哀れな鉄拳勢の一食になります。', 'donate.btn':'🍚 支援する 🍚',
+  'donate.pitch':'三島道場が練習の役に立ったら、100円ほどから次のアップデートを応援してください。ドメイン・サーバー維持と機能開発に使います。',
+  'donate.result':'自己ベスト更新！ 三島道場が役に立ったら、100円ほどから次のアップデートを応援してください。ドメイン・サーバー維持と機能開発に使います。',
+  'donate.joke':'ついでに、お腹を空かせた格ゲー勢の一食にもなります。', 'donate.bubble':'おなかすいた… ごはんちょうだい… 🍚', 'donate.btn':'🍚 支援する 🍚',
   'donate.chooseTitle':'支援方法を選ぶ', 'donate.kakao':'カカオペイ (韓国)', 'donate.kakaoSub':'スマホのカカオトーク送金 · PCはQR', 'donate.kofi':'Ko-fi', 'donate.kofiSub':'カード · PayPal', 'donate.back':'戻る',
   'donate.title':'カカオペイで支援', 'donate.qrNote':'カカオペイの送金リンクはスマートフォンでのみ開けます。PCではカカオトークのQRスキャンで下のコードを読み取ってください。スマートフォンなら下のボタンでそのまま開きます。',
   'donate.qrAlt':'カカオペイ送金QRコード', 'donate.open':'スマートフォンでカカオペイを開く',
@@ -1424,6 +1534,8 @@ ja:{
   'board.loadFail':'ランキングを読み込めません。しばらくしてからもう一度お試しください。', 'board.submitFail':'登録に失敗しました。しばらくしてからもう一度お試しください。',
   'board.nickBad':'ニックネームは2～12文字で入力してください。', 'board.done':(r,n,p)=>'登録完了 · '+r+'位 / '+n+'人 · 上位 '+p+'%',
   'board.kept':(r,n,p)=>'自己ベストを維持 · '+r+'位 / '+n+'人 · 上位 '+p+'%', 'board.me':(r,n,p)=>'自分の順位 '+r+'位 / '+n+'人 · 上位 '+p+'%',
+  'board.delete':'削除', 'board.deleteAria':'自分の記録を削除', 'board.deleteConfirm':'このランキング記録を削除しますか？ 削除した記録は元に戻せません。',
+  'board.deleting':'記録を削除中…', 'board.deleted':'自分の記録を削除しました。', 'board.deleteFail':'記録を削除できませんでした。しばらくしてからもう一度お試しください。',
   'board.meNone':'登録した記録はありません', 'card.rank':(r,n,p)=>r+'位 / '+n+'人 · 上位 '+p+'%',
   'nick.title':'ニックネームを決める', 'nick.note':'ランキングとひとことで使う名前です。他の人と重複できず、このブラウザに保存されます。ブラウザのデータを消すと新しく決め直す必要があります。',
   'nick.submit':'開始', 'nick.change':n=>'ニックネーム · '+n, 'nick.checking':'確認中…', 'nick.taken':'そのニックネームは使用中です。別の名前にしてください。',
@@ -1438,11 +1550,14 @@ ja:{
   'tier.5.wave10':'人間…ですよね？6N23 6 N、もう一度。', 'tier.5.ewgf20':'人間…ですよね？風神拳も技です。もう一度。', 'tier.5.combo10':'人間…ですよね？ウェーブ3回のあと最風、もう一度。', 'tier.5.rush30':'人間…ですよね？ダミーは逃げません。もう一度。',
   'tier.0.bd10':'人間じゃないですね!? 画面の端まで下がりました。', 'tier.1.bd10':'見事です！このバックダッシュには誰も追いつけません！', 'tier.2.bd10':'上級バックダッシュ。相手のラッシュが空を切ります。', 'tier.3.bd10':'バックダッシュ乗れてますね？あとはキャンセルのタイミングだけ。', 'tier.4.bd10':'手が温まってきました。1から4へもっと早く。', 'tier.5.bd10':'人間…ですよね？414 N、もう一度。',
   'board.note':'上位10人 · ニックネームごとにベスト1件 · リセットなしで積み上がります · 保存されるのはニックネームと記録だけです',
-  'visits':(d,t)=>'今日の訪問 '+d+' · 累計 '+t, 'posts.title':'ひとこと', 'posts.sub':'要望・質問・雑談なんでも · 最新50件 · 1分ごとに更新',
+  'visits':(d,t)=>'今日の訪問 '+d+' · 累計 '+t, 'posts.title':'ひとこと', 'posts.sub':'要望・質問・雑談なんでも · 最新50件 · ボタンで更新',
   'posts.ph':'言いたいこと (200文字)', 'posts.send':'投稿', 'posts.sending':'送信中…', 'posts.empty':'まだ投稿がありません。最初の一言をどうぞ。',
-  'posts.textBad':'本文は1～200文字で入力してください。', 'posts.tooFast':'速すぎます。1分に3件まで投稿できます。',
+  'posts.refresh':'更新', 'posts.refreshing':'読み込み中…',
+  'posts.textBad':'本文は1～200文字で入力してください。', 'posts.tooFast':'速すぎます。1分に3件まで投稿できます。', 'posts.quota':'今日の無料サーバー枠を使い切ったため、ひとことを利用できません。より良いサーバーにするにはご支援が切実に必要です ㅜㅜ',
   'posts.loadFail':'投稿を読み込めません。しばらくしてからもう一度お試しください。', 'posts.sendFail':'投稿できませんでした。しばらくしてからもう一度お試しください。',
   'posts.like':'いいね', 'posts.dislike':'よくないね', 'posts.voteFast':'速すぎます。少し待ってからもう一度押してください。', 'posts.voteFail':'リアクションを送れませんでした。しばらくしてからもう一度お試しください。',
+  'posts.reply':n=>'返信 '+n+'件', 'posts.replyPh':'返信を書く (200文字)', 'posts.replySend':'返信', 'posts.replyCancel':'キャンセル', 'posts.replying':'返信を送信中…',
+  'posts.replyFail':'返信できませんでした。しばらくしてからもう一度お試しください。',
   'card.session':'今回のセッション', 'card.rate':'最風成功率', 'card.hits':'成功 / 試行', 'card.dps':'ダッシュ/秒', 'card.bestDps':'最高ダッシュ/秒', 'card.dashes':'総ダッシュ',
   'card.chain':'最高連続ダッシュ', 'card.tries':'最風試行', 'card.mean':'平均ボタンオフセット', 'card.window':w=>'最風判定幅 '+w,
   'card.hist':'ボタンタイミング分布 (3基準、フレーム)', 'card.wave':'ウェーブ速度 (ダッシュ/秒)', 'card.noData':'まだ記録がありません',
@@ -1543,7 +1658,8 @@ addEventListener('pointerdown', unlockAudio);
 addEventListener('visibilitychange', bgmSync);
 addEventListener('focus', bgmSync);
 addEventListener('pagehide', () => {
-  if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; save(); } // flush a pending counter save
+  if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
+  save(); // practice time may be dirty between its 30-second checkpoints even when no generic save is pending
   if(snd.bgm) snd.bgm.pause();
   if(snd.lock){ snd.lock.abort(); snd.lock=null; }
   if(snd.release){ const release=snd.release; snd.release=null; release(); }
@@ -1602,31 +1718,41 @@ function recomputeDir(t, src){
 }
 function kbVector(){
   const k = store.keys;
-  const up = held.has(k.up)||held.has('ArrowUp'), dn = held.has(k.down)||held.has('ArrowDown');
-  const lf = held.has(k.left)||held.has('ArrowLeft'), rt = held.has(k.right)||held.has('ArrowRight');
+  const a = store.altKeys;
+  const up = held.has(k.up)||held.has(a.up)||held.has('ArrowUp'), dn = held.has(k.down)||held.has(a.down)||held.has('ArrowDown');
+  const lf = held.has(k.left)||held.has(a.left)||held.has('ArrowLeft'), rt = held.has(k.right)||held.has(a.right)||held.has('ArrowRight');
   kbDir = { x:(rt?1:0)-(lf?1:0), y:(up?1:0)-(dn?1:0) };
 }
-const mappedCodes = () => new Set([...Object.values(store.keys),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
-const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open || $('donateDlg').open || $('fitDlg').open; // nickname gate / result card / settings / donate QR: game input is paused (called at pad-poll rate, so no DOM query)
-let listening = null; // key remap slot
+const mappedCodes = () => new Set([...Object.values(store.keys),...Object.values(store.altKeys).filter(Boolean),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
+const buttonForCode = code => {
+  for(let n=1;n<=4;n++) if(code===store.keys['b'+n] || code===store.altKeys['b'+n]) return n;
+  return 0;
+};
+const buttonHeld = n => held.has(store.keys['b'+n]) || (!!store.altKeys['b'+n] && held.has(store.altKeys['b'+n]));
+const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open || $('donateDlg').open || $('fitDlg').open || $('noticeDlg').open; // any dialog pauses game input (called at pad-poll rate, so no DOM query)
+let listening = null; // key remap target: {slot, alt}
 addEventListener('keydown', e => {
   if(listening){
     e.preventDefault();
     if(e.code==='Escape'){ listening=null; renderKeys(); return; }
-    if(!validKey(listening,e.code) || Object.entries(store.keys).some(([k,v])=>k!==listening && v===e.code)){
+    if(listening.alt && (e.code==='Delete' || e.code==='Backspace')){
+      store.altKeys[listening.slot]=''; listening=null; resetInput(); save(); renderKeys(); return;
+    }
+    const allKeys = [...Object.entries(store.keys).map(([slot,code])=>({slot,alt:false,code})), ...Object.entries(store.altKeys).map(([slot,code])=>({slot,alt:true,code}))];
+    if(!validKey(listening.slot,e.code) || allKeys.some(x=>x.code===e.code && (x.slot!==listening.slot || x.alt!==listening.alt))){
       setCoach(['set.keyConflict']); return;
     }
-    store.keys[listening]=e.code; listening=null; resetInput(); save(); renderKeys(); return;
+    store[listening.alt?'altKeys':'keys'][listening.slot]=e.code; listening=null; resetInput(); save(); renderKeys(); return;
   }
   if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if(modalOpen()) return;
   if(!mappedCodes().has(e.code)) return;
   e.preventDefault(); unlockAudio();
   if(e.repeat || held.has(e.code)) return;
+  const button = buttonForCode(e.code), alreadyPressed = button && buttonHeld(button);
   held.add(e.code);
   const t = e.timeStamp || performance.now();
-  const k = store.keys;
-  if(e.code===k.b1) onButton(1,t); else if(e.code===k.b2) onButton(2,t); else if(e.code===k.b3) onButton(3,t); else if(e.code===k.b4) onButton(4,t);
+  if(button){ if(!alreadyPressed) onButton(button,t); }
   else { kbVector(); recomputeDir(t,'kb'); }
   if(lastSrc!=='kb') setSrc('kb');
 });
@@ -1682,36 +1808,45 @@ function pollPad(){
 }
 setInterval(pollPad, 4);
 
-/* ---------- touch controls (phones/tablets). Presentation only: the pad feeds recomputeDir like a gamepad and the buttons call onButton, so judging is identical. ---------- */
-const TOUCH_DEAD = 0.22;                                  // inside this fraction of the pad radius the stick is neutral
+/* ---------- touch controls (phones/tablets). Presentation only: three direction buttons feed recomputeDir like a gamepad and the attack buttons call onButton. ---------- */
 const touchMQ = typeof matchMedia==='function' ? matchMedia('(pointer:coarse)') : null;
 let touchOn = false;                                      // html.touch-ui is on (also lifts the stage floor so the fighter sits above the overlay)
 const touchAuto = () => !!(touchMQ && touchMQ.matches && typeof navigator!=='undefined' && navigator.maxTouchPoints>0);
+function applyTouchLayout(){
+  const box=$('touch'), dirs=$('tdirs'); if(!box || !dirs) return;
+  const attacks=$('tbtns'), inset=14, gap=8, base=clamp((typeof innerWidth==='number' ? innerWidth : 390)*.13,44,54);
+  const attackLeft=attacks?.offsetLeft||box.clientWidth-inset;
+  let size=clamp(Math.round(base*store.touchSize/100),34,76);
+  if(store.touchSize===100) size=Math.min(size,Math.max(34,Math.floor((attackLeft-inset-gap*2)/3))); // default alone guarantees no overlap; explicit user sizing may trade space for larger buttons
+  dirs.style.setProperty('--touch-dir-size',size+'px');
+  const note=$('touch').querySelector('.touch-note'), top=(note?.offsetHeight||13)+6;
+  const maxX=Math.max(0,attackLeft-gap-dirs.offsetWidth-inset), maxY=Math.max(0,box.clientHeight-dirs.offsetHeight-top-inset);
+  dirs.style.left=(inset+maxX*store.touchX/100).toFixed(1)+'px';
+  dirs.style.bottom=(inset+maxY*store.touchY/100).toFixed(1)+'px';
+}
 function applyTouchUI(){
   touchOn = store.touch==='on' || (store.touch==='auto' && touchAuto());
   const root = document.documentElement; if(root && root.classList) root.classList.toggle('touch-ui', touchOn);
-  if(!touchOn && (touchDir.x||touchDir.y)){ touchDir={x:0,y:0}; recomputeDir(performance.now()); }
   if(!lastSrc) srcBadge.textContent = T(touchOn ? 'src.waitTouch' : 'src.wait');
-  touchRelease(); resize();
+  touchRelease(); resize(); applyTouchLayout();
 }
 if(touchMQ && touchMQ.addEventListener) touchMQ.addEventListener('change', () => { if(store.touch==='auto') applyTouchUI(); });
-function touchVec(x, y, t){                               // x,y: pad-relative, -1..1, +y up. Returns the resulting direction (tests).
-  let nx=0, ny=0;
-  if(Math.hypot(x,y)>=TOUCH_DEAD){ const s = Math.round(Math.atan2(y,x)/(Math.PI/4))*(Math.PI/4); nx=Math.round(Math.cos(s)); ny=Math.round(Math.sin(s)); } // 8 sectors of 45°, edges at 22.5°
+const touchHeld=new Set(), touchPointers=new Map();
+function touchKeys(keys, t){                              // keys: physical left/down/right held at once; down+side produces a diagonal
+  touchHeld.clear(); for(const k of keys) if(['left','down','right'].includes(k)) touchHeld.add(k);
+  const nx=(touchHeld.has('right')?1:0)-(touchHeld.has('left')?1:0), ny=touchHeld.has('down')?-1:0;
   if(nx!==touchDir.x || ny!==touchDir.y){ touchDir={x:nx,y:ny}; recomputeDir(t,'touch'); }
+  $('tdirs').querySelectorAll('[data-dir]').forEach(b => b.classList.toggle('on',touchHeld.has(b.dataset.dir)));
+  if(touchHeld.size && lastSrc!=='touch') setSrc('touch');
   return curDir;
 }
 function touchPress(n, t){ if(modalOpen()) return; unlockAudio(); onButton(n,t); if(lastSrc!=='touch') setSrc('touch'); }
-const tpad = $('tpad'), tknob = $('tknob'), tdir = $('tdir'), tbtns = $('tbtns');
-let tpadId = null;                                        // pointer that owns the pad (the first finger; buttons use their own pointers)
-function touchKnob(x, y){ const R = (tpad.clientWidth||0)/2; tknob.style.transform = `translate(calc(-50% + ${(x*R*0.62).toFixed(1)}px), calc(-50% + ${(-y*R*0.62).toFixed(1)}px))`; tdir.textContent = curDir==='n' ? '' : glyphFor(curDir); tpad.classList.toggle('on', tpadId!==null); }
-function touchRelease(){ tpadId=null; touchKnob(0,0); tbtns.querySelectorAll('button').forEach(b => b.classList.remove('on')); }
-function tpadVec(e){ const r = tpad.getBoundingClientRect(); const R = r.width/2 || 1; let x = (e.clientX-(r.left+R))/R, y = -(e.clientY-(r.top+R))/R; const m = Math.hypot(x,y); if(m>1){ x/=m; y/=m; } return [x,y]; } // clamped to the unit circle: a captured finger may leave the pad, the knob must not
+const tdirs = $('tdirs'), tbtns = $('tbtns');
+function touchRelease(){ touchPointers.clear(); touchKeys([],performance.now()); tbtns.querySelectorAll('button').forEach(b => b.classList.remove('on')); }
 const evT = e => e.timeStamp || performance.now();      // same clock as keydown; a pointermove can be delivered a frame late, its own timestamp is when it happened
-tpad.addEventListener('pointerdown', e => { if(tpadId!==null || modalOpen()) return; e.preventDefault(); tpadId=e.pointerId; try{ tpad.setPointerCapture(e.pointerId); }catch(x){} unlockAudio(); const [x,y]=tpadVec(e); touchVec(x,y,evT(e)); touchKnob(x,y); });
-tpad.addEventListener('pointermove', e => { if(e.pointerId!==tpadId || modalOpen()) return; const [x,y]=tpadVec(e); touchVec(x,y,evT(e)); touchKnob(x,y); });
-const tpadEnd = e => { if(e.pointerId!==tpadId) return; tpadId=null; touchVec(0,0,evT(e)); touchKnob(0,0); };
-tpad.addEventListener('pointerup', tpadEnd); tpad.addEventListener('pointercancel', tpadEnd);
+tdirs.addEventListener('pointerdown', e => { const b=e.target.closest&&e.target.closest('[data-dir]'); if(!b || modalOpen()) return; e.preventDefault(); touchPointers.set(e.pointerId,b.dataset.dir); try{ b.setPointerCapture(e.pointerId); }catch(x){} unlockAudio(); touchKeys(touchPointers.values(),evT(e)); });
+const tdirEnd=e => { if(!touchPointers.has(e.pointerId)) return; touchPointers.delete(e.pointerId); touchKeys(touchPointers.values(),evT(e)); };
+tdirs.addEventListener('pointerup',tdirEnd); tdirs.addEventListener('pointercancel',tdirEnd);
 const tbtnOf = e => e.target && e.target.closest ? e.target.closest('[data-btn]') : null;
 tbtns.addEventListener('pointerdown', e => { const b = tbtnOf(e); if(!b) return; e.preventDefault(); b.classList.add('on'); touchPress(+b.dataset.btn, evT(e)); });
 ['pointerup','pointercancel'].forEach(ev => tbtns.addEventListener(ev, e => { const b = tbtnOf(e); if(b) b.classList.remove('on'); }));
@@ -1748,6 +1883,7 @@ function clearCommand(){
 // rush30: reset the command after a finisher (초풍·통발·나락) but keep the wave chain, so a kill does not drop the dash-point streak (a 700ms pause still ends it via endChain). cancelled=true so the next crouch dash links.
 function endCommand(){ if(trial.running && mode==='rush30'){ Object.assign(cd,{state:0,tF:0,tN:0,tD:0,tDF:0,tC:0,tRel:0,cancelled:true,pending:null,dashT:-1e9,dashWave:false}); } else clearCommand(); }
 function onDir(dir, t){
+  practiceInput();
   trialTick(t); tick(t); // 판정 기한은 화면 주사율과 무관하게 입력 시각에 검사한다.
   pushHistory({t, dir});
   // dash / backdash from a double tap. Runs before the switch so the second f still becomes the start 6 (cd.tF===t → f,f+2 eligible, 대초 label).
@@ -1945,6 +2081,7 @@ function bdTick(now){
 
 /* ---------- button / EWGF ---------- */
 function onButton(n, t){
+  practiceInput();
   trialTick(t); tick(t);
   pushHistory({t, btn:n});
   const off = t - cd.lastDF;
@@ -2171,6 +2308,7 @@ function setMode(m){
 }
 function startTrial(){
   const M = MODES[mode]; if(!M.start) return;
+  donateNudgeDefer();
   endTrial(true); clearShare();
   jackpotPause();
   trial.running=false; trial.count=0; trial.bestChain=0; trial.target=M.target||0; trial.dur=M.dur||0; trial.score=0; trial.kills=0; trial.whiffs=0; trial.dashPts=0; trial.dist=0; trial.bdCount=0; trial.bdTop=0;
@@ -2213,9 +2351,10 @@ function endTrial(cancel){
   }
   trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; }, 2200);
   $('dProg').textContent = text;
+  const oldRecords = store.records[mode], personalBest = !oldRecords.length || rec.score > Math.max(...oldRecords.map(r=>r.score));
   store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); save(); renderBests();
   store.life.trials[mode]++; jackpotHold = true; setTimeout(() => { jackpotHold = false; renderRewards(); }, 2300); checkAch(); // claiming waits for the result flash
-  trial.result = {rec, attempts:at, cycles:session.cycles.filter(since), window:store.window}; $('dShare').hidden=false;
+  trial.result = {rec, attempts:at, cycles:session.cycles.filter(since), window:store.window, personalBest}; $('dShare').hidden=false;
   boardSubmit(); // always to the ranking (the server keeps only the best); no-op without a claimed nickname
   trial.openTimer = setTimeout(() => openShare().then(() => { trial.openTimer = null; }), 900); // result card after the HUD flash; openTimer stays set until it is open
 }
@@ -2410,10 +2549,15 @@ function segSel(id, attr, cb){
 }
 segSel('winSel','win', v => { store.window=+v; save(); renderHist(); });
 segSel('touchSel','touch', v => { store.touch=v; save(); applyTouchUI(); });
+function renderTouchSettings(){
+  for(const k of ['touchSize','touchX','touchY']){ $(k).value=store[k]; $(k+'Out').textContent=store[k]+'%'; }
+  applyTouchLayout();
+}
+for(const k of ['touchSize','touchX','touchY']) $(k).addEventListener('input', () => { store[k]=+$(k).value; save(); renderTouchSettings(); });
 segSel('sideSel','side', v => { endTrial(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); });
 segSel('fxSel','fx', v => { store.fx=+v; save(); rewardNoticeClear(); renderRewards(); });
 segSel('langSel','lang', v => { setLang(v); });
-$('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDlg'); if(!d.open){ endTrial(true); resetInput(); d.showModal(); jackpotPause(); } });
+$('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDlg'); if(!d.open){ donateNudgeDefer(); endTrial(true); resetInput(); d.showModal(); jackpotPause(); } });
 $('setClose').addEventListener('click', () => { listening=null; renderKeys(); $('setDlg').close(); });
 segSel('soundSel','sound', v => { store.sound=+v; save(); unlockAudio(); bgmSync(); sfxSync(); renderSound(); });
 function setBgm(on){
@@ -2446,8 +2590,10 @@ renderSound();
 const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK'};
 const pretty = c => c.replace(/^Key|^Digit|^Numpad/, m=>m==='Numpad'?'Num':'').replace('Arrow','');
 function renderKeys(){
-  $('keys').innerHTML = Object.keys(KEYLABEL).map(k => `<button class="key${listening===k?' listen':''}" data-k="${k}"><small>${KEYLABEL[k]}</small><b>${listening===k?escapeHTML(T('set.keyListen')):pretty(store.keys[k])}</b></button>`).join('');
-  $('keys').querySelectorAll('.key').forEach(b => b.addEventListener('click', () => { listening = b.dataset.k; renderKeys(); }));
+  const active = (k,alt) => listening && listening.slot===k && listening.alt===alt;
+  const bind = (k,alt) => { const code=store[alt?'altKeys':'keys'][k], on=active(k,alt), name=KEYLABEL[k]+' · '+T(alt?'set.keyAlt':'set.keyPrimary'); return `<button type="button" class="key-bind${alt?' alt':''}${!code?' empty':''}${on?' listen':''}" data-k="${k}" data-alt="${alt?1:0}" aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"><b>${on?escapeHTML(T('set.keyListen')):code?pretty(code):escapeHTML(T('set.keyAdd'))}</b></button>`; };
+  $('keys').innerHTML = Object.keys(KEYLABEL).map(k => `<div class="key"><small>${KEYLABEL[k]}</small><div class="key-pair">${bind(k,false)}${bind(k,true)}</div></div>`).join('');
+  $('keys').querySelectorAll('.key-bind').forEach(b => b.addEventListener('click', () => { listening = {slot:b.dataset.k,alt:b.dataset.alt==='1'}; renderKeys(); }));
 }
 $('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { setMode(b.dataset.mode); if(b.scrollIntoView) b.scrollIntoView({block:'nearest', inline:'nearest'}); })); // a half-hidden tab slides fully into the scrolling list
 $('modes').addEventListener('wheel', e => { const m = e.currentTarget; if(e.deltaX || !e.deltaY || m.scrollWidth <= m.clientWidth) return; m.scrollLeft += e.deltaY; e.preventDefault(); }, {passive:false}); // a plain mouse wheel over the list scrolls it sideways
@@ -2482,13 +2628,18 @@ async function renderShare(){
 }
 function setShareMsg(m){ ui.shareMsg = m; $('shareMsg').textContent = msg(m); }
 function openShare(){
-  shareSrc = shareSource(); if(!shareSrc) return Promise.resolve();
+  const next = shareSource(); if(!next) return Promise.resolve();
+  donateNudgeDefer();
+  const sameResultOpening = next.kind==='trial' && donateResultVisible && donateResultRec===next.rec;
+  shareSrc = next;
+  if(!sameResultOpening){ donateResultVisible = takeResultDonate(next.kind==='trial' && !!trial.result.personalBest); donateResultRec = donateResultVisible ? next.rec : null; }
+  renderDonate();
   setShareMsg(''); renderShareRank();
   return renderShare().then(() => { const d = $('shareDlg'); if(!d.open){ resetInput(); d.showModal(); jackpotPause(); } }); // like setOpen/openDonate: a finger still on the pad must not keep driving onDir behind the card
 }
 $('dShare').addEventListener('click', openShare);
 $('shareClose').addEventListener('click', () => $('shareDlg').close());
-$('shareDlg').addEventListener('close', () => { if(live.nickLost){ live.nickLost = false; openNick('nick.expired'); } setTimeout(renderRewards, 0); }); // a token rejected mid-trial: ask once the card is out of the way
+$('shareDlg').addEventListener('close', () => { donateResultVisible=false; donateResultRec=null; renderDonate(); if(live.nickLost){ live.nickLost = false; openNick('nick.expired'); } setTimeout(renderRewards, 0); }); // a token rejected mid-trial: ask once the card is out of the way
 $('shareCopy').addEventListener('click', () => {
   const c = $('shareCanvas'), fail = () => setShareMsg(['share.copyFail']);
   try{
@@ -2505,6 +2656,43 @@ $('shareTweet').addEventListener('click', () => {
   try{ window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(shareModel.tweet), '_blank', 'noopener'); }catch(e){}
 });
 
+/* ---------- announcements: static patch notes in this file, with a browser-local read marker ---------- */
+function renderNotices(){
+  $('noticeBadge').hidden = !NOTICE_LATEST || store.noticeSeen===NOTICE_LATEST;
+  $('noticeList').innerHTML = NOTICES.map(n => {
+    const date = new Intl.DateTimeFormat(LOCALE[store.lang], {year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(n.date+'T12:00:00Z'));
+    return `<article class="notice-item"><div class="notice-meta"><time datetime="${n.date}">${escapeHTML(date)}</time><span class="notice-kind">${escapeHTML(T(n.kind))}</span></div><h3>${escapeHTML(T(n.title))}</h3><p>${escapeHTML(T(n.summary))}</p><ul>${n.items.map(k => `<li>${escapeHTML(T(k))}</li>`).join('')}</ul></article>`;
+  }).join('');
+}
+function openNotices(){
+  const d = $('noticeDlg'); if(typeof d.showModal!=='function' || d.open || modalOpen()) return false;
+  donateNudgeDefer(); endTrial(true); resetInput(); renderNotices(); d.showModal(); jackpotPause();
+  if(NOTICE_LATEST && store.noticeSeen!==NOTICE_LATEST){ store.noticeSeen = NOTICE_LATEST; save(); renderNotices(); }
+  noticeAutoPending = false; if(noticeAutoTimer) clearTimeout(noticeAutoTimer); noticeAutoTimer = null;
+  return true;
+}
+$('noticeOpen').addEventListener('click', openNotices);
+$('noticeClose').addEventListener('click', () => $('noticeDlg').close());
+$('noticeDlg').addEventListener('close', () => setTimeout(renderRewards, 0));
+
+// Returning visitors see each new latest announcement once. A first visit only gets the NEW badge,
+// avoiding a second modal immediately after the nickname gate. Busy UI is retried without interrupting play or results.
+let noticeAutoPending = hadStore && !!NOTICE_LATEST && store.noticeSeen!==NOTICE_LATEST;
+let noticeAutoTimer = null, noticeAutoQueued = false;
+function noticeAutoSchedule(delay=500){
+  if(!noticeAutoPending || store.noticeSeen===NOTICE_LATEST || noticeAutoTimer || noticeAutoQueued) return;
+  noticeAutoQueued = true;
+  requestAnimationFrame(() => { noticeAutoQueued = false; if(noticeAutoPending && !noticeAutoTimer) noticeAutoTimer = setTimeout(noticeAutoTry, delay); });
+}
+function noticeAutoTry(){
+  noticeAutoTimer = null;
+  if(!noticeAutoPending || store.noticeSeen===NOTICE_LATEST){ noticeAutoPending = false; return false; }
+  if(document.hidden) return false;
+  if(modalOpen() || trial.running || !!trial.cdTimer || !!trial.openTimer || jackpotBusy || jackpotHold){ noticeAutoSchedule(750); return false; }
+  return openNotices();
+}
+addEventListener('visibilitychange', () => { if(!document.hidden) noticeAutoSchedule(); });
+
 /* ---------- backend: ranking (cumulative, no reset — 2026-09-14 user decision), visit counter, shoutbox (Cloudflare Worker in worker/; see worker/README.md) ---------- */
 const BOARD_URL = 'https://mishima-dojo-board.mishima-dojo.workers.dev'; // Cloudflare Worker in worker/ (no trailing slash). Empty → all backend UI hidden.
 /* ---------- donate (PLAN 2-3): plain external link per language, no scripts. Empty → footer row hidden for that language. ---------- */
@@ -2513,16 +2701,53 @@ const BOARD_URL = 'https://mishima-dojo-board.mishima-dojo.workers.dev'; // Clou
 // changes) plus the direct link for phones. Ko-fi is a plain new-tab link. Order: ko puts KakaoPay first, other languages Ko-fi first.
 const DONATE = { kakao:{url:'https://qr.kakaopay.com/Ej8EBCpJu', qr:'donate-kakao.png'}, kofi:{url:'https://ko-fi.com/misimadojo'} };
 const donateOptions = lang => (lang==='ko' ? ['kakao','kofi'] : ['kofi','kakao']).filter(k => DONATE[k].url); // pure; unit-tested
+const DONATE_ACTIVE_MS = 10*60*1000, DONATE_IDLE_MS = 30*1000;
+let donateResultVisible = false, donateResultRec = null, donateNudgeTimer = null, practiceLastAt = 0, practiceTickAt = performance.now(), practiceSavedMs = store.donatePlayMs;
+function takeResultDonate(personalBest, day=KST_DAY()){
+  if(!personalBest || store.donateResultDay===day) return false;
+  store.donateResultDay=day; save(); return true;
+}
 function renderDonate(){
   const opts = donateOptions(store.lang), any = opts.length>0;
-  ['donate','donateShare','donateTop'].forEach(id => { $(id).hidden = !any; });
+  ['donate','donateTop'].forEach(id => { $(id).hidden = !any; });
+  $('donateShare').hidden = !any || !donateResultVisible;
   $('donateOptions').innerHTML = opts.map(k => k==='kakao'
     ? `<button type="button" class="donate-opt" data-opt="kakao"><b>${escapeHTML(T('donate.kakao'))}</b><small>${escapeHTML(T('donate.kakaoSub'))}</small></button>`
     : `<a class="donate-opt" data-opt="kofi" href="${DONATE.kofi.url}" target="_blank" rel="noopener"><b>${escapeHTML(T('donate.kofi'))}</b><small>${escapeHTML(T('donate.kofiSub'))}</small></a>`).join('');
   $('donateOpen').href = DONATE.kakao.url; $('donateQr').src = DONATE.kakao.qr;
 }
 function donateView(v){ $('donateChoose').hidden = v==='kakao'; $('donateKakao').hidden = v!=='kakao'; }
-function openDonate(){ donateView('choose'); const d = $('donateDlg'); if(typeof d.showModal==='function' && !d.open){ endTrial(true); resetInput(); d.showModal(); jackpotPause(); store.life.donate++; save(); checkAch(); } } // opening the window is the 'thought about donating' achievement
+function donateNudgeClear(){
+  clearTimeout(donateNudgeTimer); donateNudgeTimer=null; $('donateBubble').hidden=true; $('donateNudge').dataset.active='false'; $('donateNudge').dataset.motion='false';
+}
+function donateNudgeBlocked(){ return document.hidden || trial.running || !!trial.cdTimer || !!trial.openTimer || !!modalOpen() || jackpotBusy || jackpotHold; }
+function donateNudgeDefer(day=KST_DAY()){
+  if(!donateNudgeTimer && $('donateNudge').dataset.active!=='true') return false;
+  donateNudgeClear();
+  if(store.donateNudgeDay===day){ store.donateNudgeDay=''; save(); }
+  return true;
+}
+function donateNudgeMaybe(day=KST_DAY()){
+  if(donateNudgeBlocked()){ donateNudgeDefer(day); return false; }
+  if(store.donatePlayMs<DONATE_ACTIVE_MS || store.donateNudgeDay===day || !donateOptions(store.lang).length) return false;
+  store.donateNudgeDay=day; save(); const n=$('donateNudge'); n.dataset.active='true'; n.dataset.motion=String(!reduced && !!store.fx); $('donateBubble').hidden=false;
+  donateNudgeTimer=setTimeout(donateNudgeClear,8000); return true;
+}
+function practiceInput(){
+  const day=KST_DAY(); if(store.donatePlayDay!==day){ store.donatePlayDay=day; store.donatePlayMs=0; practiceSavedMs=0; saveSoon(); }
+  practiceLastAt=performance.now();
+}
+function practiceTick(now=performance.now()){
+  const elapsed=Math.min(1000,Math.max(0,now-practiceTickAt)); practiceTickAt=now;
+  const day=KST_DAY(); if(store.donatePlayDay!==day){ store.donatePlayDay=day; store.donatePlayMs=0; practiceSavedMs=0; saveSoon(); }
+  if(!document.hidden && !modalOpen() && practiceLastAt && now-practiceLastAt<=DONATE_IDLE_MS && store.donatePlayMs<DONATE_ACTIVE_MS){
+    store.donatePlayMs=Math.min(DONATE_ACTIVE_MS,store.donatePlayMs+elapsed);
+    if(store.donatePlayMs-practiceSavedMs>=30000){ practiceSavedMs=store.donatePlayMs; saveSoon(); }
+  }
+  return donateNudgeMaybe(day);
+}
+setInterval(practiceTick,1000);
+function openDonate(){ donateNudgeClear(); donateView('choose'); const d = $('donateDlg'); if(typeof d.showModal==='function' && !d.open){ endTrial(true); resetInput(); d.showModal(); jackpotPause(); store.life.donate++; save(); checkAch(); } } // opening the window is the 'thought about donating' achievement
 ['donateBtn','donateTop','donateShareBtn'].forEach(id => $(id).addEventListener('click', openDonate));
 $('donateOptions').addEventListener('click', e => { const t = e.target && e.target.closest ? e.target.closest('[data-opt]') : null; if(!t) return; if(t.dataset.opt==='kakao'){ e.preventDefault(); donateView('kakao'); } else $('donateDlg').close(); });
 $('donateBack').addEventListener('click', () => donateView('choose'));
@@ -2598,6 +2823,7 @@ function renderRewards(){
 }
 function claimRewards(){
   if(rewardBlocked() || !store.pendingRewards.length) return;
+  donateNudgeDefer();
   const batch = store.pendingRewards.splice(0), now = Date.now();
   for(const j of batch) store.ach[j.id] = now;
   save(); rewardNoticeClear();
@@ -2663,7 +2889,7 @@ function renderFit(){
     + `<div class="ach-group"><h3>${escapeHTML(T('fit.dailyGroup'))}</h3><div class="fit-chips">${DAILY_IDS.map(id => `<span class="fit-chip daily${store.ach[id]?'':' locked'}">${store.ach[id] ? escapeHTML(T('item.'+id)) : pendingReward(id) ? escapeHTML(T('item.'+id)+' · '+T('reward.pending')) : '?'}</span>`).join('')}</div></div>`;
   drawPreview($('fitPreview'), currentLook(), 1.7);
 }
-function openFit(){ const d = $('fitDlg'); if(typeof d.showModal!=='function' || d.open) return; unlockAudio(); endTrial(true); resetInput(); fitView(fit.view); renderFit(); d.showModal(); jackpotPause(); }
+function openFit(){ const d = $('fitDlg'); if(typeof d.showModal!=='function' || d.open) return; donateNudgeDefer(); unlockAudio(); endTrial(true); resetInput(); fitView(fit.view); renderFit(); d.showModal(); jackpotPause(); }
 $('rewardOpen').addEventListener('click', claimRewards);
 $('jpOk').addEventListener('click', () => { if(jackpotFinish) jackpotFinish(); });
 $('fitOpen').addEventListener('click', openFit);
@@ -2674,32 +2900,18 @@ $('fitReset').addEventListener('click', () => { for(const s of SLOTS) store.fit[
 ['setDlg','donateDlg','fitDlg'].forEach(id => $(id).addEventListener('close', () => setTimeout(renderRewards, 0))); // refresh claiming availability (#shareDlg/#nickDlg: their own close handlers)
 
 const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per start-mode trial; must match worker/index.js BOARDS and #boardTabs
-const board = { tab:'wave10', data:{}, at:{}, msg:'', seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise) · at: Date.now() of each board's last response (waveRefresh refetches wave10 after WAVE_TTL)
-const live = { visits:null, posts:null, postsMsg:'', posting:false, voting:false, visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // voting: a POST /vote is in flight (one at a time, every vote button disabled meanwhile)
+const board = { tab:'wave10', data:{}, msg:'', seq:0, deleting:false, submitting:false, loadAfterDelete:false, submitAfterDelete:false }; // score writes are serial: delete waits for submit, submit waits for delete; loads requested during delete resume afterwards
+const live = { visits:null, posts:null, postsMsg:'', postsLoading:false, posting:false, voting:false, replying:false, postsSeq:0, replyTo:0, replyText:'', visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // post mutations share one busy gate; postsSeq keeps an older list load from replacing a newer response
 // nickLater: the gate offers "practise without ranking" after the server itself failed · nickLost: a 403 arrived while the result card was up
 const TIERS = [1, 10, 20, 50, 70]; // upper bounds of "top N%" for grades SS S A B C (tier 0..4); anything above is D (tier 5). Titles: tier.N.title, comments: tier.N.<mode>
 // Grade for the result banner. Tiny boards count as ten players so 1st of 1 lands on S (top 10%), not SS — and 1st of 1 is never "D" at top 100%.
 function tierOf(rank, total){ const p = pctTop(rank, Math.max(total, 10)); const i = TIERS.findIndex(t => p<=t); return i<0 ? 5 : i; }
 const pctTop = (rank, total) => Math.max(1, Math.ceil(rank / Math.max(1,total) * 100)); // "top N%" — 1st of 1 is top 100%
 // Wave chart top band: the wave10 top-10% score (cut10 from /top or /submit), null until the board answers → WAVE_TOP_DEFAULT.
-// The board never resets (2026-09-14), so a cut only moves when someone submits: the cached value stays in use and the periodic waveRefresh refetches it once it is WAVE_TTL old.
-const WAVE_TOP_DEFAULT = 5, WAVE_TTL = 10*60e3;
-const boardSet = (t, d) => { board.data[t] = d; board.at[t] = Date.now(); };
-const waveFresh = () => !!board.data.wave10 && Date.now() - (board.at.wave10||0) < WAVE_TTL;
+// The board never resets (2026-09-14). Keep the last cut until an initial/manual board load or a score mutation returns a newer one; no background D1 polling.
+const WAVE_TOP_DEFAULT = 5;
+const boardSet = (t, d) => { board.data[t] = d; };
 const waveTop = () => { const d = board.data.wave10; return !!d && Number.isFinite(d.cut10) && d.cut10>0 ? d.cut10 : null; };
-let waveRefreshing = false;
-async function waveRefresh(){
-  const cached = board.data.wave10;
-  if(!BOARD_URL || waveFresh() || waveRefreshing) return;
-  waveRefreshing = true;
-  const nick = store.nick, token = store.nickToken;
-  try{
-    const d = await boardFetch('/top?board=wave10'+(hasNick() ? '&nick='+encodeURIComponent(nick) : ''));
-    // A manual load, submission or nickname change takes precedence over this background request.
-    if(nick===store.nick && token===store.nickToken && board.data.wave10===cached){ boardSet('wave10', d); renderWave(); renderBoard(); }
-  }catch(e){} // keep the last value and retry on the next periodic refresh
-  finally{ waveRefreshing = false; }
-}
 const waveTopText = cut => cut==null ? T('wave.topFixed') : T('wave.top', cut.toFixed(1));
 const waveYMax = top => Math.max(8, Math.ceil(top)+1); // keep the band on the chart when the cut climbs past 8 dashes/s
 const waveGrid = yMax => { const g = []; for(let v=2; v<=yMax; v+=2) g.push(v); return g; };
@@ -2730,6 +2942,7 @@ function renderNick(){
 }
 function openNick(msgKey){
   if(!BOARD_URL) return;
+  donateNudgeDefer();
   if(trial.running || trial.cdTimer) endTrial(true); // a modal pauses input but not the clock: cancel rather than let the trial end blind
   live.nickMsg = msgKey ? [msgKey] : ''; live.nickLater = false; $('nickInput').value = store.nick || ''; renderNick();
   const d = $('nickDlg'); if(!d.open && typeof d.showModal==='function') d.showModal(); jackpotPause();
@@ -2774,26 +2987,45 @@ async function boardFetch(path, init){
 }
 function renderBoard(){
   if(!BOARD_URL) return;
-  const t = board.tab, d = board.data[t], me = d && d.me;
-  document.querySelectorAll('#boardTabs button').forEach(b => b.setAttribute('aria-pressed', b.dataset.board===t?'true':'false'));
+  const t = board.tab, d = board.data[t], me = hasNick() && d && d.me && nickKey(d.me.nick)===nickKey(store.nick) ? d.me : null;
+  document.querySelectorAll('#boardTabs button').forEach(b => { b.setAttribute('aria-pressed', b.dataset.board===t?'true':'false'); b.disabled=board.deleting; });
+  $('boardRefresh').disabled = board.deleting;
   $('boardInfo').textContent = d && d.total ? T('board.total', d.total) : '';
   $('boardMe').textContent = !d ? '' : me ? T('board.me', me.rank, d.total, pctTop(me.rank, d.total)) : T('board.meNone');
   $('boardMsg').textContent = msg(board.msg);
   const rows = d ? d.rows : [];
-  const tr = r => { const x = boardRowText(t, r); return `<tr${me && r.id===me.id?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="w">${(r.win/FRAME).toFixed(1)}f</td></tr>`; };
-  const below = me && !rows.some(r => r.id===me.id) ? `<tr class="sep"><td colspan="4">⋯</td></tr>` + tr(me) : ''; // my row when it sits under the top list
+  const tr = r => { const mine = me && r.id===me.id, x = boardRowText(t, r), del = mine ? `<button class="board-delete" data-delete-score aria-label="${escapeHTML(T('board.deleteAria'))}"${board.deleting||board.submitting?' disabled':''}>${escapeHTML(T('board.delete'))}</button>` : ''; return `<tr${mine?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="w">${(r.win/FRAME).toFixed(1)}f</td><td class="act">${del}</td></tr>`; };
+  const below = me && !rows.some(r => r.id===me.id) ? `<tr class="sep"><td colspan="5">⋯</td></tr>` + tr(me) : ''; // my row when it sits under the top list
   $('boardList').innerHTML = !d ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('board.empty'))}</div>` :
-    `<table><thead><tr><th>${escapeHTML(T('board.hRank'))}</th><th>${escapeHTML(T('board.hNick'))}</th><th>${escapeHTML(T('board.hScore'))}</th><th>${escapeHTML(T('board.hWin'))}</th></tr></thead><tbody>` +
+    `<table><thead><tr><th>${escapeHTML(T('board.hRank'))}</th><th>${escapeHTML(T('board.hNick'))}</th><th>${escapeHTML(T('board.hScore'))}</th><th>${escapeHTML(T('board.hWin'))}</th><th></th></tr></thead><tbody>` +
     rows.map(tr).join('') + below + '</tbody></table>';
 }
 async function boardLoad(){
   if(!BOARD_URL) return;
+  if(board.deleting){ board.loadAfterDelete = true; renderBoard(); return; }
   const t = board.tab, seq = ++board.seq; setBoardMsg(['board.loading']); renderBoard();
   let d = null;
   try{ d = await boardFetch('/top?board='+t+(hasNick() ? '&nick='+encodeURIComponent(store.nick) : '')); } catch(e){} // an unclaimed name may belong to someone else
   if(seq!==board.seq) return; // superseded by a newer load or a submit: drop this response entirely
   if(d){ boardSet(t, d); setBoardMsg(''); if(t==='wave10') renderWave(); } else setBoardMsg(['board.loadFail']); // wave10 carries cut10: the chart's top band follows it
   renderBoard();
+}
+async function boardDelete(){
+  const t = board.tab, d = board.data[t];
+  if(!BOARD_URL || board.deleting || board.submitting || !hasNick() || !d || !d.me || nickKey(d.me.nick)!==nickKey(store.nick)) return;
+  if(typeof confirm==='function' && !confirm(T('board.deleteConfirm'))) return;
+  const nick = store.nick, token = store.nickToken; board.deleting = true; ++board.seq; setBoardMsg(['board.deleting']); renderBoard();
+  try{
+    const res = await boardFetch('/score', {method:'DELETE', body:JSON.stringify({board:t, nick, token})});
+    if(nick===store.nick && token===store.nickToken){ boardSet(t, res); if(t==='wave10') renderWave(); if(board.tab===t) setBoardMsg(['board.deleted']); }
+  }catch(err){
+    if(nick===store.nick && token===store.nickToken){ if(err.message==='auth') lostNick(); if(board.tab===t) setBoardMsg([err.message==='auth'?'nick.expired':'board.deleteFail']); }
+  }finally{
+    board.deleting = false; renderBoard();
+    const load = board.loadAfterDelete, submit = board.submitAfterDelete; board.loadAfterDelete = board.submitAfterDelete = false;
+    if(load) boardLoad();
+    if(submit) boardSubmit();
+  }
 }
 // Post-trial status in the trial bar (and the banner in the result card): auto-submitted, retry on failure.
 const submitText = s => s.state==='busy' ? T('board.submitting') : s.state==='fail' ? T(s.error==='auth' ? 'nick.expired' : 'board.submitFail') : T(s.improved ? 'board.done' : 'board.kept', s.rank, s.total, pctTop(s.rank, s.total));
@@ -2814,8 +3046,10 @@ function renderShareRank(){
 }
 async function boardSubmit(){
   const r = trial.result, e = boardEntry(r, mode); if(!BOARD_URL || !e || !hasNick() || (r.submit && r.submit.state!=='fail')) return renderTrialRank();
+  if(board.deleting){ board.submitAfterDelete = true; return renderTrialRank(); }
+  if(board.submitting) return renderTrialRank();
   const nick = store.nick, tab0 = board.tab;
-  r.submit = {state:'busy'}; renderTrialRank();
+  board.submitting = true; r.submit = {state:'busy'}; renderTrialRank(); renderBoard();
   try{
     const res = await boardFetch('/submit', {method:'POST', body:JSON.stringify({...e, nick, token:store.nickToken})});
     r.submit = {state:'done', rank:res.rank, total:res.total, improved:res.improved};
@@ -2825,14 +3059,16 @@ async function boardSubmit(){
       renderBoard();
     }
   }catch(err){ r.submit = {state:'fail', error:err.message}; if(err.message==='auth') lostNick(); }
+  board.submitting = false; renderBoard();
   renderTrialRank();
   if(r===trial.result && shareSrc && shareSrc.kind==='trial' && shareSrc.rec===r.rec){ shareSrc = shareSource(); renderShare(); } // the card (open, or still loading fonts before it opens) picks up the rank line
 }
 $('dRankRetry').addEventListener('click', boardSubmit);
 $('boardRefresh').addEventListener('click', boardLoad);
+$('boardList').addEventListener('click', ev => { const b = ev.target && ev.target.closest ? ev.target.closest('button[data-delete-score]') : null; if(b) boardDelete(); });
 $('boardTabs').addEventListener('click', ev => {
   const b = ev.target && ev.target.closest ? ev.target.closest('button[data-board]') : null;
-  if(!b || b.dataset.board===board.tab) return;
+  if(!b || board.deleting || b.dataset.board===board.tab) return;
   board.tab = b.dataset.board; setBoardMsg(''); renderBoard(); boardLoad();
 });
 // visit counter: each browser counts once per KST day (store.visitDay); otherwise just read the numbers
@@ -2847,39 +3083,48 @@ function renderVisits(){ const v = live.visits; $('visits').textContent = v ? T(
 // shoutbox: nickname + one line, newest first; the nickname field doubles as the ranking nickname editor
 function setPostsMsg(m){ live.postsMsg = m; $('postMsg').textContent = msg(m); }
 const postTime = t => new Date(t).toLocaleString(LOCALE[store.lang], {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
+const postsMutating = () => live.posting || live.voting || live.replying;
 async function postsLoad(){
-  if(!BOARD_URL) return;
-  try{ setPosts((await boardFetch('/posts')).rows); if(live.postsMsg && live.postsMsg[0]==='posts.loadFail') setPostsMsg(''); }
-  catch(e){ if(!live.posts) setPostsMsg(['posts.loadFail']); }
-  renderPosts();
+  if(!BOARD_URL || postsMutating() || live.postsLoading) return;
+  live.postsLoading = true; const seq = ++live.postsSeq; renderPosts();
+  try{ const rows = (await boardFetch('/posts')).rows; if(seq===live.postsSeq){ setPosts(rows); if(live.postsMsg && ['posts.loadFail','posts.quota'].includes(live.postsMsg[0])) setPostsMsg(''); } }
+  catch(e){ if(seq===live.postsSeq && !live.posts) setPostsMsg([e.message==='quota' ? 'posts.quota' : 'posts.loadFail']); }
+  finally{ live.postsLoading = false; renderPosts(); }
 }
-function setPosts(rows){ // every /posts, /posts POST and /vote answer lands here: posts that fell off the 50-row list are never shown again, so my votes on them are forgotten too
+function setPosts(rows){ // every post/reply/vote answer lands here: posts that fell off the 50-row list are never shown again, so my votes on them are forgotten too
   live.posts = rows;
   const keep = new Set((rows||[]).map(p => String(p.id)));
+  if(live.replyTo && !keep.has(String(live.replyTo))){ live.replyTo = 0; live.replyText = ''; }
   let n = 0; for(const id of Object.keys(store.votes)) if(!keep.has(id)){ delete store.votes[id]; n++; }
   if(n) save();
 }
-function voteBtn(p, v){ // 👍/👎 pill with the count; aria-pressed marks my own vote (store.votes), disabled while any vote request is in flight
+function voteBtn(p, v){ // 👍/👎 pill with the count; aria-pressed marks my own vote (store.votes), disabled while any post mutation is in flight
   const label = T(v===1 ? 'posts.like' : 'posts.dislike'), mine = (store.votes[p.id]||0)===v;
-  return `<button type="button" class="vote" data-id="${p.id}" data-v="${v}" aria-pressed="${mine}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}"${live.voting ? ' disabled' : ''}>${v===1 ? '👍' : '👎'} ${(v===1 ? p.up : p.down)|0}</button>`;
+  return `<button type="button" class="vote" data-id="${p.id}" data-v="${v}" aria-pressed="${mine}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}"${postsMutating() ? ' disabled' : ''}>${v===1 ? '👍' : '👎'} ${(v===1 ? p.up : p.down)|0}</button>`;
 }
 function renderPosts(){
   if(!BOARD_URL) return;
-  const rows = live.posts, text = $('postText');
-  text.placeholder = T('posts.ph'); $('postSend').disabled = live.posting; $('postMsg').textContent = msg(live.postsMsg);
+  const rows = live.posts, text = $('postText'), busy = postsMutating();
+  text.placeholder = T('posts.ph'); $('postSend').disabled = postsMutating(); $('postMsg').textContent = msg(live.postsMsg);
+  $('postsRefresh').disabled = busy || live.postsLoading;
+  $('postsRefresh').textContent = T(live.postsLoading ? 'posts.refreshing' : 'posts.refresh');
   $('postList').innerHTML = !rows ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('posts.empty'))}</div>` :
-    rows.map(p => `<div class="post"><b>${escapeHTML(p.nick)}</b><time>${escapeHTML(postTime(p.created_at))}</time><p>${escapeHTML(p.text)}</p><div class="post-votes">${voteBtn(p,1)}${voteBtn(p,-1)}</div></div>`).join('');
+    rows.map(p => { const replies = Array.isArray(p.replies) ? p.replies : [];
+      const list = replies.length ? `<div class="reply-list">${replies.map(r => `<div class="reply"><b>${escapeHTML(r.nick)}</b><time>${escapeHTML(postTime(r.created_at))}</time><p>${escapeHTML(r.text)}</p></div>`).join('')}</div>` : '';
+      const form = live.replyTo===p.id ? `<form class="reply-form" data-id="${p.id}"><input maxlength="200" autocomplete="off" aria-label="${escapeHTML(T('posts.replyPh'))}" placeholder="${escapeHTML(T('posts.replyPh'))}" value="${escapeHTML(live.replyText)}"${busy?' disabled':''}><button class="btn" type="submit"${busy?' disabled':''}>${escapeHTML(T('posts.replySend'))}</button><button class="btn ghost reply-cancel" type="button"${busy?' disabled':''}>${escapeHTML(T('posts.replyCancel'))}</button></form>` : '';
+      return `<div class="post"><b>${escapeHTML(p.nick)}</b><time>${escapeHTML(postTime(p.created_at))}</time><p>${escapeHTML(p.text)}</p><div class="post-actions"><div class="post-votes">${voteBtn(p,1)}${voteBtn(p,-1)}</div><button type="button" class="reply-open" data-id="${p.id}"${busy?' disabled':''}>↳ ${escapeHTML(T('posts.reply', replies.length))}</button></div>${list}${form}</div>`;
+    }).join('');
 }
 // like/dislike (2026-09-13): the server keeps one vote per (post, nickname) and takes an idempotent "set to v" (1 / -1 / 0 = none), so pressing my
 // current vote sends 0 (cancel) and the other button switches. store.votes mirrors the server's `mine` answer; a stale cache is corrected, never double-counted.
 async function postVote(id, v){
-  if(!BOARD_URL || live.voting || !Number.isInteger(id) || ![1,-1].includes(v)) return;
+  if(!BOARD_URL || postsMutating() || !Number.isInteger(id) || ![1,-1].includes(v)) return;
   if(!hasNick()) return openNick();
   const want = (store.votes[id]||0)===v ? 0 : v, nick = store.nick; // the answer is only ours while the nickname is still the one that voted (boardSubmit has the same guard)
-  live.voting = true; renderPosts();
+  live.voting = true; const seq = ++live.postsSeq; renderPosts();
   try{
     const r = await boardFetch('/vote', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, id, v:want})});
-    setPosts(r.rows);
+    if(seq===live.postsSeq) setPosts(r.rows);
     if(nickKey(store.nick)===nickKey(nick)){ if(r.mine) store.votes[id] = r.mine; else delete store.votes[id]; save(); }
     if(live.postsMsg && /^posts\.vote/.test(live.postsMsg[0])) setPostsMsg('');
   }catch(err){
@@ -2889,24 +3134,49 @@ async function postVote(id, v){
   }
   live.voting = false; renderPosts();
 }
-$('postList').addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('button.vote'); if(b) postVote(+b.dataset.id, +b.dataset.v); });
+$('postList').addEventListener('click', ev => {
+  const vote = ev.target.closest && ev.target.closest('button.vote'); if(vote) return postVote(+vote.dataset.id, +vote.dataset.v);
+  const open = ev.target.closest && ev.target.closest('button.reply-open');
+  if(open){ if(!hasNick()) return openNick(); live.replyTo = live.replyTo===+open.dataset.id ? 0 : +open.dataset.id; live.replyText = ''; return renderPosts(); }
+  if(ev.target.closest && ev.target.closest('button.reply-cancel')){ live.replyTo = 0; live.replyText = ''; renderPosts(); }
+});
+$('postList').addEventListener('input', ev => { if(ev.target.closest && ev.target.closest('.reply-form')) live.replyText = ev.target.value; });
+async function replySend(id, raw){
+  if(!BOARD_URL || postsMutating() || !Number.isInteger(id)) return;
+  if(!hasNick()) return openNick();
+  const nick = store.nick, text = String(raw||'').replace(/\s+/g,' ').trim();
+  if(!text || [...text].length>200) return setPostsMsg(['posts.textBad']);
+  live.replying = true; const seq = ++live.postsSeq; live.replyText = text; setPostsMsg(['posts.replying']); renderPosts();
+  try{
+    const rows = (await boardFetch('/reply', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, id, text})})).rows;
+    if(seq===live.postsSeq) setPosts(rows);
+    live.replyTo = 0; live.replyText = ''; setPostsMsg('');
+  }catch(err){
+    setPostsMsg([err.message==='rate' ? 'posts.tooFast' : err.message==='text' ? 'posts.textBad' : 'posts.replyFail']);
+    if(err.message==='auth') lostNick();
+    if(err.message==='post'){ live.replyTo = 0; live.replyText = ''; live.replying = false; return postsLoad(); }
+  }
+  live.replying = false; renderPosts();
+}
+$('postList').addEventListener('submit', ev => { const f = ev.target.closest && ev.target.closest('form.reply-form'); if(!f) return; ev.preventDefault(); replySend(+f.dataset.id, f.querySelector('input').value); });
 async function postSend(){
-  if(!BOARD_URL || live.posting) return;
+  if(!BOARD_URL || postsMutating()) return;
   if(!hasNick()) return openNick();
   const nick = store.nick, text = $('postText').value.replace(/\s+/g,' ').trim();
   if(!text || [...text].length>200) return setPostsMsg(['posts.textBad']);
-  live.posting = true; setPostsMsg(['posts.sending']); renderPosts();
-  try{ setPosts((await boardFetch('/posts', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, text})})).rows); $('postText').value = ''; setPostsMsg(''); }
+  live.posting = true; const seq = ++live.postsSeq; setPostsMsg(['posts.sending']); renderPosts();
+  try{ const rows = (await boardFetch('/posts', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, text})})).rows; if(seq===live.postsSeq) setPosts(rows); $('postText').value = ''; setPostsMsg(''); }
   catch(err){ setPostsMsg([err.message==='rate' ? 'posts.tooFast' : err.message==='text' ? 'posts.textBad' : 'posts.sendFail']); if(err.message==='auth') lostNick(); }
   live.posting = false; renderPosts();
 }
 $('postForm').addEventListener('submit', ev => { ev.preventDefault(); postSend(); });
+$('postsRefresh').addEventListener('click', postsLoad);
 function backendInit(){
   $('boardCard').hidden = $('postsCard').hidden = !BOARD_URL;
   if(!BOARD_URL) return;
   boardLoad(); postsLoad(); visitsLoad(); renderNick();
   if(!hasNick()){ openNick(); if(store.nick) claimNick(store.nick); } // first visit → gate; a nickname saved before tokens existed is claimed as-is
-  setInterval(() => { if(document.hidden) return; waveRefresh(); postsLoad(); bumpVisitDay(); visitsLoad(); }, 60000); // background tabs stay quiet
+  setInterval(() => { if(document.hidden) return; bumpVisitDay(); if(live.visitPending) visitsLoad(); }, 60000); // no recurring D1 reads; only count a KST day crossed by an already-open tab
 }
 
 /* ---------- language ---------- */
@@ -2922,12 +3192,12 @@ function applyStatic(){
 }
 function renderAll(){
   renderJackpot(); renderRewards();
-  applyStatic(); renderMode(); renderPadStatus(); renderKeys();
+  applyStatic(); renderMode(); renderPadStatus(); renderKeys(); renderTouchSettings();
   showResult(ui.result.cls, ui.result.kind, ui.result.title, ui.result.sub);
   setCoach(ui.coach); setTrend(ui.trend); renderSeg(ui.seg);
   renderBests(); renderLog(); renderHist(); renderWave();
   $('shareMsg').textContent = msg(ui.shareMsg); if($('shareDlg').open) renderShare();
-  renderBoard(); renderTrialRank(); renderVisits(); renderPosts(); if(BOARD_URL) renderNick(); renderDonate(); if($('fitDlg').open) renderFit();
+  renderBoard(); renderTrialRank(); renderVisits(); renderPosts(); if(BOARD_URL) renderNick(); renderDonate(); renderNotices(); if($('fitDlg').open) renderFit();
   if(trial.running) trialTick(performance.now());
 }
 function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); renderAll(); }
@@ -2935,7 +3205,7 @@ function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); render
 const canvas = $('stage'), ctx = canvas.getContext('2d');
 let W=800, H=360, dpr=1;
 function resize(){ const r = $('stageBox').getBoundingClientRect(); dpr = Math.min(2, devicePixelRatio||1); W = Math.max(320, r.width); H = Math.max(160, r.height); canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); renderHistory(); }
-addEventListener('resize', resize); resize(); applyTouchUI();
+addEventListener('resize', () => { resize(); applyTouchLayout(); }); resize(); applyTouchUI(); renderTouchSettings();
 
 const world = { charX:120, camX:0, dummyX:460, dummy:{y:0,vx:0,vy:0,rot:0,hit:0,alive:true,respawn:0,type:null} }; // dummy.type: null = plain bag (any hit knocks it) · 'high'|'mid'|'low' = rush30 target that only the matching move destroys
 const HIT_TYPE = {ewgf:'high', wgf:'high', tongbal:'mid', hellsweep:'low'}; // which dummy each move destroys in rush30
@@ -3397,7 +3667,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 /* ---------- boot ---------- */
-renderAll(); setMode('free'); renderHistory(); updateStats(); bumpVisitDay(); backendInit();
+renderAll(); setMode('free'); renderHistory(); updateStats(); bumpVisitDay(); backendInit(); noticeAutoSchedule();
 world.camX = world.charX - W*0.32;
 requestAnimationFrame(frame);
 })();

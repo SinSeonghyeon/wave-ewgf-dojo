@@ -9,21 +9,21 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
   let now=1000, pads=[];
   const elements=new Map(), events={}, timers=new Map(); let next=1;
   function element(){
-    return {textContent:'',innerHTML:'',style:{},dataset:{},children:[],clientWidth:800,
+    return {textContent:'',innerHTML:'',style:{setProperty(k,v){this[k]=v;}},dataset:{},children:[],clientWidth:800,clientHeight:360,offsetWidth:180,offsetHeight:55,
       classList:{add(){},toggle(){}},setAttribute(){},addEventListener(type,fn){this[type]=fn;},
       querySelectorAll(){return [];},querySelector(){return element();},
       getBoundingClientRect(){return {width:800,height:360};},getContext(){return {setTransform(){}};}};
   }
   const get=id=>{if(!elements.has(id)) elements.set(id,element()); return elements.get(id);};
   get('jackpot').hidden=true;
-  for(const id of ['setDlg','donateDlg','fitDlg']) get(id).showModal=function(){this.open=true;};
+  for(const id of ['setDlg','donateDlg','fitDlg','noticeDlg']) get(id).showModal=function(){this.open=true;};
   const context=vm.createContext({performance:{now:()=>now},document:{getElementById:get,querySelectorAll:()=>[],hasFocus:()=>true,hidden:false},
     navigator:{getGamepads:()=>pads},localStorage:{getItem:()=>saved===undefined?null:JSON.stringify(saved),setItem(){}},
     matchMedia:()=>({matches:false}),devicePixelRatio:1,requestAnimationFrame(){},
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,boardDelete,renderBoard,visitsLoad,claimNick,openNick,postVote,replySend,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,takeResultDonate,practiceInput,practiceTick,DONATE_ACTIVE_MS,touchKeys,touchPress,applyTouchUI,applyTouchLayout,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -57,6 +57,34 @@ test('daily gift updates attendance before the minute timer at KST midnight',()=
   assert.equal(a.store.life.days,2);assert.equal(a.store.life.giftDay,'2026-09-14');
   assert.equal(a.store.pendingRewards.at(-1).day,2);a.dailyGift();assert.equal(a.store.life.days,2);
   assert.equal(new Set(a.store.pendingRewards.filter(j=>j.kind==='daily').map(j=>j.id)).size,2,'unclaimed daily gifts are excluded from the next day pool');
+});
+
+test('donation prompts are capped daily and an active header nudge defers across blocking UI',()=>{
+  let wall=Date.parse('2026-09-15T03:00:00Z');
+  class ClockDate extends Date { constructor(...args){super(...(args.length?args:[wall]));} static now(){return wall;} }
+  const a=boot({v:4,lang:'ko'},undefined,{Date:ClockDate});a.get('nickDlg').open=false;
+  assert.equal(a.takeResultDonate(false),false);
+  assert.equal(a.takeResultDonate(true),true);
+  assert.equal(a.takeResultDonate(true),false,'a second personal best on the same KST day is quiet');
+  a.practiceInput();
+  for(let ms=2000;ms<=601000;ms+=1000){ a.time(ms); if(ms%20000===0) a.practiceInput(); a.practiceTick(ms); }
+  assert.equal(a.store.donatePlayMs,a.DONATE_ACTIVE_MS);
+  assert.equal(a.get('donateBubble').hidden,false);
+  assert.equal(a.get('donateNudge').dataset.active,'true');
+  a.setMode('wave10');a.startTrial();
+  assert.equal(a.get('donateNudge').dataset.active,'false','a countdown immediately hides the active nudge');
+  assert.equal(a.store.donateNudgeDay,'','blocking UI does not consume the day');
+  a.endTrial(true);a.time(602000);
+  assert.equal(a.practiceTick(602000),true,'the deferred nudge returns after the countdown is cancelled');
+  assert.equal(a.practiceTick(603000),false,'the visible nudge is still capped for the rest of its KST day');
+});
+
+test('dirty practice time is persisted on pagehide before its 30-second checkpoint',()=>{
+  let saved;
+  const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
+  a.get('nickDlg').open=false;a.practiceInput();a.time(12000);a.practiceTick(12000);
+  assert.equal(a.store.donatePlayMs,1000);a.events.pagehide();
+  assert.equal(saved.donatePlayMs,1000);
 });
 
 test('deferring an active reward also stops its synthesized chime',()=>{
@@ -187,6 +215,26 @@ test('invalid saved types fall back safely and stored text is escaped',()=>{
   assert.equal(a.store.side,1);assert.equal(a.store.window,12);assert.equal(a.store.keys.up,'KeyW');
   assert.equal(a.store.records.ewgf20.length,0);assert.ok(a.get('bests').innerHTML.includes('&lt;img src=x&gt;'));
 });
+test('each keyboard action accepts one alternate key and old saves keep their primary keys',()=>{
+  const ev=(code,timeStamp=1000)=>({code,timeStamp,target:{tagName:'DIV'},preventDefault(){}});
+  const a=boot({v:4,keys:{right:'KeyD'},altKeys:{right:'KeyO',b2:'KeyP',b3:'KeyP',up:4}});
+  assert.equal(a.store.keys.right,'KeyD');assert.equal(a.store.altKeys.right,'KeyO');
+  assert.equal(a.store.altKeys.b3,'','a duplicate alternate is dropped');assert.equal(a.store.altKeys.up,'','an invalid alternate is dropped');
+  a.events.keydown(ev('KeyD'));a.events.keydown(ev('KeyO',1010));a.events.keyup(ev('KeyD',1020));
+  assert.equal(a.cd.state,1,'releasing the primary keeps right held through the alternate');
+  a.events.keyup(ev('KeyO',1030));assert.equal(a.cd.state,2,'releasing both produces neutral');
+  a.events.keydown(ev('KeyS',1040));a.events.keydown(ev('KeyO',1060));a.events.keydown(ev('KeyP',1060));
+  assert.equal(a.session.attempts.at(-1).kind,'ewgf','alternate direction and button follow the normal judging path');
+  a.events.keydown(ev('KeyI',1061));
+  assert.equal(a.session.attempts.length,1,'primary + alternate for one held button produces one logical press');
+  a.events.keyup(ev('KeyP',1070));a.events.keydown(ev('KeyP',1080));
+  assert.equal(a.session.attempts.length,1,'re-pressing either binding while its partner is held stays suppressed');
+  a.events.keyup(ev('KeyI',1090));a.events.keyup(ev('KeyP',1090));
+  a.events.keydown(ev('KeyI',1100));a.events.keydown(ev('KeyP',1101));
+  assert.equal(a.session.attempts.length,2,'alternate after its held primary is also one logical press');
+  a.events.keyup(ev('KeyI',1110));a.events.keyup(ev('KeyP',1110));
+  assert.match(a.get('keys').innerHTML,/data-k="right" data-alt="0"[\s\S]*data-k="right" data-alt="1"[\s\S]*>O</);
+});
 test('blur clears unfinished input and cancels trial',()=>{
   const a=boot();a.setMode('wave10');a.startTrial();dash(a);a.events.blur();
   assert.equal(a.cd.state,0);assert.equal(a.cd.chain,0);assert.equal(a.trial.cdTimer,null);
@@ -223,6 +271,30 @@ test('every dictionary key exists in all three languages',()=>{
 test('the three dictionaries share exactly the same key set',()=>{
   const {I18N}=boot();const ko=Object.keys(I18N.ko).sort();
   for(const l of ['en','ja']) assert.deepEqual(Object.keys(I18N[l]).sort(),ko,'keys differ in '+l);
+});
+test('announcements render in every language and persist the latest read marker',()=>{
+  let saved;
+  const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
+  assert.ok(a.NOTICES.length);assert.equal(a.NOTICES[0].items.length,5);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
+  a.setMode('wave10');a.startTrial();a.openNotices();
+  assert.equal(a.get('noticeDlg').open,true);assert.equal(a.trial.cdTimer,null,'opening an announcement cancels a countdown');
+  assert.equal(a.store.noticeSeen,a.NOTICE_LATEST);assert.equal(saved.noticeSeen,a.NOTICE_LATEST);assert.equal(a.get('noticeBadge').hidden,true);
+  a.setLang('en');assert.match(a.get('noticeList').innerHTML,/September 15 feature update/);
+  a.setLang('ja');assert.match(a.get('noticeList').innerHTML,/9月15日 機能アップデート/);
+  const read=boot({v:4,noticeSeen:a.NOTICE_LATEST});assert.equal(read.get('noticeBadge').hidden,true);
+  const invalid=boot({v:4,noticeSeen:'removed-notice'});assert.equal(invalid.store.noticeSeen,'');assert.equal(invalid.get('noticeBadge').hidden,false);
+});
+test('announcement dates are formatted as date-only values in UTC',()=>{
+  let options;
+  function DateTimeFormat(locale,opts){options=opts;return {format:()=> 'fixed date'};}
+  const a=boot(undefined,undefined,{Intl:{DateTimeFormat}});
+  assert.equal(options.timeZone,'UTC');assert.match(a.get('noticeList').innerHTML,/fixed date/);
+});
+test('a new announcement auto-opens once for returning browsers, but not on their first visit or during play',()=>{
+  const first=boot();assert.equal(first.hadStore,false);assert.equal(first.noticeAutoTry(),false);assert.equal(!!first.get('noticeDlg').open,false);
+  const returning=boot({v:4});assert.equal(returning.hadStore,true);assert.equal(returning.noticeAutoTry(),true);assert.equal(returning.get('noticeDlg').open,true);assert.equal(returning.store.noticeSeen,returning.NOTICE_LATEST);
+  const busy=boot({v:4});busy.setMode('wave10');busy.startTrial();assert.equal(busy.noticeAutoTry(),false);assert.equal(!!busy.get('noticeDlg').open,false);assert.notEqual(busy.trial.cdTimer,null,'automatic notice never cancels an active countdown');
+  const read=boot({v:4,noticeSeen:returning.NOTICE_LATEST});assert.equal(read.noticeAutoTry(),false);assert.equal(!!read.get('noticeDlg').open,false);
 });
 test('histBins puts offsets on the window boundary inside and just outside in the late bin',()=>{
   const a=boot();const bins=a.histBins([{off:0},{off:-12},{off:12},{off:13},{off:null}],12);
@@ -381,8 +453,10 @@ test('trial end submits only with a claimed nickname (token); a failed submit sh
   for(const l of ['ko','en','ja']){card.setLang(l);for(const mode of card.BOARDS)for(let i=0;i<6;i++)assert.notEqual(card.T('tier.'+i+'.'+mode),'tier.'+i+'.'+mode,l+' '+mode+' '+i);}
   card.setLang('ko');const banner=card.get('shareTierMsg');
   await card.openShare().catch(()=>{}); // the banner is filled synchronously; the canvas draw rejects in this harness (no 2d context)
+  assert.equal(card.trial.result.personalBest,true);assert.equal(card.get('donateShare').hidden,false,'the first personal best gets today\'s result prompt');
   assert.equal(card.get('shareTier').textContent,'S');assert.equal(card.get('shareRank').className,'share-rank t1');assert.equal(banner.textContent,card.T('tier.1.wave10'));
   card.trial.result.submit={state:'done',rank:40,total:42,improved:true};await card.openShare().catch(()=>{});
+  assert.equal(card.get('donateShare').hidden,false,'a duplicate opening keeps the prompt claimed for this result');
   assert.equal(card.get('shareTier').textContent,'D');assert.equal(banner.textContent,'사람이... 맞으시죠? 6N23 6 N, 다시 갑시다.');
   card.trial.result.submit={state:'busy'};assert.equal(card.buildCard(card.shareSource()).rankText,'');
 });
@@ -435,6 +509,59 @@ test('backend races: a late submit after a rename or a tab switch does not overw
   a.claimNick('fresh'); await b.flush(); b.answer('/nick','POST',{error:'taken'},409); await b.flush(); assert.equal(a.live.nickLater,false); assert.equal(a.get('nickLater').hidden,true);
 });
 
+test('leaderboard delete is shown only on my row, confirms, sends owner credentials and refreshes from the server response',async()=>{
+  const tok='ab'.repeat(24), b=backend(); let allow=false;
+  const a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch,{confirm:()=>allow});
+  a.board.data.wave10={...topRes('me'),rows:[{...topRes('other').rows[0],id:8},topRes('me').rows[0]]}; a.renderBoard();
+  let html=a.get('boardList').innerHTML;
+  assert.equal((html.match(/data-delete-score/g)||[]).length,1,'only my row has a delete button');
+  assert.match(html,/class="me"[\s\S]*data-delete-score[\s\S]*>삭제</);
+  await a.boardDelete(); assert.equal(b.find('/score','DELETE'),undefined,'cancel sends nothing');
+  allow=true; const pending=a.boardDelete(); await b.flush();
+  const call=b.find('/score','DELETE'); assert.deepEqual(call.body,{board:'wave10',nick:'me',token:tok});
+  assert.equal(a.board.deleting,true); assert.equal(a.get('boardMsg').textContent,'기록 삭제 중…');
+  b.answer('/score','DELETE',{season:'all',board:'wave10',ok:true,deleted:1,total:1,rows:[{...topRes('other').rows[0],id:8}],me:null,cut10:.1}); await pending;
+  assert.equal(a.board.deleting,false); assert.equal(a.board.data.wave10.me,null); assert.equal(a.get('boardMe').textContent,'등록한 기록이 없습니다');
+  assert.equal(a.get('boardMsg').textContent,'내 기록을 삭제했습니다.'); assert.doesNotMatch(a.get('boardList').innerHTML,/data-delete-score/);
+});
+
+test('leaderboard delete reloads after a rename and never marks the old nickname as mine',async()=>{
+  const oldToken='ab'.repeat(24), newToken='cd'.repeat(24), b=backend();
+  const a=boot({v:4,lang:'ko',window:12,nick:'old',nickToken:oldToken},b.fetch,{confirm:()=>true});
+  a.board.data.wave10=topRes('old'); a.renderBoard();
+  const deleting=a.boardDelete(); await b.flush();
+  a.claimNick('new'); await b.flush(); b.answer('/nick','POST',{ok:true,nick:'new',token:newToken}); await b.flush();
+  assert.equal(a.board.loadAfterDelete,true,'the new owner load is queued while deletion is active');
+  assert.equal(b.find('/top?board=wave10&nick=new'),undefined,'the queued load does not race the delete');
+  assert.doesNotMatch(a.get('boardList').innerHTML,/data-delete-score/,'the old owner row immediately loses its delete button');
+  b.answer('/score','DELETE',{season:'all',board:'wave10',ok:true,deleted:1,total:0,rows:[],me:null,cut10:null}); await deleting; await b.flush();
+  assert.ok(b.find('/top?board=wave10&nick=new'),'deletion completion reloads the board for the new owner');
+  b.answer('/top?board=wave10&nick=new','GET',{season:'all',board:'wave10',total:0,rows:[],me:null,cut10:null}); await b.flush();
+  assert.equal(a.board.data.wave10.me,null); assert.equal(a.get('boardMe').textContent,'등록한 기록이 없습니다');
+});
+
+test('leaderboard submit and delete are serialized in both directions',async()=>{
+  const tok='ab'.repeat(24), run=a=>{a.setMode('wave10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();dash(a,4100);a.time(14100);a.endTrial();};
+  // An existing in-flight submit disables and rejects deletion until its response has settled.
+  let b=backend(), a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch,{confirm:()=>true});
+  a.board.data.wave10=topRes('me'); run(a); await b.flush();
+  assert.equal(a.board.submitting,true); assert.match(a.get('boardList').innerHTML,/data-delete-score[^>]* disabled/);
+  await a.boardDelete(); assert.equal(b.find('/score','DELETE'),undefined,'delete cannot overlap an active submit');
+  b.answer('/submit','POST',{ok:true,id:7,rank:1,total:1,improved:true,...topRes('me')}); await b.flush();
+  assert.equal(a.board.submitting,false); assert.doesNotMatch(a.get('boardList').innerHTML,/data-delete-score[^>]* disabled/);
+  let deleting=a.boardDelete(); await b.flush(); assert.ok(b.find('/score','DELETE'),'delete is available once submit settles');
+  b.answer('/score','DELETE',{season:'all',board:'wave10',ok:true,deleted:1,total:0,rows:[],me:null,cut10:null}); await deleting;
+
+  // If deletion starts first, a newly completed trial waits and submits only after deletion finishes.
+  b=backend(); a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch,{confirm:()=>true});
+  a.board.data.wave10=topRes('me'); deleting=a.boardDelete(); await b.flush(); run(a); await b.flush();
+  assert.equal(a.board.submitAfterDelete,true); assert.equal(b.find('/submit','POST'),undefined,'submit is queued behind delete');
+  b.answer('/score','DELETE',{season:'all',board:'wave10',ok:true,deleted:1,total:0,rows:[],me:null,cut10:null}); await deleting; await b.flush();
+  assert.ok(b.find('/submit','POST'),'queued trial submits after delete settles');
+  b.answer('/submit','POST',{ok:true,id:9,rank:1,total:1,improved:true,...topRes('me')}); await b.flush();
+  assert.equal(a.board.submitting,false); assert.equal(a.trial.result.submit.state,'done');
+});
+
 test('post votes: cancel/switch through an idempotent set, validated local cache, cleared on rename, nickname gate, deleted post',async()=>{
   const tok='ab'.repeat(24), rows=(up,down)=>[{id:7,nick:'x',text:'hi',created_at:1,up,down}], mine=()=>JSON.parse(JSON.stringify(a.store.votes)); // votes come from the vm realm: compare as plain JSON
   let b=backend(); let a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok,votes:{'7':1,'x':1,'8':5,'9':-1,'12345678901234':1}},b.fetch);
@@ -478,6 +605,31 @@ test('post votes: cancel/switch through an idempotent set, validated local cache
   a=boot({v:4,lang:'ko',window:12,votes:{'7':1}},b.fetch); assert.deepEqual(JSON.parse(JSON.stringify(a.store.votes)),{});
   // old worker without counts: buttons still render with 0
   a.live.posts=[{id:7,nick:'x',text:'hi',created_at:1}]; a.renderPosts(); assert.match(a.get('postList').innerHTML,/>👍 0<[\s\S]*>👎 0</);
+});
+
+test('post replies: render many, submit one level deep, keep text on failure, close on success, and gate by nickname',async()=>{
+  const tok='ab'.repeat(24), rows=replies=>[{id:7,nick:'original',text:'question',created_at:1,up:0,down:0,replies}];
+  let b=backend(), a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch);
+  b.answer('/posts','GET',{rows:rows([{id:1,post_id:7,nick:'one',text:'first',created_at:2},{id:2,post_id:7,nick:'two',text:'second',created_at:3}])}); await b.flush();
+  let html=a.get('postList').innerHTML; assert.match(html,/답글 2/); assert.ok(html.indexOf('first')<html.indexOf('second'),'replies render oldest first');
+  a.live.replyTo=7; a.live.replyText='draft'; a.renderPosts(); html=a.get('postList').innerHTML;
+  assert.match(html,/class="reply-form" data-id="7"/); assert.match(html,/value="draft"/); assert.match(html,/placeholder="답글 쓰기 \(200자\)"/);
+  a.postVote(7,1); await b.flush(); a.replySend(7,'must wait'); await b.flush();
+  assert.equal(b.calls.filter(x=>x.url.includes('/reply')).length,0,'a reply cannot race a vote snapshot');
+  assert.match(a.get('postList').innerHTML,/class="reply-form"[\s\S]*<input[^>]* disabled/);
+  b.answer('/vote','POST',{ok:true,id:7,mine:1,rows:rows([{id:1,post_id:7,nick:'one',text:'first',created_at:2},{id:2,post_id:7,nick:'two',text:'second',created_at:3}])}); await b.flush();
+  a.replySend(7,' hello   reply '); await b.flush(); let c=b.find('/reply','POST');
+  assert.deepEqual(c.body,{nick:'me',token:tok,id:7,text:'hello reply'}); assert.equal(a.live.replying,true); assert.match(a.get('postMsg').textContent,/답글 보내는 중/);
+  const votesBefore=b.calls.filter(x=>x.url.includes('/vote')).length; a.postVote(7,-1); await b.flush();
+  assert.equal(b.calls.filter(x=>x.url.includes('/vote')).length,votesBefore,'a vote cannot race a reply snapshot');
+  b.answer('/reply','POST',{ok:true,id:3,postId:7,rows:rows([{id:3,post_id:7,nick:'me',text:'hello reply',created_at:4}])}); await b.flush();
+  assert.equal(a.live.replying,false); assert.equal(a.live.replyTo,0); assert.equal(a.live.replyText,''); assert.match(a.get('postList').innerHTML,/hello reply/); assert.doesNotMatch(a.get('postList').innerHTML,/reply-form/);
+  a.live.replyTo=7; a.replySend(7,'retry me'); await b.flush(); b.answer('/reply','POST',{error:'rate'},429); await b.flush();
+  assert.equal(a.live.replyText,'retry me'); assert.equal(a.live.replyTo,7); assert.equal(a.get('postMsg').textContent,'너무 빠릅니다. 1분에 3개까지 남길 수 있습니다.');
+  a.setLang('ja'); assert.match(a.get('postList').innerHTML,/返信 1件/); assert.match(a.get('postList').innerHTML,/キャンセル/);
+  a.replySend(7,'gone'); await b.flush(); b.answer('/reply','POST',{error:'post'},404); await b.flush(); assert.ok(b.find('/posts','GET'),'a deleted parent reloads the list');
+  b=backend(); a=boot({v:4,lang:'ko',window:12},b.fetch); const before=b.calls.length; a.get('nickDlg').showModal=function(){this.open=true;};
+  a.replySend(7,'hi'); await b.flush(); assert.equal(b.calls.length,before); assert.equal(a.get('nickDlg').open,true);
 });
 
 test('app and worker agree on the leaderboard contract (boards, windows, detail fields)',async()=>{
@@ -786,13 +938,14 @@ test('BGM cancels queued requests and interrupted play can resume',async()=>{
   b.store.sound=1;b.bgmSync();assert.equal(b.snd.bgm.paused,false);
 });
 
-test('donate: three buttons open a chooser; KakaoPay first in ko, Ko-fi first elsewhere; KakaoPay shows the QR view',()=>{
+test('donate: header/footer stay visible while the result prompt waits for a daily personal best; chooser orders and opens both methods',()=>{
   const a=boot({v:4,lang:'ko'});
   for(const l of ['ko','en','ja']){
     a.setLang(l);const h=a.get('donateOptions').innerHTML, kakao=h.indexOf('data-opt="kakao"'), kofi=h.indexOf('data-opt="kofi"');
     assert.ok(kakao>=0&&kofi>=0,l+' both options');assert.equal(kakao<kofi,l==='ko',l+' order');
     assert.ok(h.includes('href="https://ko-fi.com/'),l+' ko-fi https link');assert.doesNotMatch(h,/donate.[a-zA-Z]+</,l+' no raw keys');
-    for(const id of ['donate','donateShare','donateTop']) assert.equal(a.get(id).hidden,false,l+' '+id+' visible');
+    for(const id of ['donate','donateTop']) assert.equal(a.get(id).hidden,false,l+' '+id+' visible');
+    assert.equal(a.get('donateShare').hidden,true,l+' result prompt hidden without a personal best');
   }
   for(const id of ['donateTop','donateShareBtn','donateBtn']) assert.ok(html.includes('id="'+id+'" type="button"'),id+' is a button');
   assert.ok(html.indexOf('id="donateShareBtn"')>html.indexOf('id="shareDlg"')&&html.indexOf('id="donateShareBtn"')<html.indexOf('id="donateDlg"'),'result-dialog button lives inside #shareDlg (not on the canvas)');
@@ -804,70 +957,58 @@ test('donate: three buttons open a chooser; KakaoPay first in ko, Ko-fi first el
   assert.ok(fs.existsSync(require('node:path').join(__dirname,'..','donate-kakao.png')),'QR image exists');
 });
 
-test('touch pad: dead zone is neutral, 45° sectors map to 8 directions, and a rolled f,N,d,df + 2 judges as EWGF through the normal path',()=>{
+test('three touch direction buttons combine down+side into diagonals and feed the normal EWGF path',()=>{
   const a=boot();
-  assert.equal(a.touchVec(0.1,0.15,1000),'n');            // inside the dead zone
-  assert.equal(a.touchVec(1,0,1000),'f');
-  assert.equal(a.touchVec(0,0,1020),'n');
-  assert.equal(a.touchVec(0.3,-0.9,1040),'d');            // 18° off straight down stays d (sector edge is 22.5°)
-  assert.equal(a.touchVec(0.7,-0.7,1060),'df');
+  assert.equal(a.touchKeys([],990),'n');
+  assert.equal(a.touchKeys(['right'],1000),'f');
+  assert.equal(a.touchKeys([],1020),'n');
+  assert.equal(a.touchKeys(['down'],1040),'d');
+  assert.equal(a.touchKeys(['down','right'],1060),'df');
   a.touchPress(2,1064);
   assert.equal(a.session.attempts.length,1);
   assert.equal(a.session.attempts[0].kind,'ewgf');
   assert.equal(a.session.attempts[0].off,4);
   assert.equal(a.get('srcBadge').textContent,a.T('src.touch'));
-  assert.equal(a.touchVec(-1,0,1100),'b');
-  assert.equal(a.touchVec(0.5,0.5,1120),'uf');
-  assert.equal(a.touchVec(-0.4,-0.9,1140),'db');
+  assert.equal(a.touchKeys(['left'],1100),'b');
+  assert.equal(a.touchKeys(['down','left'],1140),'db');
+  assert.equal(a.touchKeys(['left','right'],1160),'n','opposite horizontal buttons cancel each other');
   const p2=boot({v:4,side:-1});                            // 2P: screen right is back
-  assert.equal(p2.touchVec(1,0,1000),'b');
+  assert.equal(p2.touchKeys(['right'],1000),'b');
 });
 
 test('touch input pauses behind modals and is cleared by blur; the setting survives reload only with valid values',()=>{
   const a=boot();
-  a.touchVec(1,0,1000);a.touchVec(0,0,1020);a.touchVec(0,-1,1040);a.touchVec(0.7,-0.7,1060);
+  a.touchKeys(['right'],1000);a.touchKeys([],1020);a.touchKeys(['down'],1040);a.touchKeys(['down','right'],1060);
   a.get('setDlg').showModal(); a.touchPress(2,1064);
   assert.equal(a.session.attempts.length,0);              // button ignored while settings are open
   a.get('setDlg').open=false;
-  a.touchVec(1,0,2000); a.events.blur();                  // blur resets every source, including the on-screen pad
+  a.touchKeys(['right'],2000); a.events.blur();            // blur resets every source, including the on-screen buttons
   assert.equal(a.cd.state,0);
-  assert.equal(a.touchVec(1,0,3000),'f'); assert.equal(a.cd.state,1);
+  assert.equal(a.touchKeys(['right'],3000),'f'); assert.equal(a.cd.state,1);
   assert.equal(boot().store.touch,'auto');
   assert.equal(boot({v:4,touch:'on'}).store.touch,'on');
   assert.equal(boot({v:4,touch:'off'}).store.touch,'off');
   assert.equal(boot({v:4,touch:'yes'}).store.touch,'auto');
+  const tuned=boot({v:4,touchSize:130,touchX:65,touchY:35});
+  assert.equal(tuned.store.touchSize,130);assert.equal(tuned.store.touchX,65);assert.equal(tuned.store.touchY,35);
+  tuned.get('touchSize').value='120';tuned.get('touchSize').input();tuned.get('touchX').value='40';tuned.get('touchX').input();tuned.get('touchY').value='60';tuned.get('touchY').input();
+  assert.equal(tuned.store.touchSize,120);assert.equal(tuned.store.touchX,40);assert.equal(tuned.store.touchY,60);assert.equal(tuned.get('touchSizeOut').textContent,'120%');
+  assert.match(tuned.get('tdirs').style.left,/px$/);assert.match(tuned.get('tdirs').style.bottom,/px$/);
+  for(const bad of [{touchSize:131},{touchX:-5},{touchY:101},{touchSize:'100'}]){ const b=boot({v:4,...bad}); assert.equal(b.store.touchSize,100);assert.equal(b.store.touchX,0);assert.equal(b.store.touchY,0); }
   assert.doesNotThrow(()=>{const b=boot({v:4,touch:'on'}); b.applyTouchUI();});
   assert.match(html,/<meta name="viewport" content="width=device-width/);
   assert.match(html,/^<!doctype html>\s*(<!--[\s\S]*?-->\s*)?<html lang="ko">/i);
 });
 
-test('touch UI: idle badge says touch, the pad label follows 2P facing, and reset clears the label before the finger lifts',()=>{
+test('touch UI: idle badge follows the active input type and blur clears held direction buttons',()=>{
   const on=boot({v:4,touch:'on',lang:'ko'});
   assert.equal(on.get('srcBadge').textContent,'👆 터치 대기');
   on.setLang('en');assert.equal(on.get('srcBadge').textContent,'👆 Touch ready');
   assert.equal(boot({v:4,lang:'en'}).get('srcBadge').textContent,'⌨ Keyboard ready');
-  const p2=boot({v:4,side:-1});                            // 2P: a thumb pushed to screen right is back, and the pad arrow must point right like the chip strip
-  const rect=()=>({left:0,top:0,width:200,height:200}), ev=(id,x,y,t)=>({pointerId:id,clientX:100+x*100,clientY:100-y*100,timeStamp:t,preventDefault(){}}); // pad-relative x,y in -1..1, +y up
-  p2.get('tpad').getBoundingClientRect=rect;
-  p2.get('tpad').pointerdown(ev(1,1,0,1000));
-  assert.equal(p2.get('tdir').textContent,'→');
-  assert.equal(p2.session.attempts.length,0);
-  p2.get('tpad').pointermove(ev(1,0,1,1020));             // up
-  assert.equal(p2.get('tdir').textContent,'↑');
-  p2.get('tpad').pointermove(ev(1,5,0,1040));             // far outside the pad: clamped, still back, knob within the pad radius
-  assert.equal(p2.get('tdir').textContent,'→');
-  assert.match(p2.get('tknob').style.transform,/\+ 248\.0px\)/);  // 400·0.62 (clientWidth 800 → R 400), not 5×
-  p2.events.blur();                                         // app switch while the thumb is down
-  assert.equal(p2.get('tdir').textContent,'');
-  assert.equal(p2.cd.state,0);
-  p2.get('tpad').pointerup(ev(1,5,0,1060));                // the eventual lift is ignored (pad no longer owned) and changes nothing
-  assert.equal(p2.get('tdir').textContent,'');
-  const a=boot();                                          // a modal opened while the thumb is down: moves stop feeding onDir until the finger lifts
-  a.get('tpad').getBoundingClientRect=rect;
-  a.get('tpad').pointerdown(ev(1,1,0,1000));assert.equal(a.cd.state,1);
-  a.get('setDlg').showModal();
-  a.get('tpad').pointermove(ev(1,0,-1,1020));
-  assert.equal(a.session.attempts.length,0);assert.equal(a.cd.state,1);
+  const p2=boot({v:4,side:-1});
+  p2.touchKeys(['right'],1000);assert.equal(p2.cd.state,0,'screen right is back for 2P');
+  p2.events.blur();assert.equal(p2.touchKeys([],1020),'n');assert.equal(p2.cd.state,0);
+  assert.match(html,/id="tdirs"[\s\S]*data-dir="left"[\s\S]*data-dir="down"[\s\S]*data-dir="right"/);
 });
 
 test('wave chart top band and coach tempo follow the wave10 top-10% cut (cut10), falling back to 5 dashes/s',()=>{
@@ -886,39 +1027,32 @@ test('wave chart top band and coach tempo follow the wave10 top-10% cut (cut10),
 });
 
 
-test('wave cut never expires (no board reset): the periodic refresh refetches it once it is 10 minutes old, keeps the last value on failure and never changes tabs',async()=>{
-  let wall=Date.parse('2026-09-14T03:00:00Z');
-  const b=backend(),a=boot({v:4,lang:'ko'},b.fetch,{Date:class extends Date{static now(){return wall;}}});
-  b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:8.5});await b.flush();
-  const refresh=[...a.timers.values()].find(fn=>String(fn).includes('waveRefresh()'));
-  assert.ok(refresh);a.board.tab='rush30';
-  dash(a);for(const t of [1100,1300]){a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}
-  assert.equal(a.waveTop(),8.5);
-  refresh();assert.equal(b.find('/top?board=wave10'),undefined,'fresh data needs no refetch');
-  wall+=10*60e3-1;refresh();assert.equal(b.find('/top?board=wave10'),undefined,'still fresh just under the TTL');
-  wall+=1;assert.equal(a.waveTop(),8.5,'a stale cut stays in use: nothing to fall back to, the board never reset');
-  refresh();assert.ok(b.find('/top?board=wave10'),'stale → background refetch');assert.match(a.get('waveChart').innerHTML,/상위 10% \(8\.5 이상\)/,'the band stays while the request is pending');
-  const count=b.calls.filter(c=>c.url.includes('/top?board=wave10')).length;
-  refresh();assert.equal(b.calls.filter(c=>c.url.includes('/top?board=wave10')).length,count,'only one background request in flight');
-  b.answer('/top?board=wave10','GET',{},500);await b.flush();assert.equal(a.waveTop(),8.5,'a failed refetch keeps the last value');
-  refresh();b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:6.2});await b.flush();
-  assert.equal(a.waveTop(),6.2);assert.equal(a.board.tab,'rush30');
-  assert.match(a.get('waveChart').innerHTML,/상위 10% \(6\.2 이상\)/);
-  assert.equal(a.buildCard(a.shareSource()).chart.top,6.2);
-  refresh();assert.equal(b.find('/top?board=wave10'),undefined,'fresh again after the answer');
+test('backend does no recurring D1 reads; shoutbox refresh is explicit and the last wave cut stays cached',async()=>{
+  const b=backend(),a=boot({v:4,lang:'ko'},b.fetch);
+  b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:8.5});
+  b.answer('/posts','GET',{rows:[]}); b.answer('/visits','POST',{day:'x',today:1,total:1}); await b.flush();
+  const before=b.calls.length, periodic=[...a.timers.values()].find(fn=>String(fn).includes('bumpVisitDay()'));
+  assert.ok(periodic,'the local KST-day rollover timer remains');
+  for(let i=0;i<20;i++) periodic();
+  assert.equal(b.calls.length,before,'the timer does not poll rankings, posts or visits during the same KST day');
+  assert.equal(a.waveTop(),8.5,'the last successful cut remains cached until a user action or submission updates it');
+  assert.equal(a.get('postsRefresh').disabled,false); assert.equal(a.get('postsRefresh').textContent,'새로고침');
+  a.get('postsRefresh').click(); await b.flush();
+  assert.equal(b.calls.filter(c=>c.url.endsWith('/posts')).length,2,'the refresh button performs exactly one new posts request');
+  assert.equal(a.get('postsRefresh').disabled,true); assert.equal(a.get('postsRefresh').textContent,'불러오는 중…');
+  a.get('postsRefresh').click(); await b.flush();
+  assert.equal(b.calls.filter(c=>c.url.endsWith('/posts')).length,2,'repeat clicks are ignored while loading');
+  b.answer('/posts','GET',{rows:[]}); await b.flush();
+  assert.equal(a.get('postsRefresh').disabled,false); assert.equal(a.get('postsRefresh').textContent,'새로고침');
+  a.setLang('en'); assert.equal(a.get('postsRefresh').textContent,'Refresh');
 });
-
-test('background wave refresh preserves newer board data and ignores nickname changes',async()=>{
-  for(const change of ['data','nick']){
-    const b=backend(),a=boot({v:4,lang:'ko'},b.fetch);
-    b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:8.5});await b.flush();a.board.at.wave10=0; // stale → the next refresh refetches
-    const refresh=[...a.timers.values()].find(fn=>String(fn).includes('waveRefresh()'));
-    refresh();
-    if(change==='data')a.board.data.wave10={...topRes('x'),cut10:7};
-    else a.store.nick='new';
-    b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:6});await b.flush();
-    assert.equal(a.waveTop(),change==='data'?7:8.5,'the late response is dropped; the last good cut stays (no reset to fall back to)');
-  }
+test('shoutbox explains only a real D1 quota failure in plain language',async()=>{
+  const b=backend(),a=boot({v:4,lang:'ko'},b.fetch);
+  b.answer('/top?board=wave10','GET',{...topRes('x'),cut10:8.5});
+  b.answer('/posts','GET',{error:'quota'},503); b.answer('/visits','POST',{day:'x',today:1,total:1}); await b.flush();
+  assert.equal(a.get('postMsg').textContent,'오늘 무료 서버 사용량을 다 써서 한마디를 이용할 수 없습니다. 더 좋은 서버를 쓰려면 후원이 절실합니다 ㅜㅜ');
+  a.get('postsRefresh').click(); await b.flush(); b.answer('/posts','GET',{rows:[]}); await b.flush();
+  assert.equal(a.get('postMsg').textContent,'','a later successful refresh clears the quota notice');
 });
 /* ---------- 옷장·업적 (wardrobe + achievements, 4-9) ---------- */
 const J=x=>JSON.parse(JSON.stringify(x));

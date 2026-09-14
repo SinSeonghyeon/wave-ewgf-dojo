@@ -2,7 +2,7 @@
 // Launches headless Chrome over CDP (tools/cdp.js, no npm deps), loads index.html, feeds a 6N23+2 via keyboard,
 // switches ko/en/ja, runs a wave10 trial in ja, opens the share card, then exercises the backend UI against the real worker/index.js
 // handler served over local http with tests/fake-d1.js (first-run nickname gate incl. a taken name, auto-submit + result card with the
-// tier banner after each trial, shoutbox post, nickname change, visit counter, ko re-render) and fails if any JS error was logged.
+// tier banner after each trial, shoutbox post/reply/reaction, nickname change, visit counter, ko re-render) and fails if any JS error was logged.
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -37,15 +37,25 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   // Point a scratch copy of the app at the local worker (BOARD_URL is a const in the shipped file; the copy is never committed).
   const src = fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   if(!/const BOARD_URL = '[^']*';/.test(src)) throw new Error('BOARD_URL constant not found in index.html');
-  dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html');
-  fs.writeFileSync(page, src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`));
+  const noticeMatch = src.match(/const NOTICES = \[\s*\{id:'([^']+)'/);
+  if(!noticeMatch) throw new Error('latest notice id not found in index.html');
+  const latestNoticeId = noticeMatch[1], returningNoticeId = latestNoticeId+'-smoke-new';
+  dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html'), returningPage = path.join(dir,'returning.html');
+  const scratchSrc = src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`);
+  fs.writeFileSync(page, scratchSrc); fs.writeFileSync(returningPage, scratchSrc.replace(`{id:'${latestNoticeId}'`, `{id:'${returningNoticeId}'`));
   for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','donate-kakao.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
   try{ fs.rmSync(path.join(os.tmpdir(),'dojo-smoke-profile'),{recursive:true,force:true}); }catch(e){} // fresh localStorage every run (a navigation at the end of the run flushes it to disk)
   const b = await launch({port:9333, profile:'dojo-smoke-profile'});
   browser = b;
   console.log('Smoke: browser connected');
   const {send, evalJs, errors} = b;
-  await b.navigate(fileUrl(page));
+  const waitFor = async (expr, timeout=5000) => {
+    const until=Date.now()+timeout;
+    while(Date.now()<until){ try{ if(await evalJs(expr)) return; }catch(e){ if(!/Execution context was destroyed|Cannot find context/.test(String(e))) throw e; } await sleep(100); }
+    throw new Error('browser condition timed out: '+expr);
+  };
+  await b.navigate(fileUrl(page), 0);
+  await waitFor(`location.pathname.endsWith('/index.html') && !!document.querySelector('#noticeDlg') && document.querySelector('#nickDlg')?.open && !document.querySelector('#nickBtn')?.hidden`);
   const out = {};
   const snap = async () => evalJs(`(() => {
     const q=s=>document.querySelector(s); const css=getComputedStyle(document.documentElement);
@@ -61,6 +71,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   const key = async (code, type='keydown') => send('Input.dispatchKeyEvent',{type: type==='keydown'?'keyDown':'keyUp', code, key: code.replace('Key','').toLowerCase(), windowsVirtualKeyCode: code.charCodeAt(code.length-1)});
   const tap = async (code, hold=20) => { await key(code); await sleep(hold); await key(code,'keyup'); };
   const q = s => `document.querySelector('${s}')`;
+  const waitForSelector = async (selector, ms=4000) => { const until=Date.now()+ms; while(Date.now()<until){ if(await evalJs(`!!${q(selector)}`)) return; await sleep(100); } throw new Error('Timed out waiting for '+selector+'; postMsg='+(await evalJs(`${q('#postMsg')}?.textContent`))); };
   // nickname gate (first visit): modal open, game keys ignored while it is up, Escape does not close it, a taken name is refused, a free one starts the app
   out.gate = {open:await evalJs(`${q('#nickDlg')}.open`), closeHidden:await evalJs(`${q('#nickClose')}.hidden`), laterHidden:await evalJs(`${q('#nickLater')}.hidden`), btn:await evalJs(`({hidden:${q('#nickBtn')}.hidden, text:${q('#nickBtn')}.textContent})`)};
   await tap('KeyD',20); await sleep(150); out.gate.inputsWhileOpen = await evalJs(`document.querySelectorAll('#inputs .chip').length`);
@@ -70,9 +81,26 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await evalJs(`${q('#nickInput')}.value=' 점유됨 '; ${q('#nickSubmit')}.click()`); await sleep(800); out.gate.taken = await evalJs(`({msg:${q('#nickMsg')}.textContent, open:${q('#nickDlg')}.open})`);
   await evalJs(`${q('#nickInput')}.value='스모크 테스트'; ${q('#nickSubmit')}.click()`); await sleep(800);
   out.gate.after = await evalJs(`({open:${q('#nickDlg')}.open, btn:${q('#nickBtn')}.textContent, postNick:${q('#postNickLabel')}.textContent, stored:(s=>({nick:s.nick, token:s.nickToken}))(JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')))})`);
-  { const i = errors.findIndex(e => /status of 409/.test(e)); if(i>=0) errors.splice(i,1); } // Chrome logs the intentional 'taken' 409 as a resource error
+  for(let i=errors.length-1;i>=0;i--) if(/status of 409/.test(errors[i])) errors.splice(i,1); // Chrome may log the one intentional 'taken' response more than once
   if(!out.gate.open || !out.gate.closeHidden || !out.gate.laterHidden || out.gate.btn.hidden || !out.gate.btn.text || /·/.test(out.gate.btn.text) || out.gate.inputsWhileOpen!==0 || !out.gate.afterEscape || !out.gate.short || !out.gate.taken.msg || out.gate.taken.msg===out.gate.short || !out.gate.taken.open
      || out.gate.after.open || !/스모크 테스트/.test(out.gate.after.btn) || out.gate.after.postNick!=='스모크 테스트' || out.gate.after.stored.nick!=='스모크 테스트' || !/^[0-9a-f]{48}$/.test(out.gate.after.stored.token)) errors.push('nickname gate check failed: '+JSON.stringify(out.gate));
+  // announcements: unread badge → modal patch notes → browser-local read marker, with no automatic popup
+  await waitFor(`!!document.querySelector('#noticeBadge') && !!document.querySelector('#noticeDlg')`);
+  out.notice = await evalJs(`(() => { const q=s=>document.querySelector(s); return {badge:!q('#noticeBadge').hidden,open:q('#noticeDlg').open}; })()`);
+  out.notice.latest = latestNoticeId;
+  await evalJs(`document.querySelector('#noticeOpen').click()`); await sleep(100);
+  Object.assign(out.notice, await evalJs(`(() => { const q=s=>document.querySelector(s),st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1'));return {afterOpen:q('#noticeDlg').open,items:q('#noticeList').children.length,title:q('#noticeList h3').textContent,seen:st.noticeSeen,badgeAfter:!q('#noticeBadge').hidden}; })()`));
+  await evalJs(`document.querySelector('#noticeClose').click()`); await sleep(50); out.notice.closed = !(await evalJs(`document.querySelector('#noticeDlg').open`));
+  if(!out.notice.latest || !out.notice.badge || out.notice.open || !out.notice.afterOpen || out.notice.items<1 || !out.notice.title || out.notice.seen!==out.notice.latest || out.notice.badgeAfter || !out.notice.closed) errors.push('announcement check failed: '+JSON.stringify(out.notice));
+  // On a later visit, an unread latest id opens once after boot; the nickname gate is skipped because this is now a returning browser.
+  await b.navigate(fileUrl(returningPage), 0);
+  await waitFor(`location.pathname.endsWith('/returning.html') && !!document.querySelector('#noticeDlg')`);
+  try{ await waitFor(`document.querySelector('#noticeDlg').open`, 3000); }
+  catch(e){ e.message += '; noticeState=' + JSON.stringify(await evalJs(`(() => { const ids=['nickDlg','shareDlg','setDlg','donateDlg','fitDlg','noticeDlg']; const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')); return {dialogs:Object.fromEntries(ids.map(id=>[id,document.querySelector('#'+id).open])),seen:st.noticeSeen,nick:st.nick,hidden:document.hidden}; })()`)); throw e; }
+  out.notice.returning = await evalJs(`({open:document.querySelector('#noticeDlg').open,seen:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).noticeSeen,nickOpen:document.querySelector('#nickDlg').open})`);
+  out.notice.returning.latest = returningNoticeId;
+  await evalJs(`document.querySelector('#noticeClose').click()`);
+  if(!out.notice.returning.latest || !out.notice.returning.open || out.notice.returning.seen!==out.notice.returning.latest || out.notice.returning.nickOpen) errors.push('returning visitor announcement failed: '+JSON.stringify(out.notice.returning));
   // simulate a few inputs via keyboard events to populate result/coach/log, then switch languages
   await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(5); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(300);
   out.afterInput = await snap();
@@ -83,10 +111,14 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.sound.headerOff = await soundSnap();
   await evalJs(`document.querySelector('#bgmBtn').click()`);
   out.sound.headerOn = await soundSnap();
-  await evalJs(`document.querySelector('#setOpen').click(); document.querySelector('#bgmSel button[data-bgm="0"]').click()`);
+  await evalJs(`document.querySelector('#setOpen').click()`);
+  await evalJs(`document.querySelector('#bgmSel button[data-bgm="0"]').click()`);
+  await evalJs(`(() => { const b=document.querySelector('#keys .key-bind[data-k="right"][data-alt="1"]'); if(!b) throw new Error('alternate key slot missing: '+document.querySelector('#keys').innerHTML); b.click(); })()`);
+  await tap('KeyO');
+  out.altKey = await evalJs(`({text:document.querySelector('#keys .key-bind[data-k="right"][data-alt="1"] b').textContent,stored:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).altKeys.right})`);
   out.sound.settingsOff = await soundSnap();
   await evalJs(`document.querySelector('#setClose').click()`);
-  await b.navigate(fileUrl(page), 700);
+  await b.navigate(fileUrl(returningPage), 700);
   out.sound.reloadedOff = await soundSnap();
   await evalJs(`document.querySelector('#setOpen').click(); document.querySelector('#bgmSel button[data-bgm="1"]').click(); document.querySelector('#setClose').click()`);
   out.sound.settingsOn = await soundSnap();
@@ -124,6 +156,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await evalJs(`document.querySelector('#fitClose').click()`); await sleep(150);
   if(!(await evalJs(`document.querySelector('#jackpot').hidden`))) errors.push('dialog close auto-opened a reward');
   // Keyboard activation, same path as clicking the chest.
+  try{ await waitFor(`!document.querySelector('#rewardOpen').disabled`); }
+  catch(e){ e.message += '; rewardState=' + JSON.stringify(await evalJs(`(() => { const ids=['nickDlg','shareDlg','setDlg','donateDlg','fitDlg','noticeDlg'], st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')); return {dialogs:Object.fromEntries(ids.map(id=>[id,document.querySelector('#'+id).open])),pending:st.pendingRewards.length,title:document.querySelector('#rewardOpen').title}; })()`)); throw e; }
   await evalJs(`document.querySelector('#rewardOpen').focus()`);
   await send('Input.dispatchKeyEvent',{type:'keyDown',code:'Enter',key:'Enter',text:'\r',windowsVirtualKeyCode:13});
   await send('Input.dispatchKeyEvent',{type:'keyUp',code:'Enter',key:'Enter',windowsVirtualKeyCode:13});
@@ -143,14 +177,14 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(out.fit.wardrobe.head!=='bowl_head' || !out.fit.wardrobe.changed || out.fit.wardrobe.rows!==25 || out.fit.wardrobe.done<1) errors.push('claimed wardrobe check failed: '+JSON.stringify(out.fit.wardrobe));
   await evalJs(`document.querySelector('#fitClose').click()`);
   await evalJs(`document.querySelector('#soundSel button[data-sound=\"0\"]').click()`); await sleep(100);
-  await evalJs(`const s=document.querySelector('#sfxVol'); s.value=30; s.dispatchEvent(new Event('input')); s.dispatchEvent(new Event('change'))`); await sleep(100);
+  await evalJs(`(() => { const s=document.querySelector('#sfxVol'); s.value=30; s.dispatchEvent(new Event('input')); s.dispatchEvent(new Event('change')); })()`); await sleep(100);
   out.sound.off = await soundSnap();
   await evalJs(`document.querySelector('#soundSel button[data-sound=\"1\"]').click()`); await sleep(100);
   await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(5); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(400);
   out.sound.on = await soundSnap();
   // f,N,f double tap → dash visual in a real browser (no judging change)
-  await tap('KeyD',20); await sleep(40); await tap('KeyD',20); await sleep(100);
-  out.dash = await evalJs(`document.querySelector('#rTitle').textContent`);
+  await tap('KeyO',20); await sleep(40); await tap('KeyO',20); await sleep(100);
+  out.altUse = await evalJs(`[...document.querySelectorAll('#inputs .chip .g')].slice(-4).map(x=>x.textContent).join('')`);
   // f,f+2 and 6N23+4 in free practice, then a rush30 trial: a crouch dash scores, the HUD shows points, leaving the mode clears it without a record (2026-09-13)
   await sleep(700); await tap('KeyD',20); await sleep(40); await key('KeyD'); await sleep(30); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await sleep(300);
   out.moves = {tongbal: await evalJs(`${q('#rTitle')}.textContent`)};
@@ -173,6 +207,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
      || !/^\d+\.\d$/.test(out.moves.bdEnd.timer) || out.moves.bdLeft.score!=='' || out.moves.bdLeft.records!==0) errors.push('bd10 check failed: '+JSON.stringify({bd:out.moves.bd, bdEnd:out.moves.bdEnd, bdLeft:out.moves.bdLeft}));
   if(!/f,f\+2|통발|66\+2/.test(out.moves.tongbal) || !/Hell Sweep|나락|奈落/.test(out.moves.sweep.title) || !/Move/.test(out.moves.sweep.log) || out.moves.rush.score!=='1 PTS' || !/^1 /.test(out.moves.rush.prog) || !/^\d+\.\d$/.test(out.moves.rush.timer)
      || !/6N23\+4/.test(out.moves.rush.hint) || out.moves.rush.modes!==6 || out.moves.left.score!=='' || out.moves.left.records!==0) errors.push('f,f+2 / hell sweep / rush30 check failed: '+JSON.stringify(out.moves));
+  if(out.altKey.text!=='O' || out.altKey.stored!=='KeyO' || out.altUse!=='→★→★') errors.push('alternate key binding failed: '+JSON.stringify({altKey:out.altKey,use:out.altUse}));
   if(out.sound.off.on!=='0' || out.sound.off.stSound!==0 || out.sound.off.stSfx!==30 || !out.sound.off.disabled || out.sound.on.on!=='1' || out.sound.on.disabled) errors.push('sound settings check failed: '+JSON.stringify(out.sound));
   for(const l of ['en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);
@@ -227,77 +262,95 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await sleep(400);
   out.board.auto.after = await evalJs(`({rank:${q('#dRank')}.textContent, me:${q('#boardMe')}.textContent, rows:document.querySelectorAll('#boardList tbody tr').length, open:${q('#shareDlg')}.open, line:${q('#shareRankLine')}.textContent, tier:${q('#shareTier')}.textContent})`);
   await evalJs(`${q('#shareClose')}.click()`); await sleep(100);
+  // the highlighted owner row alone has Delete; confirming removes only this nickname's wave10 row and refreshes the board response
+  for(let i=0;i<30;i++){ if(await evalJs(`!!${q('#boardList .board-delete')}`)) break; await sleep(300); }
+  await evalJs(`(() => { window.confirm=()=>true; const b=${q('#boardList .board-delete')}; if(!b) throw new Error('owner delete button did not appear'); b.click(); })()`); await sleep(800);
+  out.board.deleted = await evalJs(`({msg:${q('#boardMsg')}.textContent, me:${q('#boardMe')}.textContent, rows:document.querySelectorAll('#boardList tbody tr').length, button:!!${q('#boardList .board-delete')}})`);
+  out.board.deleted.db = db.rows.length;
   await evalJs(`${q('#boardTabs button[data-board="ewgf20"]')}.click()`); await sleep(800);
   out.board.ewgfTab = await evalJs(`({empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, pressed:${q('#boardTabs button[data-board="ewgf20"]')}.getAttribute('aria-pressed')})`);
   // shoutbox: empty → post one line under the claimed nickname → shows; change the nickname through the header button → label follows
   out.posts = {empty:await evalJs(`${q('#postList .empty')}?.textContent`)};
-  await evalJs(`${q('#postText')}.value='  스모크   테스트 글 '; ${q('#postSend')}.click()`); await sleep(1000);
+  await evalJs(`${q('#postText')}.value='  스모크   테스트 글 '; ${q('#postSend')}.click()`); await waitForSelector('#postList .vote[data-v="1"]');
   out.posts.after = await evalJs(`({msg:${q('#postMsg')}.textContent, text:${q('#postText')}.value, items:[...document.querySelectorAll('#postList .post')].map(p=>[p.querySelector('b').textContent, p.querySelector('p').textContent])})`);
   // like → count 1 and marked as mine (server row under my nick) → like again cancels → dislike
   const voteState = () => evalJs(`[...document.querySelectorAll('#postList .vote')].map(b=>b.textContent+':'+b.getAttribute('aria-pressed'))`);
   await evalJs(`${q('#postList .vote[data-v="1"]')}.click()`); await sleep(600); out.posts.like = {ui:await voteState(), db:db.votes.map(v => [v.post_id, v.key, v.v])};
   await evalJs(`${q('#postList .vote[data-v="1"]')}.click()`); await sleep(600); out.posts.unlike = {ui:await voteState(), db:db.votes.length};
   await evalJs(`${q('#postList .vote[data-v="-1"]')}.click()`); await sleep(600); out.posts.dislike = {ui:await voteState(), db:db.votes.map(v => [v.post_id, v.key, v.v]), msg:await evalJs(`${q('#postMsg')}.textContent`)};
+  // open the inline reply form and add one reply; it should remain nested under the original post
+  await evalJs(`${q('#postList .reply-open')}.click()`); await waitForSelector('#postList .reply-form input');
+  await evalJs(`${q('#postList .reply-form input')}.value='  스모크   답글 '; ${q('#postList .reply-form')}.requestSubmit()`); await waitForSelector('#postList .reply');
+  out.posts.reply = await evalJs(`({msg:${q('#postMsg')}.textContent, count:${q('#postList .reply-open')}.textContent, replies:[...document.querySelectorAll('#postList .reply')].map(r=>[r.querySelector('b').textContent,r.querySelector('p').textContent]), form:!!${q('#postList .reply-form')}})`);
   await evalJs(`${q('#nickBtn')}.click()`); await sleep(150);
   out.nick2 = {open:await evalJs(`${q('#nickDlg')}.open`), closeHidden:await evalJs(`${q('#nickClose')}.hidden`), prefilled:await evalJs(`${q('#nickInput')}.value`)};
   await evalJs(`${q('#nickInput')}.value='스모크2'; ${q('#nickSubmit')}.click()`); await sleep(800);
   out.nick2.after = await evalJs(`({open:${q('#nickDlg')}.open, btn:${q('#nickBtn')}.textContent, postNick:${q('#postNickLabel')}.textContent, me:${q('#boardMe')}.textContent})`);
   await evalJs(`${q('#langSel button[data-lang="ko"]')}.click()`); await sleep(300);
   out.ko2 = await evalJs(`({title:${q('#boardCard h2')}.textContent, empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, rank:${q('#dRank')}.textContent, visits:${q('#visits')}.textContent, postsTitle:${q('#postsCard h2')}.textContent, nickBtn:${q('#nickBtn')}.textContent})`);
-  out.db = {scores:db.rows.map(r => ({board:r.board, nick:r.nick, score:r.score, tie:r.tie, win:r.win, week:r.week})), posts:db.posts.map(p => [p.nick, p.text]), visits:db.visits, nicks:db.db.prepare('SELECT key,nick FROM nicks ORDER BY key').all().map(r => [r.key, r.nick])};
+  out.db = {scores:db.rows.map(r => ({board:r.board, nick:r.nick, score:r.score, tie:r.tie, win:r.win, week:r.week})), posts:db.posts.map(p => [p.nick, p.text]), replies:db.replies.map(r => [r.post_id,r.nick,r.text]), visits:db.visits, nicks:db.db.prepare('SELECT key,nick FROM nicks ORDER BY key').all().map(r => [r.key, r.nick])};
   const bd = out.board, auto = bd.auto;
   if(bd.tabs.length!==5 || !/rush30|Dummy Rush/.test(bd.tabs[3]||'') || !/bd10|Backdash/.test(bd.tabs[4]||'')) errors.push('leaderboard tabs check failed: '+JSON.stringify(bd.tabs));
   if(bd.cardHidden || bd.postsHidden || !/rank 1 of 1 · top 100%/.test(bd.rank) || !bd.retryHidden || bd.info!=='1 entries' || !/rank 1 of 1 · top 100%/.test(bd.me) || !bd.meRow || bd.rows.length!==1 || bd.rows[0][1]!=='스모크 테스트' || bd.rows[0][0]!=='1' || !/^Today 1 · total 1 visits$/.test(bd.visits)) errors.push('leaderboard check failed: '+JSON.stringify(bd));
   if(!auto || auto.during.rank!=='' || auto.during.open || !/best stands · rank 1 of 1/.test(auto.after.rank) || auto.after.rows!==1 || !auto.after.open || !/best stands/.test(auto.after.line) || auto.after.tier!=='S') errors.push('leaderboard auto-submit check failed: '+JSON.stringify(auto));
+  if(!bd.deleted || bd.deleted.msg!=='Your result was deleted.' || !/No entry from you/.test(bd.deleted.me) || bd.deleted.rows!==0 || bd.deleted.button || bd.deleted.db!==0) errors.push('leaderboard self-delete check failed: '+JSON.stringify(bd.deleted));
   if(!bd.ewgfTab.empty || !/No entry from you/.test(bd.ewgfTab.me) || bd.ewgfTab.pressed!=='true') errors.push('leaderboard tab check failed: '+JSON.stringify(bd.ewgfTab));
   if(!out.posts.empty || out.posts.after.msg!=='' || out.posts.after.text!=='' || JSON.stringify(out.posts.after.items)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']])) errors.push('shoutbox check failed: '+JSON.stringify(out.posts));
   const votes = {like:JSON.stringify(out.posts.like), unlike:JSON.stringify(out.posts.unlike), dislike:JSON.stringify(out.posts.dislike)};
   if(votes.like!==JSON.stringify({ui:['👍 1:true','👎 0:false'], db:[[1,'스모크 테스트',1]]}) || votes.unlike!==JSON.stringify({ui:['👍 0:false','👎 0:false'], db:0}) || votes.dislike!==JSON.stringify({ui:['👍 0:false','👎 1:true'], db:[[1,'스모크 테스트',-1]], msg:''})) errors.push('post votes check failed: '+JSON.stringify(votes));
+  if(out.posts.reply.msg!=='' || !/Replies 1/.test(out.posts.reply.count) || JSON.stringify(out.posts.reply.replies)!==JSON.stringify([['스모크 테스트','스모크 답글']]) || out.posts.reply.form) errors.push('post reply check failed: '+JSON.stringify(out.posts.reply));
   if(!out.nick2.open || out.nick2.closeHidden || out.nick2.prefilled!=='스모크 테스트' || out.nick2.after.open || !/스모크2/.test(out.nick2.after.btn) || out.nick2.after.postNick!=='스모크2' || !/No entry from you/.test(out.nick2.after.me)) errors.push('nickname change check failed: '+JSON.stringify(out.nick2));
   if(out.ko2.title!=='순위' || !/아직 기록이 없습니다/.test(out.ko2.empty||'') || !/등록한 기록이 없습니다/.test(out.ko2.me) || !/최고 기록 유지 · 1위 \/ 1명 · 상위 100%/.test(out.ko2.rank) || !/^오늘 방문 1 · 누적 1$/.test(out.ko2.visits) || out.ko2.postsTitle!=='한마디' || out.ko2.nickBtn!=='닉네임 · 스모크2') errors.push('backend ko re-render check failed: '+JSON.stringify(out.ko2));
-  if(out.db.scores.length!==1 || out.db.scores[0].board!=='wave10' || out.db.scores[0].week!=='all' || out.db.scores[0].nick!=='스모크 테스트' || out.db.scores[0].win!==12 || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
+  if(out.db.scores.length!==0 || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']]) || JSON.stringify(out.db.replies)!==JSON.stringify([[1,'스모크 테스트','스모크 답글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
      || JSON.stringify(out.db.nicks)!==JSON.stringify([['스모크 테스트','스모크 테스트'],['스모크2','스모크2'],['점유됨','점유됨']])) errors.push('backend storage check failed: '+JSON.stringify(out.db));
   for(const s of JSON.stringify([out.gate, bd, out.posts, out.nick2, out.ko2, out.trialEnd]).match(/\b(board|mode|share|rec|posts|nick|tier)\.[a-zA-Z0-9.]+/g)||[]) errors.push('raw i18n key leaked into backend UI: '+s);
-  // touch controls (4-4): phone emulation shows the overlay, a rolled f,N,d,df + 2 on the on-screen pad judges as EWGF through the normal path, desktop hides it again
+  // touch controls: three direction buttons feed the normal path; down+right forms d/f
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
   await send('Emulation.setEmulatedMedia',{features:[{name:'pointer',value:'coarse'},{name:'hover',value:'none'}]});
-  await b.navigate(fileUrl(page), 1800);
+  await b.navigate(fileUrl(returningPage), 1800);
   const tc = await evalJs(`(() => { const r = s => { const x = document.querySelector(s).getBoundingClientRect(); return {x:x.x, y:x.y, w:x.width, h:x.height}; };
     return {ui:document.documentElement.classList.contains('touch-ui'), compat:document.compatMode, width:innerWidth, scrollW:document.documentElement.scrollWidth, shown:getComputedStyle(${q('#touch')}).display,
-      stage:r('#stageBox'), pad:r('#tpad'), b2:r('#tbtns [data-btn="2"]'), note:${q('.touch-note')}.textContent, sel:${q('#touchSel [data-touch="auto"]')}.getAttribute('aria-pressed'), badge:${q('#srcBadge')}.textContent, hint:r('#hudHint'), touchTop:r('#touch').y}; })()`);
+      stage:r('#stageBox'), dirs:r('#tdirs'), btns:r('#tbtns'), left:r('#tdirs [data-dir="left"]'), down:r('#tdirs [data-dir="down"]'), right:r('#tdirs [data-dir="right"]'), b2:r('#tbtns [data-btn="2"]'), note:${q('.touch-note')}.textContent, sel:${q('#touchSel [data-touch="auto"]')}.getAttribute('aria-pressed'), badge:${q('#srcBadge')}.textContent, hint:r('#hudHint'), touchTop:r('#touch').y,
+      tune:[${q('#touchSize')}.value,${q('#touchX')}.value,${q('#touchY')}.value]}; })()`);
   tc.reward = await evalJs(`(() => { const el=document.querySelector('#rewardOpen'), r=el.getBoundingClientRect(), fit=document.querySelector('#fitOpen').getBoundingClientRect(); return {hit:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2).closest('#rewardOpen')===el,top:r.top,bottom:r.bottom,fitBottom:fit.bottom}; })()`);
   if(!tc.reward.hit || tc.reward.top<tc.reward.fitBottom || tc.reward.bottom>tc.touchTop) errors.push('portrait reward button overlap: '+JSON.stringify(tc.reward));
-  const pc = {x:tc.pad.x+tc.pad.w/2, y:tc.pad.y+tc.pad.h/2}, R = tc.pad.w/2;
+  const center = r => ({x:r.x+r.w/2,y:r.y+r.h/2}), rc=center(tc.right), dc=center(tc.down);
   const tp = (x,y,id) => ({x, y, id, radiusX:6, radiusY:6, force:1});
   const touch = (type, pts) => send('Input.dispatchTouchEvent',{type, touchPoints:pts});
-  await touch('touchStart',[tp(pc.x+R*0.7, pc.y, 1)]); await sleep(40);           // f
-  await touch('touchMove',[tp(pc.x+R*0.05, pc.y, 1)]); await sleep(30);           // N (dead zone)
-  await touch('touchMove',[tp(pc.x, pc.y+R*0.7, 1)]); await sleep(30);            // d
-  await touch('touchStart',[tp(pc.x+R*0.55, pc.y+R*0.55, 1), tp(tc.b2.x+tc.b2.w/2, tc.b2.y+tc.b2.h/2, 2)]); await sleep(40); // df + 2 in one dispatch
-  await touch('touchEnd',[tp(pc.x+R*0.55, pc.y+R*0.55, 1)]); await sleep(30); await touch('touchEnd',[]); await sleep(300);
+  await touch('touchStart',[tp(rc.x,rc.y,1)]); await sleep(40);                    // f
+  await touch('touchEnd',[]); await sleep(30);                                    // N
+  await touch('touchStart',[tp(dc.x,dc.y,1)]); await sleep(30);                    // d
+  await touch('touchStart',[tp(dc.x,dc.y,1),tp(rc.x,rc.y,2),tp(tc.b2.x+tc.b2.w/2,tc.b2.y+tc.b2.h/2,3)]); await sleep(40); // d/f + 2
+  await touch('touchEnd',[]); await sleep(300);
   // the reward card must sit above the touch overlay so 확인 is tappable on a phone (the card is centred, so its button lands in the pad zone)
-  tc.jpHit = await evalJs(`(() => { const j=document.querySelector('#jackpot'), ok=document.querySelector('#jpOk'); j.hidden=false; j.dataset.phase='reveal'; const r=ok.getBoundingClientRect(); const el=document.elementFromPoint(r.x+r.width/2, r.y+r.height/2); const pad=document.elementFromPoint(${pc.x}, ${pc.y}); j.hidden=true; delete j.dataset.phase; return {hit:el===ok, hitId:el&&el.id, inTouchZone:r.y+r.height/2>${tc.touchTop}, padStillReachable:!!pad&&!!pad.closest('#tpad')}; })()`);
+  tc.jpHit = await evalJs(`(() => { const j=document.querySelector('#jackpot'), ok=document.querySelector('#jpOk'); j.hidden=false; j.dataset.phase='reveal'; const r=ok.getBoundingClientRect(); const el=document.elementFromPoint(r.x+r.width/2, r.y+r.height/2); const pad=document.elementFromPoint(${rc.x}, ${rc.y}); j.hidden=true; delete j.dataset.phase; return {hit:el===ok, hitId:el&&el.id, inTouchZone:r.y+r.height/2>${tc.touchTop}, padStillReachable:!!pad&&!!pad.closest('#tdirs')}; })()`);
   tc.after = await evalJs(`({chips:[...document.querySelectorAll('#inputs .chip')].map(c => c.textContent.replace(/\\s+/g,'')).join(' '), title:${q('#rTitle')}.textContent, src:${q('#srcBadge')}.textContent,
-    knob:${q('#tknob')}.style.transform, dir:${q('#tdir')}.textContent, log:${q('#logBody')}.textContent.slice(0,60)})`);
+    active:document.querySelectorAll('#tdirs button.on').length, log:${q('#logBody')}.textContent.slice(0,60)})`);
+  // The default must remain usable even at the narrow supported viewport. A user-requested enlargement is intentionally not width-clamped.
+  await send('Emulation.setDeviceMetricsOverride',{width:320,height:700,deviceScaleFactor:2,mobile:true});
+  await b.navigate(fileUrl(returningPage), 1500);
+  tc.narrow = await evalJs(`(() => { const r = s => { const x=document.querySelector(s).getBoundingClientRect(); return {x:x.x,w:x.width,r:x.right}; }; return {dirs:r('#tdirs'),btns:r('#tbtns')}; })()`);
+  tc.narrowCustom = await evalJs(`(() => { const s=document.querySelector('#touchSize'); s.value='140'; s.dispatchEvent(new Event('input',{bubbles:true})); const d=document.querySelector('#tdirs').getBoundingClientRect(), b=document.querySelector('#tbtns').getBoundingClientRect(); const out={size:getComputedStyle(document.querySelector('#tdirs')).getPropertyValue('--touch-dir-size').trim(),dirs:{x:d.x,w:d.width,r:d.right},btns:{x:b.x,w:b.width,r:b.right}}; s.value='100'; s.dispatchEvent(new Event('input',{bubbles:true})); return out; })()`);
   // rotated phone: the stage widens to 16/9, pad and buttons stay inside the overlay (below the note, no overlap between them) and the mode hint sits just above it
   await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:2,mobile:true});
-  await b.navigate(fileUrl(page), 1500);
+  await b.navigate(fileUrl(returningPage), 1500);
   tc.land = await evalJs(`(() => { const r = s => { const x = document.querySelector(s).getBoundingClientRect(); return {x:x.x, y:x.y, w:x.width, h:x.height, r:x.right, b:x.bottom}; };
-    return {reward:r('#rewardOpen'), fit:r('#fitOpen'), stage:r('#stageBox'), touch:r('#touch'), note:r('.touch-note'), pad:r('#tpad'), btns:r('#tbtns'), hint:r('#hudHint'), hintShown:getComputedStyle(${q('#hudHint')}).display, hintText:${q('#hudHint')}.textContent}; })()`);
+    return {reward:r('#rewardOpen'), fit:r('#fitOpen'), stage:r('#stageBox'), touch:r('#touch'), note:r('.touch-note'), dirs:r('#tdirs'), btns:r('#tbtns'), hint:r('#hudHint'), hintShown:getComputedStyle(${q('#hudHint')}).display, hintText:${q('#hudHint')}.textContent}; })()`);
   const L = tc.land, inside = (a, o) => a.y>=o.y-0.5 && a.b<=o.b+0.5 && a.x>=o.x-0.5 && a.r<=o.r+0.5;
   if(L.reward.y<L.fit.b || L.reward.b>L.touch.y || !inside(L.reward,L.stage)) errors.push('landscape reward button overlap: '+JSON.stringify(L));
-  if(!(L.stage.w>L.stage.h) || !inside(L.pad,L.touch) || !inside(L.btns,L.touch) || L.pad.y<L.note.b-0.5 || L.btns.y<L.note.b-0.5 || L.pad.r>L.btns.x || L.pad.w<80 || L.btns.w<80
+  if(!(L.stage.w>L.stage.h) || !inside(L.dirs,L.touch) || !inside(L.btns,L.touch) || L.dirs.y<L.note.b-0.5 || L.btns.y<L.note.b-0.5 || L.dirs.r>L.btns.x || L.dirs.w<140 || L.btns.w<80
      || L.hintShown==='none' || L.hint.b>L.touch.y+0.5 || L.hint.y<L.stage.y+L.stage.h*0.46-1 || !L.hintText) errors.push('touch landscape layout check failed: '+JSON.stringify(L));
   await send('Emulation.setEmulatedMedia',{features:[{name:'pointer',value:'fine'},{name:'hover',value:'hover'}]});
   await send('Emulation.setTouchEmulationEnabled',{enabled:false});
   await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
-  await b.navigate(fileUrl(page), 1500);
+  await b.navigate(fileUrl(returningPage), 1500);
   tc.desktop = await evalJs(`({ui:document.documentElement.classList.contains('touch-ui'), shown:getComputedStyle(${q('#touch')}).display})`);
   out.touch = tc;
   if(!tc.jpHit.hit) errors.push('reward 확인 button is covered by the touch overlay: '+JSON.stringify(tc.jpHit));
-  if(!tc.ui || tc.compat!=='CSS1Compat' || tc.width!==390 || tc.scrollW>390 || tc.shown!=='block' || tc.sel!=='true' || tc.pad.w<150 || tc.b2.w<56 || tc.pad.y<tc.stage.y+tc.stage.h*0.5 || tc.badge!=='👆 터치 대기' || tc.hint.y<tc.stage.y+tc.stage.h*0.46-1 || tc.hint.y+tc.hint.h>tc.touchTop+0.5
-     || tc.after.title!=='초풍!' || tc.after.src!=='👆 터치' || !/^→[0-9f]* ★[0-9]+f ↓[0-9]+f ↘[0-9]+f/.test(tc.after.chips) || !tc.after.knob.startsWith('translate(calc(-50% + 0px)') || tc.after.dir!=='' || tc.desktop.ui || tc.desktop.shown!=='none')
+  if(!tc.ui || tc.compat!=='CSS1Compat' || tc.width!==390 || tc.scrollW>390 || tc.shown!=='block' || tc.sel!=='true' || tc.dirs.w<160 || tc.dirs.x+tc.dirs.w>tc.btns.x || tc.right.w<46 || tc.b2.w<56 || tc.dirs.y<tc.stage.y+tc.stage.h*0.5 || tc.badge!=='👆 터치 대기' || tc.hint.y<tc.stage.y+tc.stage.h*0.46-1 || tc.hint.y+tc.hint.h>tc.touchTop+0.5 || JSON.stringify(tc.tune)!=='["100","0","0"]'
+     || tc.narrow.dirs.r>tc.narrow.btns.x || tc.narrowCustom.size!=='62px'
+     || tc.after.title!=='초풍!' || tc.after.src!=='👆 터치' || !/^→[0-9f]* ★[0-9]+f ↓[0-9]+f ↘[0-9]+f/.test(tc.after.chips) || tc.after.active!==0 || tc.desktop.ui || tc.desktop.shown!=='none')
     errors.push('touch controls check failed: '+JSON.stringify(tc));
   const shotDir=path.join(__dirname,'../.sandbox/bgm-toggle');fs.mkdirSync(shotDir,{recursive:true});
   for(const width of [1366,390]){

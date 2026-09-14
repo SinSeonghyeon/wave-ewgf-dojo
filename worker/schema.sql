@@ -39,13 +39,23 @@ CREATE TABLE IF NOT EXISTS visits (
   n   INTEGER NOT NULL DEFAULT 0
 );
 
--- Message board: nickname + one line of text, newest first, no threads.
+-- Message board: nickname + one line of text, newest first. Replies are one level deep and oldest first under each post.
 CREATE TABLE IF NOT EXISTS posts (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   nick       TEXT    NOT NULL,             -- 2..12 code points
   text       TEXT    NOT NULL,             -- 1..200 code points, whitespace collapsed
   created_at INTEGER NOT NULL              -- epoch ms
 );
+
+-- Replies (2026-09-14): many one-level replies per post. The Worker removes these before deleting the parent post.
+CREATE TABLE IF NOT EXISTS replies (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  post_id    INTEGER NOT NULL,
+  nick       TEXT    NOT NULL,             -- 2..12 code points
+  text       TEXT    NOT NULL,             -- 1..200 code points, whitespace collapsed
+  created_at INTEGER NOT NULL              -- epoch ms
+);
+CREATE INDEX IF NOT EXISTS replies_post_id ON replies (post_id, id);
 
 -- Post votes (2026-09-13): one row per (post, nickname); v = 1 like / -1 dislike. /posts aggregates them into up/down,
 -- POST /vote sets/clears the caller's row (PRIMARY KEY = one vote per nick per post), DELETE /posts/:id removes the post's rows.
