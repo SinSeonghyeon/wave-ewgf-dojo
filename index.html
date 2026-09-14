@@ -810,7 +810,7 @@ function setFit(slot, id){ if(!ITEMS[slot] || !ITEMS[slot][id] || !owned(id)) re
 // Newest first. For each patch, add one entry and the matching notice.<id> strings to all three I18N dictionaries.
 // The latest id is the read marker saved in this browser; no backend or deployment-time request is involved.
 const NOTICES = [
-  {id:'2026-09-15-notices', date:'2026-09-15', kind:'notice.kind.update', title:'notice.20260915.title', summary:'notice.20260915.summary', items:['notice.20260915.1','notice.20260915.2','notice.20260915.3']},
+  {id:'2026-09-15-notices', date:'2026-09-15', kind:'notice.kind.update', title:'notice.20260915.title', summary:'notice.20260915.summary', items:['notice.20260915.1','notice.20260915.2','notice.20260915.3','notice.20260915.4','notice.20260915.5']},
 ];
 const NOTICE_LATEST = NOTICES[0]?.id || '';
 
@@ -897,8 +897,12 @@ ko:{
   'app.title':'미시마 도장',
   'app.tagline':'미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정',
   'notice.button':'공지', 'notice.open':'공지사항 열기', 'notice.new':'NEW', 'notice.title':'공지사항', 'notice.sub':'미시마 도장의 업데이트와 패치 노트입니다.', 'notice.kind.update':'업데이트',
-  'notice.20260915.title':'공지사항 기능 추가', 'notice.20260915.summary':'앞으로 업데이트 내용을 앱 안에서 바로 확인할 수 있습니다.',
-  'notice.20260915.1':'헤더의 종 버튼을 누르면 패치 노트가 열립니다.', 'notice.20260915.2':'새 공지가 있으면 버튼에 NEW 배지가 표시됩니다.', 'notice.20260915.3':'공지 내용은 한국어·영어·일본어를 지원합니다.',
+  'notice.20260915.title':'9월 15일 기능 업데이트', 'notice.20260915.summary':'모바일 조작과 키 설정, 한마디·순위 기능을 다듬고 앱 안 공지를 추가했습니다.',
+  'notice.20260915.1':'화면 위쪽의 종 버튼에서 업데이트 내용을 확인할 수 있으며, 읽지 않은 공지에는 NEW가 표시됩니다.',
+  'notice.20260915.2':'모바일 방향 입력을 ←·↓·→ 독립 버튼으로 바꾸고, 대각선 동시 입력과 크기·위치 저장을 지원합니다.',
+  'notice.20260915.3':'설정에서 방향과 공격 버튼의 보조 키를 하나씩 설정할 수 있습니다.',
+  'notice.20260915.4':'한마디 글마다 여러 답글을 남기고 작성된 순서대로 볼 수 있습니다.',
+  'notice.20260915.5':'순위표의 본인 행에서 현재 보드의 최고 기록만 삭제할 수 있습니다. 닉네임과 브라우저 기록은 유지됩니다.',
   'modes.aria':'연습 모드', 'stage.aria':'연습 스테이지', 'stage.canvasAria':'SD 캐릭터 연출 화면', 'inputs.aria':'입력 기록', 'coach.aria':'코치 패널', 'stats.aria':'이번 세션 기록', 'records.aria':'기록',
   'src.wait':'⌨ 키보드 대기', 'src.waitTouch':'👆 터치 대기', 'src.kb':'⌨ 키보드', 'src.pad':'🎮 게임패드', 'src.touch':'👆 터치',
   'mode.free.name':'자유 연습', 'mode.free.desc':'제한 없이 웨이브와 초풍을 섞어 연습합니다. 모든 입력이 기록됩니다.',
@@ -1125,8 +1129,12 @@ en:{
   'app.title':'Mishima Dojo',
   'app.tagline':'Mishima-style input trainer · Judges 6N23 6 N 6N23 … wave dashes and 6N23+2 EWGF frame by frame',
   'notice.button':'News', 'notice.open':'Open announcements', 'notice.new':'NEW', 'notice.title':'Announcements', 'notice.sub':'Updates and patch notes for Mishima Dojo.', 'notice.kind.update':'Update',
-  'notice.20260915.title':'Announcements added', 'notice.20260915.summary':'You can now check the latest changes without leaving the app.',
-  'notice.20260915.1':'Press the bell in the header to open the patch notes.', 'notice.20260915.2':'A NEW badge appears when an unread announcement is available.', 'notice.20260915.3':'Announcements are available in Korean, English, and Japanese.',
+  'notice.20260915.title':'September 15 feature update', 'notice.20260915.summary':'We improved mobile controls, key settings, the shoutbox and leaderboards, and added in-app announcements.',
+  'notice.20260915.1':'Check updates from the bell button at the top of the screen. A NEW badge marks unread announcements.',
+  'notice.20260915.2':'Mobile directions now use separate ←, ↓ and → buttons, with diagonal presses and saved size and position settings.',
+  'notice.20260915.3':'In Settings, you can assign one alternate key to every direction and attack action.',
+  'notice.20260915.4':'Each shoutbox post can now have multiple replies, shown in chronological order.',
+  'notice.20260915.5':'Delete your best result for the current board from your own leaderboard row. Your nickname and local records stay intact.',
   'modes.aria':'Practice mode', 'stage.aria':'Practice stage', 'stage.canvasAria':'SD character stage', 'inputs.aria':'Input history', 'coach.aria':'Coach panel', 'stats.aria':'Session stats', 'records.aria':'Records',
   'src.wait':'⌨ Keyboard ready', 'src.waitTouch':'👆 Touch ready', 'src.kb':'⌨ Keyboard', 'src.pad':'🎮 Gamepad', 'src.touch':'👆 Touch',
   'mode.free.name':'Free practice', 'mode.free.desc':'Mix wave dashes and EWGFs freely. Every input is recorded.',
@@ -1351,8 +1359,12 @@ ja:{
   'app.title':'三島道場',
   'app.tagline':'三島流入力トレーナー · 6N23 6 N 6N23 … のウェーブと 6N23+2 の最風をフレーム単位で判定',
   'notice.button':'お知らせ', 'notice.open':'お知らせを開く', 'notice.new':'NEW', 'notice.title':'お知らせ', 'notice.sub':'三島道場のアップデートとパッチノートです。', 'notice.kind.update':'アップデート',
-  'notice.20260915.title':'お知らせ機能を追加', 'notice.20260915.summary':'アプリ内で最新の変更内容を確認できるようになりました。',
-  'notice.20260915.1':'ヘッダーのベルを押すとパッチノートが開きます。', 'notice.20260915.2':'未読のお知らせがある場合はNEWバッジを表示します。', 'notice.20260915.3':'お知らせは韓国語・英語・日本語に対応しています。',
+  'notice.20260915.title':'9月15日 機能アップデート', 'notice.20260915.summary':'モバイル操作とキー設定、ひとこと・ランキング機能を改善し、アプリ内のお知らせを追加しました。',
+  'notice.20260915.1':'画面上部のベルボタンから更新内容を確認でき、未読のお知らせにはNEWが表示されます。',
+  'notice.20260915.2':'モバイルの方向入力を←・↓・→の独立ボタンに変更し、斜め同時押しと大きさ・位置の保存に対応しました。',
+  'notice.20260915.3':'設定で方向・攻撃ボタンごとにサブキーを1つ設定できます。',
+  'notice.20260915.4':'ひとことの各投稿に複数の返信を書けるようになり、古い順に表示されます。',
+  'notice.20260915.5':'ランキングの自分の行から、現在のボードのベスト記録だけを削除できます。ニックネームとブラウザ内の記録は残ります。',
   'modes.aria':'練習モード', 'stage.aria':'練習ステージ', 'stage.canvasAria':'SDキャラクター演出画面', 'inputs.aria':'入力履歴', 'coach.aria':'コーチパネル', 'stats.aria':'セッション記録', 'records.aria':'記録',
   'src.wait':'⌨ キーボード待機', 'src.waitTouch':'👆 タッチ待機', 'src.kb':'⌨ キーボード', 'src.pad':'🎮 ゲームパッド', 'src.touch':'👆 タッチ',
   'mode.free.name':'自由練習', 'mode.free.desc':'制限なしでウェーブと最風を混ぜて練習します。すべての入力が記録されます。',

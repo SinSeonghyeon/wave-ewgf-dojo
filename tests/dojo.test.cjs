@@ -275,11 +275,12 @@ test('the three dictionaries share exactly the same key set',()=>{
 test('announcements render in every language and persist the latest read marker',()=>{
   let saved;
   const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
-  assert.ok(a.NOTICES.length);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/공지사항 기능 추가/);
+  assert.ok(a.NOTICES.length);assert.equal(a.NOTICES[0].items.length,5);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
   a.setMode('wave10');a.startTrial();a.openNotices();
   assert.equal(a.get('noticeDlg').open,true);assert.equal(a.trial.cdTimer,null,'opening an announcement cancels a countdown');
   assert.equal(a.store.noticeSeen,a.NOTICE_LATEST);assert.equal(saved.noticeSeen,a.NOTICE_LATEST);assert.equal(a.get('noticeBadge').hidden,true);
-  a.setLang('ja');assert.match(a.get('noticeList').innerHTML,/お知らせ機能を追加/);
+  a.setLang('en');assert.match(a.get('noticeList').innerHTML,/September 15 feature update/);
+  a.setLang('ja');assert.match(a.get('noticeList').innerHTML,/9月15日 機能アップデート/);
   const read=boot({v:4,noticeSeen:a.NOTICE_LATEST});assert.equal(read.get('noticeBadge').hidden,true);
   const invalid=boot({v:4,noticeSeen:'removed-notice'});assert.equal(invalid.store.noticeSeen,'');assert.equal(invalid.get('noticeBadge').hidden,false);
 });

@@ -39,10 +39,10 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(!/const BOARD_URL = '[^']*';/.test(src)) throw new Error('BOARD_URL constant not found in index.html');
   const noticeMatch = src.match(/const NOTICES = \[\s*\{id:'([^']+)'/);
   if(!noticeMatch) throw new Error('latest notice id not found in index.html');
-  const latestNoticeId = noticeMatch[1];
+  const latestNoticeId = noticeMatch[1], returningNoticeId = latestNoticeId+'-smoke-new';
   dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html'), returningPage = path.join(dir,'returning.html');
   const scratchSrc = src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`);
-  fs.writeFileSync(page, scratchSrc); fs.writeFileSync(returningPage, scratchSrc);
+  fs.writeFileSync(page, scratchSrc); fs.writeFileSync(returningPage, scratchSrc.replace(`{id:'${latestNoticeId}'`, `{id:'${returningNoticeId}'`));
   for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','donate-kakao.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
   try{ fs.rmSync(path.join(os.tmpdir(),'dojo-smoke-profile'),{recursive:true,force:true}); }catch(e){} // fresh localStorage every run (a navigation at the end of the run flushes it to disk)
   const b = await launch({port:9333, profile:'dojo-smoke-profile'});
@@ -55,7 +55,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
     throw new Error('browser condition timed out: '+expr);
   };
   await b.navigate(fileUrl(page), 0);
-  await waitFor(`location.pathname.endsWith('/index.html') && !!document.querySelector('#noticeDlg') && !!document.querySelector('#nickDlg')`);
+  await waitFor(`location.pathname.endsWith('/index.html') && !!document.querySelector('#noticeDlg') && document.querySelector('#nickDlg')?.open && !document.querySelector('#nickBtn')?.hidden`);
   const out = {};
   const snap = async () => evalJs(`(() => {
     const q=s=>document.querySelector(s); const css=getComputedStyle(document.documentElement);
@@ -71,7 +71,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   const key = async (code, type='keydown') => send('Input.dispatchKeyEvent',{type: type==='keydown'?'keyDown':'keyUp', code, key: code.replace('Key','').toLowerCase(), windowsVirtualKeyCode: code.charCodeAt(code.length-1)});
   const tap = async (code, hold=20) => { await key(code); await sleep(hold); await key(code,'keyup'); };
   const q = s => `document.querySelector('${s}')`;
-  const waitFor = async (selector, ms=4000) => { const until=Date.now()+ms; while(Date.now()<until){ if(await evalJs(`!!${q(selector)}`)) return; await sleep(100); } throw new Error('Timed out waiting for '+selector+'; postMsg='+(await evalJs(`${q('#postMsg')}?.textContent`))); };
+  const waitForSelector = async (selector, ms=4000) => { const until=Date.now()+ms; while(Date.now()<until){ if(await evalJs(`!!${q(selector)}`)) return; await sleep(100); } throw new Error('Timed out waiting for '+selector+'; postMsg='+(await evalJs(`${q('#postMsg')}?.textContent`))); };
   // nickname gate (first visit): modal open, game keys ignored while it is up, Escape does not close it, a taken name is refused, a free one starts the app
   out.gate = {open:await evalJs(`${q('#nickDlg')}.open`), closeHidden:await evalJs(`${q('#nickClose')}.hidden`), laterHidden:await evalJs(`${q('#nickLater')}.hidden`), btn:await evalJs(`({hidden:${q('#nickBtn')}.hidden, text:${q('#nickBtn')}.textContent})`)};
   await tap('KeyD',20); await sleep(150); out.gate.inputsWhileOpen = await evalJs(`document.querySelectorAll('#inputs .chip').length`);
@@ -93,12 +93,12 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await evalJs(`document.querySelector('#noticeClose').click()`); await sleep(50); out.notice.closed = !(await evalJs(`document.querySelector('#noticeDlg').open`));
   if(!out.notice.latest || !out.notice.badge || out.notice.open || !out.notice.afterOpen || out.notice.items<1 || !out.notice.title || out.notice.seen!==out.notice.latest || out.notice.badgeAfter || !out.notice.closed) errors.push('announcement check failed: '+JSON.stringify(out.notice));
   // On a later visit, an unread latest id opens once after boot; the nickname gate is skipped because this is now a returning browser.
-  await evalJs(`const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1'));st.noticeSeen='';localStorage.setItem('wave-ewgf-dojo-v1',JSON.stringify(st))`);
   await b.navigate(fileUrl(returningPage), 0);
   await waitFor(`location.pathname.endsWith('/returning.html') && !!document.querySelector('#noticeDlg')`);
-  await waitFor(`document.querySelector('#noticeDlg').open`, 3000);
+  try{ await waitFor(`document.querySelector('#noticeDlg').open`, 3000); }
+  catch(e){ e.message += '; noticeState=' + JSON.stringify(await evalJs(`(() => { const ids=['nickDlg','shareDlg','setDlg','donateDlg','fitDlg','noticeDlg']; const st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')); return {dialogs:Object.fromEntries(ids.map(id=>[id,document.querySelector('#'+id).open])),seen:st.noticeSeen,nick:st.nick,hidden:document.hidden}; })()`)); throw e; }
   out.notice.returning = await evalJs(`({open:document.querySelector('#noticeDlg').open,seen:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).noticeSeen,nickOpen:document.querySelector('#nickDlg').open})`);
-  out.notice.returning.latest = latestNoticeId;
+  out.notice.returning.latest = returningNoticeId;
   await evalJs(`document.querySelector('#noticeClose').click()`);
   if(!out.notice.returning.latest || !out.notice.returning.open || out.notice.returning.seen!==out.notice.returning.latest || out.notice.returning.nickOpen) errors.push('returning visitor announcement failed: '+JSON.stringify(out.notice.returning));
   // simulate a few inputs via keyboard events to populate result/coach/log, then switch languages
@@ -118,7 +118,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.altKey = await evalJs(`({text:document.querySelector('#keys .key-bind[data-k="right"][data-alt="1"] b').textContent,stored:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).altKeys.right})`);
   out.sound.settingsOff = await soundSnap();
   await evalJs(`document.querySelector('#setClose').click()`);
-  await b.navigate(fileUrl(page), 700);
+  await b.navigate(fileUrl(returningPage), 700);
   out.sound.reloadedOff = await soundSnap();
   await evalJs(`document.querySelector('#setOpen').click(); document.querySelector('#bgmSel button[data-bgm="1"]').click(); document.querySelector('#setClose').click()`);
   out.sound.settingsOn = await soundSnap();
@@ -156,6 +156,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await evalJs(`document.querySelector('#fitClose').click()`); await sleep(150);
   if(!(await evalJs(`document.querySelector('#jackpot').hidden`))) errors.push('dialog close auto-opened a reward');
   // Keyboard activation, same path as clicking the chest.
+  try{ await waitFor(`!document.querySelector('#rewardOpen').disabled`); }
+  catch(e){ e.message += '; rewardState=' + JSON.stringify(await evalJs(`(() => { const ids=['nickDlg','shareDlg','setDlg','donateDlg','fitDlg','noticeDlg'], st=JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')); return {dialogs:Object.fromEntries(ids.map(id=>[id,document.querySelector('#'+id).open])),pending:st.pendingRewards.length,title:document.querySelector('#rewardOpen').title}; })()`)); throw e; }
   await evalJs(`document.querySelector('#rewardOpen').focus()`);
   await send('Input.dispatchKeyEvent',{type:'keyDown',code:'Enter',key:'Enter',text:'\r',windowsVirtualKeyCode:13});
   await send('Input.dispatchKeyEvent',{type:'keyUp',code:'Enter',key:'Enter',windowsVirtualKeyCode:13});
@@ -269,7 +271,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.board.ewgfTab = await evalJs(`({empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, pressed:${q('#boardTabs button[data-board="ewgf20"]')}.getAttribute('aria-pressed')})`);
   // shoutbox: empty → post one line under the claimed nickname → shows; change the nickname through the header button → label follows
   out.posts = {empty:await evalJs(`${q('#postList .empty')}?.textContent`)};
-  await evalJs(`${q('#postText')}.value='  스모크   테스트 글 '; ${q('#postSend')}.click()`); await waitFor('#postList .vote[data-v="1"]');
+  await evalJs(`${q('#postText')}.value='  스모크   테스트 글 '; ${q('#postSend')}.click()`); await waitForSelector('#postList .vote[data-v="1"]');
   out.posts.after = await evalJs(`({msg:${q('#postMsg')}.textContent, text:${q('#postText')}.value, items:[...document.querySelectorAll('#postList .post')].map(p=>[p.querySelector('b').textContent, p.querySelector('p').textContent])})`);
   // like → count 1 and marked as mine (server row under my nick) → like again cancels → dislike
   const voteState = () => evalJs(`[...document.querySelectorAll('#postList .vote')].map(b=>b.textContent+':'+b.getAttribute('aria-pressed'))`);
@@ -277,8 +279,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await evalJs(`${q('#postList .vote[data-v="1"]')}.click()`); await sleep(600); out.posts.unlike = {ui:await voteState(), db:db.votes.length};
   await evalJs(`${q('#postList .vote[data-v="-1"]')}.click()`); await sleep(600); out.posts.dislike = {ui:await voteState(), db:db.votes.map(v => [v.post_id, v.key, v.v]), msg:await evalJs(`${q('#postMsg')}.textContent`)};
   // open the inline reply form and add one reply; it should remain nested under the original post
-  await evalJs(`${q('#postList .reply-open')}.click()`); await waitFor('#postList .reply-form input');
-  await evalJs(`${q('#postList .reply-form input')}.value='  스모크   답글 '; ${q('#postList .reply-form')}.requestSubmit()`); await waitFor('#postList .reply');
+  await evalJs(`${q('#postList .reply-open')}.click()`); await waitForSelector('#postList .reply-form input');
+  await evalJs(`${q('#postList .reply-form input')}.value='  스모크   답글 '; ${q('#postList .reply-form')}.requestSubmit()`); await waitForSelector('#postList .reply');
   out.posts.reply = await evalJs(`({msg:${q('#postMsg')}.textContent, count:${q('#postList .reply-open')}.textContent, replies:[...document.querySelectorAll('#postList .reply')].map(r=>[r.querySelector('b').textContent,r.querySelector('p').textContent]), form:!!${q('#postList .reply-form')}})`);
   await evalJs(`${q('#nickBtn')}.click()`); await sleep(150);
   out.nick2 = {open:await evalJs(`${q('#nickDlg')}.open`), closeHidden:await evalJs(`${q('#nickClose')}.hidden`), prefilled:await evalJs(`${q('#nickInput')}.value`)};
@@ -306,7 +308,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
   await send('Emulation.setEmulatedMedia',{features:[{name:'pointer',value:'coarse'},{name:'hover',value:'none'}]});
-  await b.navigate(fileUrl(page), 1800);
+  await b.navigate(fileUrl(returningPage), 1800);
   const tc = await evalJs(`(() => { const r = s => { const x = document.querySelector(s).getBoundingClientRect(); return {x:x.x, y:x.y, w:x.width, h:x.height}; };
     return {ui:document.documentElement.classList.contains('touch-ui'), compat:document.compatMode, width:innerWidth, scrollW:document.documentElement.scrollWidth, shown:getComputedStyle(${q('#touch')}).display,
       stage:r('#stageBox'), dirs:r('#tdirs'), btns:r('#tbtns'), left:r('#tdirs [data-dir="left"]'), down:r('#tdirs [data-dir="down"]'), right:r('#tdirs [data-dir="right"]'), b2:r('#tbtns [data-btn="2"]'), note:${q('.touch-note')}.textContent, sel:${q('#touchSel [data-touch="auto"]')}.getAttribute('aria-pressed'), badge:${q('#srcBadge')}.textContent, hint:r('#hudHint'), touchTop:r('#touch').y,
@@ -327,12 +329,12 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
     active:document.querySelectorAll('#tdirs button.on').length, log:${q('#logBody')}.textContent.slice(0,60)})`);
   // The default must remain usable even at the narrow supported viewport. A user-requested enlargement is intentionally not width-clamped.
   await send('Emulation.setDeviceMetricsOverride',{width:320,height:700,deviceScaleFactor:2,mobile:true});
-  await b.navigate(fileUrl(page), 1500);
+  await b.navigate(fileUrl(returningPage), 1500);
   tc.narrow = await evalJs(`(() => { const r = s => { const x=document.querySelector(s).getBoundingClientRect(); return {x:x.x,w:x.width,r:x.right}; }; return {dirs:r('#tdirs'),btns:r('#tbtns')}; })()`);
   tc.narrowCustom = await evalJs(`(() => { const s=document.querySelector('#touchSize'); s.value='140'; s.dispatchEvent(new Event('input',{bubbles:true})); const d=document.querySelector('#tdirs').getBoundingClientRect(), b=document.querySelector('#tbtns').getBoundingClientRect(); const out={size:getComputedStyle(document.querySelector('#tdirs')).getPropertyValue('--touch-dir-size').trim(),dirs:{x:d.x,w:d.width,r:d.right},btns:{x:b.x,w:b.width,r:b.right}}; s.value='100'; s.dispatchEvent(new Event('input',{bubbles:true})); return out; })()`);
   // rotated phone: the stage widens to 16/9, pad and buttons stay inside the overlay (below the note, no overlap between them) and the mode hint sits just above it
   await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:2,mobile:true});
-  await b.navigate(fileUrl(page), 1500);
+  await b.navigate(fileUrl(returningPage), 1500);
   tc.land = await evalJs(`(() => { const r = s => { const x = document.querySelector(s).getBoundingClientRect(); return {x:x.x, y:x.y, w:x.width, h:x.height, r:x.right, b:x.bottom}; };
     return {reward:r('#rewardOpen'), fit:r('#fitOpen'), stage:r('#stageBox'), touch:r('#touch'), note:r('.touch-note'), dirs:r('#tdirs'), btns:r('#tbtns'), hint:r('#hudHint'), hintShown:getComputedStyle(${q('#hudHint')}).display, hintText:${q('#hudHint')}.textContent}; })()`);
   const L = tc.land, inside = (a, o) => a.y>=o.y-0.5 && a.b<=o.b+0.5 && a.x>=o.x-0.5 && a.r<=o.r+0.5;
@@ -342,7 +344,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await send('Emulation.setEmulatedMedia',{features:[{name:'pointer',value:'fine'},{name:'hover',value:'hover'}]});
   await send('Emulation.setTouchEmulationEnabled',{enabled:false});
   await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
-  await b.navigate(fileUrl(page), 1500);
+  await b.navigate(fileUrl(returningPage), 1500);
   tc.desktop = await evalJs(`({ui:document.documentElement.classList.contains('touch-ui'), shown:getComputedStyle(${q('#touch')}).display})`);
   out.touch = tc;
   if(!tc.jpHit.hit) errors.push('reward 확인 button is covered by the touch overlay: '+JSON.stringify(tc.jpHit));
