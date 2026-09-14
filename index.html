@@ -148,6 +148,9 @@
   .board-list td.s small{font-family:var(--body);color:var(--muted);font-size:11.5px;margin-left:6px}
   .board-list td.w{font-family:var(--mono);color:var(--muted);font-size:12px}
   .board-list tr.me td{background:var(--accent-soft)} .board-list tr.me td:not(.s){color:var(--accent)}
+  .board-list td.act{width:1%;padding-left:6px;text-align:right}
+  .board-delete{background:transparent;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:4px 8px;white-space:nowrap;font-size:11px}
+  .board-delete:hover{color:#ff9b9b;border-color:#a8474e}.board-delete:disabled{opacity:.45;cursor:default}
   .board-list tr.sep td{text-align:center;color:var(--faint);padding:2px 0;border-bottom:0}
   .board-list .empty,.posts .empty{color:var(--muted);text-align:center;padding:18px 0;font-size:13px}
   .card-msg{font-family:var(--mono);font-size:12.5px;color:var(--accent);min-height:1.4em;margin-top:6px}
@@ -1063,6 +1066,8 @@ ko:{
   'board.loadFail':'순위표를 불러올 수 없습니다. 잠시 후 다시 시도하세요.', 'board.submitFail':'등록에 실패했습니다. 잠시 후 다시 시도하세요.',
   'board.nickBad':'닉네임은 2~12자로 입력하세요.', 'board.done':(r,n,p)=>'등록 완료 · '+r+'위 / '+n+'명 · 상위 '+p+'%',
   'board.kept':(r,n,p)=>'최고 기록 유지 · '+r+'위 / '+n+'명 · 상위 '+p+'%', 'board.me':(r,n,p)=>'내 순위 '+r+'위 / '+n+'명 · 상위 '+p+'%',
+  'board.delete':'삭제', 'board.deleteAria':'내 기록 삭제', 'board.deleteConfirm':'이 순위 기록을 삭제할까요? 삭제한 기록은 되돌릴 수 없습니다.',
+  'board.deleting':'기록 삭제 중…', 'board.deleted':'내 기록을 삭제했습니다.', 'board.deleteFail':'기록을 삭제하지 못했습니다. 잠시 후 다시 시도하세요.',
   'board.meNone':'등록한 기록이 없습니다', 'card.rank':(r,n,p)=>r+'위 / '+n+'명 · 상위 '+p+'%',
   'nick.title':'닉네임 정하기', 'nick.note':'순위와 한마디에 쓰이는 이름입니다. 다른 사람과 겹칠 수 없고 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 새 닉네임을 정해야 합니다.',
   'nick.submit':'시작', 'nick.change':n=>'닉네임 · '+n, 'nick.checking':'확인 중…', 'nick.taken':'이미 사용 중인 닉네임입니다. 다른 이름을 정하세요.',
@@ -1288,6 +1293,8 @@ en:{
   'board.loadFail':'Could not load the ranking. Try again later.', 'board.submitFail':'Submission failed. Try again later.',
   'board.nickBad':'Nickname must be 2–12 characters.', 'board.done':(r,n,p)=>'Submitted · rank '+r+' of '+n+' · top '+p+'%',
   'board.kept':(r,n,p)=>'Your best stands · rank '+r+' of '+n+' · top '+p+'%', 'board.me':(r,n,p)=>'You: rank '+r+' of '+n+' · top '+p+'%',
+  'board.delete':'Delete', 'board.deleteAria':'Delete my result', 'board.deleteConfirm':'Delete this ranking result? This cannot be undone.',
+  'board.deleting':'Deleting result…', 'board.deleted':'Your result was deleted.', 'board.deleteFail':'Could not delete the result. Try again later.',
   'board.meNone':'No entry from you yet', 'card.rank':(r,n,p)=>'Rank '+r+' of '+n+' · top '+p+'%',
   'nick.title':'Pick a nickname', 'nick.note':'Used for the ranking and the shoutbox. It cannot clash with anyone else and is stored in this browser. Clearing browser data means picking a new one.',
   'nick.submit':'Start', 'nick.change':n=>'Nickname · '+n, 'nick.checking':'Checking…', 'nick.taken':'That nickname is taken. Pick another.',
@@ -1512,6 +1519,8 @@ ja:{
   'board.loadFail':'ランキングを読み込めません。しばらくしてからもう一度お試しください。', 'board.submitFail':'登録に失敗しました。しばらくしてからもう一度お試しください。',
   'board.nickBad':'ニックネームは2～12文字で入力してください。', 'board.done':(r,n,p)=>'登録完了 · '+r+'位 / '+n+'人 · 上位 '+p+'%',
   'board.kept':(r,n,p)=>'自己ベストを維持 · '+r+'位 / '+n+'人 · 上位 '+p+'%', 'board.me':(r,n,p)=>'自分の順位 '+r+'位 / '+n+'人 · 上位 '+p+'%',
+  'board.delete':'削除', 'board.deleteAria':'自分の記録を削除', 'board.deleteConfirm':'このランキング記録を削除しますか？ 削除した記録は元に戻せません。',
+  'board.deleting':'記録を削除中…', 'board.deleted':'自分の記録を削除しました。', 'board.deleteFail':'記録を削除できませんでした。しばらくしてからもう一度お試しください。',
   'board.meNone':'登録した記録はありません', 'card.rank':(r,n,p)=>r+'位 / '+n+'人 · 上位 '+p+'%',
   'nick.title':'ニックネームを決める', 'nick.note':'ランキングとひとことで使う名前です。他の人と重複できず、このブラウザに保存されます。ブラウザのデータを消すと新しく決め直す必要があります。',
   'nick.submit':'開始', 'nick.change':n=>'ニックネーム · '+n, 'nick.checking':'確認中…', 'nick.taken':'そのニックネームは使用中です。別の名前にしてください。',
@@ -2875,7 +2884,7 @@ $('fitReset').addEventListener('click', () => { for(const s of SLOTS) store.fit[
 ['setDlg','donateDlg','fitDlg'].forEach(id => $(id).addEventListener('close', () => setTimeout(renderRewards, 0))); // refresh claiming availability (#shareDlg/#nickDlg: their own close handlers)
 
 const BOARDS = Object.keys(MODES).filter(m => MODES[m].start); // one board per start-mode trial; must match worker/index.js BOARDS and #boardTabs
-const board = { tab:'wave10', data:{}, at:{}, msg:'', seq:0 }; // seq: only the newest load may touch msg/data (tab switches race otherwise) · at: Date.now() of each board's last response (waveRefresh refetches wave10 after WAVE_TTL)
+const board = { tab:'wave10', data:{}, at:{}, msg:'', seq:0, deleting:false, submitting:false, loadAfterDelete:false, submitAfterDelete:false }; // score writes are serial: delete waits for submit, submit waits for delete; loads requested during delete resume afterwards
 const live = { visits:null, posts:null, postsMsg:'', posting:false, voting:false, replying:false, postsSeq:0, replyTo:0, replyText:'', visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // post mutations share one busy gate; postsSeq keeps an older list load from replacing a newer response
 // nickLater: the gate offers "practise without ranking" after the server itself failed · nickLost: a 403 arrived while the result card was up
 const TIERS = [1, 10, 20, 50, 70]; // upper bounds of "top N%" for grades SS S A B C (tier 0..4); anything above is D (tier 5). Titles: tier.N.title, comments: tier.N.<mode>
@@ -2976,26 +2985,45 @@ async function boardFetch(path, init){
 }
 function renderBoard(){
   if(!BOARD_URL) return;
-  const t = board.tab, d = board.data[t], me = d && d.me;
-  document.querySelectorAll('#boardTabs button').forEach(b => b.setAttribute('aria-pressed', b.dataset.board===t?'true':'false'));
+  const t = board.tab, d = board.data[t], me = hasNick() && d && d.me && nickKey(d.me.nick)===nickKey(store.nick) ? d.me : null;
+  document.querySelectorAll('#boardTabs button').forEach(b => { b.setAttribute('aria-pressed', b.dataset.board===t?'true':'false'); b.disabled=board.deleting; });
+  $('boardRefresh').disabled = board.deleting;
   $('boardInfo').textContent = d && d.total ? T('board.total', d.total) : '';
   $('boardMe').textContent = !d ? '' : me ? T('board.me', me.rank, d.total, pctTop(me.rank, d.total)) : T('board.meNone');
   $('boardMsg').textContent = msg(board.msg);
   const rows = d ? d.rows : [];
-  const tr = r => { const x = boardRowText(t, r); return `<tr${me && r.id===me.id?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="w">${(r.win/FRAME).toFixed(1)}f</td></tr>`; };
-  const below = me && !rows.some(r => r.id===me.id) ? `<tr class="sep"><td colspan="4">⋯</td></tr>` + tr(me) : ''; // my row when it sits under the top list
+  const tr = r => { const mine = me && r.id===me.id, x = boardRowText(t, r), del = mine ? `<button class="board-delete" data-delete-score aria-label="${escapeHTML(T('board.deleteAria'))}"${board.deleting||board.submitting?' disabled':''}>${escapeHTML(T('board.delete'))}</button>` : ''; return `<tr${mine?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="w">${(r.win/FRAME).toFixed(1)}f</td><td class="act">${del}</td></tr>`; };
+  const below = me && !rows.some(r => r.id===me.id) ? `<tr class="sep"><td colspan="5">⋯</td></tr>` + tr(me) : ''; // my row when it sits under the top list
   $('boardList').innerHTML = !d ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('board.empty'))}</div>` :
-    `<table><thead><tr><th>${escapeHTML(T('board.hRank'))}</th><th>${escapeHTML(T('board.hNick'))}</th><th>${escapeHTML(T('board.hScore'))}</th><th>${escapeHTML(T('board.hWin'))}</th></tr></thead><tbody>` +
+    `<table><thead><tr><th>${escapeHTML(T('board.hRank'))}</th><th>${escapeHTML(T('board.hNick'))}</th><th>${escapeHTML(T('board.hScore'))}</th><th>${escapeHTML(T('board.hWin'))}</th><th></th></tr></thead><tbody>` +
     rows.map(tr).join('') + below + '</tbody></table>';
 }
 async function boardLoad(){
   if(!BOARD_URL) return;
+  if(board.deleting){ board.loadAfterDelete = true; renderBoard(); return; }
   const t = board.tab, seq = ++board.seq; setBoardMsg(['board.loading']); renderBoard();
   let d = null;
   try{ d = await boardFetch('/top?board='+t+(hasNick() ? '&nick='+encodeURIComponent(store.nick) : '')); } catch(e){} // an unclaimed name may belong to someone else
   if(seq!==board.seq) return; // superseded by a newer load or a submit: drop this response entirely
   if(d){ boardSet(t, d); setBoardMsg(''); if(t==='wave10') renderWave(); } else setBoardMsg(['board.loadFail']); // wave10 carries cut10: the chart's top band follows it
   renderBoard();
+}
+async function boardDelete(){
+  const t = board.tab, d = board.data[t];
+  if(!BOARD_URL || board.deleting || board.submitting || !hasNick() || !d || !d.me || nickKey(d.me.nick)!==nickKey(store.nick)) return;
+  if(typeof confirm==='function' && !confirm(T('board.deleteConfirm'))) return;
+  const nick = store.nick, token = store.nickToken; board.deleting = true; ++board.seq; setBoardMsg(['board.deleting']); renderBoard();
+  try{
+    const res = await boardFetch('/score', {method:'DELETE', body:JSON.stringify({board:t, nick, token})});
+    if(nick===store.nick && token===store.nickToken){ boardSet(t, res); if(t==='wave10') renderWave(); if(board.tab===t) setBoardMsg(['board.deleted']); }
+  }catch(err){
+    if(nick===store.nick && token===store.nickToken){ if(err.message==='auth') lostNick(); if(board.tab===t) setBoardMsg([err.message==='auth'?'nick.expired':'board.deleteFail']); }
+  }finally{
+    board.deleting = false; renderBoard();
+    const load = board.loadAfterDelete, submit = board.submitAfterDelete; board.loadAfterDelete = board.submitAfterDelete = false;
+    if(load) boardLoad();
+    if(submit) boardSubmit();
+  }
 }
 // Post-trial status in the trial bar (and the banner in the result card): auto-submitted, retry on failure.
 const submitText = s => s.state==='busy' ? T('board.submitting') : s.state==='fail' ? T(s.error==='auth' ? 'nick.expired' : 'board.submitFail') : T(s.improved ? 'board.done' : 'board.kept', s.rank, s.total, pctTop(s.rank, s.total));
@@ -3016,8 +3044,10 @@ function renderShareRank(){
 }
 async function boardSubmit(){
   const r = trial.result, e = boardEntry(r, mode); if(!BOARD_URL || !e || !hasNick() || (r.submit && r.submit.state!=='fail')) return renderTrialRank();
+  if(board.deleting){ board.submitAfterDelete = true; return renderTrialRank(); }
+  if(board.submitting) return renderTrialRank();
   const nick = store.nick, tab0 = board.tab;
-  r.submit = {state:'busy'}; renderTrialRank();
+  board.submitting = true; r.submit = {state:'busy'}; renderTrialRank(); renderBoard();
   try{
     const res = await boardFetch('/submit', {method:'POST', body:JSON.stringify({...e, nick, token:store.nickToken})});
     r.submit = {state:'done', rank:res.rank, total:res.total, improved:res.improved};
@@ -3027,14 +3057,16 @@ async function boardSubmit(){
       renderBoard();
     }
   }catch(err){ r.submit = {state:'fail', error:err.message}; if(err.message==='auth') lostNick(); }
+  board.submitting = false; renderBoard();
   renderTrialRank();
   if(r===trial.result && shareSrc && shareSrc.kind==='trial' && shareSrc.rec===r.rec){ shareSrc = shareSource(); renderShare(); } // the card (open, or still loading fonts before it opens) picks up the rank line
 }
 $('dRankRetry').addEventListener('click', boardSubmit);
 $('boardRefresh').addEventListener('click', boardLoad);
+$('boardList').addEventListener('click', ev => { const b = ev.target && ev.target.closest ? ev.target.closest('button[data-delete-score]') : null; if(b) boardDelete(); });
 $('boardTabs').addEventListener('click', ev => {
   const b = ev.target && ev.target.closest ? ev.target.closest('button[data-board]') : null;
-  if(!b || b.dataset.board===board.tab) return;
+  if(!b || board.deleting || b.dataset.board===board.tab) return;
   board.tab = b.dataset.board; setBoardMsg(''); renderBoard(); boardLoad();
 });
 // visit counter: each browser counts once per KST day (store.visitDay); otherwise just read the numbers

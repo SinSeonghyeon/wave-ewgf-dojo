@@ -7,6 +7,7 @@
 | `POST /nick` | 닉네임 등록 `{nick}` → `{ok,nick,token}`. 대소문자·전각을 무시하고 유일. 이미 있으면 409 `taken`. 토큰은 브라우저가 보관하고 아래 등록·게시에 붙인다 |
 | `GET /top?board=wave10[&nick=]` | 상위 10 + 참가 수 + (nick이 있으면) 내 행과 순위 `me` + `cut10`(상위 10% 경계 점수. 10명 미만은 10명으로 계산해 1위 점수, 빈 보드는 null. 앱은 wave10의 값으로 웨이브 차트 상위 띠를 그린다) |
 | `POST /submit` | 기록 등록(`token` 필수, 틀리면 403 `auth`). 닉네임당 보드마다 1행(초기화 없음, 2026-09-14): 더 좋으면 교체, 아니면 유지(`improved:false`) |
+| `DELETE /score` | 본인 기록 삭제 `{board,nick,token}`. 닉네임+토큰 소유권을 검증하고 현재 보드의 본인 행만 지운 뒤 갱신된 `/top` 모양을 돌려준다 |
 | `GET /visits` · `POST /visits` | 오늘(KST)·누적 방문 수. POST는 오늘에 1을 더한다(앱이 브라우저당 하루 1회만 보냄) |
 | `GET /posts` · `POST /posts` | 한마디 최신 50개(행마다 좋아요 `up`·싫어요 `down` 수와 오래된 순 `replies[]`) · 작성(`{nick,token,text}`, 200자) |
 | `POST /reply` | 원글에 1단계 대댓글 작성(`{nick,token,id,text}`, 200자, 여러 개 가능) → `{ok,id,postId,rows}`. 원글과 합쳐 IP당 1분 3개(`POST_LIMIT`) |

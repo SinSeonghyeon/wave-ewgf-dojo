@@ -81,7 +81,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await evalJs(`${q('#nickInput')}.value=' 점유됨 '; ${q('#nickSubmit')}.click()`); await sleep(800); out.gate.taken = await evalJs(`({msg:${q('#nickMsg')}.textContent, open:${q('#nickDlg')}.open})`);
   await evalJs(`${q('#nickInput')}.value='스모크 테스트'; ${q('#nickSubmit')}.click()`); await sleep(800);
   out.gate.after = await evalJs(`({open:${q('#nickDlg')}.open, btn:${q('#nickBtn')}.textContent, postNick:${q('#postNickLabel')}.textContent, stored:(s=>({nick:s.nick, token:s.nickToken}))(JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')))})`);
-  { const i = errors.findIndex(e => /status of 409/.test(e)); if(i>=0) errors.splice(i,1); } // Chrome logs the intentional 'taken' 409 as a resource error
+  for(let i=errors.length-1;i>=0;i--) if(/status of 409/.test(errors[i])) errors.splice(i,1); // Chrome may log the one intentional 'taken' response more than once
   if(!out.gate.open || !out.gate.closeHidden || !out.gate.laterHidden || out.gate.btn.hidden || !out.gate.btn.text || /·/.test(out.gate.btn.text) || out.gate.inputsWhileOpen!==0 || !out.gate.afterEscape || !out.gate.short || !out.gate.taken.msg || out.gate.taken.msg===out.gate.short || !out.gate.taken.open
      || out.gate.after.open || !/스모크 테스트/.test(out.gate.after.btn) || out.gate.after.postNick!=='스모크 테스트' || out.gate.after.stored.nick!=='스모크 테스트' || !/^[0-9a-f]{48}$/.test(out.gate.after.stored.token)) errors.push('nickname gate check failed: '+JSON.stringify(out.gate));
   // announcements: unread badge → modal patch notes → browser-local read marker, with no automatic popup
@@ -175,7 +175,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(out.fit.wardrobe.head!=='bowl_head' || !out.fit.wardrobe.changed || out.fit.wardrobe.rows!==25 || out.fit.wardrobe.done<1) errors.push('claimed wardrobe check failed: '+JSON.stringify(out.fit.wardrobe));
   await evalJs(`document.querySelector('#fitClose').click()`);
   await evalJs(`document.querySelector('#soundSel button[data-sound=\"0\"]').click()`); await sleep(100);
-  await evalJs(`const s=document.querySelector('#sfxVol'); s.value=30; s.dispatchEvent(new Event('input')); s.dispatchEvent(new Event('change'))`); await sleep(100);
+  await evalJs(`(() => { const s=document.querySelector('#sfxVol'); s.value=30; s.dispatchEvent(new Event('input')); s.dispatchEvent(new Event('change')); })()`); await sleep(100);
   out.sound.off = await soundSnap();
   await evalJs(`document.querySelector('#soundSel button[data-sound=\"1\"]').click()`); await sleep(100);
   await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(5); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(400);
@@ -260,6 +260,11 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await sleep(400);
   out.board.auto.after = await evalJs(`({rank:${q('#dRank')}.textContent, me:${q('#boardMe')}.textContent, rows:document.querySelectorAll('#boardList tbody tr').length, open:${q('#shareDlg')}.open, line:${q('#shareRankLine')}.textContent, tier:${q('#shareTier')}.textContent})`);
   await evalJs(`${q('#shareClose')}.click()`); await sleep(100);
+  // the highlighted owner row alone has Delete; confirming removes only this nickname's wave10 row and refreshes the board response
+  for(let i=0;i<30;i++){ if(await evalJs(`!!${q('#boardList .board-delete')}`)) break; await sleep(300); }
+  await evalJs(`(() => { window.confirm=()=>true; const b=${q('#boardList .board-delete')}; if(!b) throw new Error('owner delete button did not appear'); b.click(); })()`); await sleep(800);
+  out.board.deleted = await evalJs(`({msg:${q('#boardMsg')}.textContent, me:${q('#boardMe')}.textContent, rows:document.querySelectorAll('#boardList tbody tr').length, button:!!${q('#boardList .board-delete')}})`);
+  out.board.deleted.db = db.rows.length;
   await evalJs(`${q('#boardTabs button[data-board="ewgf20"]')}.click()`); await sleep(800);
   out.board.ewgfTab = await evalJs(`({empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, pressed:${q('#boardTabs button[data-board="ewgf20"]')}.getAttribute('aria-pressed')})`);
   // shoutbox: empty → post one line under the claimed nickname → shows; change the nickname through the header button → label follows
@@ -286,6 +291,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(bd.tabs.length!==5 || !/rush30|Dummy Rush/.test(bd.tabs[3]||'') || !/bd10|Backdash/.test(bd.tabs[4]||'')) errors.push('leaderboard tabs check failed: '+JSON.stringify(bd.tabs));
   if(bd.cardHidden || bd.postsHidden || !/rank 1 of 1 · top 100%/.test(bd.rank) || !bd.retryHidden || bd.info!=='1 entries' || !/rank 1 of 1 · top 100%/.test(bd.me) || !bd.meRow || bd.rows.length!==1 || bd.rows[0][1]!=='스모크 테스트' || bd.rows[0][0]!=='1' || !/^Today 1 · total 1 visits$/.test(bd.visits)) errors.push('leaderboard check failed: '+JSON.stringify(bd));
   if(!auto || auto.during.rank!=='' || auto.during.open || !/best stands · rank 1 of 1/.test(auto.after.rank) || auto.after.rows!==1 || !auto.after.open || !/best stands/.test(auto.after.line) || auto.after.tier!=='S') errors.push('leaderboard auto-submit check failed: '+JSON.stringify(auto));
+  if(!bd.deleted || bd.deleted.msg!=='Your result was deleted.' || !/No entry from you/.test(bd.deleted.me) || bd.deleted.rows!==0 || bd.deleted.button || bd.deleted.db!==0) errors.push('leaderboard self-delete check failed: '+JSON.stringify(bd.deleted));
   if(!bd.ewgfTab.empty || !/No entry from you/.test(bd.ewgfTab.me) || bd.ewgfTab.pressed!=='true') errors.push('leaderboard tab check failed: '+JSON.stringify(bd.ewgfTab));
   if(!out.posts.empty || out.posts.after.msg!=='' || out.posts.after.text!=='' || JSON.stringify(out.posts.after.items)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']])) errors.push('shoutbox check failed: '+JSON.stringify(out.posts));
   const votes = {like:JSON.stringify(out.posts.like), unlike:JSON.stringify(out.posts.unlike), dislike:JSON.stringify(out.posts.dislike)};
@@ -293,7 +299,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(out.posts.reply.msg!=='' || !/Replies 1/.test(out.posts.reply.count) || JSON.stringify(out.posts.reply.replies)!==JSON.stringify([['스모크 테스트','스모크 답글']]) || out.posts.reply.form) errors.push('post reply check failed: '+JSON.stringify(out.posts.reply));
   if(!out.nick2.open || out.nick2.closeHidden || out.nick2.prefilled!=='스모크 테스트' || out.nick2.after.open || !/스모크2/.test(out.nick2.after.btn) || out.nick2.after.postNick!=='스모크2' || !/No entry from you/.test(out.nick2.after.me)) errors.push('nickname change check failed: '+JSON.stringify(out.nick2));
   if(out.ko2.title!=='순위' || !/아직 기록이 없습니다/.test(out.ko2.empty||'') || !/등록한 기록이 없습니다/.test(out.ko2.me) || !/최고 기록 유지 · 1위 \/ 1명 · 상위 100%/.test(out.ko2.rank) || !/^오늘 방문 1 · 누적 1$/.test(out.ko2.visits) || out.ko2.postsTitle!=='한마디' || out.ko2.nickBtn!=='닉네임 · 스모크2') errors.push('backend ko re-render check failed: '+JSON.stringify(out.ko2));
-  if(out.db.scores.length!==1 || out.db.scores[0].board!=='wave10' || out.db.scores[0].week!=='all' || out.db.scores[0].nick!=='스모크 테스트' || out.db.scores[0].win!==12 || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']]) || JSON.stringify(out.db.replies)!==JSON.stringify([[1,'스모크 테스트','스모크 답글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
+  if(out.db.scores.length!==0 || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']]) || JSON.stringify(out.db.replies)!==JSON.stringify([[1,'스모크 테스트','스모크 답글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
      || JSON.stringify(out.db.nicks)!==JSON.stringify([['스모크 테스트','스모크 테스트'],['스모크2','스모크2'],['점유됨','점유됨']])) errors.push('backend storage check failed: '+JSON.stringify(out.db));
   for(const s of JSON.stringify([out.gate, bd, out.posts, out.nick2, out.ko2, out.trialEnd]).match(/\b(board|mode|share|rec|posts|nick|tier)\.[a-zA-Z0-9.]+/g)||[]) errors.push('raw i18n key leaked into backend UI: '+s);
   // touch controls: three direction buttons feed the normal path; down+right forms d/f
