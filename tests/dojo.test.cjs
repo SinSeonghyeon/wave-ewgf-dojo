@@ -23,7 +23,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,boardDelete,renderBoard,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
 }
@@ -433,6 +433,59 @@ test('backend races: a late submit after a rename or a tab switch does not overw
   b=backend(); a=boot({v:4,lang:'ko',window:12},b.fetch); a.claimNick('fresh'); await b.flush(); b.answer('/nick','POST',{error:'server'},500); await b.flush();
   assert.equal(a.live.nickLater,true); assert.equal(a.get('nickLater').hidden,false);
   a.claimNick('fresh'); await b.flush(); b.answer('/nick','POST',{error:'taken'},409); await b.flush(); assert.equal(a.live.nickLater,false); assert.equal(a.get('nickLater').hidden,true);
+});
+
+test('leaderboard delete is shown only on my row, confirms, sends owner credentials and refreshes from the server response',async()=>{
+  const tok='ab'.repeat(24), b=backend(); let allow=false;
+  const a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch,{confirm:()=>allow});
+  a.board.data.wave10={...topRes('me'),rows:[{...topRes('other').rows[0],id:8},topRes('me').rows[0]]}; a.renderBoard();
+  let html=a.get('boardList').innerHTML;
+  assert.equal((html.match(/data-delete-score/g)||[]).length,1,'only my row has a delete button');
+  assert.match(html,/class="me"[\s\S]*data-delete-score[\s\S]*>삭제</);
+  await a.boardDelete(); assert.equal(b.find('/score','DELETE'),undefined,'cancel sends nothing');
+  allow=true; const pending=a.boardDelete(); await b.flush();
+  const call=b.find('/score','DELETE'); assert.deepEqual(call.body,{board:'wave10',nick:'me',token:tok});
+  assert.equal(a.board.deleting,true); assert.equal(a.get('boardMsg').textContent,'기록 삭제 중…');
+  b.answer('/score','DELETE',{season:'all',board:'wave10',ok:true,deleted:1,total:1,rows:[{...topRes('other').rows[0],id:8}],me:null,cut10:.1}); await pending;
+  assert.equal(a.board.deleting,false); assert.equal(a.board.data.wave10.me,null); assert.equal(a.get('boardMe').textContent,'등록한 기록이 없습니다');
+  assert.equal(a.get('boardMsg').textContent,'내 기록을 삭제했습니다.'); assert.doesNotMatch(a.get('boardList').innerHTML,/data-delete-score/);
+});
+
+test('leaderboard delete reloads after a rename and never marks the old nickname as mine',async()=>{
+  const oldToken='ab'.repeat(24), newToken='cd'.repeat(24), b=backend();
+  const a=boot({v:4,lang:'ko',window:12,nick:'old',nickToken:oldToken},b.fetch,{confirm:()=>true});
+  a.board.data.wave10=topRes('old'); a.renderBoard();
+  const deleting=a.boardDelete(); await b.flush();
+  a.claimNick('new'); await b.flush(); b.answer('/nick','POST',{ok:true,nick:'new',token:newToken}); await b.flush();
+  assert.equal(a.board.loadAfterDelete,true,'the new owner load is queued while deletion is active');
+  assert.equal(b.find('/top?board=wave10&nick=new'),undefined,'the queued load does not race the delete');
+  assert.doesNotMatch(a.get('boardList').innerHTML,/data-delete-score/,'the old owner row immediately loses its delete button');
+  b.answer('/score','DELETE',{season:'all',board:'wave10',ok:true,deleted:1,total:0,rows:[],me:null,cut10:null}); await deleting; await b.flush();
+  assert.ok(b.find('/top?board=wave10&nick=new'),'deletion completion reloads the board for the new owner');
+  b.answer('/top?board=wave10&nick=new','GET',{season:'all',board:'wave10',total:0,rows:[],me:null,cut10:null}); await b.flush();
+  assert.equal(a.board.data.wave10.me,null); assert.equal(a.get('boardMe').textContent,'등록한 기록이 없습니다');
+});
+
+test('leaderboard submit and delete are serialized in both directions',async()=>{
+  const tok='ab'.repeat(24), run=a=>{a.setMode('wave10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();dash(a,4100);a.time(14100);a.endTrial();};
+  // An existing in-flight submit disables and rejects deletion until its response has settled.
+  let b=backend(), a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch,{confirm:()=>true});
+  a.board.data.wave10=topRes('me'); run(a); await b.flush();
+  assert.equal(a.board.submitting,true); assert.match(a.get('boardList').innerHTML,/data-delete-score[^>]* disabled/);
+  await a.boardDelete(); assert.equal(b.find('/score','DELETE'),undefined,'delete cannot overlap an active submit');
+  b.answer('/submit','POST',{ok:true,id:7,rank:1,total:1,improved:true,...topRes('me')}); await b.flush();
+  assert.equal(a.board.submitting,false); assert.doesNotMatch(a.get('boardList').innerHTML,/data-delete-score[^>]* disabled/);
+  let deleting=a.boardDelete(); await b.flush(); assert.ok(b.find('/score','DELETE'),'delete is available once submit settles');
+  b.answer('/score','DELETE',{season:'all',board:'wave10',ok:true,deleted:1,total:0,rows:[],me:null,cut10:null}); await deleting;
+
+  // If deletion starts first, a newly completed trial waits and submits only after deletion finishes.
+  b=backend(); a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch,{confirm:()=>true});
+  a.board.data.wave10=topRes('me'); deleting=a.boardDelete(); await b.flush(); run(a); await b.flush();
+  assert.equal(a.board.submitAfterDelete,true); assert.equal(b.find('/submit','POST'),undefined,'submit is queued behind delete');
+  b.answer('/score','DELETE',{season:'all',board:'wave10',ok:true,deleted:1,total:0,rows:[],me:null,cut10:null}); await deleting; await b.flush();
+  assert.ok(b.find('/submit','POST'),'queued trial submits after delete settles');
+  b.answer('/submit','POST',{ok:true,id:9,rank:1,total:1,improved:true,...topRes('me')}); await b.flush();
+  assert.equal(a.board.submitting,false); assert.equal(a.trial.result.submit.state,'done');
 });
 
 test('post votes: cancel/switch through an idempotent set, validated local cache, cleared on rename, nickname gate, deleted post',async()=>{

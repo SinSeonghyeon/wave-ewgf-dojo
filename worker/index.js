@@ -3,6 +3,7 @@
 //          GET  /top?board=wave10[&nick=x] → {season,board,total,rows[≤10],me,cut10}   (cut10: score at the top-10% boundary, null on an empty board)
 //          POST /submit {board,nick,token,score,tie,detail,win,lang} → {ok,id,rank,improved} + the /top shape   (403 {error:'auth'} on a bad token)
 //                (one row per nick per board: a worse result leaves the stored best untouched, improved=false)
+//          DELETE /score {board,nick,token} → {ok,deleted} + the /top shape   (the token owner can delete only their own row on that board)
 //          GET  /visits → {day,today,total}   ·   POST /visits → counts one visit for today (KST) and returns the same
 //          GET  /posts → {rows[≤50: {id,nick,text,created_at,up,down}]}   ·   POST /posts {nick,token,text} → {ok,id,rows}   ·   DELETE /posts/:id (Bearer ADMIN_TOKEN, also drops its votes)
 //          POST /vote {nick,token,id,v: 1|-1|0} → {ok,id,mine,rows}   (2026-09-13: sets the caller's like/dislike on post `id`, 0 clears it; one vote per nick per post;
@@ -166,7 +167,7 @@ async function route(request, env, now) {
   const url = new URL(request.url), path = url.pathname.replace(/\/+$/, '') || '/', method = request.method;
   if (method === 'OPTIONS') return new Response(null, {status: originOk(request, env) ? 204 : 403});
   const mod = await admin(request, env, url, path, method, now); if (mod) return mod; // token-only routes, before the origin gate (curl sends no Origin)
-  if (method === 'POST' && !originOk(request, env)) return json({error: 'origin'}, 403);
+  if ((method === 'POST' || (method === 'DELETE' && path === '/score')) && !originOk(request, env)) return json({error: 'origin'}, 403);
   if (path === '/' && method === 'GET') return json({ok: true, service: 'mishima-dojo-board', season: seasonKey(now)});
 
   if (path === '/top' && method === 'GET') {
@@ -198,6 +199,16 @@ async function route(request, env, now) {
       .bind(season, e.board, e.nick, e.score, e.tie, JSON.stringify(e.detail), e.win, e.lang, now).run();
     const t = await top(env.DB, e.board, season, e.nick);
     return json({ok: true, id: t.me.id, rank: t.me.rank, improved: t.me.created_at === now, ...t});
+  }
+  if (path === '/score' && method === 'DELETE') {
+    const {body, status, error} = await readJson(request); if (error) return json({error}, status);
+    if (!body || typeof body !== 'object') return json({error: 'body'}, 400);
+    const board = body.board; if (!boardSpec(board)) return json({error: 'board'}, 400);
+    if (!cleanNick(body.nick)) return json({error: 'nick'}, 400);
+    const nick = await owner(env.DB, body.nick, body.token); if (!nick) return json({error: 'auth'}, 403);
+    const season = seasonKey(now);
+    const r = await env.DB.prepare('DELETE FROM scores WHERE week=? AND board=? AND nick=?').bind(season, board, nick).run();
+    return json({ok: true, deleted: r.meta.changes || 0, ...await top(env.DB, board, season, nick)});
   }
 
   if (path === '/visits' && (method === 'GET' || method === 'POST')) return json(await visits(env.DB, now, method === 'POST'));
