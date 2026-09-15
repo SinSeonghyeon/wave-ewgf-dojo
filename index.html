@@ -689,7 +689,7 @@ const fmtMs = ms => (ms>=0?'+':'−') + Math.abs(Math.round(ms)) + 'ms';
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const WALK_F = 90, WALK_B = 70, TAP_MS = 250; // walk speed px/s (forward/back), f,N,f double-tap dash window. Visual only; judging never reads these.
 const FF_MS = 250;      // judging: f,f+2 (통발) accepts the 2 up to this long after the second f (state 1/2 with cd.dashT===cd.tF)
-const RUSH_PTS = {kill:5, wgf:2, dashMax:3}; // 더미 격파: correct hit 5, non-just WGF on the high dummy 2, each crouch dash min(chain,3)
+const RUSH_PTS = {kill:10, wgf:5, dashMax:3}; // 더미 격파: correct hit 10, non-just WGF on the high dummy 5, each crouch dash min(chain,3)
 // 백대시 모델 (2026-09-13). 실측이 아니라 사용자 체감·참고 자료 기반 가정값 — 숫자만 고치면 판정·거리·등급·문구·테스트가 함께 따라온다 (설계 결정 17).
 const BD = {
   MIN_F: 6,        // 두 번째 4를 이 프레임 미만으로 잡고 1(↙)을 누르면 백대시가 나가기 전에 앉은 것 → 백대시 없음, 거리 0
@@ -990,7 +990,7 @@ ko:{
   'pop.ewgf':'초풍!', 'pop.wgf':'풍신권',
   'pop.streak':n=>n+'초'+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'대초!', 'a.dashEwgf.title':'대초!', 'res.dash_ewgf':'대초', 'a.streak.sub':n=>' · '+n+'연속',
   /* 통발 · 나락 · 더미 격파 (2026-09-13) */
-  'mode.rush30.name':'더미 격파 30초', 'mode.rush30.desc':'30초 동안 상단·중단·하단 더미가 무작위로 나옵니다. 상단=초풍, 중단=통발(66+2), 하단=나락(6N23+4)으로 격파하면 5점(저스트를 놓친 풍신권은 2점), 크라우치 대시마다 연속 수만큼(최대 3점) 점수.',
+  'mode.rush30.name':'더미 격파 30초', 'mode.rush30.desc':'30초 동안 상단·중단·하단 더미가 무작위로 나옵니다. 상단=초풍, 중단=통발(66+2), 하단=나락(6N23+4)으로 격파하면 10점(저스트를 놓친 풍신권은 5점), 크라우치 대시마다 연속 수만큼(최대 3점) 점수.',
   'hint.rush30':'상단=초풍 6N23+2 · 중단=통발 66+2 · 하단=나락 6N23+4 · 웨이브로 접근하면 연속 수만큼 점수 (GO 때 연속은 1부터)',
   'trial.rushPts':(s,k)=>s+'점 · 격파 '+k, 'trial.rushEnd':(s,k)=>'30초 종료 · '+s+'점 (격파 '+k+')',
   'rec.pts':s=>s+'점', 'rec.rushSub':(k,w,d)=>'격파 '+k+' · 헛침 '+w+' · 웨이브 '+d+'점',
@@ -1223,7 +1223,7 @@ en:{
   'pop.ewgf':'EWGF!', 'pop.wgf':'WGF',
   'pop.streak':n=>'EWGF ×'+n+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'Dash EWGF!', 'a.dashEwgf.title':'Dash EWGF!', 'res.dash_ewgf':'Dash EWGF', 'a.streak.sub':n=>' · streak '+n,
   /* f,f+2 · hell sweep · dummy rush (2026-09-13) */
-  'mode.rush30.name':'Dummy Rush 30s', 'mode.rush30.desc':'High, mid and low dummies appear at random for 30 seconds. High = EWGF, mid = f,f+2, low = hell sweep (f,N,d,df+4): 5 points each (a non-just WGF scores 2), plus 1–3 points per crouch dash by chain length.',
+  'mode.rush30.name':'Dummy Rush 30s', 'mode.rush30.desc':'High, mid and low dummies appear at random for 30 seconds. High = EWGF, mid = f,f+2, low = hell sweep (f,N,d,df+4): 10 points each (a non-just WGF scores 5), plus 1–3 points per crouch dash by chain length.',
   'hint.rush30':'High = EWGF 6N23+2 · Mid = f,f+2 · Low = hell sweep 6N23+4 · wave in for points per chain (chain restarts at GO)',
   'trial.rushPts':(s,k)=>s+' pts · '+k+' destroyed', 'trial.rushEnd':(s,k)=>'30s over · '+s+' pts ('+k+' destroyed)',
   'rec.pts':s=>s+' pts', 'rec.rushSub':(k,w,d)=>k+' destroyed · '+w+' whiffs · wave '+d+' pts',
@@ -1454,7 +1454,7 @@ ja:{
   'pop.ewgf':'最風!', 'pop.wgf':'風神拳',
   'pop.streak':n=>'最風×'+n+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'ダッシュ最風!', 'a.dashEwgf.title':'ダッシュ最風!', 'res.dash_ewgf':'ダッシュ最風', 'a.streak.sub':n=>' · '+n+'連続',
   /* 66+2 · 奈落 · ダミー撃破 (2026-09-13) */
-  'mode.rush30.name':'ダミー撃破30秒', 'mode.rush30.desc':'30秒間、上段・中段・下段のダミーがランダムに現れます。上段=最風、中段=66+2、下段=奈落(6N23+4)で撃破すると5点(ジャスト外れの風神拳は2点)、風神ステップごとに連続数ぶん(最大3点)加点。',
+  'mode.rush30.name':'ダミー撃破30秒', 'mode.rush30.desc':'30秒間、上段・中段・下段のダミーがランダムに現れます。上段=最風、中段=66+2、下段=奈落(6N23+4)で撃破すると10点(ジャスト外れの風神拳は5点)、風神ステップごとに連続数ぶん(最大3点)加点。',
   'hint.rush30':'上段=最風 6N23+2 · 中段=66+2 · 下段=奈落 6N23+4 · ウェーブで近づくと連続数ぶん加点 (GO時に連続は1から)',
   'trial.rushPts':(s,k)=>s+'点 · 撃破 '+k, 'trial.rushEnd':(s,k)=>'30秒終了 · '+s+'点 (撃破 '+k+')',
   'rec.pts':s=>s+'点', 'rec.rushSub':(k,w,d)=>'撃破 '+k+' · 空振り '+w+' · ウェーブ '+d+'点',
