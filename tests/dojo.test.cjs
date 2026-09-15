@@ -743,7 +743,7 @@ test('hell sweep (6N23+4) is judged without a just frame, through the pending pa
   a=boot();a.setMode('ewgf20');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();dash(a,4100);a.onButton(4,4200);
   assert.equal(a.trial.count,0,'a hell sweep does not count toward an EWGF trial');assert.equal(a.get('rTitle').textContent,'Hell Sweep');
 });
-test('rush30: typed dummies, wave points by chain, 5 for the right move, 2 for a WGF up high, whiffs for the rest, record and board entry',async()=>{
+test('rush30: typed dummies, wave points by chain, 10 for the right move, 5 for a WGF up high, whiffs for the rest, record and board entry',async()=>{
   const w=await import(require('node:url').pathToFileURL(require('node:path').join(__dirname,'../worker/index.js')).href);
   const a=boot({v:4,lang:'en'});a.setMode('rush30');
   assert.equal(a.get('dStart').hidden,false);assert.ok(a.get('hudHint').textContent.includes('EWGF'));
@@ -758,29 +758,29 @@ test('rush30: typed dummies, wave points by chain, 5 for the right move, 2 for a
   // wrong move → whiff, dummy stands
   d.type='mid';near();dash(a,7000);a.onButton(2,7060);assert.equal(a.session.attempts[0].kind,'ewgf');
   assert.equal(a.trial.whiffs,1);assert.equal(a.trial.score,16,'the dash still scored 1, the whiff nothing');assert.equal(d.hit,0);assert.equal(a.pops.at(-1).text,'whiff');
-  // right move → +5, knocked (consumed immediately; launch waits 110ms and respawn is scheduled at the hit)
+  // right move → +10, knocked (consumed immediately; launch waits 110ms and respawn is scheduled at the hit)
   near();a.onDir('f',8000);a.onDir('n',8020);a.onDir('f',8040);a.onButton(2,8100);
-  assert.equal(a.trial.score,21);assert.equal(a.trial.kills,1);assert.equal(a.pops.at(-1).text,'+5');assert.ok(d.respawn>0);
+  assert.equal(a.trial.score,26);assert.equal(a.trial.kills,1);assert.equal(a.pops.at(-1).text,'+10');assert.ok(d.respawn>0);
   for(const [id,fn] of [...a.timers]) if(fn.toString().includes('d.hit=1')){fn();a.timers.delete(id);}
   assert.equal(d.hit,1);
   a.onButton(4,8200);assert.equal(a.trial.whiffs,1,'a stray 4 with no command does nothing');
   near();d.hit=1;d.type='low';dash(a,9000);a.onButton(4,9100);assert.equal(a.trial.whiffs,2,'a flying dummy is not a target');d.hit=0;
-  near();dash(a,10000);a.onButton(4,10100);assert.equal(a.trial.score,22+1+5);assert.equal(a.trial.kills,2,'hell sweep on the low dummy');
+  near();dash(a,10000);a.onButton(4,10100);assert.equal(a.trial.score,27+1+10);assert.equal(a.trial.kills,2,'hell sweep on the low dummy');
   near();d.type='high';dash(a,11000);a.onButton(2,11060+a.store.window+20);assert.equal(a.session.attempts.at(-1).kind,'wgf');
-  assert.equal(a.trial.score,28+1+2,'a WGF on the high dummy scores 2');assert.equal(a.trial.kills,3);assert.equal(a.pops.at(-1).text,'+2');
+  assert.equal(a.trial.score,38+1+5,'a WGF on the high dummy scores 5');assert.equal(a.trial.kills,3);assert.equal(a.pops.at(-1).text,'+5');
   near();d.type='high';dash(a,12000);a.onButton(4,12100);assert.equal(a.trial.whiffs,3,'hell sweep on the high dummy whiffs');
   a.world.dummyX=a.world.charX+300;d.type='high';dash(a,13000);a.onButton(2,13060);assert.equal(a.trial.whiffs,4,'out of reach whiffs');
   assert.equal(a.session.tries,3);assert.equal(a.session.hits,2,'EWGF stats count only EWGF attempts (f,f+2 and the sweeps are not tries)');
   // 30 seconds → record, share model, board entry validates against the worker
   a.trialTick(4000+30000);assert.equal(a.trial.running,false);assert.equal(a.world.dummy.type,null,'plain dummy is back');
-  const rec=a.store.records.rush30[0];assert.equal(rec.score,33);assert.equal(rec.kills,3);assert.equal(rec.whiffs,4);assert.equal(rec.dashPts,21,'15 from the chain + 1 per single dash');
-  assert.equal(rec.label,'33 pts');assert.equal(rec.sub,'3 destroyed · 4 whiffs · wave 21 pts');assert.ok(a.get('bests').innerHTML.includes('33 pts'));
+  const rec=a.store.records.rush30[0];assert.equal(rec.score,46);assert.equal(rec.kills,3);assert.equal(rec.whiffs,4);assert.equal(rec.dashPts,21,'15 from the chain + 1 per single dash');
+  assert.equal(rec.label,'46 pts');assert.equal(rec.sub,'3 destroyed · 4 whiffs · wave 21 pts');assert.ok(a.get('bests').innerHTML.includes('46 pts'));
   const e=JSON.parse(JSON.stringify(a.boardEntry(a.trial.result,'rush30')));
-  assert.deepEqual(e,{board:'rush30',win:12,lang:'en',score:33,tie:3,detail:{kills:3,whiffs:4,dashPts:21}});assert.equal(w.validate({...e,nick:'smoke'}).error,undefined);
-  assert.equal(a.boardRowText('rush30',{score:33,detail:e.detail}).sub,'3 destroyed · 4 whiffs · wave 21 pts');
-  const card=a.buildCard(a.shareSource());assert.equal(card.hero.value,'33');assert.equal(card.hero.label,'Points');assert.equal(card.metrics[0].value,'3');assert.ok(card.sub.includes('33 pts'));
+  assert.deepEqual(e,{board:'rush30',win:12,lang:'en',score:46,tie:3,detail:{kills:3,whiffs:4,dashPts:21}});assert.equal(w.validate({...e,nick:'smoke'}).error,undefined);
+  assert.equal(a.boardRowText('rush30',{score:46,detail:e.detail}).sub,'3 destroyed · 4 whiffs · wave 21 pts');
+  const card=a.buildCard(a.shareSource());assert.equal(card.hero.value,'46');assert.equal(card.hero.label,'Points');assert.equal(card.metrics[0].value,'3');assert.ok(card.sub.includes('46 pts'));
   assert.doesNotMatch(JSON.stringify(card),/(^|[\s"])(card|rec|trial|mode)\.[a-zA-Z0-9]+/);
-  a.setLang('ko');assert.ok(a.get('bests').innerHTML.includes('33점'));
+  a.setLang('ko');assert.ok(a.get('bests').innerHTML.includes('46점'));
   // cancel paths hand the stage back to the plain dummy
   for(const cancel of [a=>a.get('dReset').click(),a=>a.events.blur(),a=>a.get('setOpen').click(),a=>a.setMode('free')]){
     const b=boot();b.setMode('rush30');b.startTrial();const c=b.timers.get(b.trial.cdTimer);b.time(4000);c();c();c();assert.ok(b.world.dummy.type);
@@ -806,10 +806,10 @@ test('rush30: a second tongbal 60ms later cannot score the same dummy',()=>{
   for(const t of [4100,4160]){
     a.time(t);a.onDir('f',t);a.onDir('n',t+10);a.onDir('f',t+20);a.onButton(2,t+20);a.onDir('n',t+30);
   }
-  assert.equal(a.trial.kills,1);assert.equal(a.trial.score,5);assert.equal(a.trial.whiffs,1);
+  assert.equal(a.trial.kills,1);assert.equal(a.trial.score,10);assert.equal(a.trial.whiffs,1);
   a.updateDummy(4209);assert.equal(a.world.dummy.y,0,'launch delay is preserved');
   a.updateDummy(4210);assert.ok(a.world.dummy.y<0);
-  a.endTrial();assert.equal(a.trial.result.rec.score,5);assert.equal(a.boardEntry(a.trial.result,'rush30').tie,1);
+  a.endTrial();assert.equal(a.trial.result.rec.score,10);assert.equal(a.boardEntry(a.trial.result,'rush30').tie,1);
 });
 
 test('rush30: all moves respawn on the first frame at or after 700ms at every refresh rate',()=>{
