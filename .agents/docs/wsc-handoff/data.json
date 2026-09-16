@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-09-17",
+  "purpose": "production_handoff_not_a_verified_final_dataset",
+  "context": {"game": "Tekken 8", "character": "Devil Jin", "move": "WS RP", "build": null, "input_side": "notation_assumes_facing_right"},
+  "notation": {"forward": "→", "neutral": "★", "down": "↓", "down_forward": "↘", "back": "←", "down_back": "↙", "attack": "RP"},
+  "definitions": {"A": "frames from df reference to back", "B": "frames from back to RP", "inclusive_count_verified": false, "A_plus_B_is_total_time_to_hit": false},
+  "rule": [
+    {"back_at_f": 7, "rp_after_back_f": [1]},
+    {"back_at_f": 8, "rp_after_back_f": [1, 2]},
+    {"back_at_f": 9, "rp_after_back_f": [1, 2, 3]}
+  ],
+  "tests": [
+    {"A": 6, "B": 1, "success": false, "evidence": "memo_explicit"},
+    {"A": 6, "B": 2, "success": false, "evidence": "memo_explicit"},
+    {"A": 7, "B": 1, "success": true, "evidence": "memo_explicit"},
+    {"A": 7, "B": 2, "success": false, "evidence": "memo_explicit"},
+    {"A": 7, "B": 3, "success": false, "evidence": "memo_explicit"},
+    {"A": 7, "B": 4, "success": false, "evidence": "memo_explicit"},
+    {"A": 8, "B": 1, "success": true, "evidence": "memo_explicit"},
+    {"A": 8, "B": 2, "success": true, "evidence": "memo_explicit"},
+    {"A": 8, "B": 3, "success": false, "evidence": "memo_explicit"},
+    {"A": 9, "B": 1, "success": true, "evidence": "memo_explicit"},
+    {"A": 9, "B": 2, "success": true, "evidence": "user_rule_only"},
+    {"A": 9, "B": 3, "success": true, "evidence": "memo_explicit"},
+    {"A": 10, "B": 1, "success": false, "evidence": "memo_explicit"},
+    {"A": 10, "B": 2, "success": false, "evidence": "memo_explicit"},
+    {"A": 11, "B": 4, "success": false, "evidence": "memo_explicit"}
+  ],
+  "tests_metadata": {"repeat_counts": null, "exact_failure_move_mapping": null, "individual_video_links_verified": false},
+  "assets": [
+    {"id": "raw_gameplay", "local_path": "C:/Users/gus54/Videos/Captures/TEKKEN™8   2026-09-16 23-24-32.mp4", "package_path": null, "duration_s_approx": 263.367, "width": 1920, "height": 1080, "container_fps": 120, "game_fps_observed_approx": 60},
+    {"id": "character_reference", "local_path": "C:/Users/gus54/OneDrive/문서/카카오톡 받은 파일/코덱스.png", "package_path": "assets/character-reference.png", "target": "lower_right_bearded_character", "publication_rights_confirmed": false},
+    {"id": "original_memo", "local_path": "C:/Users/gus54/OneDrive/Desktop/새 폴더/웨캔기어 프레임 정리.txt", "package_path": "assets/frame-notes-original.txt"}
+  ],
+  "clip_candidates": [
+    {"id": "clean_success", "asset_id": "raw_gameplay", "in_s": 142.85, "out_s": 144.20, "evidence": "prior_visual_candidate", "exact_AB_verified": false},
+    {"id": "wgf_failure", "asset_id": "raw_gameplay", "in_s": 10.95, "out_s": 11.85, "evidence": "prior_visual_candidate", "exact_AB_verified": false},
+    {"id": "standing_failure", "asset_id": "raw_gameplay", "in_s": 24.60, "out_s": 25.40, "evidence": "prior_visual_candidate", "exact_AB_verified": false},
+    {"id": "success_log", "asset_id": "raw_gameplay", "in_s": 12.75, "out_s": 13.55, "evidence": "prior_visual_candidate", "suggested_AB": [8, 2], "exact_AB_verified": false}
+  ],
+  "comparison": {
+    "start_condition": null,
+    "counting_convention": null,
+    "rows": [
+      {"id": "wave_cancel", "display_label": "웨이브 캔슬", "preparation_f": null, "input_to_hit_f": null, "evidence": "measurement_pending"},
+      {"id": "down_release", "display_label": "↓ 유지 후 떼기", "down_hold_user_report_f": 8, "down_7_or_less_user_report": "sidestep", "preparation_f": null, "input_to_hit_f": null, "evidence": "user_report_pending_capture"},
+      {"id": "qcb", "display_label": "↓ ↙ ←", "preparation_f": null, "input_to_hit_f": null, "evidence": "user_report_pending_capture"},
+      {"id": "down_back_release", "display_label": "↙ 유지 후 떼기", "preparation_f": null, "input_to_hit_f": null, "evidence": "user_report_pending_capture"}
+    ],
+    "user_reported_conclusion": "qcb and down_back methods take similar time to wave_cancel; exact values not supplied",
+    "missing_value_display": "측정 대기"
+  },
+  "montage_counts": [1, 2, 4, 8, 16],
+  "montage_slots": [
+    {"id": "failure_01", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_02", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_03", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_04", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_05", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_06", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_07", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_08", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_09", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_10", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_11", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_12", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_13", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_14", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_15", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
+    {"id": "failure_16", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"}
+  ],
+  "publication_gates": {"history_claim_verified": false, "frame_count_convention_verified": false, "comparison_measurements_verified": false, "real_match_example_selected": false, "character_rights_confirmed": false, "all_montage_slots_real": false}
+}
