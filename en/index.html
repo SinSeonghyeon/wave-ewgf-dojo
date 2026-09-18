@@ -67,7 +67,7 @@
   <section>
     <h2>How judging works</h2>
     <ul>
-      <li><strong>EWGF:</strong> measures the gap between the moment <code>d/f</code> registers and the moment you press <code>2</code>. Inside the window (0.5f, 0.7f or 0.9f; default 0.7f = ±12 ms) it is an EWGF. Late is a plain WGF, early is a fail, and either way you see the offset in ms so you know which way to adjust.</li>
+      <li><strong>EWGF:</strong> rounds each input timestamp onto a shared 60Hz frame grid. <code>d/f</code> and <code>2</code> (RP) must land in the same frame. RP in a later frame gives WGF; an earlier frame is a miss. The grid is independent of display refresh rate and is not synchronized to the game. Wave dash also accepts <code>f, d, d/f</code> without the initial neutral.</li>
       <li><strong>Wave dash:</strong> checks the <code>f → N → d → d/f</code> order, catches a missing cancel <code>f</code> after <code>d/f</code> and a missing neutral before the next dash, and counts chain length and dashes per second.</li>
       <li><strong>Precision:</strong> browser input timing is about 4 ms precise, so expect small differences from the real game. The trainer is for building the rhythm, the game is the final judge.</li>
     </ul>

@@ -18,11 +18,12 @@ if(!['ko','en','ja'].includes(LANG)){ console.error('--lang must be ko, en or ja
 // Expose the card functions from the IIFE in a temporary copy (the shipped page stays untouched).
 const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
 const hook = 'globalThis.__og={buildOgCard,drawCard,setLang,displayFont,cssVar,el:$};})();';
-const patched = html.replace(/\}\)\(\);\s*<\/script>/, hook+'\n</script>');
+const patched = html.replace(/\}\)\(\);\s*<\/script>/, hook+'\n</script>').replace(/const BOARD_URL = '[^']*';/, "const BOARD_URL = '';");
 if(patched===html){ console.error('could not find the end of the script IIFE in index.html'); process.exit(2); }
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dojo-og-'));
 const tmpHtml = path.join(tmpDir, 'index.html');
 fs.writeFileSync(tmpHtml, patched, 'utf8');
+fs.copyFileSync(path.join(__dirname, '../donate-kakao.png'), path.join(tmpDir, 'donate-kakao.png'));
 const rmTmp = () => { try{ fs.rmSync(tmpDir, {recursive:true, force:true}); }catch(e){} };
 
 (async () => {
