@@ -398,6 +398,25 @@ test('static head carries the SEO and Open Graph tags that crawlers read without
   assert.match(html,/document\.title = T\('app\.docTitle'\)/);
 });
 
+test('localized static descriptions match the app dictionary and all pages reference the shared PNG icon',()=>{
+  const path=require('node:path'), root=path.resolve(__dirname,'..'), a=boot();
+  const png=fs.readFileSync(path.join(root,'favicon.png'));
+  assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+  const width=png.readUInt32BE(16), height=png.readUInt32BE(20);
+  assert.ok(width>0);assert.equal(width,height,'the icon is square');
+  for(const [lang,file] of [['ko','index.html'],['en','en/index.html'],['ja','ja/index.html']]){
+    const filename=path.join(root,file), src=fs.readFileSync(filename,'utf8');
+    a.setLang(lang);
+    for(const attr of ['name="description"','property="og:description"']){
+      assert.equal(src.match(new RegExp('<meta '+attr+' content="([^"]*)"'))?.[1],a.T('app.description'),file+' '+attr);
+    }
+    const icon=src.match(/<link\b[^>]*rel="icon"[^>]*>/)?.[0];assert.ok(icon,file+' has an icon');
+    const href=icon.match(/href="([^"]+)"/)?.[1];assert.ok(href);
+    assert.equal(path.resolve(path.dirname(filename),href),path.join(root,'favicon.png'),file+' icon path');
+    assert.equal(icon.match(/sizes="([^"]+)"/)?.[1],width+'x'+height,file+' declared icon size');
+  }
+});
+
 test('leaderboard entry is built only from a finished trial, one metric pair per board',()=>{
   const a=boot({v:4,lang:'ko',window:8});
   assert.match(a.BOARD_URL,/^$|^https:\/\/[^/]+$/,'BOARD_URL is empty or an https origin without trailing slash');

@@ -43,7 +43,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html'), returningPage = path.join(dir,'returning.html');
   const scratchSrc = src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`);
   fs.writeFileSync(page, scratchSrc); fs.writeFileSync(returningPage, scratchSrc.replace(`{id:'${latestNoticeId}'`, `{id:'${returningNoticeId}'`));
-  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3','donate-kakao.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
+  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3','donate-kakao.png','favicon.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
   try{ fs.rmSync(path.join(os.tmpdir(),'dojo-smoke-profile'),{recursive:true,force:true}); }catch(e){} // fresh localStorage every run (a navigation at the end of the run flushes it to disk)
   const b = await launch({port:9333, profile:'dojo-smoke-profile'});
   browser = b;
@@ -212,6 +212,10 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   for(const l of ['en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);
     out[l] = await snap();
+    const landing=fs.readFileSync(path.join(__dirname,'..',l==='ko'?'index.html':l+'/index.html'),'utf8');
+    const expectedDescription=landing.match(/<meta name="description" content="([^"]*)"/)[1];
+    out[l].descriptions=await evalJs(`({meta:document.querySelector('meta[name="description"]').content,og:document.querySelector('meta[property="og:description"]').content})`);
+    if(out[l].descriptions.meta!==expectedDescription || out[l].descriptions.og!==expectedDescription) errors.push('localized description mismatch: '+l+' '+JSON.stringify(out[l].descriptions));
     if(out[l].bgmTitle!==({ko:'배경음 켜기/끄기',en:'BGM on/off',ja:'BGMのオン/オフ'})[l]) errors.push('BGM tooltip translation failed: '+l);
     out[l].stored = await evalJs(`JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).lang`);
   }

@@ -24,6 +24,7 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dojo-og-'));
 const tmpHtml = path.join(tmpDir, 'index.html');
 fs.writeFileSync(tmpHtml, patched, 'utf8');
 fs.copyFileSync(path.join(__dirname, '../donate-kakao.png'), path.join(tmpDir, 'donate-kakao.png'));
+fs.copyFileSync(path.join(__dirname, '../favicon.png'), path.join(tmpDir, 'favicon.png'));
 const rmTmp = () => { try{ fs.rmSync(tmpDir, {recursive:true, force:true}); }catch(e){} };
 
 (async () => {
