@@ -989,12 +989,14 @@ test('touch input pauses behind modals and is cleared by blur; the setting survi
   assert.equal(boot({v:4,touch:'on'}).store.touch,'on');
   assert.equal(boot({v:4,touch:'off'}).store.touch,'off');
   assert.equal(boot({v:4,touch:'yes'}).store.touch,'auto');
-  const tuned=boot({v:4,touchSize:130,touchX:65,touchY:35});
-  assert.equal(tuned.store.touchSize,130);assert.equal(tuned.store.touchX,65);assert.equal(tuned.store.touchY,35);
-  tuned.get('touchSize').value='120';tuned.get('touchSize').input();tuned.get('touchX').value='40';tuned.get('touchX').input();tuned.get('touchY').value='60';tuned.get('touchY').input();
-  assert.equal(tuned.store.touchSize,120);assert.equal(tuned.store.touchX,40);assert.equal(tuned.store.touchY,60);assert.equal(tuned.get('touchSizeOut').textContent,'120%');
+  assert.equal(boot().store.touchSize,100);
+  const tuned=boot({v:4,touchSize:300,touchX:65,touchY:35});
+  assert.equal(tuned.store.touchSize,300);assert.equal(tuned.store.touchX,65);assert.equal(tuned.store.touchY,35);
+  tuned.get('touchSize').value='295';tuned.get('touchSize').input();tuned.get('touchX').value='40';tuned.get('touchX').input();tuned.get('touchY').value='60';tuned.get('touchY').input();
+  assert.equal(tuned.store.touchSize,295);assert.equal(tuned.store.touchX,40);assert.equal(tuned.store.touchY,60);assert.equal(tuned.get('touchSizeOut').textContent,'295%');
   assert.match(tuned.get('tdirs').style.left,/px$/);assert.match(tuned.get('tdirs').style.bottom,/px$/);
-  for(const bad of [{touchSize:131},{touchX:-5},{touchY:101},{touchSize:'100'}]){ const b=boot({v:4,...bad}); assert.equal(b.store.touchSize,100);assert.equal(b.store.touchX,0);assert.equal(b.store.touchY,0); }
+  for(const bad of [{touchSize:301},{touchSize:305},{touchX:-5},{touchY:101},{touchSize:'100'}]){ const b=boot({v:4,...bad}); assert.equal(b.store.touchSize,100);assert.equal(b.store.touchX,0);assert.equal(b.store.touchY,0); }
+  assert.match(html,/id="touchSize" min="70" max="300" step="5" value="100"/);
   assert.doesNotThrow(()=>{const b=boot({v:4,touch:'on'}); b.applyTouchUI();});
   assert.match(html,/<meta name="viewport" content="width=device-width/);
   assert.match(html,/^<!doctype html>\s*(<!--[\s\S]*?-->\s*)?<html lang="ko">/i);

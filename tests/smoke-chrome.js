@@ -327,11 +327,12 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   tc.jpHit = await evalJs(`(() => { const j=document.querySelector('#jackpot'), ok=document.querySelector('#jpOk'); j.hidden=false; j.dataset.phase='reveal'; const r=ok.getBoundingClientRect(); const el=document.elementFromPoint(r.x+r.width/2, r.y+r.height/2); const pad=document.elementFromPoint(${rc.x}, ${rc.y}); j.hidden=true; delete j.dataset.phase; return {hit:el===ok, hitId:el&&el.id, inTouchZone:r.y+r.height/2>${tc.touchTop}, padStillReachable:!!pad&&!!pad.closest('#tdirs')}; })()`);
   tc.after = await evalJs(`({chips:[...document.querySelectorAll('#inputs .chip')].map(c => c.textContent.replace(/\\s+/g,'')).join(' '), title:${q('#rTitle')}.textContent, src:${q('#srcBadge')}.textContent,
     active:document.querySelectorAll('#tdirs button.on').length, log:${q('#logBody')}.textContent.slice(0,60)})`);
-  // The default must remain usable even at the narrow supported viewport. A user-requested enlargement is intentionally not width-clamped.
+  tc.customMove = await evalJs(`(() => { const s=document.querySelector('#touchSize'), x=document.querySelector('#touchX'), dirs=document.querySelector('#tdirs'); s.value='140'; s.dispatchEvent(new Event('input',{bubbles:true})); const size=getComputedStyle(dirs).getPropertyValue('--touch-dir-size').trim(), left0=dirs.getBoundingClientRect().x; x.value='100'; x.dispatchEvent(new Event('input',{bubbles:true})); const left100=dirs.getBoundingClientRect().x; x.value='0'; x.dispatchEvent(new Event('input',{bubbles:true})); s.value='100'; s.dispatchEvent(new Event('input',{bubbles:true})); return {size,left0,left100}; })()`);
+  // The new 100% baseline matches the former 140% visual size but auto-fits; explicit sizes remain unclamped and can move across the overlay.
   await send('Emulation.setDeviceMetricsOverride',{width:320,height:700,deviceScaleFactor:2,mobile:true});
   await b.navigate(fileUrl(returningPage), 1500);
   tc.narrow = await evalJs(`(() => { const r = s => { const x=document.querySelector(s).getBoundingClientRect(); return {x:x.x,w:x.width,r:x.right}; }; return {dirs:r('#tdirs'),btns:r('#tbtns')}; })()`);
-  tc.narrowCustom = await evalJs(`(() => { const s=document.querySelector('#touchSize'); s.value='140'; s.dispatchEvent(new Event('input',{bubbles:true})); const d=document.querySelector('#tdirs').getBoundingClientRect(), b=document.querySelector('#tbtns').getBoundingClientRect(); const out={size:getComputedStyle(document.querySelector('#tdirs')).getPropertyValue('--touch-dir-size').trim(),dirs:{x:d.x,w:d.width,r:d.right},btns:{x:b.x,w:b.width,r:b.right}}; s.value='100'; s.dispatchEvent(new Event('input',{bubbles:true})); return out; })()`);
+  tc.narrowCustom = await evalJs(`(() => { const s=document.querySelector('#touchSize'), dirs=document.querySelector('#tdirs'); s.value='300'; s.dispatchEvent(new Event('input',{bubbles:true})); const size=getComputedStyle(dirs).getPropertyValue('--touch-dir-size').trim(); s.value='100'; s.dispatchEvent(new Event('input',{bubbles:true})); return {size}; })()`);
   // rotated phone: the stage widens to 16/9, pad and buttons stay inside the overlay (below the note, no overlap between them) and the mode hint sits just above it
   await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,deviceScaleFactor:2,mobile:true});
   await b.navigate(fileUrl(returningPage), 1500);
@@ -349,7 +350,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.touch = tc;
   if(!tc.jpHit.hit) errors.push('reward 확인 button is covered by the touch overlay: '+JSON.stringify(tc.jpHit));
   if(!tc.ui || tc.compat!=='CSS1Compat' || tc.width!==390 || tc.scrollW>390 || tc.shown!=='block' || tc.sel!=='true' || tc.dirs.w<160 || tc.dirs.x+tc.dirs.w>tc.btns.x || tc.right.w<46 || tc.b2.w<56 || tc.dirs.y<tc.stage.y+tc.stage.h*0.5 || tc.badge!=='👆 터치 대기' || tc.hint.y<tc.stage.y+tc.stage.h*0.46-1 || tc.hint.y+tc.hint.h>tc.touchTop+0.5 || JSON.stringify(tc.tune)!=='["100","0","0"]'
-     || tc.narrow.dirs.r>tc.narrow.btns.x || tc.narrowCustom.size!=='62px'
+     || tc.customMove.size!=='99px' || tc.customMove.left100<=tc.customMove.left0 || tc.narrow.dirs.r>tc.narrow.btns.x || tc.narrowCustom.size!=='185px'
      || tc.after.title!=='초풍!' || tc.after.src!=='👆 터치' || !/^→[0-9f]* ★[0-9]+f ↓[0-9]+f ↘[0-9]+f/.test(tc.after.chips) || tc.after.active!==0 || tc.desktop.ui || tc.desktop.shown!=='none')
     errors.push('touch controls check failed: '+JSON.stringify(tc));
   const shotDir=path.join(__dirname,'../.sandbox/bgm-toggle');fs.mkdirSync(shotDir,{recursive:true});

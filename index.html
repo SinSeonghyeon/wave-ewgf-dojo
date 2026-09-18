@@ -522,7 +522,7 @@
           <div class="row"><label class="t" data-i18n="set.touch">터치 컨트롤</label>
             <div class="segc" id="touchSel"><button data-touch="auto" aria-pressed="true" data-i18n="set.touchAuto">자동 (터치 기기)</button><button data-touch="on" aria-pressed="false" data-i18n="set.on">켜기</button><button data-touch="off" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div class="row"><label class="t" for="touchSize" data-i18n="set.touchSize">방향 버튼 크기</label>
-            <div class="range"><input type="range" id="touchSize" min="70" max="140" step="5" value="100"><output id="touchSizeOut">100%</output></div></div>
+            <div class="range"><input type="range" id="touchSize" min="70" max="300" step="5" value="100"><output id="touchSizeOut">100%</output></div></div>
           <div class="row"><label class="t" for="touchX" data-i18n="set.touchX">방향 버튼 가로 위치</label>
             <div class="range"><input type="range" id="touchX" min="0" max="100" step="5" value="0"><output id="touchXOut">0%</output></div></div>
           <div class="row"><label class="t" for="touchY" data-i18n="set.touchY">방향 버튼 세로 위치</label>
@@ -841,7 +841,7 @@ try{
     if([1,-1].includes(s.side)) store.side=s.side;
     if([0,1].includes(s.fx)) store.fx=s.fx;
     if(['auto','on','off'].includes(s.touch)) store.touch=s.touch;
-    if(Number.isInteger(s.touchSize) && s.touchSize>=70 && s.touchSize<=140 && s.touchSize%5===0) store.touchSize=s.touchSize;
+    if(Number.isInteger(s.touchSize) && s.touchSize>=70 && s.touchSize<=300 && s.touchSize%5===0) store.touchSize=s.touchSize;
     if(Number.isInteger(s.touchX) && s.touchX>=0 && s.touchX<=100 && s.touchX%5===0) store.touchX=s.touchX;
     if(Number.isInteger(s.touchY) && s.touchY>=0 && s.touchY<=100 && s.touchY%5===0) store.touchY=s.touchY;
     if([0,1].includes(s.sound)) store.sound=s.sound;
@@ -1814,13 +1814,16 @@ let touchOn = false;                                      // html.touch-ui is on
 const touchAuto = () => !!(touchMQ && touchMQ.matches && typeof navigator!=='undefined' && navigator.maxTouchPoints>0);
 function applyTouchLayout(){
   const box=$('touch'), dirs=$('tdirs'); if(!box || !dirs) return;
-  const attacks=$('tbtns'), inset=14, gap=8, base=clamp((typeof innerWidth==='number' ? innerWidth : 390)*.13,44,54);
+  const attacks=$('tbtns'), inset=14, gap=8, base=clamp((typeof innerWidth==='number' ? innerWidth : 390)*.13,44,54)*1.4; // the former 140% visual size is the new 100% baseline
   const attackLeft=attacks?.offsetLeft||box.clientWidth-inset;
-  let size=clamp(Math.round(base*store.touchSize/100),34,76);
-  if(store.touchSize===100) size=Math.min(size,Math.max(34,Math.floor((attackLeft-inset-gap*2)/3))); // default alone guarantees no overlap; explicit user sizing may trade space for larger buttons
+  let size=Math.max(34,Math.round(base*store.touchSize/100));
+  if(store.touchSize===100){
+    const defaultMax=Math.max(34,Math.floor((attackLeft-inset-gap*3)/3)); // three buttons + two grid gaps + one clear gap before attacks
+    size=Math.min(size,defaultMax);                                      // only the default auto-fits; explicit sizes may intentionally overlap
+  }
   dirs.style.setProperty('--touch-dir-size',size+'px');
   const note=$('touch').querySelector('.touch-note'), top=(note?.offsetHeight||13)+6;
-  const maxX=Math.max(0,attackLeft-gap-dirs.offsetWidth-inset), maxY=Math.max(0,box.clientHeight-dirs.offsetHeight-top-inset);
+  const maxX=Math.max(0,box.clientWidth-dirs.offsetWidth-inset*2), maxY=Math.max(0,box.clientHeight-dirs.offsetHeight-top-inset);
   dirs.style.left=(inset+maxX*store.touchX/100).toFixed(1)+'px';
   dirs.style.bottom=(inset+maxY*store.touchY/100).toFixed(1)+'px';
 }
