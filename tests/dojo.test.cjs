@@ -23,9 +23,9 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>events[name]=fn,
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,boardDelete,renderBoard,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={SFX_START,HIT_CONTACT_MS,impacts,sparks,wsc,wscStartChallenge,WSC_TARGET,wscJudge,wscFrames,wscA,frameSlot,resetInput,renderWsc,onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,boardDelete,renderBoard,visitsLoad,claimNick,openNick,postVote,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,touchVec,touchPress,applyTouchUI,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit};})();');
   vm.runInContext(script,context);
-  return {...context.app,events,get,timers,time:t=>now=t,pads:p=>pads=p};
+  return {...context.app,events,get,timers,document:context.document,time:t=>now=t,pads:p=>pads=p};
 }
 function dash(a,t=1000){a.onDir('f',t);a.onDir('n',t+20);a.onDir('d',t+40);a.onDir('df',t+60);}
 const F=1000/60, fr=n=>Math.round(n*F); // backdash tests speak in frames
@@ -104,18 +104,15 @@ test('valid saved window choices survive the default change',()=>{
   for(const window of [8,12,15]) assert.equal(boot({v:4,window}).store.window,window);
 });
 
-test('EWGF accepts both window boundaries and rejects inputs just outside',()=>{
-  for(const saved of [undefined,...[8,12,15].map(window=>({v:4,window}))]){
-    const window=saved?.window??12;
-    for(const off of [-window-1,-window,window,window+1]){
-      const a=boot(saved);
-      a.onDir('f',1000);a.onDir('n',1020);a.onDir('d',1040);
-      if(off<0){a.onButton(2,1060+off);a.onDir('df',1060);}
-      else {a.onDir('df',1060);a.onButton(2,1060+off);}
-      assert.equal(a.session.attempts.length,1);
-      assert.equal(a.session.attempts[0].off,off);
-      assert.equal(a.session.attempts[0].kind,Math.abs(off)<=window?'ewgf':off<0?'early':'wgf');
-    }
+test('EWGF compares absolute rounded 60Hz slots, independently of legacy window and render ticks',()=>{
+  const slot=t=>Math.floor(t/F+0.5), edge=63.5*F;
+  for(const window of [8,12,15]) for(const [df,rp] of [[1007,1009],[1000,1007],[edge-.001,edge],[edge,edge+.001],[edge,edge-.001],[1060,1056],[1060,1060],[1060,1070]]){
+    const a=boot({v:4,window});a.onDir('f',df-60);a.onDir('d',df-20);
+    if(rp<df){a.onButton(2,rp);a.onDir('df',df);}else{a.onDir('df',df);a.onButton(2,rp);}
+    const expected=slot(rp)===slot(df)?'ewgf':slot(rp)<slot(df)?'early':'wgf';
+    assert.equal(a.session.attempts.length,1);assert.equal(a.session.attempts[0].kind,expected,JSON.stringify({df,rp,window}));
+    assert.equal(a.session.attempts[0].frameOff,slot(rp)-slot(df));
+    const bins=a.histBins(a.session.attempts,window);assert.equal(bins[6+slot(rp)-slot(df)].n,1);
   }
 });
 
@@ -139,7 +136,7 @@ test('input deadlines work without animation frames',()=>{
 });
 test('negative offset is judged once against incoming diagonal',()=>{
   const a=boot();a.onDir('f',1000);a.onDir('n',1020);a.onDir('d',1040);a.onButton(2,1056);a.onDir('df',1060);
-  assert.equal(a.session.attempts[0].off,-4);assert.equal(a.session.attempts[0].kind,'ewgf');assert.equal(a.cd.pending,null);
+  assert.equal(a.session.attempts[0].off,-4);assert.equal(a.session.attempts[0].kind,'early');assert.equal(a.cd.pending,null);
 });
 test('expired pending button cannot become an EWGF',()=>{
   const a=boot();a.onDir('f',1000);a.onDir('n',1020);a.onDir('d',1040);a.onButton(2,1050);a.onDir('df',1180);
@@ -242,13 +239,13 @@ test('wave10 trial result becomes a share card model in the current language',()
   const m=a.buildCard(src);
   assert.equal(m.app,'미시마 도장');assert.equal(m.modeName,'웨이브 10초');assert.equal(m.hero.value,'0.2');assert.equal(m.hero.label,'대시/초');
   assert.equal(m.chart.type,'wave');assert.equal(m.chart.pts.length,1);assert.equal(m.url,a.SITE_URL);
-  assert.deepEqual(Array.from(m.metrics,x=>x.value),['2','2','0']);assert.equal(m.windowText,'초풍 판정 폭 보통 0.7f');
+  assert.deepEqual(Array.from(m.metrics,x=>x.value),['2','2','0']);assert.equal(m.windowText,'초풍 판정 60Hz 동일 프레임');
   assert.ok(m.tweet.includes('0.2 대시/초'));assert.ok(m.tweet.includes('최고 연속 2'));assert.ok(m.tweet.endsWith('\n'+a.SITE_URL));
   assert.match(m.file,/^mishima-dojo-wave10-\d{8}\.png$/);
   a.setLang('en');const e=a.buildCard(src);assert.equal(e.modeName,'Wave 10s');assert.equal(e.sub,'10s over · 2 dashes (0.2 dashes/s)');assert.equal(e.hero.label,'dashes/s');
   a.startTrial();assert.equal(a.trial.result,null);assert.equal(a.get('dShare').hidden,true);
 });
-test('completed EWGF card preserves the judgment window after settings change',()=>{
+test('completed EWGF card uses fixed frame rule despite legacy saved window',()=>{
   const a=boot({v:4,lang:'ko',window:12});a.setMode('ewgf20');a.startTrial();
   const countdown=a.timers.get(a.trial.cdTimer);a.time(4000);countdown();countdown();countdown();
   for(let i=0;i<20;i++){a.clearCommand();dash(a,4100+i*200);a.onButton(2,4170+i*200);}
@@ -256,8 +253,8 @@ test('completed EWGF card preserves the judgment window after settings change',(
   a.store.window=8;
   const src=a.shareSource(), m=a.buildCard(src);
   assert.equal(src.window,12);assert.equal(m.hero.value,'100%');
-  assert.equal(m.windowText,'초풍 판정 폭 보통 0.7f');assert.match(m.tweet,/보통 0\.7f/);
-  assert.equal(m.chart.window,12);
+  assert.equal(m.windowText,'초풍 판정 60Hz 동일 프레임');assert.match(m.tweet,/60Hz 동일 프레임/);
+  assert.equal(m.chart.window,F/2);
 });
 
 test('wave trial card counts only attempts made during the completed trial',()=>{
@@ -559,8 +556,8 @@ test('sound settings: defaults, invalid saves fall back, valid saves survive, sl
   a.get('bgmVol').value='abc';a.get('bgmVol').input();assert.equal(a.store.bgmVol,0);
   // fx paths that call playSfx must be harmless without Audio
   a.fx.crouchDash();a.fx.ewgf(5);a.fx.ewgf(1,true);a.fx.dash();a.fx.backdash();
-  assert.deepEqual(Object.keys(html.match(/const SND = \{([^}]*)\}/)[1].split(',').reduce((o,kv)=>{o[kv.split(':')[0].trim()]=1;return o;},{})),['bgm','wave','ewgf']);
-  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3']) assert.ok(fs.existsSync(require('node:path').join(__dirname,'..',f)),f+' exists');
+  assert.deepEqual(Object.keys(html.match(/const SND = \{([^}]*)\}/)[1].split(',').reduce((o,kv)=>{o[kv.split(':')[0].trim()]=1;return o;},{})),['bgm','wave','ewgf','wsc','hellsweep','tongbal','hit','backdash']);
+  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3']) assert.ok(fs.existsSync(require('node:path').join(__dirname,'..',f)),f+' exists');
 });
 test('EWGF streak counts consecutive successes, resets on failure, fault, 3s gap, mode/reset/blur, and caps the look at level 6',()=>{
   const a=boot();
@@ -708,8 +705,8 @@ test('rush30: a second tongbal 60ms later cannot score the same dummy',()=>{
     a.time(t);a.onDir('f',t);a.onDir('n',t+10);a.onDir('f',t+20);a.onButton(2,t+20);a.onDir('n',t+30);
   }
   assert.equal(a.trial.kills,1);assert.equal(a.trial.score,5);assert.equal(a.trial.whiffs,1);
-  a.updateDummy(4209);assert.equal(a.world.dummy.y,0,'launch delay is preserved');
-  a.updateDummy(4210);assert.ok(a.world.dummy.y<0);
+  a.updateDummy(4279);assert.equal(a.world.dummy.y,0,'launch delay is preserved');
+  a.updateDummy(4280);assert.ok(a.world.dummy.y<0);
   a.endTrial();assert.equal(a.trial.result.rec.score,5);assert.equal(a.boardEntry(a.trial.result,'rush30').tie,1);
 });
 
@@ -802,7 +799,7 @@ test('active SFX follow volume immediately and mute stops every voice',()=>{
   const a=boot(undefined,undefined,{Audio:AudioStub});a.unlockAudio();
   a.playSfx('wave');a.playSfx('ewgf');
   a.get('sfxVol').value='25';a.get('sfxVol').input();
-  for(const voices of Object.values(a.snd.pool)) for(const voice of voices) assert.equal(voice.volume,.25);
+  for(const [name,voices] of Object.entries(a.snd.pool)) for(const voice of voices) assert.equal(voice.volume,['wsc','tongbal'].includes(name)?.2:.25);
   a.store.sound=0;a.sfxSync();
   for(const voices of Object.values(a.snd.pool)) for(const voice of voices){assert.equal(voice.paused,true);assert.equal(voice.volume,0);}
   a.store.sound=1;a.playSfx('ewgf');a.get('sfxVol').value='0';a.get('sfxVol').input();
@@ -992,7 +989,7 @@ test('wardrobe: lifetime counters grow with dashes, EWGFs and strikes, survive a
   // strikes count too, and the 0.5f window feeds its own counter
   a.onDir('f',30000);a.onDir('n',30020);a.onDir('f',30040);a.onButton(2,30100);assert.equal(a.store.life.tongbal,1);
   dash(a,31000);a.onButton(4,31070);assert.equal(a.store.life.hellsweep,1);assert.ok(a.pendingReward('red_arms'),'one of each strike → pending wrist wraps');
-  a.store.window=8;dash(a,32000);a.onButton(2,32060);assert.equal(a.store.life.tightEwgf,1);assert.equal(a.store.life.ewgf,3);
+  a.store.window=8;dash(a,32000);a.onButton(2,32060);assert.equal(a.store.life.tightEwgf,3);assert.equal(a.store.life.ewgf,3);
   assert.equal(a.session.tries,2,'session stats untouched by the wardrobe (reset above, then two EWGF attempts)');
 });
 test('wardrobe: donate and trials reserve rewards; closing dialogs and trials never claims automatically',()=>{
@@ -1327,4 +1324,285 @@ test('reward toast batches arrivals, flies to the chest without claiming and can
   assert.equal(a.store.pendingRewards.length,2);assert.equal(Object.keys(a.store.ach).length,0);assert.equal(a.get('jackpot').hidden,true);
   step();assert.equal(a.get('rewardOpen').dataset.arrival,'false');
   a.store.life.dashes=10;a.checkAch();step();a.get('dataReset').click();assert.equal(cancelled,2);assert.equal(toast.hidden,true);assert.equal(a.store.pendingRewards.length,0);
+});
+
+
+function wscPrefix(a,t=1000,neutral=true){a.onDir('f',t);if(neutral)a.onDir('n',t+10);a.onDir('d',t+20);a.onDir('df',t+30);return t+30;}
+function wscRun(a,A,B,t=1000){const df=wscPrefix(a,t);a.onDir('b',df+(A-1)*F);if(B!=null)a.onButton(2,df+(A-1+B)*F);return a.wsc.last;}
+test('WSC six success combinations and rejected timings use approved independent rounded intervals',()=>{
+  for(const [A,B,ok] of [[8,1,true],[9,1,true],[9,2,true],[10,1,true],[10,2,true],[10,3,true],[7,1,false],[8,2,false],[8,3,false],[9,3,false],[10,4,false],[11,1,false],[12,4,false],[8,0,false],[8,-1,false]]){
+    const a=boot();a.setMode('wsc');const r=wscRun(a,A,B);
+    assert.equal(r.ok,ok,`${A}+${B}`);assert.equal(r.a,A);assert.equal(r.b,B);assert.equal(a.wsc.session.tries,1);
+  }
+  const a=boot();
+  for(const [raw,expected] of [[7.5-.0001,7],[7.5,8],[7.5+.0001,8],[10.5-.0001,10],[10.5,11],[10.5+.0001,11]]) assert.equal(a.wscFrames(raw*F),expected);
+  for(const [raw,ok] of [[.5-.0001,false],[.5,true],[1.5-.0001,true],[1.5,false],[0,false]]) assert.equal(a.wscJudge(7*F,raw*F).ok,ok);
+  assert.equal(a.wscJudge(7*F,null).ok,false);
+});
+test('WSC isolates all existing statistics, achievements, records, board and sharing',()=>{
+  const a=boot();dash(a);a.onButton(2,1060);const before=JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]);
+  a.setMode('wsc');wscRun(a,8,1,2000);wscRun(a,9,3,3000);
+  assert.equal(JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]),before);
+  assert.equal(a.shareSource(),null);assert.equal(a.boardEntry({rec:{score:1}},'wsc'),null);assert.equal(a.get('dShare').hidden,true);assert.equal(a.BOARDS.includes('wsc'),false);
+  a.get('dReset').click();assert.equal(a.wsc.session.tries,0);assert.equal(JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]),before);
+  assert.equal(boot().wsc.session.tries,0);
+});
+test('WSC always evaluates the full command and only completed attempts enter the single session rate',()=>{
+  const a=boot();a.setMode('wsc');const df=wscPrefix(a);a.onDir('b',df+7*F);
+  assert.equal(a.wsc.last,null);assert.equal(a.wsc.session.tries,0);assert.match(a.get('wscAB').innerHTML,/8f/);
+  a.onButton(2,df+8*F);assert.equal(a.wsc.last.ok,true);assert.equal(a.wsc.session.tries,1);
+  a.onButton(2,1400);assert.equal(a.wsc.session.tries,1);
+  wscRun(a,7,1,2000);wscRun(a,9,2,3000);wscRun(a,9,3,4000);
+  assert.equal(a.wsc.session.tries,4);assert.equal(a.wsc.session.hits,2);
+  const df2=wscPrefix(a,5000);a.onDir('b',df2+7*F);a.onButton(1,df2+8*F);assert.equal(a.wsc.last.reason,'button');
+  wscPrefix(a,6000);a.onButton(2,6130);assert.equal(a.wsc.last,null);assert.equal(a.get('rTitle').textContent,a.T('a.wgf.title'));
+  wscPrefix(a,7000);a.tick(8031);assert.equal(a.wsc.last.reason,'aborted');assert.equal(a.wsc.session.tries,5);assert.equal(a.wsc.session.aborted,1);
+  for(const cancel of [()=>a.resetInput(),()=>a.events.blur(),()=>a.get('setOpen').click(),()=>a.setMode('free')]){
+    a.setMode('wsc');a.get('setDlg').open=false;wscPrefix(a,9000);const before=a.wsc.session.tries;cancel();assert.equal(a.wsc.active,null);assert.equal(a.wsc.session.tries,before);
+  }
+  assert.doesNotMatch(html,/id="wscSteps"|data-step=/);
+  a.setMode('wsc');wscRun(a,8,1,10000);assert.doesNotMatch(a.get('wscAxis').innerHTML,/data-frame="-/);assert.equal(a.wsc.last.events[0].dir,'df');
+});
+
+test('WSC permits neutral and one forward, rejects other directions, replaces only complete wave prefixes',()=>{
+  for(const dirs of [[],['n'],['f'],['f','n']]) for(const release of [false,true]){
+    const a=boot();a.setMode('wsc');const df=wscPrefix(a,1000,false);
+    dirs.forEach((d,i)=>a.onDir(d,df+20+i*20));a.onDir('b',df+8*F);if(release)a.onDir('n',df+8*F+2);a.onButton(2,df+9*F);assert.equal(a.wsc.last.ok,true,dirs+' / '+release);
+  }
+  for(const dirs of [['f','n','f'],['d'],['db'],['u'],['uf'],['ub'],['n','df']]){
+    const a=boot();a.setMode('wsc');const df=wscPrefix(a);dirs.forEach((d,i)=>a.onDir(d,df+10+i*10));a.onDir('b',df+7*F);a.onButton(2,df+8*F);assert.equal(a.wsc.last.ok,false,dirs.join(','));
+  }
+  for(const d of ['f','df','d','db','u','ub','uf']){const a=boot();a.setMode('wsc');const df=wscPrefix(a);a.onDir('b',df+7*F);a.onDir(d,df+7*F+1);a.onButton(2,df+8*F);assert.equal(a.wsc.last.reason,'direction');}
+  const a=boot();a.setMode('wsc');wscPrefix(a);a.onDir('f',1080);a.onDir('n',1090);const df=wscPrefix(a,1100,false);a.onDir('b',df+9*F);a.onButton(2,df+12*F);
+  assert.equal(a.wsc.last.ok,true);assert.equal(a.wsc.last.df,df);assert.equal(a.wsc.session.tries,1);
+  const b=boot();b.setMode('wsc');b.onDir('f',1000);b.onDir('df',1020);b.onButton(2,1100);assert.equal(b.wsc.session.tries,0);assert.equal(b.wsc.session.errors,1);
+});
+test('neutral omission works for regular wave chains without merging cancel and start forward',()=>{
+  const a=boot();a.onDir('f',1000);a.onDir('d',1020);a.onDir('df',1040);
+  a.onDir('f',1100);a.onDir('n',1120);a.onDir('f',1140);a.onDir('d',1160);a.onDir('df',1180);
+  assert.equal(a.session.dashes,2);assert.equal(a.cd.chain,2);assert.equal(a.cd.chainCycles[0].nGap,0);
+});
+test('WSC translated results, touch/keyboard/pad input paths, side mirroring and no repeated held RP',()=>{
+  for(const side of [1,-1]){
+    const a=boot({v:4,side});a.setMode('wsc');
+    a.touchVec(side,0,1000);a.touchVec(0,0,1010);a.touchVec(0,-1,1020);a.touchVec(side,-1,1030);a.touchVec(-side,0,1030+7*F);a.touchPress(2,1030+8*F);
+    assert.equal(a.wsc.last.ok,true);assert.equal(a.get('wscCommand').textContent,'6N23 · '+(side===1?'←':'→')+' · RP');
+    for(const lang of ['ko','en','ja']){a.setLang(lang);assert.ok(a.get('wscResult').textContent.includes(a.T('wsc.success')));assert.doesNotMatch(a.get('wscDetail').textContent,/wsc\./);}
+  }
+  const a=boot();a.setMode('wsc');
+  const key=(code,t,up=false)=>a.events[up?'keyup':'keydown']({code,timeStamp:t,target:{tagName:'BODY'},preventDefault(){},repeat:false});
+  key('KeyD',1000);key('KeyD',1010,true);key('KeyS',1020);key('KeyD',1030);key('KeyS',1040,true);key('KeyD',1050,true);key('KeyA',1030+7*F);key('KeyI',1030+8*F);key('KeyI',1250);
+  assert.equal(a.wsc.last.ok,true);assert.equal(a.wsc.session.tries,1);
+  const b=boot();b.setMode('wsc');
+  const sample=(t,idx)=>{b.time(t);b.pads([{index:0,id:'test',mapping:'standard',axes:[0,0],timestamp:t,buttons:Array.from({length:16},(_,i)=>({pressed:idx.includes(i),value:idx.includes(i)?1:0}))}]);b.pollPad();};
+  sample(1000,[15]);sample(1010,[]);sample(1020,[13]);sample(1030,[13,15]);sample(1030+7*F,[14]);sample(1030+8*F,[14,3]);sample(1300,[14,3]);
+  assert.equal(b.wsc.last.ok,true);assert.equal(b.wsc.session.tries,1);
+});
+
+test('WSC deadlines are independent of 60/120Hz ticks; hidden tabs cancel and a new full command replaces an unfinished RP',()=>{
+  for(const hz of [60,120]){
+    const a=boot();a.setMode('wsc');
+    const events=[[1000,()=>a.onDir('f',1000)],[1020,()=>a.onDir('d',1020)],[1030,()=>a.onDir('df',1030)],
+      [1030+8*F,()=>a.onDir('b',1030+8*F)],[1030+10*F,()=>a.onButton(2,1030+10*F)]];
+    for(let t=1000;t<1300;t+=1000/hz) events.push([t,()=>a.tick(t)]);
+    events.sort((x,y)=>x[0]-y[0]).forEach(x=>x[1]());assert.equal(a.wsc.last.ok,true);assert.equal(a.wsc.last.b,2);
+    wscPrefix(a,2000);a.document.hidden=true;a.events.visibilitychange();assert.equal(a.wsc.active,null);assert.equal(a.wsc.session.tries,1);
+  }
+  const a=boot();a.setMode('wsc');let df=wscPrefix(a);a.onDir('b',df+7*F);
+  df=wscPrefix(a,1300);a.onDir('b',df+7*F);a.onButton(2,df+8*F);assert.equal(a.wsc.last.ok,true);assert.equal(a.wsc.last.df,df);assert.equal(a.wsc.session.tries,1);
+});
+
+function wscTaskRun(a,waves,B=1,t=7000){
+  let df=wscPrefix(a,t);
+  for(let n=1;n<waves;n++){
+    a.onDir('f',df+20);a.onDir('n',df+30);
+    df=wscPrefix(a,df+50,n%2===0);
+  }
+  a.onDir('b',df+7*F);a.onButton(2,df+(7+B)*F);return a.wsc.last;
+}
+test('WSC 10 random tasks count down, complete once, remain local and preserve practice totals',()=>{
+  const a=boot();a.setMode('wsc');wscRun(a,8,1);const before=JSON.stringify([a.session,a.store.life,a.store.records,a.store.ach,a.store.pendingRewards]);
+  a.time(2000);a.wscStartChallenge();assert.equal(a.wsc.challenge.status,'countdown');
+  wscRun(a,8,1,2100);assert.equal(a.wsc.challenge.stats.tries,0);assert.equal(a.wsc.session.tries,1);
+  a.tick(5000);assert.equal(a.wsc.challenge.status,'running');
+  const first=a.wsc.challenge.taskN;
+  wscPrefix(a,5100);a.tick(6131);assert.equal(a.wsc.challenge.stats.aborted,1);assert.equal(a.wsc.challenge.stats.tries,0);assert.equal(a.wsc.challenge.taskN,first);
+  for(let i=0;i<10;i++){
+    const n=a.wsc.challenge.taskN;assert.ok(Number.isInteger(n)&&n>=0&&n<=3);
+    for(const lang of ['ko','en','ja']){a.setLang(lang);assert.equal(a.wsc.challenge.taskN,n);assert.doesNotMatch(a.get('wscTask').textContent,/wsc\./);}
+    const r=wscTaskRun(a,n+1,i<8?1:2,7000+i*1000);assert.equal(r.waves,n+1);assert.equal(r.ok,i<8);
+  }
+  assert.equal(a.wsc.challenge.status,'done');assert.equal(a.wsc.challenge.stats.tries,10);assert.equal(a.wsc.challenge.stats.hits,8);assert.equal(a.wsc.challenge.stats.best,8);
+  assert.equal(a.wsc.session.tries,11);assert.equal(a.trial.result,null);assert.equal(a.shareSource(),null);assert.equal(a.get('hudScore').textContent,'');
+  wscRun(a,8,1,20000);assert.equal(a.wsc.challenge.stats.tries,10);assert.equal(a.wsc.session.tries,12);
+  for(const lang of ['ko','en','ja']){a.setLang(lang);assert.match(a.get('wscChallengeStatus').textContent,/80%/);}
+  assert.equal(JSON.stringify([a.session,a.store.life,a.store.records,a.store.ach,a.store.pendingRewards]),before);
+});
+test('WSC random tasks include both endpoints, permit repeats and redraw only after completion',()=>{
+  let value=0;
+  const a=boot({fx:0},undefined,{Math:Object.assign(Object.create(Math),{random:()=>value})});
+  a.setMode('wsc');a.wscStartChallenge();assert.equal(a.wsc.challenge.taskN,0);a.tick(4000);
+  value=0.999999;wscTaskRun(a,1);assert.equal(a.wsc.challenge.taskN,3);
+  wscTaskRun(a,4,1,9000);assert.equal(a.wsc.challenge.taskN,3);
+  a.setLang('en');assert.equal(a.wsc.challenge.taskN,3);
+  wscPrefix(a,11000);a.tick(12031);assert.equal(a.wsc.challenge.taskN,3);
+  value=0;wscTaskRun(a,4,1,13000);assert.equal(a.wsc.challenge.taskN,0);
+});
+test('WSC tasks require exactly N+1 waves for all N=0..3 and both sides',()=>{
+  for(const side of [1,-1])for(let n=0;n<=3;n++)for(const delta of [-1,0,1]){
+    const a=boot({fx:0});a.store.side=side;a.setMode('wsc');a.wscStartChallenge();a.tick(4000);a.wsc.challenge.taskN=n;
+    const waves=n+1+delta;if(waves===0)continue;
+    const r=wscTaskRun(a,waves);assert.equal(r.timingOK,true);assert.equal(r.taskOK,delta===0);assert.equal(r.ok,delta===0);assert.equal(r.waves,waves);assert.equal(r.taskN,n);
+    assert.equal(a.wsc.challenge.stats.tries,1);assert.equal(a.wsc.challenge.stats.hits,delta===0?1:0);
+  }
+});
+test('WSC wave count does not carry across broken links, cancel reuse or interrupted retries',()=>{
+  for(const broken of ['direction','back','reuse','pause']){
+    const a=boot();a.setMode('wsc');a.wscStartChallenge();a.tick(4000);a.wsc.challenge.taskN=1;
+    const df=wscPrefix(a,5000);
+    if(broken==='pause'){a.tick(df+1001);wscTaskRun(a,1,1,6500);}
+    else{
+      if(broken==='direction')a.onDir('u',df+10);
+      if(broken==='back')a.onDir('b',df+10);
+      a.onDir('f',df+20);a.onDir('n',df+30);
+      if(broken==='reuse'){a.onDir('d',df+40);a.onDir('df',df+50);a.onDir('b',df+7*F);a.onButton(2,df+8*F);}
+      else wscTaskRun(a,1,1,df+50);
+    }
+    assert.equal(a.wsc.last.ok,false,broken);assert.equal(a.wsc.challenge.stats.hits,0,broken);
+  }
+});
+
+test('WSC challenge cancels on blur, hidden, mode, side reset, modal and explicit cancel without saving a result',()=>{
+  for(const running of [false,true])for(const reason of ['blur','hidden','mode','side','modal','cancel','reset']){
+    const a=boot();a.setMode('wsc');a.wscStartChallenge();if(running)a.tick(4000);
+    if(reason==='blur')a.events.blur();
+    if(reason==='hidden'){a.document.hidden=true;a.events.visibilitychange();}
+    if(reason==='mode')a.setMode('free');
+    if(reason==='side'){a.store.side=-1;a.resetInput();}
+    if(reason==='modal')a.get('setOpen').click();
+    if(reason==='cancel')a.wscStartChallenge();
+    if(reason==='reset')a.get('dReset').click();
+    assert.equal(a.wsc.challenge.status,reason==='reset'?'idle':'cancelled',reason);a.tick(10000);assert.notEqual(a.wsc.challenge.status,'running');assert.equal(a.trial.result,null);assert.equal(a.get('hudCenter').textContent,'');
+  }
+});
+
+test('WSC successful uppercut has its own rise and recovery, hits only the visual dummy and respects effects settings',()=>{
+  for(const fx of [0,1]){
+    const a=boot({v:4,fx});a.setMode('wsc');a.world.charX=120;a.world.dummyX=180;a.time(1500);wscRun(a,8,1);
+    assert.equal(a.anim.kind==='wsc',!!fx);assert.equal(a.world.dummy.hit,1);
+    if(fx){const low=a.poseAt(1500),high=a.poseAt(1670),recover=a.poseAt(1900);assert.ok(low.crouch>high.crouch);assert.ok(high.armR>recover.armR);assert.equal(a.snd.pool.wave,undefined);assert.equal(a.snd.pool.ewgf,undefined);}
+    assert.equal(a.session.tries,0);assert.equal(a.store.life.ewgf,0);assert.equal(a.store.life.dashes,0);
+  }
+});
+
+test('WSC A counts d/f as frame 1 while B remains zero-based elapsed time',()=>{
+  const a=boot();assert.equal(a.wscA(0),1);
+  for(const [raw,A] of [[6.5-.0001,7],[6.5,8],[6.5+.0001,8],[7.5-.0001,8],[7.5,9],[8.5,10],[9.5-.0001,10],[9.5,11]]) assert.equal(a.wscJudge(raw*F,F).a,A);
+  for(const [elapsed,A,maxB] of [[7,8,1],[8,9,2],[9,10,3]]){
+    assert.equal(a.wscJudge(elapsed*F,maxB*F).ok,true);assert.equal(a.wscJudge(elapsed*F,(maxB+1)*F).ok,false);
+  }
+  assert.equal(a.wscJudge(10*F,F).ok,false,'10 elapsed frames is now A=11');
+  a.setMode('wsc');const df=wscPrefix(a);a.onDir('b',df+7*F);a.onButton(2,df+8*F);
+  assert.equal(a.wsc.last.a,8);assert.equal(a.wsc.last.b,1);assert.ok(Math.abs(a.wsc.last.aRaw-7*F)<1e-9);
+  assert.match(a.get('wscAxis').innerHTML,/data-frame="1"/);assert.doesNotMatch(a.get('wscAxis').innerHTML,/data-frame="0"/);
+  assert.match(a.get('wscAB').innerHTML,/7.00f/);
+});
+
+
+test('all modes share WSC recognition without counting the finisher as an EWGF or scoring it',()=>{
+  for(const mode of ['free','wsc','wave10','ewgf20','combo10','rush30','bd10'])for(const side of [1,-1]){
+    const a=boot({fx:1});a.store.side=side;a.setMode(mode);
+    if(!['free','wsc'].includes(mode)){a.trial.running=true;a.trial.tStart=1000;a.trial.dur=10000;a.trial.target=20;a.trial.dist=0;a.trial.bdCount=0;a.trial.bdTop=0;a.trial.score=0;a.trial.kills=0;a.trial.dashPts=0;}
+    const df=wscPrefix(a);const before=JSON.stringify([a.session.tries,a.session.hits,a.session.attempts,a.store.life,a.trial.count,a.trial.score,a.trial.dist,a.store.ach,a.store.records]);
+    a.onDir('b',df+7*F);a.onButton(2,df+8*F);
+    assert.equal(a.wsc.last.ok,true,mode);assert.equal(a.anim.kind,'wsc',mode);assert.equal(a.get('rTitle').textContent,a.T('wsc.success'),mode);
+    assert.equal(JSON.stringify([a.session.tries,a.session.hits,a.session.attempts,a.store.life,a.trial.count,a.trial.score,a.trial.dist,a.store.ach,a.store.records]),before,mode);
+    a.tick(2500);assert.equal(a.wsc.session.tries,1);
+  }
+});
+test('WSC practice accepts EWGF, early RP, hellsweep and demon paw with isolated records and unchanged tasks',()=>{
+  for(const move of ['ewgf','pending','hellsweep','tongbal']){
+    const a=boot({fx:1});a.setMode('wsc');a.wscStartChallenge();a.tick(4000);
+    const n=a.wsc.challenge.taskN,before=JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]);
+    if(move==='tongbal'){a.onDir('f',5000);a.onDir('n',5020);a.onDir('f',5040);a.onButton(2,5050);}
+    else if(move==='pending'){a.onDir('f',5000);a.onDir('n',5010);a.onDir('d',5020);a.onButton(2,5030);a.onDir('df',5030);}
+    else{const df=wscPrefix(a,5000);a.onButton(move==='hellsweep'?4:2,df);}
+    assert.equal(a.anim.kind,move==='pending'?'ewgf':move,move);assert.equal(a.wsc.active,null,move);assert.equal(a.wsc.session.tries,0,move);assert.equal(a.wsc.challenge.stats.tries,0,move);assert.equal(a.wsc.challenge.taskN,n,move);
+    a.tick(7000);assert.equal(a.wsc.session.aborted,0,move);
+    assert.equal(JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]),before,move);
+  }
+});
+test('live WSC frame display uses elapsed time, A starts at one, B starts at zero, and completion freezes it',()=>{
+  const a=boot();a.setMode('wsc');const df=wscPrefix(a);
+  assert.equal(a.get('wscLive').dataset.frame,'1');a.tick(df+4*F);assert.equal(a.get('wscLive').dataset.frame,'5');assert.match(a.get('wscLive').textContent,/A 5f/);
+  a.onDir('b',df+7*F);assert.match(a.get('wscLive').textContent,/A 8f.*B 0f/);
+  a.tick(df+8*F);assert.match(a.get('wscLive').textContent,/A 8f.*B 1f/);
+  a.onButton(2,df+8*F);assert.equal(a.get('wscLive').dataset.frame,'');const text=a.get('wscLive').textContent;a.tick(df+10*F);assert.equal(a.get('wscLive').textContent,text);
+  wscPrefix(a,2000);a.tick(2530);assert.equal(a.get('wscLive').dataset.frame,'31');a.resetInput();a.renderWsc();assert.equal(a.get('wscLive').dataset.frame,'');
+});
+
+
+test('provided move sounds are lazy, route by move and honor SFX volume and mute independently of effects',()=>{
+  const played=[];class Sound extends AudioStub {play(){played.push(this.src);return super.play();}}
+  const a=boot({fx:0,bgm:0,sfxVol:35},undefined,{Audio:Sound});
+  assert.deepEqual(Object.keys(a.snd.pool),[]);a.unlockAudio();a.world.dummyX=10000;
+  a.fx.tongbal();a.fx.hellsweep();a.setMode('wsc');wscRun(a,8,1);
+  for(const file of ['sfx-tongbal.mp3','sfx-hellsweep.mp3','sfx-wsc.mp3']) assert.equal(played.filter(s=>s===file).length,1,file);
+  for(const name of ['tongbal','hellsweep','wsc'])assert.ok(a.snd.pool[name].some(v=>!v.paused&&v.volume===(name==='hellsweep'?.35:.35*.8)));
+  const n=played.length;a.store.sound=0;a.sfxSync();a.fx.tongbal();a.fx.hellsweep();wscRun(a,8,1,2000);assert.equal(played.length,n);
+  a.store.sound=1;a.store.sfxVol=0;a.fx.tongbal();assert.equal(played.length,n);
+});
+test('contact sound and burst occur once at dummy launch, never on misses or mismatched targets',()=>{
+  for(const fx of [0,1])for(const reduced of [false,true]){
+    const played=[];class Sound extends AudioStub {play(){played.push(this.src);return super.play();}}
+    const a=boot({fx,bgm:0},undefined,{Audio:Sound,matchMedia:()=>({matches:reduced})});a.unlockAudio();a.world.charX=120;a.world.dummyX=180;
+    a.time(1000);assert.equal(a.tryHit('tongbal'),true);assert.equal(a.tryHit('tongbal'),false);a.updateDummy(1179);assert.equal(played.includes('sfx-hit.mp3'),false);
+    a.updateDummy(1180);assert.equal(played.filter(s=>s==='sfx-hit.mp3').length,1);assert.equal(a.impacts.length,fx&&!reduced?1:0);assert.equal(a.sparks.length>0,!!fx&&!reduced);
+    a.updateDummy(1190);assert.equal(played.filter(s=>s==='sfx-hit.mp3').length,1);
+    a.world.dummy.hit=0;a.world.dummy.alive=true;a.world.dummyX=1000;assert.equal(a.tryHit('ewgf'),false);
+    a.world.dummyX=180;a.world.dummy.type='low';assert.equal(a.tryHit('tongbal'),false);assert.equal(played.filter(s=>s==='sfx-hit.mp3').length,1);
+    assert.equal(a.tryHit('hellsweep'),true);a.store.sound=0;a.updateDummy(1200);assert.equal(played.filter(s=>s==='sfx-hit.mp3').length,1);
+  }
+});
+
+
+test('WSC move sound follows technique success even when the challenge asks for a different wave count',()=>{
+  const played=[];class Sound extends AudioStub {play(){played.push(this.src);return super.play();}}
+  const a=boot({fx:0,bgm:0},undefined,{Audio:Sound});a.unlockAudio();a.setMode('wsc');a.wscStartChallenge();a.tick(4000);a.wsc.challenge.taskN=1;
+  wscRun(a,8,1,5000);assert.equal(a.wsc.last.ok,false);assert.equal(a.wsc.last.timingOK,true);assert.equal(a.wsc.challenge.stats.hits,0);assert.equal(played.filter(s=>s==='sfx-wsc.mp3').length,1);
+  wscRun(a,8,2,6000);assert.equal(played.filter(s=>s==='sfx-wsc.mp3').length,1);
+});
+
+test('move gain survives live volume changes and every contact cue waits for the per-move timestamp',()=>{
+  for(const move of ['ewgf','wgf','tongbal','hellsweep','wsc']){
+    const played=[];class Sound extends AudioStub {play(){played.push(this.src);return super.play();}}
+    const a=boot({bgm:0},undefined,{Audio:Sound});a.unlockAudio();a.time(1000);a.world.charX=120;a.world.dummyX=180;
+    a.playSfx('tongbal');a.playSfx('wsc');a.store.sfxVol=50;a.sfxSync();
+    for(const name of ['tongbal','wsc'])for(const v of a.snd.pool[name])assert.equal(v.volume,.4);
+    a.playSfx('tongbal');assert.ok(a.snd.pool.tongbal.some(v=>!v.paused&&v.volume===.4));
+    assert.equal(a.tryHit(move),true);const contact=1000+a.HIT_CONTACT_MS[move];assert.equal(a.world.dummy.launchAt,contact);
+    a.updateDummy(contact-1);assert.equal(played.includes('sfx-hit.mp3'),false);assert.equal(a.impacts.length,0);assert.equal(a.world.dummy.y,0);
+    a.updateDummy(contact);assert.equal(played.filter(s=>s==='sfx-hit.mp3').length,1);assert.equal(a.impacts.length,1);assert.ok(a.world.dummy.y<0);
+    a.updateDummy(contact+1);assert.equal(played.filter(s=>s==='sfx-hit.mp3').length,1);
+  }
+});
+
+test('hit playback skips the measured 120ms lead-in on every voice and after mute; other clips start at zero',()=>{
+  const a=boot({bgm:0},undefined,{Audio:AudioStub});assert.equal(Object.keys(a.snd.pool).length,0);a.unlockAudio();
+  for(const name of ['wsc','tongbal','hellsweep','hit'])assert.equal(a.snd.pool[name].length,3);
+  for(let i=0;i<5;i++){a.playSfx('hit');assert.equal(a.snd.pool.hit[a.snd.idx.hit].currentTime,.12);}
+  a.store.sound=0;a.sfxSync();a.store.sound=1;a.playSfx('hit');assert.equal(a.snd.pool.hit[a.snd.idx.hit].currentTime,.12);
+  a.playSfx('wsc');assert.equal(a.snd.pool.wsc[a.snd.idx.wsc].currentTime,0);
+});
+
+test('backdash sound follows actual b,N,b output in every mode, not walking, held back or blocked repeats',()=>{
+  for(const mode of ['free','wsc','bd10','wave10','ewgf20','combo10','rush30']){
+    const played=[];class Sound extends AudioStub {play(){played.push(this.src);return super.play();}}
+    const a=boot({bgm:0,fx:0},undefined,{Audio:Sound});a.unlockAudio();a.setMode(mode);
+    a.onDir('b',1000);a.tick(1020);assert.equal(played.includes('sfx-backdash.mp3'),false);
+    a.onDir('n',1030);a.onDir('b',1050);assert.equal(played.filter(s=>s==='sfx-backdash.mp3').length,1,mode);
+    a.onDir('n',1080);a.onDir('b',1100);assert.equal(played.filter(s=>s==='sfx-backdash.mp3').length,1,mode);
+    a.onDir('n',1600);a.onDir('b',1700);a.onDir('n',1720);a.onDir('b',1740);assert.equal(played.filter(s=>s==='sfx-backdash.mp3').length,2,mode);
+    a.store.sound=0;a.sfxSync();a.fx.backdash();assert.equal(played.filter(s=>s==='sfx-backdash.mp3').length,2,mode);
+  }
 });

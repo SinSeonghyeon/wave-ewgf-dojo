@@ -6,8 +6,8 @@
 
 ```
 설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,touch,sound,bgm,bgmVol,sfxVol,keys,records,nick,…,life,ach,pendingRewards,fit} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save()
-소리      SND{bgm,wave,ewgf} 파일명 · snd{ok(typeof Audio),unlocked,bgm,pool,idx,lock,release} · 부트 때는 아무것도 만들지 않음(테스트 vm·og 생성이 미디어를 안 건드림)
-          unlockAudio(): 첫 keydown/pointerdown/패드 버튼에서 1회 → 효과음 풀(이름당 Audio 3개, 라운드로빈) 생성 + bgmSync()
+소리      SND{bgm,wave,ewgf,wsc,hellsweep,tongbal,hit,backdash} 파일명 · snd{ok(typeof Audio),unlocked,bgm,pool,idx,lock,release} · 부트 때는 아무것도 만들지 않음(테스트 vm·og 생성이 미디어를 안 건드림)
+          unlockAudio(): 첫 keydown/pointerdown/패드 버튼에서 1회 → 모든 효과음 풀(이름당 Audio 3개, 라운드로빈) 생성 + bgmSync()
           bgmSync(): sound && bgm && bgmVol>0 && unlocked && !hidden이면 Web Locks(mishima-dojo-bgm) 획득 후 bgm 지연 생성·volume·play(). 같은 브라우저·사이트에서 한 창만 재생. 숨김/끄기/pagehide 시 대기 취소·pause·권한 반환, pageshow/visibilitychange/focus/blur에서 동기화. Web Locks 미지원은 hasFocus 조건으로 대체. NotAllowedError만 unlocked=false로 다음 제스처에 재시도(AbortError는 무시)
           sfxSync(): 모든 기존 효과음 보이스에 볼륨 적용, 끄기/0%는 pause·재생 위치 초기화. 설정 진입은 endTrial(true)·resetInput() 후 showModal로 측정·입력 잔여 상태 정리
           playSfx(name): fx.crouchDash → 'wave', fx.ewgf → 'ewgf'. 설정 #soundSel(segSel, 마스터) · #bgmSel/#bgmBtn → setBgm(on)(배경음만 끄기, 켜면 마스터도 켜기) · #bgmVol/#sfxVol range(input → store·save, sfx change → 미리듣기) · renderSound()는 부트·변경 시 슬라이더·두 설정 토글·헤더 효과 상태(sound && bgm)를 동기화
@@ -32,7 +32,7 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
           자유 연습은 bd.engaged(첫 1 캔슬에 true, 백대시 없이 3초면 false)일 때만 카드·코치·로그·HUD(hudChainL BACKDASH, cd.chain===0일 때만)를 건드린다. bdClear()는 resetInput/setMode/측정 GO/endTrial(모두 updateHud와 짝). session.bd{count,dist,bestChain,top}(테스트가 읽는 관측값, 통계 격자에는 안 나옴). bd10 측정은 trial.dist/bdCount/bdTop/bestChain → renderBdHud(#hudScore "n.n m") · 구간 막대: bd.seg{tap,n,hold,db} → renderSeg(bd 변형, seg.namesBd 4·N·4홀드·1, 5번째 칸 접힘, 제목 #segTitle)
 경직      bdRec{until} — 모든 모드의 스테이지 기능(판정 아님): onDir에서 b,N,b가 나가면 until = t + RECOVER_F(판정이 그 백대시를 본 뒤 설정), 그 안의 b,N,b는 fx.backdash 없음, d/db/df/u/ub/uf가 until을 지우고 anim이 backdash면 이동 정지 + bdCrouch. frame()은 until 전엔 뒤 걷기만 막고, poseAt backdash는 240ms 뒤에도 until까지 자세 유지(sweat)
 초풍 판정 onButton(n,t): n===4 → 나락(strike), n===2 → 초풍 판정, 그 외 → wrongBtn 코치
-          초풍: classify(off) → attempt(kind, off, t) · off = 버튼 시각 − 마지막 3 시각 · |off| ≤ store.window → ewgf · off > window → wgf · off < −window → early
+          초풍: classify(off,t) → attempt(kind,off,t). frameSlot(t)=floor(t/FRAME+0.5), 대각과 RP의 슬롯 차이 0→ewgf / 양수→wgf / 음수→early. 원시 off는 보존, a.frameOff를 히스토그램에 사용(간격 반올림과 다름).
           상태 3(d 유지)에서 버튼이 먼저 오면 cd.pending={t,btn}, 3이 오면 음수 오프셋으로 판정, 120ms 안에 3이 없으면 no_df(btn 2만)
           attempt 종류: ewgf / combo_short(웨이브 초풍 모드에서 웨이브 3회 미만) / wgf / early / no_df / early_stage / no_cd
           attempt 레코드 {t,kind,off,chain,mode,streak,dash}: streak = combo{n,t}(연속 초풍. ewgf가 아니면 0, 마지막 초풍 후 3초 지나면 다시 1부터, resetInput/setMode/측정 GO/fault에서 0)
@@ -68,11 +68,11 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
           방문자(#visits, 헤더 우상단): visitsLoad()가 KST 날짜(KST_DAY)와 store.visitDay를 비교해 다르면 visitDay를 먼저 저장하고 POST /visits(요청 중 새로고침·두 번째 탭이 다시 세지 않게; 실패하면 그날은 안 세어짐), 같으면 GET. live.visitsBusy로 한 번에 하나만. 문구 visits(today,total)
           한마디(#postsCard): #postForm(#postNickLabel 표시 + 본문 #postText 200자) → postSend(POST /posts; hasNick()이 아니면 게이트를 연다) → 응답 rows로 목록 갱신. 오류 코드 매핑 rate→posts.tooFast, text→posts.textBad, auth→lostNick(). 좋아요/싫어요(2026-09-13, 결정 18): renderPosts가 글마다 `.post-votes`에 voteBtn(👍 up / 👎 down, aria-pressed = 내 표) 두 개를 그리고 #postList 클릭 위임 → postVote(id, v): hasNick() 아니면 게이트, 내 표와 같으면 v:0(취소) 아니면 v로 POST /vote(멱등 설정), 응답 `mine`으로 store.votes[id] 갱신(요청 시작 때의 닉과 key가 같을 때만 — 요청 중 닉을 바꾸면 새 닉의 캐시를 더럽히지 않음)·setPosts(rows)로 목록 교체, live.voting(불리언)이 참인 동안 모든 표 버튼 비활성 + 요청 하나만. 오류 rate→posts.voteFast, post(삭제됨)→postsLoad, auth→lostNick, 그 외 posts.voteFail. store.votes = {글 id: 1|-1} 렌더 전용 캐시(로더가 닉이 있을 때 숫자 id·±1만 통과, live.posts를 대입하는 유일한 함수 setPosts가 목록 밖 id 제거, 닉 변경(claimNick 다른 key)·lostNick에서 비움)
           서버 코드는 worker/ (CODE_MAP 범위 밖, worker/README.md 참조). 응답 shape: /nick {ok,nick,token} | 409 taken · /top {season,board,total,rows[{id,rank,nick,score,tie,detail,win,created_at}],me|null,cut10(상위 10% 경계 점수, 10명 미만은 1위, 빈 보드 null)} · /submit 같은 shape + {ok,id,rank,improved} · DELETE /score 같은 shape + {ok,deleted} · /visits {day,today,total} · /posts {rows[{id,nick,text,created_at,up,down}]} · /vote {ok,id,mine,rows} (400 id/v · 403 auth · 404 post · 429 rate)
-모드      MODES{free,wave10(10초),ewgf20(20회),combo10(10회),rush30(30초 더미 격파),bd10(10초 백대시 거리)} · setMode → renderMode · startTrial(3초 카운트다운, rush면 GO에 rushSpawn) · endTrial(기록 저장, rush면 dummy.type=null 복구) · trialTick(trial.dur 있으면 타이머, rush는 renderRushHud) · rush30: trial{score,kills,whiffs,dashPts}, RUSH_PTS{kill:5,wgf:2,dashMax:3}, HIT_TYPE{ewgf:high,wgf:high,tongbal:mid,hellsweep:low}, boardEntry tie=kills
+모드      MODES{free,wsc(전용 무제한),wave10(10초),ewgf20(20회),combo10(10회),rush30(30초 더미 격파),bd10(10초 백대시 거리)} · setMode → renderMode · startTrial(3초 카운트다운, rush면 GO에 rushSpawn) · endTrial(기록 저장, rush면 dummy.type=null 복구) · trialTick(trial.dur 있으면 타이머, rush는 renderRushHud) · rush30: trial{score,kills,whiffs,dashPts}, RUSH_PTS{kill:5,wgf:2,dashMax:3}, HIT_TYPE{ewgf:high,wgf:high,tongbal:mid,hellsweep:low}, boardEntry tie=kills
 설정 UI   #setDlg(dialog.share.settings, aside 안에 둠) ← 스테이지 우상단 톱니 버튼 #setOpen(.hud-gear, pointer-events:auto) · #setClose · 톱니 바로 왼쪽 #sideSel(.hud-side)의 1P/2P 버튼은 스테이지에서 바로 방향 전환(설정 창에서는 제거, 기존 측정 취소·입력 초기화·저장 유지). 480px 이하 화면은 타이머를 버튼 아래로 배치 · 열려 있으면 modalOpen()이 게임 입력을 멈춤(키 리맵 listening은 그보다 먼저 처리되어 동작)
-          segSel(id,attr,cb): winSel/sideSel/fxSel/touchSel/soundSel/langSel · renderKeys(): 키 리맵(중복·방향키 충돌 거부, Esc 취소) · 볼륨 기본값 100/100
+          segSel(id,attr,cb): sideSel/fxSel/touchSel/soundSel/langSel · renderKeys(): 키 리맵(중복·방향키 충돌 거부, Esc 취소) · 볼륨 기본값 100/100
 스테이지  canvas · world/anim/ghosts/pops/sparks/dust/bolts · fx{crouchDash,ewgf(n,fromDash),wgf,jab,stumble,dash(short),backdash,tongbal,hellsweep} · pop(text,color,size,opts) 폰트는 displayFont() · opts에 x(월드 px),y(바닥 위 px) 추가 가능(격파 팝은 더미 위)
-          world.dummy.type: null=일반 백(아무 기술이나 반응) · high/mid/low=rush30 표적(HIT_TYPE 일치만 격파). tryHit(move)는 true/false 반환(사거리 10~130px, 날아가는 중이면 false), 명중 즉시 hit=1로 중복 득점을 차단하고 launchAt=지금+110까지 낙하·스파크를 지연한다. updateDummy(now)가 물리·재등장을 처리하며 타입 더미는 낙하 완료와 무관하게 respawn=명중+700 이후 첫 프레임에 교체한다. rushSpawn()=타입·거리 랜덤(140~min(380,W*0.6)px). drawDummy는 DUMMY_LOOK로 타입별 위치·색·라벨(dummy.high/mid/low)
+          world.dummy.type: null=일반 백(아무 기술이나 반응) · high/mid/low=rush30 표적(HIT_TYPE 일치만 격파). tryHit(move)는 true/false 반환(사거리 10~130px, 날아가는 중이면 false), 명중 즉시 hit=1로 중복 득점을 차단하고 launchAt=지금+HIT_CONTACT_MS[move]까지 낙하·스파크를 지연한다. updateDummy(now)가 물리·재등장을 처리하며 타입 더미는 낙하 완료와 무관하게 respawn=명중+700 이후 첫 프레임에 교체한다. rushSpawn()=타입·거리 랜덤(140~min(380,W*0.6)px). drawDummy는 DUMMY_LOOK로 타입별 위치·색·라벨(dummy.high/mid/low)
           STREAK[1..6] 연속 초풍 팝 스타일(size/color 토큰/glow/rings/sparks/shake, 6에서 고정) · pop opts {lvl,glow,rings,core,life} → 렌더러가 punch-in(easeOutBack)·shadowBlur·퍼지는 링·흰 코어를 그림. reduced motion이면 크기·색·글로우만
           frame(): 걷기(curDir f/b 유지 + idle/walk 이고 moveDur 없음, WALK_F/WALK_B px/s, 살아있는 더미 DUMMY_STOP(36px) 앞에서 정지) → 이동 → rush 더미 통과 방지 clamp → 카메라 → 더미(타입 있으면 rushSpawn 리스폰, 없으면 기존 앞으로 재배치) → 배경/바닥 → 먼지 → 잔상(cd/dash/backdash) → 더미 → 캐릭터 → 번개 → 스파크 → 텍스트 팝 → 플래시
           drawFighter(g,x,y,pose,dir,alpha,tint,look=currentLook()) look=슬롯별 아이템(옷장; tint가 있으면 훅 생략, hairBase 실루엣) · pose.step(−1..1: 보폭, 0이면 기존과 픽셀 동일)·reach(앞팔 추가 길이, 통발)·sink(스탠스 낮춤, 나락)·sweep(오른 다리 궤도각, null이 아니면 다리 하나를 하체 중심 저평 타원 궤도로 그려 한 바퀴 스윕) · poseAt(now): anim.kind('cd','ewgf','jab','stumble','dash','backdash','tongbal','hellsweep','walk','idle')
@@ -90,7 +90,7 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 
 - 상태 타임아웃 250ms, d/f 유지 상태 450ms, d/f 뗀 뒤 캔슬 대기 120ms, pending 버튼 120ms, 체인 종료 700ms.
 - 백대시 `BD`(가정값, 결정 17): MIN_F 6 · MOVE_F 10 · RECOVER_F 26 · LINK_MAX_F 60 · TIERS top 3.5 / fast 3.0 / ok 2.2 m/s. 4 탭·N 짝짓기는 TAP_MS(250) 공유. 문구(클로저)와 테스트가 상수를 읽으므로 숫자만 바꾸면 된다.
-- 판정 폭 8/12/15ms(0.5f/0.7f/0.9f). 기본 12. "완벽한 저스트" 코치 문구는 `|off| ≤ min(8, window/2)`.
+- 초풍은 공통 60Hz 슬롯 동일성(AGENTS 결정 2). 옛 window는 로드/서버 호환 및 기존 나락 선입력에만 유지. 선택 UI 없음. 완벽 코치 `|off|≤4ms`, 사범 피부 진행은 동일 슬롯 성공 중 `|off|≤8ms`.
 - 웨이브 상위 띠(차트 음영·카드 chart.top·코치 tempo.5)는 웨이브 10초 순위 상위 10% 경계(`waveTop()`, 워커 `cut10`). 보드 응답 전·백엔드 없음이면 5 대시/초 폴백. 순위가 초기화되지 않으므로(2026-09-14) 받은 값은 만료 없이 유지되고, 1분 주기 waveRefresh()가 `board.at.wave10`이 `WAVE_TTL`(10분)보다 오래됐거나 없을 때 선택 탭 변경 없이 배경 재조회한다(중복 요청 방지, 실패 시 마지막 값 유지 후 다음 주기 재시도, 새 로드·등록·닉 변경 우선). 보드 데이터는 항상 `boardSet(t,d)`로 넣어 `board.at[t]`를 찍는다. boardLoad/boardSubmit이 wave10 데이터를 받으면 renderWave()로 띠를 갱신. 구간 조언은 가장 긴 구간이 90ms를 넘을 때만.
 
 ## i18n 용어
@@ -118,11 +118,38 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 
 ## 검증
 
-- `node --test tests/dojo.test.cjs`: 배포 HTML의 실제 스크립트를 읽어 DOM·게임패드·시간을 모사. 판정, 측정 모드 경계, 패드 동시 입력·재연결, 저장 데이터 검증, 누적 통계, 판정 폭 경계, 언어 전환, 세 사전 키 집합 일치, 공유 카드 모델(histBins/buildCard/shareSource), OG 카드 모델(buildOgCard)과 `<head>`의 정적 SEO/OG 태그(og:image 절대 주소·1200×630·theme-color가 `--bg`와 일치·외부 스크립트 없음)를 검증한다. 테스트 하네스의 `querySelectorAll`은 빈 배열을 돌려주므로 정적 텍스트 치환은 여기서 검증되지 않는다. 하네스에는 `createElement`·캔버스 컨텍스트가 없으므로 그리기·클립보드 코드는 클릭 핸들러 안에서만 호출해야 한다.
+- `node --test tests/dojo.test.cjs`: 배포 HTML의 실제 스크립트를 읽어 DOM·게임패드·시간을 모사. 판정, 측정 모드 경계, 패드 동시 입력·재연결, 저장 데이터 검증, 누적 통계, 공통 60Hz 슬롯 경계, 언어 전환, 세 사전 키 집합 일치, 공유 카드 모델(histBins/buildCard/shareSource), OG 카드 모델(buildOgCard)과 `<head>`의 정적 SEO/OG 태그(og:image 절대 주소·1200×630·theme-color가 `--bg`와 일치·외부 스크립트 없음)를 검증한다. 테스트 하네스의 `querySelectorAll`은 빈 배열을 돌려주므로 정적 텍스트 치환은 여기서 검증되지 않는다. 하네스에는 `createElement`·캔버스 컨텍스트가 없으므로 그리기·클립보드 코드는 클릭 핸들러 안에서만 호출해야 한다.
 - `node --test tests/board.test.cjs`: Worker 핸들러를 `tests/fake-d1.js`(node:sqlite 인메모리 + 실제 schema.sql, D1 prepare/bind/run/all/first 모양)로 직접 호출. 주차·일 키 경계(15:00 UTC), 닉네임·본문 정규화·범위 검증, 닉네임 등록(대소문자·전각 무시 유니크, 토큰 없거나 틀리면 submit/posts 403, 등록 철자로 저장, 레이트 리밋 스텁), 닉네임당 1행 업서트(더 나쁘면 유지·improved=false), 동점 순위 공유·보드/주차 격리, 10위 캡 + 10위 밖 내 순위, 방문 집계, 게시판(50개 캡·검증·레이트 리밋 스텁·관리자 삭제 403/404), 좋아요/싫어요(닉당 1표·멱등 설정·변경·취소·검증 400/403/404·레이트 리밋 스텁·글 삭제 시 표 삭제), CORS·상속 키 400·404/413·500(스택 비노출). 두 파일을 함께 돌리려면 `node --test tests/dojo.test.cjs tests/board.test.cjs`.
 - `node tests/smoke-chrome.js`: 로컬 Chrome/Edge를 헤드리스로 띄워 CDP로 조작. 시작 시 `worker/index.js`를 로컬 http로 감싸고(가짜 D1) `BOARD_URL`만 그 주소로 바꾼 index.html 사본을 임시 폴더에 만들어 연다(원본은 건드리지 않음). 키보드로 6N23+2 입력, ko/en/ja 왕복 전환, 일본어로 웨이브 10초 측정 모드를 끝까지 돌린 뒤 공유 카드 열기·1200×630 PNG 생성·이미지 복사 시도(file://에서는 거부되어 안내 문구)·언어 전환·닫기, 백엔드는 로드 직후 닉네임 게이트부터: 모달 열림·게이트 중 키 입력 무시·Escape로 안 닫힘·2자 미만 거부·미리 점유된 닉네임 409 거부(Chrome이 남기는 409 리소스 오류 로그는 걸러냄)·자유 닉네임으로 시작(localStorage nick+token 48 hex). 측정 모드가 끝나면 자동 등록 문구와 자동으로 열린 결과 창 배너(등급 t2 '上級', 1位/1人)를 확인하고, 두 번째 측정 모드 자동 등록('최고 기록 유지'·결과 창 재오픈) → 다른 보드 빈 상태 → 한마디 작성·표시 → 헤더 버튼으로 닉네임 변경 → ko 전환 후 문구와 가짜 D1의 scores/posts/visits/nicks 행을 검사한다. JS 오류가 있거나 검사가 실패하면 종료 코드 1. 약 40초 걸린다.
 - 스모크 테스트 끝에 폰 에뮬레이션(390×844, touch, pointer:coarse)으로 터치 오버레이 표시·대기 배지 → 패드에서 f,N,d,df를 굴리고(CDP Input.dispatchTouchEvent) df와 2를 한 번에 보내 초풍 판정 → 가로(844×390)에서 패드·버튼이 오버레이 안에 겹침 없이 들어가고 힌트가 그 위에 보이는지 → 데스크톱으로 되돌리면 숨김을 확인한다.
 - 실제 키보드·게임패드·터치 지연, DirectInput 장치별 hat 매핑, 화면 폭별 시각 품질은 자동 검증에 없다.
 - 캔버스 입자·더미 물리는 프레임마다 고정량으로 갱신하므로 주사율에 따라 연출 속도가 달라진다. 판정과 rush30 더미 재등장은 시각 기반이라 영향 없음(재등장은 기한 이후 첫 프레임).
 
-- 소리 회귀 브라우저 검사: `node tests/smoke-sound.js`. 로컬 HTTP로 backend 비활성 사본을 제공, 같은 Chrome의 별도 창 두 개에서 BGM 한 개·끄기/닫기 시 권한 이전·재생 중 효과음 볼륨/끄기를 검증.
+- 소리 회귀 브라우저 검사: `node tests/smoke-sound.js`. 로컬 HTTP로 backend 비활성 사본을 제공, 같은 Chrome의 별도 창 두 개에서 BGM 한 개·끄기/닫기 시 권한 이전·재생 중 효과음 볼륨/끄기를 검증. 정리본 MP3 5개 실제 디코딩/재생·볼륨·일괄 음소거와 피격 효과 스크린샷도 확인한다.
+
+
+## 웨캔기어 (2026-09-18, 후속 UI 반영)
+
+- `wsc`는 메모리 전용 `session` 하나 + `challenge{status,stats,startAt,remaining,taskN}`. onDir/tick은 모든 모드에서 wsc와 기존 cd를 함께 실행한다. onButton은 active.back이 있으면 wscButton으로 소비하고 endCommand, 없으면 wscOtherMove로 후보를 지우고 기존 기술을 판정한다. pending RP/나락 확정도 attempt/strike에서 후보를 정리한다. wsc 모드의 completeCD/attempt/strike/addLog 기록 쓰기는 가드로 막아 기존 session/life/업적을 유지한다. 다른 모드에서는 기존 웨이브만 정상 집계하며 WSC 마무리로 attempt/strike/측정 점수를 만들지 않는다. 공통 입력 정규화·키보드/패드/터치와 1P/2P 변환은 유지.
+- `wscJudge` / `wscFrames` / `wscA`: 경과 간격 반올림, A만 +1(대각 입력 프레임 포함). A=8..10(실제 경과 7..9)/B=1..A−7, B는 뒤 입력 0f 기준 유지. 원시 값·정수 값 보존. 초풍 `frameSlot`과 다른 정책.
+- `wscDir`: 선행 prefix 순서만 인식하고 시간 기록은 마지막 df부터 `active.events`에 넣는다. 첫 앞은 캔슬, 별도 시작 앞부터 새 prefix; 완성된 대각만 기준 교체. `wscButton` → `wscFinish` 결과 최대 1회, `wscRecord`로 세션 및 실행 중 도전에 각각 집계. 중단 aborted/선행 errors는 분모 제외, 최근 rows 12건.
+- `wscStartChallenge` / `WSC_TARGET=10`: countdown(3초) → running → done. wscTick의 입력 시각·RAF tick으로 진행, 별도 타이머 없음. 카운트다운 입력은 무시. N=0~3을 과제마다 무작위 추첨, active.waves의 유효한 연결 수가 taskN+1인지 A/B와 함께 평가. 결과 taskN/waves/taskOK/timingOK로 횟수와 타이밍을 따로 보존. 10번째 평가 결과에서 완료, 다음 시도는 세션에만 추가. 기존 trial/BOARDS/랭킹/공유 경로 없음. rewardBlocked는 도전 중 보상 수령도 막는다.
+- `resetInput` → `wscCancel`이 진행 입력과 도전을 취소한다. 내부 GO·다른 기술·일반 모드의 미완성 웨이브 만료에서는 `wscCancel(false)`로 후보만 지운다. 모드/side/모달/blur/hidden에서 취소. 세션 초기화는 WSC의 session/challenge만 비운다.
+- 왼쪽 #inputs(기존 입력 간격 f 이력), #wscTimeline(6N23 묶음 + 1..15f 축 + #wscLive 실시간 A/B), 오른쪽 .coach 안 #wscPanel(전체 결과, #wscAB 두 칸, 도전 버튼/요약/#wscTask 요구·현재 횟수, 이번 세션 통계, 접이식 기록/안내). 단계 버튼 없음. 기본 2열 레이아웃/모바일 1열 유지. 표는 가로 스크롤하며 새 결과의 뒤·RP 구간으로 정적 이동. renderWscLive(now)는 RAF 현재 시각으로 판정과 동일한 반올림을 표시하고 .current 칸을 강조·스크롤한다. 판정 자체는 입력 시각만 사용한다. 완료/취소에는 진행 강조 제거, 15f 초과는 마지막 칸과 정확한 숫자 유지. #resultCard도 표시해 다른 기술 결과를 보여준다. shareSource/openShare 가드 유지.
+- `wscAnimate` → poseAt('wsc'): 앉기/상승/복귀, moveChar·기상어퍼 팝·tryHit('wsc')로 일반 더미만 반응. wsc 기술음은 playSfx, 일반 더미 tryHit는 연출 설정과 독립. rushStrike·기술 통계 없음. timingOK(도전 횟수와 독립)일 때 기술 연출·소리. fx off/reduced는 기상어퍼 추가 모션만 생략.
+- `tests/smoke-wsc.js`: 백엔드 없는 사본, 실제 브라우저 키 이벤트, 여섯 조합/동시/모달 취소, 실제 3초 카운트다운/랜덤 과제 10회 완료/취소, 1366·390px × ko/en/ja × 1P/2P 레이아웃 및 기상어퍼 스크린샷. `.sandbox/wsc/browser/` 저장.
+- `tools/make-og.js`는 임시 사본의 백엔드를 끄고 QR 리소스를 복사해 외부 서버·누락 리소스 없이 생성한다.
+
+
+## 기술별 효과음·피격 (2026-09-18)
+
+- 효과음은 첫 사용자 입력(unlockAudio)에서 sfxPool에 이름별 Audio 3개를 미리 생성한다. `fx.tongbal/hellsweep`, `wscAnimate`에서 각각 재생한다. 기존 wave/ewgf 소리는 유지, 풍신권·실패에는 새 기술음을 임의로 배정하지 않는다.
+- `tryHit`가 사거리/활성/중복/타입을 검증하고 예약한 launchAt에 `updateDummy`가 피격음과 효과를 1회 생성한다. 피격음은 sound/sfxVol만 따르고, `impacts`의 180ms 원·방사선과 접촉 불꽃은 fx/reduced도 따른다. effects-off에서도 더미 명중·점수는 동일하다.
+- 원본 제공 폴더 `D:\사운드 모음`: 정리본 기상어퍼소리.mp3→sfx-wsc.mp3, 나락소리.mp3→sfx-hellsweep.mp3, 통발소리.mp3→sfx-tongbal.mp3, 피격음.mp3→sfx-hit.mp3, 백대쉬소리.mp3→sfx-backdash.mp3. 파일 내용은 변경하지 않았다. 2026-09-18 사용자 확인: 4개 모두 직접 제작 또는 사이트 공개 사용 권한이 있는 음원. 출처 확인 완료.
+
+- 2026-09-18 피격음 후속 조정: `SFX_GAIN{tongbal:0.8,wsc:0.8}`와 `sfxVolume(name)`을 재생 및 sfxSync 모두에서 적용. `HIT_CONTACT_MS`는 통발/초풍/풍신권 180ms, 나락 160ms, 기상어퍼 200ms. 사운드·충격 효과·더미 날아가기의 시작을 같은 launchAt에서 처리하며 점수/명중 예약/700ms 재등장 정책은 유지한다. 실제 게임 발동 프레임이 아닌 사이트 연출 조정값이다.
+
+- 2026-09-18 음원 내부 지연 확인: FFmpeg 및 Chrome decodeAudioData에서 피격음의 10ms RMS가 최대 RMS의 30%를 처음 넘는 구간은 180ms(최대는300ms). `SFX_START.hit=0.18`로 재생 시작점을 옮겼다. 다른 기술음은0, 원본 MP3·기술별 contact 시간·80% gain은 유지한다. 첫 입력에서 모든 SFX를 선로딩한다. `tests/smoke-sound.js`는 디코딩한 onset과 설정 offset 일치, 실제 seek 완료 후 currentTime을 검사하며, 로컬 미디어 서버에 Range 응답을 제공한다.
+- `.sandbox/wsc/`에 audio-analysis.json, browser-audio-analysis.json, sync-before/after.mp4 보관. 비교 영상은 동일한 선로딩 조건에서 hit offset0/0.18만 비교한 브라우저 캔버스+오디오 캡처다. 녹화 첫 통발 피격음 파형 상관 비교에서 약917ms→753ms(약164ms 단축). 에이전트의 직접 청취 결과가 아니며 오디오 출력 장치의 체감 싱크 보장은 아님.
+
+- 2026-09-18 정리 음원 재교체(최신): 사용자 제공 5개를 원본 바이트 그대로 복사. 새 피격음의 10ms RMS 30% 시작점은120ms이므로 SFX_START.hit=0.12로 갱신(위180ms 분석은 이전 파일 이력). 통발/기상어퍼80%와 기존 contact 시간은 유지. `fx.backdash`에서 playSfx('backdash'), tapDetect가 실제 출력한 b,N,b만 재생하고 경직 중 무효 재입력·걷기에는 재생하지 않는다. 정리본 녹화 `.sandbox/wsc/sync-clean.mp4`(백대시→통발→기상어퍼→나락)는 브라우저 오디오·캔버스 캡처이며 직접 청취 검증은 아니다.

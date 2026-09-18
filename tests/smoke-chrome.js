@@ -39,7 +39,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(!/const BOARD_URL = '[^']*';/.test(src)) throw new Error('BOARD_URL constant not found in index.html');
   dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html');
   fs.writeFileSync(page, src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`));
-  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','donate-kakao.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
+  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3','donate-kakao.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
   try{ fs.rmSync(path.join(os.tmpdir(),'dojo-smoke-profile'),{recursive:true,force:true}); }catch(e){} // fresh localStorage every run (a navigation at the end of the run flushes it to disk)
   const b = await launch({port:9333, profile:'dojo-smoke-profile'});
   browser = b;
@@ -172,7 +172,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(!/^\d\.\d m$/.test(out.moves.bd.score) || out.moves.bd.kind!=='BACKDASH' || !/×2/.test(out.moves.bd.title) || out.moves.bd.chain!=='BACKDASH' || !/^\d\.\d m$/.test(out.moves.bdEnd.score) || parseFloat(out.moves.bdEnd.score)<=parseFloat(out.moves.bd.score)
      || !/^\d+\.\d$/.test(out.moves.bdEnd.timer) || out.moves.bdLeft.score!=='' || out.moves.bdLeft.records!==0) errors.push('bd10 check failed: '+JSON.stringify({bd:out.moves.bd, bdEnd:out.moves.bdEnd, bdLeft:out.moves.bdLeft}));
   if(!/f,f\+2|통발|66\+2/.test(out.moves.tongbal) || !/Hell Sweep|나락|奈落/.test(out.moves.sweep.title) || !/Move/.test(out.moves.sweep.log) || out.moves.rush.score!=='1 PTS' || !/^1 /.test(out.moves.rush.prog) || !/^\d+\.\d$/.test(out.moves.rush.timer)
-     || !/6N23\+4/.test(out.moves.rush.hint) || out.moves.rush.modes!==6 || out.moves.left.score!=='' || out.moves.left.records!==0) errors.push('f,f+2 / hell sweep / rush30 check failed: '+JSON.stringify(out.moves));
+     || !/6N23\+4/.test(out.moves.rush.hint) || out.moves.rush.modes!==7 || out.moves.left.score!=='' || out.moves.left.records!==0) errors.push('f,f+2 / hell sweep / rush30 check failed: '+JSON.stringify(out.moves));
   if(out.sound.off.on!=='0' || out.sound.off.stSound!==0 || out.sound.off.stSfx!==30 || !out.sound.off.disabled || out.sound.on.on!=='1' || out.sound.on.disabled) errors.push('sound settings check failed: '+JSON.stringify(out.sound));
   for(const l of ['en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);

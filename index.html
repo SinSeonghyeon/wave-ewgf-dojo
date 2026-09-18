@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>미시마 도장 | 철권 초풍·웨이브 대시 연습 (Mishima Dojo EWGF Trainer)</title>
-<meta name="description" content="철권 미시마류 초풍(EWGF)·웨이브 대시(6N23) 입력을 브라우저에서 프레임 단위로 판정하는 무료 연습 도구. 키보드·게임패드 지원, 판정 폭 0.5f/0.7f/0.9f, 타이밍 히스토그램과 측정 모드. Free Tekken EWGF trainer & wave dash practice tool with frame-accurate input judging.">
+<meta name="description" content="철권 미시마류 초풍(EWGF)·웨이브 대시(6N23) 입력을 브라우저에서 프레임 단위로 판정하는 무료 연습 도구. 키보드·게임패드 지원, 60Hz 동일 프레임 판정, 타이밍 히스토그램과 측정 모드. Free Tekken EWGF trainer & wave dash practice tool with frame-accurate input judging.">
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#0B0E13">
 <link rel="canonical" href="https://mishimaryu.com/">
@@ -25,7 +25,7 @@
 <meta property="og:locale:alternate" content="en_US">
 <meta property="og:locale:alternate" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"미시마 도장 (Mishima Dojo)","alternateName":["Mishima Dojo","三島道場","Mishima Dojo EWGF Trainer"],"url":"https://mishimaryu.com/","image":"https://mishimaryu.com/og.png","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","browserRequirements":"Requires JavaScript","inLanguage":["ko","en","ja"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"철권 미시마류 초풍(EWGF)·웨이브 대시(6N23) 입력을 브라우저에서 프레임 단위로 판정하는 무료 연습 도구. 키보드·게임패드 지원, 판정 폭 0.5f/0.7f/0.9f, 타이밍 히스토그램과 측정 모드. Free Tekken EWGF trainer & wave dash practice tool with frame-accurate input judging.","keywords":"Tekken, EWGF, Electric Wind God Fist, wave dash, Mishima, 철권, 초풍, 웨이브, 鉄拳, 最速風神拳, 風神ステップ"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"미시마 도장 (Mishima Dojo)","alternateName":["Mishima Dojo","三島道場","Mishima Dojo EWGF Trainer"],"url":"https://mishimaryu.com/","image":"https://mishimaryu.com/og.png","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","browserRequirements":"Requires JavaScript","inLanguage":["ko","en","ja"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"철권 미시마류 초풍(EWGF)·웨이브 대시(6N23) 입력을 브라우저에서 프레임 단위로 판정하는 무료 연습 도구. 키보드·게임패드 지원, 60Hz 동일 프레임 판정, 타이밍 히스토그램과 측정 모드. Free Tekken EWGF trainer & wave dash practice tool with frame-accurate input judging.","keywords":"Tekken, EWGF, Electric Wind God Fist, wave dash, Mishima, 철권, 초풍, 웨이브, 鉄拳, 最速風神拳, 風神ステップ"}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Dela+Gothic+One&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
@@ -390,6 +390,35 @@
   .lang button{background:transparent;border:0;color:var(--muted);padding:6px 9px;font-size:12px;font-family:var(--mono)}
   .lang button+button{border-left:1px solid var(--line2)}
   .lang button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .stage-wrap{min-width:0}
+  .wsc-panel{margin-top:0;padding:18px;background:var(--panel);border:1px solid var(--line2);border-radius:8px;min-width:0}
+  .wsc-panel h2{margin:0 0 10px;font-family:var(--display);font-size:22px;color:var(--gold)}
+  .wsc-timeline{margin-top:14px}
+  .wsc-ab{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .wsc-ab>div{padding:12px 9px;background:var(--bg);border:1px solid var(--line2);border-radius:5px;font-size:12px;color:var(--muted)}
+  .wsc-ab b{display:block;font:24px var(--mono);color:var(--ink);margin:6px 0}
+  .wsc-ab .ok{border-color:var(--accent)}.wsc-ab .no{border-color:var(--red)}
+  .wsc-challenge{padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .wsc-challenge .btn{width:100%}
+  .wsc-panel details{margin-top:12px}.wsc-panel summary{cursor:pointer;color:var(--muted);font-size:12px}
+  .wsc-command{font:700 clamp(15px,3.5vw,20px) var(--mono);letter-spacing:1px;color:var(--ink);margin:12px 0}
+  .wsc-scroll{overflow-x:auto;max-width:100%;padding-bottom:6px}
+  .wsc-axis{display:flex;min-width:640px;gap:3px;padding:5px 0}
+  .wsc-cell{flex:1;min-width:36px;text-align:center;border:1px solid var(--line2);border-radius:4px;padding:7px 2px;font:12px var(--mono);color:var(--muted)}
+  .wsc-cell b{display:block;min-height:34px;color:var(--ink);font-size:14px;white-space:pre-line}
+  .wsc-cell.a{border:2px solid var(--gold)} .wsc-cell.b{border:2px dashed var(--accent)}
+  .wsc-cell.a.b{box-shadow:inset 0 0 0 1px var(--gold)}
+  .wsc-cell.mark{background:var(--accent-soft)}
+  .wsc-cell.current{background:var(--accent-soft);outline:2px solid var(--ink);outline-offset:-4px;color:var(--ink)}
+  .wsc-live{font:600 18px var(--mono);color:var(--accent);min-height:1.7em;margin:8px 0}
+  .wsc-result{font-size:17px;color:var(--gold);margin:12px 0;min-height:28px}
+  .wsc-panel .note{line-height:1.7;margin:8px 0;overflow-wrap:anywhere}
+  .wsc-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+  .wsc-stats div{background:var(--bg);padding:10px;border-radius:4px;font-size:12px;color:var(--muted)}
+  .wsc-stats b{display:block;color:var(--ink);font:20px var(--mono)}
+  .wsc-panel table{width:100%;font-size:12px;border-collapse:collapse}.wsc-panel td,.wsc-panel th{text-align:left;padding:7px 5px;border-bottom:1px solid var(--line)}
+  body.wsc-mode .coach>.coach-box,body.wsc-mode .coach>.stats,body.wsc-mode .records,body.wsc-mode #hudChain{display:none}
+
 </style>
 
 
@@ -404,6 +433,7 @@
     </div>
     <nav class="modes" role="tablist" data-i18n-aria="modes.aria" aria-label="연습 모드" id="modes">
       <button role="tab" data-mode="free" aria-selected="true" data-i18n="mode.free.name">자유 연습</button>
+      <button role="tab" data-mode="wsc" aria-selected="false" data-i18n="mode.wsc.name">웨캔기어 연습</button>
       <button role="tab" data-mode="wave10" aria-selected="false" data-i18n="mode.wave10.name">웨이브 10초</button>
       <button role="tab" data-mode="ewgf20" aria-selected="false" data-i18n="mode.ewgf20.name">초풍 20회</button>
       <button role="tab" data-mode="combo10" aria-selected="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button>
@@ -454,9 +484,32 @@
         <span class="d-rank" id="dRank"></span>
         <button class="btn ghost" id="dRankRetry" hidden data-i18n="board.retry">다시 시도</button>
       </div>
+      <section class="wsc-panel wsc-timeline" id="wscTimeline" hidden aria-labelledby="wscCommand">
+        <div class="wsc-command" id="wscCommand"></div>
+        <p class="note" id="wscGuide"></p>
+        <div class="wsc-live" id="wscLive" role="timer" aria-live="off"></div>
+        <div class="wsc-scroll" tabindex="0" role="region" data-i18n-aria="wsc.timeline"><div class="wsc-axis" id="wscAxis"></div></div>
+        <p class="note" id="wscLegend"></p>
+      </section>
     </section>
 
     <aside class="coach" data-i18n-aria="coach.aria" aria-label="코치 패널">
+      <section class="wsc-panel" id="wscPanel" hidden aria-labelledby="wscTitle">
+        <h2 id="wscTitle" data-i18n="wsc.evaluation"></h2>
+        <div class="wsc-result" id="wscResult" role="status" aria-live="polite"></div>
+        <div class="wsc-ab" id="wscAB"></div>
+        <p class="note" id="wscDetail"></p>
+        <div class="wsc-challenge">
+          <button class="btn" id="wscChallengeBtn" type="button"></button>
+          <p id="wscTask" role="status" aria-live="polite" hidden></p>
+          <p class="note" id="wscChallengeStatus" role="status" aria-live="polite"></p>
+        </div>
+        <h3 class="note" data-i18n="stats.aria"></h3>
+        <div class="wsc-stats" id="wscStats"></div>
+        <p class="note" id="wscCounts"></p>
+        <details><summary data-i18n="wsc.recent"></summary><table><thead><tr><th data-i18n="wsc.result"></th><th>A</th><th>B</th><th data-i18n="wsc.reason"></th></tr></thead><tbody id="wscRows"></tbody></table></details>
+        <details><summary data-i18n="wsc.help"></summary><p class="note" data-i18n="wsc.note"></p></details>
+      </section>
       <div class="result" id="resultCard">
         <div class="r-kind" id="rKind">READY</div>
         <div class="r-title" id="rTitle"></div>
@@ -483,8 +536,7 @@
       <dialog class="share settings" id="setDlg" aria-labelledby="setTitle">
         <div class="set-head"><h2 id="setTitle" data-i18n="set.title">입력 · 판정 설정</h2><button class="btn ghost" id="setClose" type="button" data-i18n="share.close">닫기</button></div>
         <div class="set">
-          <div class="row"><label class="t" data-i18n="set.window">초풍 판정 폭</label>
-            <div class="segc" id="winSel"><button data-win="8" aria-pressed="false" data-i18n="set.win8">저스트 0.5f</button><button data-win="12" aria-pressed="true" data-i18n="set.win12">보통 0.7f</button><button data-win="15" aria-pressed="false" data-i18n="set.win15">관대 0.9f</button></div></div>
+          <p class="note" data-i18n="ewgf.gridNote"></p>
           <div class="row"><label class="t" data-i18n="set.fx">연출 (흔들림·플래시)</label>
             <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div class="row"><label class="t" data-i18n="set.touch">터치 컨트롤</label>
@@ -580,7 +632,7 @@
     </div>
     <div class="card chart" id="histCard">
       <h2 data-i18n="hist.title">초풍 버튼 타이밍 분포</h2>
-      <p class="sub" data-i18n="hist.sub">d/f 입력 시점을 0으로, 2(RP) 버튼이 눌린 프레임 차이 · 최근 60회</p>
+      <p class="sub" data-i18n="hist.sub">공통 60Hz 칸에서 RP − d/f 프레임 차이 · 0f가 성공 · 최근 60회</p>
       <div id="hist"></div>
       <div class="legend"><span><i style="background:var(--accent)"></i><em data-i18n="hist.lOk">초풍 (판정 안)</em></span><span><i style="background:var(--warn)"></i><em data-i18n="hist.lEarly">빠름 (d+2)</em></span><span><i style="background:var(--red)"></i><em data-i18n="hist.lLate">늦음 (풍신권)</em></span></div>
       <div class="tip" id="histTip"></div>
@@ -609,7 +661,7 @@
       <h3 data-i18n="about.what.h">철권8 초풍·웨이브 대시 연습 도구</h3>
       <p data-i18n="about.what.p">미시마 도장은 철권(철권8) 미시마류의 핵심 입력인 초풍신권(EWGF, 6N23+2)과 웨이브 대시(풍신 스텝 연속, 6N23 6 N 6N23 6 N …)를 브라우저에서 연습하는 무료 도구입니다. 설치 없이 키보드·게임패드·레버리스(히트박스)로 바로 쓸 수 있고, 게임을 켜지 않아도 입력만으로 판정합니다. 비공식 팬 제작이며, 게임 자체를 건드리는 매크로나 치트가 아닙니다.</p>
       <h3 data-i18n="about.judge.h">판정 방식</h3>
-      <p data-i18n="about.judge.p">입력 하나하나의 시각을 밀리초 단위로 기록해 1프레임(16.67ms) 기준으로 판정합니다. 초풍은 3(d/f)이 들어간 순간과 버튼 2를 누른 순간의 차이를 재서, 판정 폭(0.5f·0.7f·0.9f, 기본 0.7f = ±12ms) 안이면 초풍, 늦으면 풍신권, 빠르면 실패로 표시하고 몇 ms 빠르거나 늦었는지 알려 줍니다. 웨이브는 6 → N → 2 → 3 순서와 캔슬 6·시작 6 누락을 잡아 연속 횟수와 초당 대시 수를 셉니다. 브라우저 입력 시각의 정밀도(약 4ms) 때문에 실제 게임 판정과는 약간의 오차가 있습니다.</p>
+      <p data-i18n="about.judge.p">초풍은 각 입력 시각을 공통 60Hz 프레임 칸에 반올림해 3(d/f)과 버튼 2(RP)가 같은 칸이면 성공, RP가 뒤 칸이면 풍신권, 앞 칸이면 실패로 표시합니다. 웨이브는 6 → N → 2 → 3 또는 중립을 생략한 6 → 2 → 3을 인정하며 캔슬 6과 다음 시작 6은 별도로 필요합니다. 웨캔기어는 전용 모드에서 대각을 1f로 센 뒤 8·9·10f에 따라 RP 1·1~2·1~3f를 연습합니다. 브라우저의 60Hz 기준은 실제 게임 프레임과 동기화되지 않으며 입력 장치마다 오차가 있습니다.</p>
       <h3 data-i18n="about.modes.h">측정 모드와 순위</h3>
       <p data-i18n="about.modes.p">자유 연습 외에 웨이브 10초, 초풍 20회, 웨이브 초풍 10회, 더미 격파 30초, 백대시 10초 측정 모드가 있습니다. 결과는 초풍 버튼 타이밍 분포와 웨이브 속도 추이로 그려지고, 닉네임을 정하면 순위에 올려 다른 플레이어와 비교하고 상위 %에 따른 등급(SS~D)을 받습니다. 결과 카드는 이미지로 저장해 공유할 수 있습니다.</p>
       <h3 data-i18n="about.faq.h">자주 묻는 질문</h3>
@@ -765,7 +817,7 @@ function setFit(slot, id){ if(!ITEMS[slot] || !ITEMS[slot][id] || !owned(id)) re
 const STORE = 'wave-ewgf-dojo-v1';
 const LANGS = ['ko','en','ja'];
 const detectLang = () => { const l = (typeof navigator!=='undefined' && navigator.language || '').toLowerCase(); return l.startsWith('ko')?'ko':l.startsWith('ja')?'ja':'en'; };
-const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // EWGF window in ms: 0.5f / 0.7f / 0.9f (design decision 2; no 1f+ option)
+const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // Legacy saved values / unchanged Worker contract; not used by the current EWGF judge
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
 let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', sound:1, bgm:1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault()};
@@ -838,7 +890,7 @@ ko:{
   'mode.combo10.name':'웨이브 초풍 10회', 'mode.combo10.desc':'웨이브를 3회 이상 이어간 뒤 초풍으로 마무리. 10번 시도해 성공률을 기록합니다.',
   'hint.free':'6N23 = 크라우치 대시 · 3 직후 ↓를 떼 6(캔슬), 떼고 다시 6N23 · 3 과 동시에 I(2) = 초풍',
   'hint.wave10':'시작 후 6N23 6 N 6N23 6 N … 반복 · 3 직후 ↓만 떼면 캔슬 6, 떼었다가 다시 6',
-  'hint.ewgf20':'6 떼고 2 그리고 3 과 동시에 오른손(2) · 기본 판정은 0.7프레임(설정에서 변경)',
+  'hint.ewgf20':'6 떼고 2 그리고 3 과 동시에 오른손(2) · 대각과 오른손이 공통 60Hz 격자의 같은 프레임에 들어와야 성공',
   'hint.combo10':'6N23 6 N … 웨이브 3회 이상 → 마지막 3 과 동시에 2',
   'trial.start':'시작', 'trial.reset':'세션 초기화',
   'ready.title':'입력을 기다리는 중', 'ready.sub':'키보드 또는 게임패드로 입력하세요', 'ready.reset':'세션 초기화됨',
@@ -849,16 +901,15 @@ ko:{
   'seg.l1':'시작 6 유지', 'seg.l2':'중립', 'seg.l3':'2 유지', 'seg.l4':'3 유지 → 캔슬 6', 'seg.l5':'캔슬 6 → 다음 시작 6',
   'stat.dps':'최고 웨이브 속도 (대시/초)', 'stat.chain':'최고 연속 대시', 'stat.dash':'총 대시', 'stat.rate':'초풍 성공률', 'stat.try':'초풍 시도', 'stat.mean':'평균 버튼 오프셋',
   'set.title':'입력 · 판정 설정',
-  'set.window':'초풍 판정 폭', 'set.win8':'저스트 0.5f', 'set.win12':'보통 0.7f', 'set.win15':'관대 0.9f',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'캐릭터 방향', 'set.side1':'1P (→ 가 앞)', 'set.side2':'2P (← 가 앞)',
   'set.fx':'연출 (흔들림·플래시)', 'set.on':'켜기', 'set.off':'끄기',
   'set.touch':'터치 컨트롤', 'set.touchAuto':'자동 (터치 기기)', 'touch.note':'터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)', 'touch.aria':'터치 컨트롤', 'touch.padAria':'방향 패드 — 손가락을 굴려 입력',
   'set.keys':'키 설정 — 칸을 누른 뒤 원하는 키를 입력 (방향키 ↑↓←→ 는 항상 사용 가능)', 'set.keyListen':'키 입력…',
   'set.keyConflict':'이미 사용 중이거나 방향키와 충돌하는 키입니다. 다른 키를 누르세요. Esc로 취소합니다.',
   'set.pad':'게임패드', 'set.padNone':'연결 안 됨 · 패드 아무 버튼이나 누르면 감지', 'set.padOn':'연결됨 · ',
-  'set.padNote':'패드 기본 배치: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>, 십자키·왼쪽 스틱 모두 방향으로 인식. 브라우저 입력은 약 4ms 단위로 읽히므로 실제 게임보다 오차가 조금 있습니다. 기본 판정은 0.7프레임(보통)이며, 실제 게임에 맞추려면 저스트 0.5f로 좁히세요.',
+  'set.padNote':'패드 기본 배치: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>, 십자키·왼쪽 스틱 모두 방향으로 인식.',
   'set.reset':'기록·업적 초기화', 'set.resetBtn':'초기화…', 'set.resetNote':'모드별 최고 기록, 누적 통계, 업적, 복장을 지웁니다. 닉네임과 설정은 남습니다.', 'set.resetConfirm':'최고 기록·누적 통계·업적·복장을 모두 지웁니다. 되돌릴 수 없습니다. 계속할까요?', 'set.resetDone':'기록과 업적을 초기화했습니다.',
-  'hist.title':'초풍 버튼 타이밍 분포', 'hist.sub':'d/f 입력 시점을 0으로, 2(RP) 버튼이 눌린 프레임 차이 · 최근 60회',
+  'hist.title':'초풍 버튼 타이밍 분포', 'hist.sub':"공통 60Hz 칸에서 RP − d/f 프레임 차이 · 0f가 성공 · 최근 60회",
   'hist.lOk':'초풍 (판정 안)', 'hist.lEarly':'빠름 (d+2)', 'hist.lLate':'늦음 (풍신권)', 'hist.aria':'초풍 버튼 타이밍 히스토그램',
   'hist.empty':'초풍을 시도하면 분포가 쌓입니다', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}회 · ${k}`, 'hist.kOk':'초풍', 'hist.kEarly':'빠름', 'hist.kLate':'늦음',
   'wave.title':'웨이브 속도 추이', 'wave.sub':'크라우치 대시 한 번당 속도 (대시/초) · 최근 40회 · 음영 = 웨이브 10초 순위 상위 10%', 'wave.aria':'웨이브 속도 추이',
@@ -881,7 +932,7 @@ ko:{
   'coach.wrongBtn':n=>'초풍은 <strong>2 (오른손 펀치)</strong> 입니다. 방금 누른 버튼은 '+n+'번.',
   'a.ewgf.title':'초풍!', 'a.ewgf.sub':(f,ms)=>'버튼 오프셋 '+f+' ('+ms+')', 'a.afterWave':n=>' · 웨이브 '+n+'회 후',
   'a.ewgf.perfect':'완벽한 저스트. 이 감각을 <strong>손에 기억</strong>시키세요 — d/f 로 미는 손과 2 를 누르는 손이 한 동작이었습니다.',
-  'a.ewgf.late':f=>'성공. 버튼이 d/f 보다 '+f+' 뒤에 들어왔습니다. 조금만 더 <strong>동시에</strong> 누르면 저스트 판정도 통과합니다.',
+  'a.ewgf.late':f=>'성공. 버튼이 d/f 보다 '+f+' 뒤에 들어왔지만 공통 60Hz 격자의 <strong>같은 프레임</strong>입니다. 경계를 넘으면 1ms 차이도 실패하므로 동시에 누르는 감각을 유지하세요.',
   'a.ewgf.early':f=>'성공. 버튼이 d/f 보다 살짝 먼저('+f+') 들어왔습니다. ↓→ 로 미는 순간에 맞춰 <strong>아주 조금 늦게</strong> 눌러도 됩니다.',
   'a.combo.title':'초풍 (웨이브 부족)', 'a.combo.coach':n=>'초풍은 됐지만 앞의 웨이브가 '+n+'회였습니다. 이 모드는 <strong>웨이브 3회 이상</strong> 후에 초풍을 넣어야 인정됩니다.',
   'a.wgf.title':'풍신권', 'a.wgf.sub':(f,ms)=>'공격 버튼이 '+f+' ('+ms+') 늦었습니다',
@@ -908,7 +959,7 @@ ko:{
   'trend.noisy':'타이밍이 들쭉날쭉합니다. 웨이브 리듬을 일정하게 만든 뒤 마지막 d/f 에 버튼을 "얹는" 느낌으로 통일하세요.',
   'trend.late':ms=>'전반적으로 늦는 경향입니다. 버튼을 지금보다 약 '+ms+'ms 일찍, d/f 와 동시에.',
   'trend.early':ms=>'전반적으로 빠른 경향입니다. ↓→ 가 들어간 것을 느끼고 누르는 쪽으로 약 '+ms+'ms 늦추세요.',
-  'trend.stable':'타이밍이 안정적입니다. 판정 폭을 한 단계 좁혀 보거나, 웨이브 3회 이상 후 초풍(웨이브 초풍 모드)으로 넘어가세요.',
+  'trend.stable':"타이밍이 안정적입니다. 웨이브 3회 이상 후 초풍(웨이브 초풍 모드)도 연습해 보세요.",
   'chain.end':(n,dps,name,ms)=>'웨이브 '+n+'연속 종료 · 평균 '+dps+' 대시/초. 평균적으로 가장 긴 구간은 '+name+' ('+ms+'ms)',
   'chain.fix':' — 여기를 줄이면 속도가 바로 올라갑니다.', 'chain.ok':' — 균형이 좋습니다.',
   'trial.waveEnd':(n,dps)=>'10초 종료 · '+n+'회 ('+dps+' 대시/초)', 'trial.end':(ok,tg,r)=>'종료 · 성공 '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' 대시',
@@ -980,7 +1031,7 @@ ko:{
   'ach.thunder_head':'파도타기', 'ach.thunder_head.d':'대시 500회 누적', 'ach.thunder_top':'초풍 50', 'ach.thunder_top.d':'초풍 50회 누적', 'ach.thunder_arms':'3연속 초풍', 'ach.thunder_arms.d':'초풍 3연속',
   'ach.thunder_legs':'10초에 15', 'ach.thunder_legs.d':'웨이브 10초에서 15대시', 'ach.thunder_shoes':'100점 격파', 'ach.thunder_shoes.d':'더미 격파 30초 100점', 'ach.thunder_skin':'중단과 하단', 'ach.thunder_skin.d':'통발 30회와 나락 30회',
   'ach.master_head':'파도 삼천', 'ach.master_head.d':'대시 3,000회 누적', 'ach.master_top':'초풍 300', 'ach.master_top.d':'초풍 300회 누적', 'ach.master_arms':'5연속 초풍', 'ach.master_arms.d':'초풍 5연속',
-  'ach.master_legs':'스무 걸음 파도', 'ach.master_legs.d':'웨이브 20연속', 'ach.master_shoes':'20개 중 16', 'ach.master_shoes.d':'초풍 20회에서 16회 성공', 'ach.master_skin':'0.5f의 초풍', 'ach.master_skin.d':'판정 폭 0.5f에서 초풍 10회',
+  'ach.master_legs':'스무 걸음 파도', 'ach.master_legs.d':'웨이브 20연속', 'ach.master_shoes':'20개 중 16', 'ach.master_shoes.d':'초풍 20회에서 16회 성공', 'ach.master_skin':"정밀한 초풍", 'ach.master_skin.d':"동일 프레임 성공 중 입력 간격 ±8ms 이내 초풍 10회",
   'ach.devil_head':'파도 만 번', 'ach.devil_head.d':'대시 10,000회 누적', 'ach.devil_top':'초풍 천 번', 'ach.devil_top.d':'초풍 1,000회 누적', 'ach.devil_arms':'10연속 초풍', 'ach.devil_arms.d':'초풍 10연속',
   'ach.devil_legs':'20개 중 20', 'ach.devil_legs.d':'초풍 20회 전부 성공', 'ach.devil_shoes':'200점 격파', 'ach.devil_shoes.d':'더미 격파 30초 200점', 'ach.devil_skin':'한 달 출석', 'ach.devil_skin.d':'30일 방문',
   'ach.bowl_head':'후원 생각이 있었군요..!?', 'ach.bowl_head.d':'후원 창을 열어 보았다 (버튼만 눌러도 됩니다)',
@@ -1017,21 +1068,21 @@ ko:{
   'posts.loadFail':'글을 불러올 수 없습니다. 잠시 후 다시 시도하세요.', 'posts.sendFail':'글을 남기지 못했습니다. 잠시 후 다시 시도하세요.',
   'posts.like':'좋아요', 'posts.dislike':'싫어요', 'posts.voteFast':'너무 빠릅니다. 잠시 후 다시 눌러 주세요.', 'posts.voteFail':'반응을 남기지 못했습니다. 잠시 후 다시 시도하세요.',
   'card.session':'이번 세션 통계', 'card.rate':'초풍 성공률', 'card.hits':'성공 / 시도', 'card.dps':'대시/초', 'card.bestDps':'최고 대시/초', 'card.dashes':'총 대시',
-  'card.chain':'최고 연속 대시', 'card.tries':'초풍 시도', 'card.mean':'평균 버튼 오프셋', 'card.window':w=>'초풍 판정 폭 '+w,
+  'card.chain':'최고 연속 대시', 'card.tries':'초풍 시도', 'card.mean':'평균 버튼 오프셋', 'card.window':w=>'초풍 판정 '+w,
   'card.hist':'버튼 타이밍 분포 (d/f 기준, 프레임)', 'card.wave':'웨이브 속도 (대시/초)', 'card.noData':'아직 기록이 없습니다',
   'card.tweet':(name,summary,win)=>'미시마 도장 · '+name+' · '+summary+' · 판정 '+win+' #철권 #초풍 #TEKKEN',
   'app.docTitle':'미시마 도장 | 철권 초풍·웨이브 대시 연습',
   'og.chipWave':'웨이브', 'og.chipEwgf':'초풍', 'og.altNames':'Mishima Dojo · 三島道場',
   'og.line1':'철권 초풍·웨이브 대시 연습', 'og.line2':'브라우저에서 프레임 단위로 판정',
   'og.keywords':'EWGF trainer · wave dash practice · 무료 · 키보드 / 게임패드',
-  'og.footer':'판정 폭 0.5f · 0.7f · 0.9f · 타이밍 히스토그램 · 측정 모드 · 공유 카드',
+  'og.footer':"60Hz 동일 프레임 · 타이밍 히스토그램 · 측정 모드 · 공유 카드",
   'footer':'표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.',
   'footer.copy':'© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.', 'footer.contact':'문의',
   'about.summary':'미시마 도장은 어떤 사이트인가요? (소개 · 판정 방식 · 자주 묻는 질문)',
   'about.what.h':'철권8 초풍·웨이브 대시 연습 도구',
   'about.what.p':'미시마 도장은 철권(철권8) 미시마류의 핵심 입력인 초풍신권(EWGF, 6N23+2)과 웨이브 대시(풍신 스텝 연속, 6N23 6 N 6N23 6 N …)를 브라우저에서 연습하는 무료 도구입니다. 설치 없이 키보드·게임패드·레버리스(히트박스)로 바로 쓸 수 있고, 게임을 켜지 않아도 입력만으로 판정합니다. 비공식 팬 제작이며, 게임 자체를 건드리는 매크로나 치트가 아닙니다.',
   'about.judge.h':'판정 방식',
-  'about.judge.p':'입력 하나하나의 시각을 밀리초 단위로 기록해 1프레임(16.67ms) 기준으로 판정합니다. 초풍은 3(d/f)이 들어간 순간과 버튼 2를 누른 순간의 차이를 재서, 판정 폭(0.5f·0.7f·0.9f, 기본 0.7f = ±12ms) 안이면 초풍, 늦으면 풍신권, 빠르면 실패로 표시하고 몇 ms 빠르거나 늦었는지 알려 줍니다. 웨이브는 6 → N → 2 → 3 순서와 캔슬 6·시작 6 누락을 잡아 연속 횟수와 초당 대시 수를 셉니다. 브라우저 입력 시각의 정밀도(약 4ms) 때문에 실제 게임 판정과는 약간의 오차가 있습니다.',
+  'about.judge.p':"초풍은 각 입력 시각을 공통 60Hz 프레임 칸에 반올림해 3(d/f)과 버튼 2(RP)가 같은 칸이면 성공, RP가 뒤 칸이면 풍신권, 앞 칸이면 실패로 표시합니다. 웨이브는 6 → N → 2 → 3 또는 중립을 생략한 6 → 2 → 3을 인정하며 캔슬 6과 다음 시작 6은 별도로 필요합니다. 웨캔기어는 전용 모드에서 대각을 1f로 센 뒤 8·9·10f에 따라 RP 1·1~2·1~3f를 연습합니다. 브라우저의 60Hz 기준은 실제 게임 프레임과 동기화되지 않으며 입력 장치마다 오차가 있습니다.",
   'about.modes.h':'측정 모드와 순위',
   'about.modes.p':'자유 연습 외에 웨이브 10초, 초풍 20회, 웨이브 초풍 10회, 더미 격파 30초, 백대시 10초 측정 모드가 있습니다. 결과는 초풍 버튼 타이밍 분포와 웨이브 속도 추이로 그려지고, 닉네임을 정하면 순위에 올려 다른 플레이어와 비교하고 상위 %에 따른 등급(SS~D)을 받습니다. 결과 카드는 이미지로 저장해 공유할 수 있습니다.',
   'about.faq.h':'자주 묻는 질문',
@@ -1046,6 +1097,54 @@ ko:{
   'about.q5':'무료인가요?',
   'about.a5':'전부 무료이고 광고가 없습니다. 후원으로 운영합니다.',
   'about.links':'소개 페이지',
+  "mode.wsc.name":"웨캔기어 연습",
+  "mode.wsc.desc":"뒤 입력과 RP 연결을 따로 익히는 무제한 연습",
+  "hint.wsc":"↘ → 뒤 8·9·10f / RP 1·1~2·1~3f",
+  "wsc.timeline":"커맨드·프레임 타임라인. 좌우로 스크롤할 수 있습니다.",
+  "wsc.legend":"실선: 뒤 허용 8~10f · 점선: RP 허용 · 1f: 기준 대각 · 15f 이후는 마지막 칸에 모음",
+  "wsc.result":"결과",
+  "wsc.reason":"교정할 부분",
+  "wsc.ready":"커맨드를 입력하세요",
+  "wsc.backWait":"뒤 입력 대기",
+  "wsc.rpWait":"RP 입력 대기",
+  "wsc.success":"웨캔기어 성공",
+  "wsc.ok":"성공",
+  "wsc.fail":"실패",
+  "wsc.cancelled":"진행 중 입력 취소 · 집계 제외",
+  "wsc.aborted":"입력 중단",
+  "wsc.order":"→ (★) ↓ ↘ 순서를 확인하세요",
+  "wsc.button":"RP(버튼 2)를 입력하세요",
+  "wsc.missing":"뒤 입력 누락",
+  "wsc.direction":"허용되지 않은 중간 방향",
+  "wsc.forward":"앞 입력은 대각 이후 1회까지만 허용",
+  "wsc.aEarly":"뒤가 빠릅니다 · 목표 8~10f",
+  "wsc.aLate":"뒤가 늦습니다 · 목표 8~10f",
+  "wsc.bEarly":"RP가 빠릅니다",
+  "wsc.bLate":"RP가 늦습니다",
+  "wsc.simultaneous":"뒤+RP 동시 입력은 실패",
+  "wsc.fixA":"뒤 타이밍부터 교정하세요",
+  "wsc.tries":"평가 시도",
+  "wsc.hits":"성공",
+  "wsc.rate":"성공률",
+  "wsc.streak":"현재 연속",
+  "wsc.best":"최고 연속",
+  "wsc.note":"6N23 선행 구간의 속도는 평가하지 않습니다. 3부터 뒤까지는 중립과 앞 1회, 뒤부터 RP까지는 뒤 유지·중립을 허용합니다. 뒤+RP 동시는 실패입니다. 마지막 입력 후 1초 중단은 성공률에서 제외합니다. 세션·도전 기록은 새로고침하면 사라지고 기존 통계·업적·순위에는 포함되지 않습니다. 60Hz 간격 반올림은 연습용 근사이며 실제 게임·입력 장치와 오차가 있습니다.",
+  "ewgf.grid":"60Hz 동일 프레임",
+  "ewgf.gridNote":"초풍: 각 입력 시각을 공통 60Hz 프레임 칸에 반올림하고, ↘와 RP가 같은 칸일 때 성공합니다. 화면 주사율과 무관하며 실제 게임 프레임과 동기화되지는 않습니다.",
+  'wsc.allow':(a,b)=>'A '+a+'f → RP 1~'+b+'f',
+  "wsc.evaluation":"웨캔기어 평가",
+  "wsc.guide":"6N23은 한 커맨드로 입력하세요. 마지막 3을 1f로 세어 뒤 8·9·10f → RP 1·1~2·1~3f를 평가합니다. 선행 N은 생략 가능합니다.",
+  "wsc.aLabel":"A · 뒤 입력",
+  "wsc.bLabel":"B · RP 연결",
+  "wsc.aTarget":"목표 8~10f",
+  "wsc.bPending":"A에 따라 허용 범위 결정",
+  "wsc.recent":"최근 입력 기록",
+  "wsc.help":"판정 안내",
+  "wsc.move":"기상어퍼!",
+  "wsc.challengeCancel":"도전 취소",
+  "wsc.challengeCancelled":"도전 취소 · 자유롭게 계속 연습하세요.",
+  'wsc.liveA':n=>'진행 중 · A '+n+'f', 'wsc.liveB':(a,b)=>'A '+a+'f 확정 · B '+b+'f 진행 중', 'wsc.liveReady':'대각 입력부터 프레임이 흐릅니다', 'wsc.liveDone':'입력 완료 · 타임라인 확인', 'wsc.otherMove':'다른 기술 입력 · 웨캔기어를 계속 연습하세요', 'wsc.task':(i,total,n,target,current)=>'과제 '+i+'/'+total+' · 웨이브 '+n+'회 후 웨캔기어 → '+target+'번째에 성공 · 현재 '+current+'번째', 'wsc.waveResult':(target,actual)=>'목표 '+target+'번째 · 실제 '+actual+'번째', 'wsc.bTarget':n=>'목표 1~'+n+'f', 'wsc.counts':n=>'선행 커맨드 오류 '+n+' · 성공률에서 제외', 'wsc.challengeStart':n=>n+'회 도전 시작', 'wsc.countdown':n=>n+'초 후 도전 시작', 'wsc.challengeProgress':(n,total,h)=>n+' / '+total+'회 · 성공 '+h+'회', 'wsc.challengeDone':(h,n,rate,best)=>'도전 완료 · '+h+'/'+n+' 성공 ('+rate+'%) · 최고 '+best+'연속', 'wsc.challengeHint':n=>'랜덤 과제 '+n+'회: 웨이브 0~3회 후 다음 웨이브에서 웨캔기어. 평가 후 다음 과제로, 입력 중단 시 같은 과제를 다시 합니다.',
+  'wsc.elapsed':(f,ms)=>'경과 '+f+'f / '+ms+'ms',
 },
 en:{
   'app.title':'Mishima Dojo',
@@ -1058,7 +1157,7 @@ en:{
   'mode.combo10.name':'Wave EWGF ×10', 'mode.combo10.desc':'Wave dash 3+ times, then finish with EWGF. 10 attempts, records success rate.',
   'hint.free':'6N23 = crouch dash · right after 3 release ↓ for 6 (cancel), release, then 6N23 again · press I(2) with 3 = EWGF',
   'hint.wave10':'After GO repeat 6N23 6 N 6N23 6 N … · release only ↓ right after 3 for the cancel 6, release, then 6 again',
-  'hint.ewgf20':'6, release, 2, then right punch (2) together with 3 · default window 0.7f (change in settings)',
+  'hint.ewgf20':'6, release, 2, then right punch (2) together with 3 · d/f and right punch must land in the same frame of the shared 60Hz grid',
   'hint.combo10':'6N23 6 N … wave 3+ times → press 2 with the final 3',
   'trial.start':'Start', 'trial.reset':'Reset session',
   'ready.title':'Waiting for input', 'ready.sub':'Use keyboard or gamepad', 'ready.reset':'Session reset',
@@ -1069,16 +1168,15 @@ en:{
   'seg.l1':'Start 6 held', 'seg.l2':'Neutral', 'seg.l3':'2 held', 'seg.l4':'3 held → cancel 6', 'seg.l5':'Cancel 6 → next start 6',
   'stat.dps':'Best wave speed (dashes/s)', 'stat.chain':'Best chain', 'stat.dash':'Total dashes', 'stat.rate':'EWGF rate', 'stat.try':'EWGF attempts', 'stat.mean':'Avg button offset',
   'set.title':'Input · judgement settings',
-  'set.window':'EWGF window', 'set.win8':'Just 0.5f', 'set.win12':'Normal 0.7f', 'set.win15':'Lenient 0.9f',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'Facing', 'set.side1':'1P (→ is forward)', 'set.side2':'2P (← is forward)',
   'set.fx':'Effects (shake · flash)', 'set.on':'On', 'set.off':'Off',
   'set.touch':'Touch controls', 'set.touchAuto':'Auto (touch devices)', 'touch.note':'Touch is less precise than a keyboard (good for spotting trends)', 'touch.aria':'Touch controls', 'touch.padAria':'Direction pad — roll your thumb to input',
   'set.keys':'Key bindings — click a slot, then press a key (arrow keys ↑↓←→ always work)', 'set.keyListen':'press key…',
   'set.keyConflict':'That key is already in use or conflicts with the arrow keys. Press another key. Esc cancels.',
   'set.pad':'Gamepad', 'set.padNone':'Not connected · press any pad button to detect', 'set.padOn':'Connected · ',
-  'set.padNote':'Default pad layout: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>; d-pad and left stick both count as direction. Browser input is polled at roughly 4ms, so expect slight deviation from the real game. The default window is 0.7 frames (normal); narrow it to Just 0.5f to match the real game.',
+  'set.padNote':'Default pad layout: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>; d-pad and left stick both count as direction.',
   'set.reset':'Reset records & achievements', 'set.resetBtn':'Reset…', 'set.resetNote':'Clears best records, lifetime stats, achievements and the outfit. Nickname and settings stay.', 'set.resetConfirm':'This wipes best records, lifetime stats, achievements and the outfit. It cannot be undone. Continue?', 'set.resetDone':'Records and achievements were reset.',
-  'hist.title':'EWGF button timing', 'hist.sub':'Frame difference of the 2 (RP) press relative to the d/f input at 0 · last 60',
+  'hist.title':'EWGF button timing', 'hist.sub':"RP − d/f on the shared 60Hz grid · 0f is success · last 60 tries",
   'hist.lOk':'EWGF (in window)', 'hist.lEarly':'Early (d+2)', 'hist.lLate':'Late (WGF)', 'hist.aria':'EWGF button timing histogram',
   'hist.empty':'Attempt an EWGF and the distribution builds up here', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}× · ${k}`, 'hist.kOk':'EWGF', 'hist.kEarly':'early', 'hist.kLate':'late',
   'wave.title':'Wave speed trend', 'wave.sub':'Speed per crouch dash (dashes/s) · last 40 · shaded = top 10% of the Wave 10s ranking', 'wave.aria':'Wave speed trend',
@@ -1101,7 +1199,7 @@ en:{
   'coach.wrongBtn':n=>'EWGF uses <strong>2 (right punch)</strong>. You pressed button '+n+'.',
   'a.ewgf.title':'EWGF!', 'a.ewgf.sub':(f,ms)=>'Button offset '+f+' ('+ms+')', 'a.afterWave':n=>' · after '+n+(n===1?' wave':' waves'),
   'a.ewgf.perfect':'Perfect just frame. <strong>Memorise this feel</strong> — the hand rolling into d/f and the hand pressing 2 moved as one.',
-  'a.ewgf.late':f=>'Success. The button landed '+f+' after d/f. Press a little more <strong>simultaneously</strong> and it passes the just-frame window too.',
+  'a.ewgf.late':f=>'Success. The button landed '+f+' after d/f, within the <strong>same frame</strong> of the shared 60Hz grid. Even a 1ms gap fails across a frame boundary, so keep aiming for simultaneous inputs.',
   'a.ewgf.early':f=>'Success. The button landed slightly before d/f ('+f+'). You can press <strong>a touch later</strong>, right as you roll into ↓→.',
   'a.combo.title':'EWGF (short wave)', 'a.combo.coach':n=>'EWGF landed, but only '+n+(n===1?' wave':' waves')+' came before it. This mode requires <strong>3 or more waves</strong> before the EWGF.',
   'a.wgf.title':'Wind God Fist', 'a.wgf.sub':(f,ms)=>'Attack button was '+f+' ('+ms+') late',
@@ -1128,7 +1226,7 @@ en:{
   'trend.noisy':'Timing is inconsistent. Make the wave rhythm steady first, then "lay" the button onto the final d/f the same way every time.',
   'trend.late':ms=>'You tend to be late. Press about '+ms+'ms earlier, together with d/f.',
   'trend.early':ms=>'You tend to be early. Feel ↓→ register, then press: about '+ms+'ms later.',
-  'trend.stable':'Timing is stable. Try one step narrower window, or move on to EWGF after 3+ waves (Wave EWGF mode).',
+  'trend.stable':"Timing is stable. Try EWGF after three or more waves in Wave EWGF mode.",
   'chain.end':(n,dps,name,ms)=>'Wave chain of '+n+' ended · avg '+dps+' dashes/s. Longest segment on average: '+name+' ('+ms+'ms)',
   'chain.fix':' — shorten this and speed goes up immediately.', 'chain.ok':' — well balanced.',
   'trial.waveEnd':(n,dps)=>'10s over · '+n+' dashes ('+dps+' dashes/s)', 'trial.end':(ok,tg,r)=>'Done · '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' dashes',
@@ -1199,7 +1297,7 @@ en:{
   'ach.thunder_head':'Wave Rider', 'ach.thunder_head.d':'500 dashes in total', 'ach.thunder_top':'EWGF 50', 'ach.thunder_top.d':'50 EWGFs in total', 'ach.thunder_arms':'Triple EWGF', 'ach.thunder_arms.d':'3 EWGFs in a row',
   'ach.thunder_legs':'15 in 10s', 'ach.thunder_legs.d':'15 dashes in a Wave 10s trial', 'ach.thunder_shoes':'100-Point Rush', 'ach.thunder_shoes.d':'100 points in a dummy rush', 'ach.thunder_skin':'Mid and Low', 'ach.thunder_skin.d':'30 f,f+2 and 30 hell sweeps',
   'ach.master_head':'Three Thousand Waves', 'ach.master_head.d':'3,000 dashes in total', 'ach.master_top':'EWGF 300', 'ach.master_top.d':'300 EWGFs in total', 'ach.master_arms':'Five in a Row', 'ach.master_arms.d':'5 EWGFs in a row',
-  'ach.master_legs':'Twenty-Step Wave', 'ach.master_legs.d':'A 20-dash wave chain', 'ach.master_shoes':'16 of 20', 'ach.master_shoes.d':'16 hits in an EWGF 20 trial', 'ach.master_skin':'0.5f EWGF', 'ach.master_skin.d':'10 EWGFs at the 0.5f window',
+  'ach.master_legs':'Twenty-Step Wave', 'ach.master_legs.d':'A 20-dash wave chain', 'ach.master_shoes':'16 of 20', 'ach.master_shoes.d':'16 hits in an EWGF 20 trial', 'ach.master_skin':"Precise electrics", 'ach.master_skin.d':"10 same-frame EWGFs with input gaps within ±8ms",
   'ach.devil_head':'Ten Thousand Waves', 'ach.devil_head.d':'10,000 dashes in total', 'ach.devil_top':'Thousand EWGFs', 'ach.devil_top.d':'1,000 EWGFs in total', 'ach.devil_arms':'Ten in a Row', 'ach.devil_arms.d':'10 EWGFs in a row',
   'ach.devil_legs':'Perfect 20', 'ach.devil_legs.d':'All 20 in an EWGF 20 trial', 'ach.devil_shoes':'200-Point Rush', 'ach.devil_shoes.d':'200 points in a dummy rush', 'ach.devil_skin':'A Month of Practice', 'ach.devil_skin.d':'Visit on 30 days',
   'ach.bowl_head':'So You Thought About Donating..!?', 'ach.bowl_head.d':'Opened the donate window (just pressing the button counts)',
@@ -1235,21 +1333,21 @@ en:{
   'posts.loadFail':'Could not load posts. Try again later.', 'posts.sendFail':'Could not post. Try again later.',
   'posts.like':'Like', 'posts.dislike':'Dislike', 'posts.voteFast':'Too fast. Try again in a moment.', 'posts.voteFail':'Could not save your reaction. Try again later.',
   'card.session':'This session', 'card.rate':'EWGF success rate', 'card.hits':'Hits / tries', 'card.dps':'dashes/s', 'card.bestDps':'Best dashes/s', 'card.dashes':'Total dashes',
-  'card.chain':'Best dash chain', 'card.tries':'EWGF tries', 'card.mean':'Avg button offset', 'card.window':w=>'EWGF window '+w,
+  'card.chain':'Best dash chain', 'card.tries':'EWGF tries', 'card.mean':'Avg button offset', 'card.window':w=>'EWGF: '+w,
   'card.hist':'Button timing (frames from d/f)', 'card.wave':'Wave speed (dashes/s)', 'card.noData':'No data yet',
   'card.tweet':(name,summary,win)=>'Mishima Dojo · '+name+' · '+summary+' · window '+win+' #TEKKEN #EWGF',
   'app.docTitle':'Mishima Dojo | Tekken EWGF & Wave Dash Trainer',
   'og.chipWave':'wave', 'og.chipEwgf':'EWGF', 'og.altNames':'미시마 도장 · 三島道場',
   'og.line1':'Tekken EWGF & wave dash practice', 'og.line2':'Frame-accurate judging in your browser',
   'og.keywords':'EWGF trainer · wave dash practice · free · keyboard / gamepad',
-  'og.footer':'Windows 0.5f · 0.7f · 0.9f · timing histogram · trials · share cards',
+  'og.footer':"Same 60Hz frame · timing histogram · trials · share cards",
   'footer':'Notation: 6 = forward (f), N = neutral, 2 = down (d), 3 = down-forward (d/f), button 2 = right punch (RP). Wave = 6N23 6 N 6N23 6 N … (the 6 after 3 cancels the recovery). 1 frame = 16.67ms. Unofficial fan-made practice tool.',
   'footer.copy':'© 2026 Seonghyeon Shin. All rights reserved. No copying, modification or redistribution of the source, artwork or audio.', 'footer.contact':'Contact',
   'about.summary':'What is Mishima Dojo? (About · how judging works · FAQ)',
   'about.what.h':'Free Tekken 8 EWGF and wave dash trainer',
   'about.what.p':'Mishima Dojo is a free browser tool for the two inputs every Mishima-style character in Tekken (Tekken 8) lives on: the Electric Wind God Fist (EWGF, f,N,d,d/f+2, written 6N23+2 here) and the wave dash (crouch dash chains, 6N23 6 N 6N23 6 N …). Nothing to install: it works with a keyboard, gamepad or hitbox/leverless, and it judges your inputs without the game running. It is an unofficial fan-made tool, not a macro or a cheat, and it never touches the game.',
   'about.judge.h':'How judging works',
-  'about.judge.p':'Every key or button press is timestamped in milliseconds and graded against one frame (16.67 ms). For the EWGF it measures the gap between the moment d/f registers and the moment you press 2: inside the window (0.5f, 0.7f or 0.9f, default 0.7f = ±12 ms) it is an EWGF, late is a plain WGF, early is a fail, and either way you see the offset in ms. For the wave dash it checks the f → N → d → d/f order, catches a missing cancel f and a missing starting f, and counts chain length and dashes per second. Browser input timing is about 4 ms precise, so expect small differences from the real game.',
+  'about.judge.p':"EWGF rounds each input timestamp onto a shared 60Hz grid: d/f and RP in the same frame succeed; RP in a later frame is WGF and in an earlier frame is a miss. Wave dash accepts f, N, d, d/f or f, d, d/f, with separate cancel and starting forward inputs. Dedicated wave-cancel practice pairs back on frame 8/9/10 counting d/f as frame 1 with RP at 1/1–2/1–3f. The browser grid is not synchronized to game frames; input devices have different timing errors.",
   'about.modes.h':'Timed modes and the leaderboard',
   'about.modes.p':'Besides free practice there are Wave 10s, EWGF ×20, Wave EWGF ×10, Dummy Rush 30s and Backdash 10s. Results are charted as a button-timing histogram and a wave speed trend. Pick a nickname to post to the leaderboard, compare with other players and get a tier (SS to D) from your top percentage. Result cards can be saved as images for sharing.',
   'about.faq.h':'FAQ',
@@ -1264,6 +1362,54 @@ en:{
   'about.q5':'Is it free?',
   'about.a5':'Completely free, no ads. It runs on donations.',
   'about.links':'Intro pages',
+  "mode.wsc.name":"Wave-cancel WS upper",
+  "mode.wsc.desc":"Untimed practice for back timing and the RP follow-up",
+  "hint.wsc":"d/f → back 8/9/10f · RP 1 / 1–2 / 1–3f",
+  "wsc.timeline":"Command and frame timeline. Scroll horizontally.",
+  "wsc.legend":"Solid: back 8–10f · dashed: RP window · 1f: reference diagonal · 15f+ grouped in the last cell",
+  "wsc.result":"Result",
+  "wsc.reason":"Feedback",
+  "wsc.ready":"Enter the command",
+  "wsc.backWait":"Waiting for back",
+  "wsc.rpWait":"Waiting for RP",
+  "wsc.success":"Wave-cancel WS upper success",
+  "wsc.ok":"Success",
+  "wsc.fail":"Miss",
+  "wsc.cancelled":"Input cancelled · not counted",
+  "wsc.aborted":"Interrupted",
+  "wsc.order":"Check f, (N), d, d/f order",
+  "wsc.button":"Press RP (button 2)",
+  "wsc.missing":"Missing back",
+  "wsc.direction":"Invalid intermediate direction",
+  "wsc.forward":"Only one forward input after d/f is allowed",
+  "wsc.aEarly":"Back too early · target 8–10f",
+  "wsc.aLate":"Back too late · target 8–10f",
+  "wsc.bEarly":"RP too early",
+  "wsc.bLate":"RP too late",
+  "wsc.simultaneous":"Simultaneous back+RP fails",
+  "wsc.fixA":"Correct back timing first",
+  "wsc.tries":"Graded tries",
+  "wsc.hits":"Successes",
+  "wsc.rate":"Success rate",
+  "wsc.streak":"Current streak",
+  "wsc.best":"Best streak",
+  "wsc.note":"The speed of the 6N23 prefix is not graded. Between d/f and back, neutral and one forward input are allowed; between back and RP, hold back or return to neutral. Simultaneous back+RP fails. A 1-second pause is excluded from the success rate. Session and challenge records reset on reload and never affect existing stats, achievements or rankings. Rounding intervals at 60Hz is a practice approximation; game and device timing may differ.",
+  "ewgf.grid":"Same 60Hz frame",
+  "ewgf.gridNote":"EWGF: round each input timestamp onto a shared 60Hz grid. d/f and RP must land in the same frame. This is independent of display refresh rate and is not synchronized to the game.",
+  'wsc.allow':(a,b)=>'A '+a+'f → RP 1–'+b+'f',
+  "wsc.evaluation":"Wave-cancel feedback",
+  "wsc.guide":"Enter 6N23 as one command. Count the final d/f as frame 1: back at 8/9/10f, then RP at 1/1–2/1–3f. The initial N is optional.",
+  "wsc.aLabel":"A · Back timing",
+  "wsc.bLabel":"B · RP link",
+  "wsc.aTarget":"Target 8–10f",
+  "wsc.bPending":"Window depends on A",
+  "wsc.recent":"Recent inputs",
+  "wsc.help":"Judging guide",
+  "wsc.move":"WS upper!",
+  "wsc.challengeCancel":"Cancel challenge",
+  "wsc.challengeCancelled":"Challenge cancelled · continue free practice.",
+  'wsc.liveA':n=>'Live · A '+n+'f', 'wsc.liveB':(a,b)=>'A '+a+'f locked · B '+b+'f live', 'wsc.liveReady':'Frame count starts at d/f', 'wsc.liveDone':'Input complete · Review the timeline', 'wsc.otherMove':'Other move · Continue practicing wave-cancel upper', 'wsc.task':(i,total,n,target,current)=>'Task '+i+'/'+total+' · '+n+' waves, then wave-cancel upper on wave '+target+' · Current wave: '+current, 'wsc.waveResult':(target,actual)=>'Target wave: '+target+' · Actual wave: '+actual, 'wsc.bTarget':n=>'Target 1–'+n+'f', 'wsc.counts':n=>'Prefix errors '+n+' · excluded from success rate', 'wsc.challengeStart':n=>'Start '+n+'-try challenge', 'wsc.countdown':n=>'Starting in '+n, 'wsc.challengeProgress':(n,total,h)=>n+' / '+total+' tries · '+h+' successes', 'wsc.challengeDone':(h,n,rate,best)=>'Complete · '+h+'/'+n+' successes ('+rate+'%) · best streak '+best, 'wsc.challengeHint':n=>''+n+' random tasks: do 0–3 waves, then cancel on the next wave. Each result advances the task; interrupted input retries it.',
+  'wsc.elapsed':(f,ms)=>'Elapsed '+f+'f / '+ms+'ms',
 },
 ja:{
   'app.title':'三島道場',
@@ -1276,7 +1422,7 @@ ja:{
   'mode.combo10.name':'ウェーブ最風10回', 'mode.combo10.desc':'ウェーブを3回以上つないでから最風で締める。10回試行して成功率を記録します。',
   'hint.free':'6N23 = 風神ステップ · 3の直後に↓を離して6(キャンセル)、離してまた6N23 · 3と同時にI(2) = 最風',
   'hint.wave10':'開始後 6N23 6 N 6N23 6 N … を繰り返す · 3の直後に↓だけ離すとキャンセル6、離してまた6',
-  'hint.ewgf20':'6を離して2、そして3と同時に右パンチ(2) · 初期判定は0.7フレーム(設定で変更)',
+  'hint.ewgf20':'6を離して2、そして3と同時に右パンチ(2) · 斜めと右パンチが共通60Hzグリッドの同じフレームに入れば成功',
   'hint.combo10':'6N23 6 N … ウェーブ3回以上 → 最後の3と同時に2',
   'trial.start':'開始', 'trial.reset':'セッション初期化',
   'ready.title':'入力待ち', 'ready.sub':'キーボードまたはゲームパッドで入力してください', 'ready.reset':'セッションを初期化しました',
@@ -1287,16 +1433,15 @@ ja:{
   'seg.l1':'始動6保持', 'seg.l2':'ニュートラル', 'seg.l3':'2保持', 'seg.l4':'3保持 → キャンセル6', 'seg.l5':'キャンセル6 → 次の始動6',
   'stat.dps':'最高ウェーブ速度 (ダッシュ/秒)', 'stat.chain':'最高連続ステップ', 'stat.dash':'総ステップ数', 'stat.rate':'最風成功率', 'stat.try':'最風試行', 'stat.mean':'平均ボタンオフセット',
   'set.title':'入力・判定設定',
-  'set.window':'最風判定幅', 'set.win8':'ジャスト 0.5f', 'set.win12':'普通 0.7f', 'set.win15':'甘め 0.9f',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'キャラの向き', 'set.side1':'1P (→が前)', 'set.side2':'2P (←が前)',
   'set.fx':'演出 (揺れ・フラッシュ)', 'set.on':'オン', 'set.off':'オフ',
   'set.touch':'タッチ操作', 'set.touchAuto':'自動 (タッチ端末)', 'touch.note':'タッチ入力はキーボードより判定精度が低めです (傾向の把握向け)', 'touch.aria':'タッチ操作', 'touch.padAria':'方向パッド — 指を転がして入力',
   'set.keys':'キー設定 — 枠を押してから使いたいキーを入力 (矢印キー↑↓←→は常に使用可)', 'set.keyListen':'キー入力…',
   'set.keyConflict':'すでに使用中か矢印キーと衝突するキーです。別のキーを押してください。Escでキャンセル。',
   'set.pad':'ゲームパッド', 'set.padNone':'未接続 · パッドのボタンを押すと検出', 'set.padOn':'接続済み · ',
-  'set.padNote':'パッド初期配置: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>、十字キー・左スティックとも方向として認識。ブラウザ入力は約4ms単位で読まれるため、実機よりわずかに誤差があります。初期判定は0.7フレーム(普通)です。実機に合わせるならジャスト0.5fに狭めてください。',
+  'set.padNote':'パッド初期配置: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>、十字キー・左スティックとも方向として認識。',
   'set.reset':'記録・実績の初期化', 'set.resetBtn':'初期化…', 'set.resetNote':'モード別最高記録・累計統計・実績・服装を消します。ニックネームと設定は残ります。', 'set.resetConfirm':'最高記録・累計統計・実績・服装をすべて消します。元に戻せません。続けますか?', 'set.resetDone':'記録と実績を初期化しました。',
-  'hist.title':'最風ボタンタイミング分布', 'hist.sub':'3(d/f)入力時点を0とした2(RP)ボタン押下のフレーム差 · 直近60回',
+  'hist.title':'最風ボタンタイミング分布', 'hist.sub':"共通60Hz枠の RP − ↘ フレーム差 · 0fが成功 · 直近60回",
   'hist.lOk':'最風 (判定内)', 'hist.lEarly':'早い (2+2)', 'hist.lLate':'遅い (風神拳)', 'hist.aria':'最風ボタンタイミングのヒストグラム',
   'hist.empty':'最風を試行すると分布が溜まります', 'hist.tip':(f,ms,n,k)=>`${f} (${ms}ms) · ${n}回 · ${k}`, 'hist.kOk':'最風', 'hist.kEarly':'早い', 'hist.kLate':'遅い',
   'wave.title':'ウェーブ速度推移', 'wave.sub':'風神ステップ1回あたりの速度 (ダッシュ/秒) · 直近40回 · 網掛け = ウェーブ10秒ランキング上位10%', 'wave.aria':'ウェーブ速度推移',
@@ -1319,7 +1464,7 @@ ja:{
   'coach.wrongBtn':n=>'最風は<strong>2 (右パンチ)</strong>です。今押したボタンは'+n+'番。',
   'a.ewgf.title':'最風!', 'a.ewgf.sub':(f,ms)=>'ボタンオフセット '+f+' ('+ms+')', 'a.afterWave':n=>' · ウェーブ'+n+'回後',
   'a.ewgf.perfect':'完璧なジャスト。この感覚を<strong>手に覚えさせて</strong>ください — 3へ倒す手と2を押す手が一つの動作でした。',
-  'a.ewgf.late':f=>'成功。ボタンが3より'+f+'遅れて入りました。もう少し<strong>同時に</strong>押せばジャスト判定も通ります。',
+  'a.ewgf.late':f=>'成功。ボタンが3より'+f+'遅れて入りましたが、共通60Hzグリッドの<strong>同じフレーム</strong>です。境界をまたぐと1ms差でも失敗するため、同時入力を意識しましょう。',
   'a.ewgf.early':f=>'成功。ボタンが3よりわずかに早く('+f+')入りました。↓→へ倒す瞬間に合わせて<strong>ほんの少し遅く</strong>押しても大丈夫です。',
   'a.combo.title':'最風 (ウェーブ不足)', 'a.combo.coach':n=>'最風は出ましたが、その前のウェーブが'+n+'回でした。このモードは<strong>ウェーブ3回以上</strong>の後に最風を入れないと認められません。',
   'a.wgf.title':'風神拳', 'a.wgf.sub':(f,ms)=>'攻撃ボタンが'+f+' ('+ms+')遅れました',
@@ -1346,7 +1491,7 @@ ja:{
   'trend.noisy':'タイミングがばらついています。ウェーブのリズムを一定にしてから、最後の3にボタンを「乗せる」感覚で統一してください。',
   'trend.late':ms=>'全体的に遅れる傾向です。ボタンを今より約'+ms+'ms早く、3と同時に。',
   'trend.early':ms=>'全体的に早い傾向です。↓→が入ったのを感じてから押す方向で、約'+ms+'ms遅らせてください。',
-  'trend.stable':'タイミングが安定しています。判定幅を一段階狭めるか、ウェーブ3回以上の後の最風(ウェーブ最風モード)に進みましょう。',
+  'trend.stable':"タイミングが安定しています。ウェーブ3回以上からの最風も練習しましょう。",
   'chain.end':(n,dps,name,ms)=>'ウェーブ'+n+'連続終了 · 平均 '+dps+' ダッシュ/秒。平均で一番長い区間は'+name+' ('+ms+'ms)',
   'chain.fix':' — ここを縮めれば速度がすぐ上がります。', 'chain.ok':' — バランスが良いです。',
   'trial.waveEnd':(n,dps)=>'10秒終了 · '+n+'回 ('+dps+' ダッシュ/秒)', 'trial.end':(ok,tg,r)=>'終了 · 成功 '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' ステップ',
@@ -1417,7 +1562,7 @@ ja:{
   'ach.thunder_head':'波乗り', 'ach.thunder_head.d':'ステップ累計500回', 'ach.thunder_top':'最風50', 'ach.thunder_top.d':'最風累計50回', 'ach.thunder_arms':'最風3連', 'ach.thunder_arms.d':'最風3連続',
   'ach.thunder_legs':'10秒で15', 'ach.thunder_legs.d':'ウェーブ10秒で15ステップ', 'ach.thunder_shoes':'100点撃破', 'ach.thunder_shoes.d':'ダミー撃破30秒で100点', 'ach.thunder_skin':'中段と下段', 'ach.thunder_skin.d':'66+2と奈落を30回ずつ',
   'ach.master_head':'三千の波', 'ach.master_head.d':'ステップ累計3,000回', 'ach.master_top':'最風300', 'ach.master_top.d':'最風累計300回', 'ach.master_arms':'最風5連', 'ach.master_arms.d':'最風5連続',
-  'ach.master_legs':'二十歩の波', 'ach.master_legs.d':'ウェーブ20連続', 'ach.master_shoes':'20回中16回', 'ach.master_shoes.d':'最風20回で16回成功', 'ach.master_skin':'0.5fの最風', 'ach.master_skin.d':'判定幅0.5fで最風10回',
+  'ach.master_legs':'二十歩の波', 'ach.master_legs.d':'ウェーブ20連続', 'ach.master_shoes':'20回中16回', 'ach.master_shoes.d':'最風20回で16回成功', 'ach.master_skin':"精密な最風", 'ach.master_skin.d':"同一フレーム成功で入力間隔±8ms以内の最風10回",
   'ach.devil_head':'一万の波', 'ach.devil_head.d':'ステップ累計10,000回', 'ach.devil_top':'千の最風', 'ach.devil_top.d':'最風累計1,000回', 'ach.devil_arms':'最風10連', 'ach.devil_arms.d':'最風10連続',
   'ach.devil_legs':'20回中20回', 'ach.devil_legs.d':'最風20回を全部成功', 'ach.devil_shoes':'200点撃破', 'ach.devil_shoes.d':'ダミー撃破30秒で200点', 'ach.devil_skin':'一か月出席', 'ach.devil_skin.d':'30日訪問',
   'ach.bowl_head':'支援する気があったんですね..!?', 'ach.bowl_head.d':'支援ウィンドウを開いた (ボタンを押すだけでOK)',
@@ -1453,21 +1598,21 @@ ja:{
   'posts.loadFail':'投稿を読み込めません。しばらくしてからもう一度お試しください。', 'posts.sendFail':'投稿できませんでした。しばらくしてからもう一度お試しください。',
   'posts.like':'いいね', 'posts.dislike':'よくないね', 'posts.voteFast':'速すぎます。少し待ってからもう一度押してください。', 'posts.voteFail':'リアクションを送れませんでした。しばらくしてからもう一度お試しください。',
   'card.session':'今回のセッション', 'card.rate':'最風成功率', 'card.hits':'成功 / 試行', 'card.dps':'ダッシュ/秒', 'card.bestDps':'最高ダッシュ/秒', 'card.dashes':'総ダッシュ',
-  'card.chain':'最高連続ダッシュ', 'card.tries':'最風試行', 'card.mean':'平均ボタンオフセット', 'card.window':w=>'最風判定幅 '+w,
+  'card.chain':'最高連続ダッシュ', 'card.tries':'最風試行', 'card.mean':'平均ボタンオフセット', 'card.window':w=>'最風判定 '+w,
   'card.hist':'ボタンタイミング分布 (3基準、フレーム)', 'card.wave':'ウェーブ速度 (ダッシュ/秒)', 'card.noData':'まだ記録がありません',
   'card.tweet':(name,summary,win)=>'三島道場 · '+name+' · '+summary+' · 判定 '+win+' #鉄拳 #最風 #TEKKEN',
   'app.docTitle':'三島道場 | 鉄拳 最風・ウェーブ練習ツール',
   'og.chipWave':'ウェーブ', 'og.chipEwgf':'最風', 'og.altNames':'미시마 도장 · Mishima Dojo',
   'og.line1':'鉄拳 最風・ウェーブ練習', 'og.line2':'ブラウザでフレーム単位に判定',
   'og.keywords':'EWGF trainer · wave dash practice · 無料 · キーボード / ゲームパッド',
-  'og.footer':'判定幅 0.5f · 0.7f · 0.9f · タイミング分布 · 測定モード · 共有カード',
+  'og.footer':"60Hz同一フレーム · タイミング分布 · 測定モード · 共有カード",
   'footer':'表記: 6 = 前, N = ニュートラル, 2 = 下, 3 = 斜め下前, ボタン2 = 右パンチ(RP)。ウェーブ = 6N23 6 N 6N23 6 N … (3の後の6が硬直キャンセル)。1フレーム = 16.67ms基準。非公式ファン製作の練習ツールです。',
   'footer.copy':'© 2026 Seonghyeon Shin. All rights reserved. ソース・画像・音声の複製、改変、再配布を禁止します。', 'footer.contact':'お問い合わせ',
   'about.summary':'三島道場とは？（紹介・判定の仕組み・よくある質問）',
   'about.what.h':'鉄拳8 最風・風神ステップ練習ツール',
   'about.what.p':'三島道場は、鉄拳（鉄拳8）の三島系キャラの要となる最速風神拳（最風、6N23+2）と風神ステップ連続（ウェーブ、6N23 6 N 6N23 6 N …）をブラウザで練習できる無料ツールです。インストール不要で、キーボード・パッド・レバーレス（ヒットボックス）にそのまま対応し、ゲームを起動しなくても入力だけで判定します。非公式のファン製作で、ゲーム本体に触れるマクロやチートではありません。',
   'about.judge.h':'判定の仕組み',
-  'about.judge.p':'入力ひとつひとつの時刻をミリ秒単位で記録し、1フレーム（16.67ms）を基準に判定します。最風は3（斜め下前）が入った瞬間とボタン2を押した瞬間の差を測り、判定幅（0.5f・0.7f・0.9f、既定 0.7f = ±12ms）内なら最風、遅ければ風神拳、早ければ失敗と表示し、何ms早い・遅いかを示します。ウェーブは 6 → N → 2 → 3 の順序とキャンセル6・始動6の抜けを検出し、連続回数と1秒あたりのステップ数を数えます。ブラウザの入力時刻の精度（約4ms）の都合で、実際のゲームの判定とはわずかな差があります。',
+  'about.judge.p':"最風は各入力時刻を共通60Hz枠に四捨五入し、↘とRPが同じ枠なら成功、RPが後の枠なら風神拳、前の枠なら失敗です。ウェーブは6 N 2 3と中立を省略した6 2 3を認めますが、キャンセル6と次の始動6は別々に必要です。専用練習では↘を1fと数えて後ろ8・9・10fに対しRP 1・1～2・1～3fを練習します。ブラウザの枠はゲームと同期せず、入力機器によって誤差があります。",
   'about.modes.h':'計測モードとランキング',
   'about.modes.p':'自由練習のほかに、ウェーブ10秒・最風20回・ウェーブ最風10回・ダミー撃破30秒・バックダッシュ10秒の計測モードがあります。結果はボタンタイミング分布とステップ速度の推移としてグラフ化され、ニックネームを決めるとランキングに登録して他のプレイヤーと比較し、上位%に応じたランク（SS〜D）が付きます。結果カードは画像として保存・共有できます。',
   'about.faq.h':'よくある質問',
@@ -1482,6 +1627,54 @@ ja:{
   'about.q5':'無料ですか？',
   'about.a5':'すべて無料で広告もありません。支援で運営しています。',
   'about.links':'紹介ページ',
+  "mode.wsc.name":"ウェーブキャンセル立ち途中RP",
+  "mode.wsc.desc":"後ろ入力とRPのタイミングを学ぶ時間無制限の練習",
+  "hint.wsc":"↘ → 後ろ8・9・10f / RP 1・1～2・1～3f",
+  "wsc.timeline":"コマンド・フレームタイムライン。左右にスクロールできます。",
+  "wsc.legend":"実線：後ろ8～10f · 破線：RP範囲 · 1f：基準の斜め入力 · 15f以降は最後の枠",
+  "wsc.result":"結果",
+  "wsc.reason":"修正点",
+  "wsc.ready":"コマンドを入力してください",
+  "wsc.backWait":"後ろ入力待ち",
+  "wsc.rpWait":"RP入力待ち",
+  "wsc.success":"ウェーブキャンセル成功",
+  "wsc.ok":"成功",
+  "wsc.fail":"失敗",
+  "wsc.cancelled":"入力を取消 · 集計対象外",
+  "wsc.aborted":"入力中断",
+  "wsc.order":"→ (★) ↓ ↘ の順序を確認",
+  "wsc.button":"RP（ボタン2）を入力",
+  "wsc.missing":"後ろ入力なし",
+  "wsc.direction":"途中の方向が無効",
+  "wsc.forward":"斜め入力の後の前入力は1回まで",
+  "wsc.aEarly":"後ろが早い · 目標8～10f",
+  "wsc.aLate":"後ろが遅い · 目標8～10f",
+  "wsc.bEarly":"RPが早い",
+  "wsc.bLate":"RPが遅い",
+  "wsc.simultaneous":"後ろ+RPの同時入力は失敗",
+  "wsc.fixA":"後ろのタイミングから修正",
+  "wsc.tries":"判定試行",
+  "wsc.hits":"成功",
+  "wsc.rate":"成功率",
+  "wsc.streak":"現在の連続",
+  "wsc.best":"最高連続",
+  "wsc.note":"6N23の先行入力の速さは判定しません。3から後ろまでは中立と前1回、後ろからRPまでは後ろ保持・中立を許可。同時の後ろ+RPは失敗です。最後の入力から1秒の中断は成功率から除外。セッション・チャレンジ記録は再読み込みで消え、既存の統計・実績・ランキングには含めません。60Hz間隔丸めは練習用近似で、ゲームや機器と誤差があります。",
+  "ewgf.grid":"60Hz同一フレーム",
+  "ewgf.gridNote":"最風：各入力時刻を共通60Hzフレーム枠に四捨五入し、↘とRPが同じ枠なら成功。画面のリフレッシュレートに依存せず、実際のゲームとは同期しません。",
+  'wsc.allow':(a,b)=>'A '+a+'f → RP 1～'+b+'f',
+  "wsc.evaluation":"ウェーブキャンセル評価",
+  "wsc.guide":"6N23を一つのコマンドとして入力。最後の3を1fとして後ろ8・9・10f → RP 1・1～2・1～3fを判定します。最初のNは省略可能です。",
+  "wsc.aLabel":"A · 後ろ入力",
+  "wsc.bLabel":"B · RP接続",
+  "wsc.aTarget":"目標8～10f",
+  "wsc.bPending":"Aに応じて範囲が決定",
+  "wsc.recent":"最近の入力",
+  "wsc.help":"判定ガイド",
+  "wsc.move":"立ち途中アッパー！",
+  "wsc.challengeCancel":"チャレンジ取消",
+  "wsc.challengeCancelled":"チャレンジ取消 · 自由練習を続けられます。",
+  'wsc.liveA':n=>'進行中 · A '+n+'f', 'wsc.liveB':(a,b)=>'A '+a+'f確定 · B '+b+'f進行中', 'wsc.liveReady':'斜め入力からフレーム計測開始', 'wsc.liveDone':'入力完了 · タイムラインを確認', 'wsc.otherMove':'別の技の入力 · キャンセル練習を続けましょう', 'wsc.task':(i,total,n,target,current)=>'課題 '+i+'/'+total+' · ウェーブ'+n+'回後、'+target+'回目でキャンセル成功 · 現在'+current+'回目', 'wsc.waveResult':(target,actual)=>'目標'+target+'回目 · 実際'+actual+'回目', 'wsc.bTarget':n=>'目標1～'+n+'f', 'wsc.counts':n=>'先行コマンドエラー '+n+' · 成功率から除外', 'wsc.challengeStart':n=>n+'回チャレンジ開始', 'wsc.countdown':n=>n+'秒後に開始', 'wsc.challengeProgress':(n,total,h)=>n+' / '+total+'回 · 成功'+h+'回', 'wsc.challengeDone':(h,n,rate,best)=>'完了 · '+h+'/'+n+'成功 ('+rate+'%) · 最高'+best+'連続', 'wsc.challengeHint':n=>'ランダム課題'+n+'回：ウェーブ0～3回後、次のウェーブでキャンセル。判定後は次の課題へ、中断時は同じ課題をやり直します。',
+  'wsc.elapsed':(f,ms)=>'経過 '+f+'f / '+ms+'ms',
 },
 };
 const T = (key, ...args) => {
@@ -1493,20 +1686,24 @@ const T = (key, ...args) => {
 const msg = v => typeof v==='function' ? v() : Array.isArray(v) ? T(...v) : (v==null?'':v);
 const displayFont = () => store.lang==='ja' ? '"Dela Gothic One", "Noto Sans JP", sans-serif' : '"Black Han Sans", "Noto Sans KR", sans-serif';
 
-/* ---------- sound (own recordings). Nothing is created until the first user gesture, so the unit-test vm and og generation never touch media. ---------- */
-const SND = { bgm:'bgm.mp3', wave:'sfx-wave.mp3', ewgf:'sfx-ewgf.mp3' };
+/* ---------- sound (local audio assets). Nothing is created until the first user gesture, so the unit-test vm and og generation never touch media. ---------- */
+const SND = { bgm:'bgm.mp3', wave:'sfx-wave.mp3', ewgf:'sfx-ewgf.mp3', wsc:'sfx-wsc.mp3', hellsweep:'sfx-hellsweep.mp3', tongbal:'sfx-tongbal.mp3', hit:'sfx-hit.mp3', backdash:'sfx-backdash.mp3' };
+const SFX_GAIN = {tongbal:0.8,wsc:0.8};
+// Decoded MP3: the cleaned hit transient begins at 120ms; skip its quiet lead-in, not the visual contact.
+const SFX_START = {hit:0.12};
+const sfxVolume = name => (store.sound?store.sfxVol/100:0)*(SFX_GAIN[name]??1);
 const snd = { ok: typeof Audio!=='undefined', unlocked:false, bgm:null, pool:{}, idx:{}, lock:null, release:null };
 function mkAudio(src, loop){ const a = new Audio(); a.preload='auto'; a.loop=!!loop; a.src=src; return a; }
 function sfxPool(name){ return snd.pool[name] || (snd.pool[name] = [0,1,2].map(() => mkAudio(SND[name], false))); } // 3 voices so a fast wave can overlap
 function playSfx(name){
   if(!snd.ok || !store.sound || !snd.unlocked || store.sfxVol<=0) return;
   const p = sfxPool(name), i = snd.idx[name] = ((snd.idx[name]||0)+1) % p.length, a = p[i];
-  a.volume = store.sfxVol/100; try{ a.currentTime = 0; }catch(e){}
+  a.volume = sfxVolume(name); try{ a.currentTime = SFX_START[name]??0; }catch(e){}
   const r = a.play(); if(r && r.catch) r.catch(()=>{});
 }
 function sfxSync(){
-  for(const voices of Object.values(snd.pool)) for(const a of voices){
-    a.volume = store.sound ? store.sfxVol/100 : 0;
+  for(const [name,voices] of Object.entries(snd.pool)) for(const a of voices){
+    a.volume = sfxVolume(name);
     if(!store.sound || store.sfxVol<=0){ a.pause(); try{ a.currentTime=0; }catch(e){} }
   }
 }
@@ -1547,9 +1744,9 @@ function playChime(){
     return () => bus.disconnect();
   }catch(e){}
 }
-function unlockAudio(){ dailyGift(); /* first gesture reserves the daily gift */ if(!snd.ok || snd.unlocked) return; snd.unlocked=true; ['wave','ewgf'].forEach(sfxPool); bgmSync(); }
+function unlockAudio(){ dailyGift(); /* first gesture reserves the daily gift */ if(!snd.ok || snd.unlocked) return; snd.unlocked=true; Object.keys(SND).filter(name=>name!=='bgm').forEach(sfxPool); bgmSync(); }
 addEventListener('pointerdown', unlockAudio);
-addEventListener('visibilitychange', bgmSync);
+addEventListener('visibilitychange', () => { if(document.hidden) { resetInput(); endTrial(true); } bgmSync(); });
 addEventListener('focus', bgmSync);
 addEventListener('pagehide', () => {
   if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; save(); } // flush a pending counter save
@@ -1645,8 +1842,9 @@ addEventListener('keyup', e => {
   kbVector(); recomputeDir(e.timeStamp||performance.now(),'kb');
 });
 function resetInput(){
+  wscCancel();
   held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); touchDir={x:0,y:0}; curDir='n'; touchRelease();
-  clearCommand(); resetCombo(); resetTaps(); bdClear(); updateHud();
+  clearCommand(); resetCombo(); resetTaps(); bdClear(); updateHud(); renderWsc();
 }
 addEventListener('blur', () => { resetInput(); endTrial(true); bgmSync(); });
 
@@ -1749,6 +1947,194 @@ function renderHistory(){
   }).join('');
 }
 
+/* ---------- WSC: shared move recognition, separate practice records and local challenge ---------- */
+const wscStats = () => ({tries:0,hits:0,streak:0,best:0,aborted:0,errors:0,rows:[]});
+const WSC_TARGET = 10;
+const wsc = {prefix:0,prefixAt:0,active:null,last:null,notice:'ready',session:wscStats(),challenge:{status:'idle',stats:null}};
+const wscFrames = ms => Math.floor(ms/FRAME+0.5);
+const wscA = ms => wscFrames(ms)+1; // A counts the diagonal itself as frame 1; B remains elapsed frames
+function wscJudge(aRaw,bRaw){
+  const a=wscA(aRaw), b=bRaw==null?null:wscFrames(bRaw), aOK=a>=8&&a<=10;
+  return {a,b,aRaw,bRaw,aOK,bOK:b!==null&&bRaw>0&&b>=1&&b<=a-7,ok:aOK&&b!==null&&bRaw>0&&b>=1&&b<=a-7};
+}
+function wscCancel(cancelChallenge=true){
+  if(wsc.active||wsc.prefix){ wsc.last=null; wsc.notice='cancelled'; }
+  wsc.active=null; wsc.prefix=0;
+  if(cancelChallenge && ['countdown','running'].includes(wsc.challenge.status)){
+    wsc.challenge.status='cancelled'; $('hudCenter').textContent=''; $('hudScore').textContent='';
+  }
+}
+function wscStartChallenge(){
+  if(mode!=='wsc'||modalOpen()||jackpotBusy) return;
+  const cancel=['countdown','running'].includes(wsc.challenge.status);
+  resetInput();
+  if(!cancel){
+    wsc.challenge={status:'countdown',startAt:performance.now()+3000,remaining:3,stats:wscStats(),taskN:Math.floor(Math.random()*4)};
+    wsc.last=null; wsc.notice='ready';
+  }
+  renderWsc(); renderRewards();
+}
+function wscTick(t){
+  const c=wsc.challenge;
+  if(c.status==='countdown'){
+    if(t<c.startAt){ const left=Math.ceil((c.startAt-t)/1000); if(left!==c.remaining){c.remaining=left;renderWscChallenge();} return; }
+    wscCancel(false); c.status='running'; wsc.notice='ready'; renderWsc();
+  }
+  if(wsc.active && t-wsc.active.lastAt>1000){
+    if(mode==='wsc'||wsc.active.back!=null) wscFinish(null,'aborted'); else wscCancel(false);
+  }
+  else if(!wsc.active && wsc.prefix && t-wsc.prefixAt>1000){ wsc.prefix=0; wsc.notice='ready'; renderWsc(); }
+}
+function wscDir(dir,t){
+  if(wsc.challenge.status==='countdown') return;
+  const a=wsc.active;
+  if(a){
+    a.lastAt=t; a.events.push({dir,t});
+    if(dir==='f') a.forwards++;
+    if(a.back!=null){ if(dir!=='n') a.bad='direction'; }
+    else if(dir==='b') a.back=t;
+    else if(dir==='f'){ if(a.forwards>1) a.bad='forward'; }
+    else if(dir!=='n') a.bad='direction';
+  }
+  // First forward after d/f is a cancel. A separate start forward completes the next wave.
+  if(dir==='f' && (!a || a.back!=null || a.forwards>=2)) wsc.prefix=1;
+  else if(dir==='n' && wsc.prefix===1) wsc.prefix=2;
+  else if(dir==='d' && (wsc.prefix===1||wsc.prefix===2)) wsc.prefix=3;
+  else if(dir==='df' && wsc.prefix===3){
+    // A new wave extends the chain only through cancel 6, N, separate start 6, (N), 2, 3.
+    const linked=a&&/^df,(n,)?f,n,f,(n,)?d,df$/.test(a.events.map(e=>e.dir).join(','));
+    wsc.active={df:t,back:null,forwards:0,bad:null,lastAt:t,waves:linked?a.waves+1:1,events:[{dir,t}]};
+    wsc.prefix=0; wsc.last=null; wsc.notice='backWait';
+ // no SFX or lifetime counters
+  } else if(dir!=='n' || wsc.prefix!==2){
+    if(mode==='wsc' && wsc.prefix && !a){ wsc.session.errors++; if(wsc.challenge.status==='running') wsc.challenge.stats.errors++; wsc.notice='order'; }
+    wsc.prefix=0;
+  }
+  wsc.prefixAt=t; renderWsc();
+}
+function wscButton(n,t){
+  if(wsc.challenge.status==='countdown') return;
+  if(!wsc.active){ wsc.notice=n===2?'order':'button'; renderWsc(); return; }
+  wsc.active.events.push({btn:n,t});
+  wscFinish(t,n!==2?'button':wsc.active.bad || (wsc.active.back==null?'missing':null));
+}
+function wscRecord(stat,r){
+  if(r.reason==='aborted') stat.aborted++;
+  else { stat.tries++; if(r.ok){stat.hits++;stat.streak++;stat.best=Math.max(stat.best,stat.streak);}else stat.streak=0; }
+  stat.rows.unshift(r); if(stat.rows.length>12) stat.rows.pop();
+}
+function wscFinish(t,reason){
+  const a=wsc.active; if(!a) return;
+  const r=wscJudge(a.back==null?0:a.back-a.df,t==null||a.back==null?null:t-a.back);
+  if(a.back==null){ r.a=null; r.aRaw=null; r.aOK=false; }
+  Object.assign(r,{reason,df:a.df,events:a.events.slice()}); r.ok=!reason&&r.ok;
+  const c=wsc.challenge;
+  r.timingOK=r.ok;
+  if(c.status==='running'){
+    r.taskN=c.taskN;r.waves=a.waves;r.taskOK=a.waves===c.taskN+1;
+    r.ok=r.ok&&r.taskOK;
+  }
+  wscRecord(wsc.session,r);
+  if(c.status==='running'){
+    wscRecord(c.stats,r);
+    if(c.stats.tries>=WSC_TARGET) c.status='done';
+    else if(reason!=='aborted') c.taskN=Math.floor(Math.random()*4);
+  }
+  wsc.last=r; wsc.active=null; wsc.prefix=0;
+  if(r.timingOK) wscAnimate(); // the move still executes when only the challenge wave count is wrong
+  showResult(r.ok?'wave':'miss','WAVE-CANCEL WS UPPER',[r.ok?'wsc.success':r.reason==='aborted'?'wsc.aborted':'wsc.fail'],()=>wscReason(r));
+  renderWsc(); renderRewards();
+}
+function wscAnimate(){
+  playSfx('wsc');
+  if(!world.dummy.type) tryHit('wsc'); // contact sound is independent of visual-effects settings
+  if(!store.fx||reduced) return;
+  startAnim('wsc'); moveChar(26,140);
+  pop(T('wsc.move'),cssVar('--gold','#F5C542'),36,{y:-104,life:650});
+}
+function wscReason(r){
+  if(r.reason==='aborted') return T('wsc.aborted');
+  const parts=r.reason?[T('wsc.'+r.reason)]:[];
+  if(r.taskN!=null) parts.push(T('wsc.waveResult',r.taskN+1,r.waves));
+  if(r.a!=null&&!r.aOK) parts.push(T(r.a<8?'wsc.aEarly':'wsc.aLate'));
+  if(r.b!=null){
+    if(r.bRaw===0) parts.push(T('wsc.simultaneous'));
+    else if(r.b<1) parts.push(T('wsc.bEarly'));
+    else if(r.b>(r.aOK?r.a-7:3)) parts.push(T('wsc.bLate'));
+  }
+  if(r.a!=null&&!r.aOK && parts.length>1) parts.push(T('wsc.fixA'));
+  return parts.join(' · ') || T('wsc.ok');
+}
+function renderWscChallenge(){
+  if(mode!=='wsc') return;
+  const c=wsc.challenge, busy=c.status==='countdown'||c.status==='running', st=c.stats;
+  $('wscChallengeBtn').textContent=T(busy?'wsc.challengeCancel':'wsc.challengeStart',WSC_TARGET);
+  $('wscChallengeStatus').textContent=c.status==='countdown'?T('wsc.countdown',c.remaining):c.status==='running'?T('wsc.challengeProgress',st.tries,WSC_TARGET,st.hits):c.status==='done'?T('wsc.challengeDone',st.hits,WSC_TARGET,Math.round(st.hits/WSC_TARGET*100),st.best):T(c.status==='cancelled'?'wsc.challengeCancelled':'wsc.challengeHint',WSC_TARGET);
+  $('wscTask').hidden=!busy;
+  $('wscTask').dataset.n=busy?String(c.taskN):'';
+  $('wscTask').textContent=busy?T('wsc.task',st.tries+1,WSC_TARGET,c.taskN,c.taskN+1,wsc.active?wsc.active.waves:0):'';
+  $('hudCenter').textContent=c.status==='countdown'?String(c.remaining):'';
+  $('hudScore').textContent=c.status==='running'?st.tries+' / '+WSC_TARGET:'';
+}
+function wscOtherMove(){
+  wscCancel(false); wsc.last=null;
+  if(mode==='wsc'){ wsc.notice='otherMove'; renderWsc(); }
+}
+function renderWscLive(now){
+  if(mode!=='wsc') return;
+  const a=wsc.active, frame=a?Math.max(1,wscA(Math.max(0,now-a.df))):null;
+  const text=a?(a.back==null?T('wsc.liveA',frame):T('wsc.liveB',wscA(a.back-a.df),wscFrames(Math.max(0,now-a.back)))):T(wsc.last?'wsc.liveDone':'wsc.liveReady');
+  const el=$('wscLive'); if(el.textContent!==text) el.textContent=text;
+  const changed=el.dataset.frame!==(frame==null?'':String(frame));
+  el.dataset.frame=frame==null?'':String(frame);
+  for(const cell of $('wscAxis').querySelectorAll('.wsc-cell')){
+    const current=frame!=null&&Number(cell.dataset.frame)===Math.min(frame,15);
+    cell.classList.toggle('current',current);
+    if(current&&changed){
+      const box=$('wscAxis').parentElement, b=box.getBoundingClientRect(), c=cell.getBoundingClientRect();
+      if(c.left<b.left) box.scrollLeft-=b.left-c.left;
+      else if(c.right>b.right) box.scrollLeft+=c.right-b.right;
+    }
+  }
+}
+function renderWsc(){
+  if(mode!=='wsc') return;
+  const glyph=d=>glyphFor(d), stat=wsc.session, a=wsc.active, r=wsc.last;
+  $('wscCommand').textContent='6N23 · '+glyph('b')+' · RP';
+  $('wscGuide').textContent=T('wsc.guide');
+  const A=a&&a.back!=null?wscA(a.back-a.df):r?r.a:null;
+  const valid=A>=8&&A<=10;
+  $('wscLegend').textContent=T('wsc.legend')+(valid?' · '+T('wsc.allow',A,A-7):'');
+  const events=a?a.events:r?r.events:[], df=a?a.df:r?r.df:null, cells=[];
+  // Only the final d/f and later inputs are timed. The preceding wave is a single command label.
+  for(let f=1;f<=15;f++){
+    const ev=events.filter(e=>df!=null&&e.t>=df&&Math.min(wscA(e.t-df),15)===f);
+    const marks=ev.map(e=>e.btn?['','LP','RP','LK','RK'][e.btn]:glyph(e.dir));
+    if(df==null&&f===1) marks.push(glyph('df'));
+    const cls=(f>=8&&f<=10?' a':'')+(valid&&f>A&&f<=A+A-7?' b':'')+(marks.length?' mark':'');
+    cells.push(`<div class="wsc-cell${cls}" data-frame="${f}"><b>${escapeHTML(marks.join('\n'))}</b>${f===15?'15+':f}f</div>`);
+  }
+  $('wscAxis').innerHTML=cells.join('');
+  renderWscLive(Math.max(performance.now(),a?a.lastAt:0));
+  if(r && wsc.viewed!==r){
+    wsc.viewed=r; const box=$('wscAxis').parentElement;
+    if(box && box.scrollWidth>box.clientWidth) box.scrollLeft=Math.max(0,(Math.min(8,A??8)-2)*39);
+  }
+  const num=n=>n==null?'—':n+'f';
+  const result=r?T(r.ok?'wsc.success':r.reason==='aborted'?'wsc.aborted':'wsc.fail'):T('wsc.'+(a?(a.back==null?'backWait':'rpWait'):wsc.notice));
+  $('wscResult').textContent=result;
+  const axis=(key,value,raw,ok,target)=>`<div class="${value==null?'':ok?'ok':'no'}">${escapeHTML(T(key))}<b>${num(value)}</b>${escapeHTML(target)}${raw==null?'':`<br>${escapeHTML(T('wsc.elapsed',(raw/FRAME).toFixed(2),raw.toFixed(2)))}`}</div>`;
+  const aRaw=r?r.aRaw:a&&a.back!=null?a.back-a.df:null;
+  $('wscAB').innerHTML=axis('wsc.aLabel',A,aRaw,valid,T('wsc.aTarget'))+axis('wsc.bLabel',r?r.b:null,r?r.bRaw:null,!!r&&r.aOK&&r.bOK,valid?T('wsc.bTarget',A-7):T('wsc.bPending'));
+  $('wscDetail').textContent=r?wscReason(r):'';
+  const values=[['tries',stat.tries],['hits',stat.hits],['rate',stat.tries?Math.round(stat.hits/stat.tries*100)+'%':'—'],['streak',stat.streak],['best',stat.best],['aborted',stat.aborted]];
+  $('wscStats').innerHTML=values.map(([k,v])=>`<div><b>${v}</b>${escapeHTML(T('wsc.'+k))}</div>`).join('');
+  $('wscCounts').textContent=T('wsc.counts',stat.errors);
+  $('wscRows').innerHTML=stat.rows.map(x=>`<tr><td>${escapeHTML(T(x.ok?'wsc.ok':x.reason==='aborted'?'wsc.aborted':'wsc.fail'))}</td><td>${num(x.a)}</td><td>${num(x.b)}</td><td>${escapeHTML(wscReason(x))}</td></tr>`).join('');
+  renderWscChallenge();
+}
+$('wscChallengeBtn').addEventListener('click',wscStartChallenge);
+
 /* ---------- crouch dash state machine ---------- */
 function resetCD(){ cd.state=0; }
 function clearCommand(){
@@ -1759,6 +2145,8 @@ function endCommand(){ if(trial.running && mode==='rush30'){ Object.assign(cd,{s
 function onDir(dir, t){
   trialTick(t); tick(t); // 판정 기한은 화면 주사율과 무관하게 입력 시각에 검사한다.
   pushHistory({t, dir});
+  if(mode==='wsc'&&wsc.challenge.status==='countdown') return;
+  wscDir(dir,t);
   // dash / backdash from a double tap. Runs before the switch so the second f still becomes the start 6 (cd.tF===t → f,f+2 eligible, 대초 label).
   // The wave's cancel 6 → N → start 6 is a dash too (2026-09-12 user decision; the cancel 6 alone is not): shorter visual, no 대초 label (dashWave).
   let bdOutNow = false; // this input completed a b,N,b outside the recovery
@@ -1819,11 +2207,13 @@ function completeCD(t){
   else { if(linked && !cd.cancelled) noCancel = true; cd.chain=1; cd.chainCycles=[]; }
   cd.chainCycles.push(cyc);
   cd.lastDF = t; cd.tDF = t; cd.state = 4; cd.cancelled = false;
-  session.dashes++;
-  session.bestChain = Math.max(session.bestChain, cd.chain);
-  store.life.dashes++; store.life.maxChain = Math.max(store.life.maxChain, cd.chain); saveSoon(); checkAch();
-  if(cyc.cycle){ const dps = 1000/cyc.cycle; session.cycles.push({t, cycle:cyc.cycle, dps}); if(session.cycles.length>200) session.cycles.shift(); }
-  if(cd.chain>=3){ const last3 = cd.chainCycles.slice(-3); const span = last3[2].t - last3[0].t; const dps = 2000/span; if(dps>session.bestDps) session.bestDps = dps; }
+  if(mode!=='wsc'){
+    session.dashes++;
+    session.bestChain = Math.max(session.bestChain, cd.chain);
+    store.life.dashes++; store.life.maxChain = Math.max(store.life.maxChain, cd.chain); saveSoon(); checkAch();
+    if(cyc.cycle){ const dps = 1000/cyc.cycle; session.cycles.push({t, cycle:cyc.cycle, dps}); if(session.cycles.length>200) session.cycles.shift(); }
+    if(cd.chain>=3){ const last3 = cd.chainCycles.slice(-3); const span = last3[2].t - last3[0].t; const dps = 2000/span; if(dps>session.bestDps) session.bestDps = dps; }
+  }
   if(trial.running && mode==='wave10'){ trial.count++; trial.bestChain = Math.max(trial.bestChain||0, cd.chain); }
   else if(trial.running && mode==='rush30'){ const p = Math.min(cd.chain, RUSH_PTS.dashMax); trial.score += p; trial.dashPts += p; pop('+'+p, cssVar('--accent','#4CC9FF'), 24, {y:-150}); renderRushHud(); } // wave movement scores by chain length, anywhere (user decision)
   if(cyc.cycle) renderWave();
@@ -1956,6 +2346,9 @@ function bdTick(now){
 function onButton(n, t){
   trialTick(t); tick(t);
   pushHistory({t, btn:n});
+  if(mode==='wsc'&&wsc.challenge.status==='countdown') return;
+  if(wsc.active&&wsc.active.back!=null){ wscButton(n,t); endCommand(); return; }
+  wscOtherMove();
   const off = t - cd.lastDF;
   if(n===4){ // 나락 f,N,d,df+4: no just frame — any 4 while the crouch dash is active (or up to 250ms into the cancel 6)
     if(cd.state===4 || cd.state===7 || (cd.state===5 && off<=250)){ strike('hellsweep', t); return; }
@@ -1966,7 +2359,7 @@ function onButton(n, t){
     if(cd.state>=3 && (mode==='ewgf20'||mode==='combo10')) setCoach(['coach.wrongBtn', n]);
     return;
   }
-  if(cd.state===4 || cd.state===7 || (cd.state===5 && off<=250) || (off>=0 && off<=store.window)){ classify(off, t); return; }
+  if(cd.state===4 || cd.state===7 || (cd.state===5 && off<=250) || (off>=0 && frameSlot(t)===frameSlot(cd.lastDF))){ classify(off, t); return; }
   if(cd.state===3){
     if(cd.pending && cd.pending.btn===2){ resolvePending(null,t); attempt('no_cd',null,t); }
     else cd.pending = {t, btn:2}; // a pending 4 is replaced silently
@@ -1988,28 +2381,34 @@ function resolvePending(tDF, now){
 /* ---------- 통발 / 나락: judged strikes that are not EWGF attempts (no effect on tries/hits/histogram/streak) ---------- */
 const STRIKE_KIND = {tongbal:'DEMON PAW', hellsweep:'HELL SWEEP', hellsweepEarly:'MISS'};
 function strike(kind, t){
+  wscOtherMove();
   const chainBefore = (t - cd.lastDF < 700) ? cd.chain : 0, ok = kind!=='hellsweepEarly';
   showResult(ok?'wave':'miss', STRIKE_KIND[kind], ['a.'+kind+'.title'], ['a.'+kind+'.sub']);
   setCoach(['a.'+kind+'.coach']);
   addLog(t, 'log.tStrike', ['res.'+kind], '', chainBefore? ['log.mAfterWave', chainBefore]:'', ok?'ok':'no');
   if(kind==='tongbal') fx.tongbal(); else if(kind==='hellsweep') fx.hellsweep(); else fx.jab();
-  if(ok){ rushStrike(kind, t); store.life[kind]++; saveSoon(); checkAch(); }
+  if(ok&&mode!=='wsc'){ rushStrike(kind, t); store.life[kind]++; saveSoon(); checkAch(); }
   endCommand(); updateHud();
 }
+const frameSlot = t => Math.floor(t / FRAME + 0.5); // performance.timeOrigin is the shared grid origin; independent of render rate
 function classify(off, t){
-  const w = store.window;
-  if(Math.abs(off)<=w) attempt('ewgf', off, t);
-  else if(off>w) attempt('wgf', off, t);
+  const delta = frameSlot(t) - frameSlot(t-off);
+  if(delta===0) attempt('ewgf', off, t);
+  else if(delta>0) attempt('wgf', off, t);
   else attempt('early', off, t);
 }
 function attempt(kind, off, t){
+  wscOtherMove();
   const chainBefore = (t - cd.lastDF < 700) ? cd.chain : 0;
   if(kind==='ewgf'){ if(t - combo.t > 3000) combo.n = 0; combo.n++; combo.t = t; } else resetCombo();
   const a = { t, kind, off, chain: chainBefore, mode, streak: combo.n, dash: kind==='ewgf' && cd.dashT>0 && cd.dashT===cd.tF && !cd.dashWave };
-  session.attempts.push(a); if(session.attempts.length>300) session.attempts.shift();
-  session.tries++; if(kind==='ewgf') session.hits++;
-  { const L = store.life; L.tries++; if(kind==='ewgf'){ L.ewgf++; if(store.window===8) L.tightEwgf++; L.maxStreak = Math.max(L.maxStreak, combo.n); } saveSoon(); checkAch(); }
-  if(off!=null){ session.offsetSum+=off; session.offsetCount++; }
+  if(off!=null) a.frameOff=frameSlot(t)-frameSlot(t-off);
+  if(mode!=='wsc'){
+    session.attempts.push(a); if(session.attempts.length>300) session.attempts.shift();
+    session.tries++; if(kind==='ewgf') session.hits++;
+    { const L = store.life; L.tries++; if(kind==='ewgf'){ L.ewgf++; if(Math.abs(off)<=8) L.tightEwgf++; L.maxStreak = Math.max(L.maxStreak, combo.n); } saveSoon(); checkAch(); }
+    if(off!=null){ session.offsetSum+=off; session.offsetCount++; }
+  }
   const comboOK = chainBefore>=3;
   const f = off==null?'':fmtF(off), ms = off==null?'':fmtMs(off);
   let title, sub, cls, coach, res, rowCls;
@@ -2017,7 +2416,7 @@ function attempt(kind, off, t){
     case 'ewgf':
       cls='ewgf'; title=[a.dash?'a.dashEwgf.title':'a.ewgf.title']; res=a.dash?'dash_ewgf':'ewgf'; rowCls='ok';
       sub = () => T('a.ewgf.sub', f, ms) + (chainBefore>1 ? T('a.afterWave', chainBefore) : '') + (a.streak>1 ? T('a.streak.sub', a.streak) : '');
-      coach = Math.abs(off)<=Math.min(8, store.window/2) ? ['a.ewgf.perfect'] : (off>0 ? ['a.ewgf.late', f] : ['a.ewgf.early', f]);
+      coach = Math.abs(off)<=4 ? ['a.ewgf.perfect'] : (off>0 ? ['a.ewgf.late', f] : ['a.ewgf.early', f]);
       if(mode==='combo10' && !comboOK) { coach = ['a.combo.coach', chainBefore]; title=['a.combo.title']; cls='wgf'; res='combo_short'; rowCls='wg'; }
       fx.ewgf(a.streak, a.dash); rushStrike('ewgf', t); break;
     case 'wgf':
@@ -2107,6 +2506,7 @@ function updateHud(){
   $('hudChainN').textContent = n; $('hudChainL').textContent = useBd ? 'BACKDASH' : 'WAVE'; h.classList.toggle('hot', n>=3);
 }
 function addLog(t, type, res, num, memo, cls){
+  if(mode==='wsc') return;
   session.log.unshift({time:new Date(), type, res, num, memo, cls:cls||''}); if(session.log.length>12) session.log.pop(); renderLog();
 }
 function renderLog(){
@@ -2119,6 +2519,7 @@ function renderLog(){
 
 /* ---------- tick: timeouts ---------- */
 function tick(now){
+  wscTick(now); renderWscLive(now);
   if(cd.state===1 && now-cd.tF>250) cd.state=0;
   else if(cd.state===2 && now-cd.tN>250) cd.state=0;
   else if(cd.state===3 && now-cd.tD>250){ if(cd.pending) resolvePending(null, now); cd.state=0; }
@@ -2148,6 +2549,7 @@ function endChain(now){
 /* ---------- trials ---------- */
 const MODES = {
   free:   {start:false},
+  wsc:    {start:false},
   wave10: {start:true, dur:10000},
   ewgf20: {start:true, target:20},
   combo10:{start:true, target:10},
@@ -2169,11 +2571,16 @@ function renderMode(){
   $('dName').textContent=T('mode.'+mode+'.name'); $('dDesc').textContent=T('mode.'+mode+'.desc'); $('dStart').hidden=!M.start;
   $('hudHint').textContent = T('hint.'+mode);
   const sb = $('dShare'); sb.textContent = T(M.start?'share.card':'share.session'); sb.hidden = !!M.start && !trial.result;
+  if(mode==='wsc') sb.hidden=true;
+  if(document.body) document.body.classList.toggle('wsc-mode',mode==='wsc');
+  $('wscPanel').hidden=mode!=='wsc'; $('wscTimeline').hidden=mode!=='wsc'; renderWsc();
   renderTrialRank();
 }
 function clearShare(){ trial.result=null; $('dShare').hidden = !!MODES[mode].start; renderTrialRank(); }
 function setMode(m){
-  endTrial(true); clearCommand(); resetCombo(); bdClear(); updateHud(); mode = m; trial.result=null;
+  const leavingWsc=mode==='wsc'&&m!=='wsc';
+  endTrial(true); resetInput(); mode = m; trial.result=null;
+  if(leavingWsc) showResult('', 'READY', ['ready.title'], ['ready.reset']);
   document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-selected', b.dataset.mode===m?'true':'false'));
   $('dProg').textContent=''; $('hudTimer').textContent='';
   renderMode();
@@ -2262,7 +2669,7 @@ function renderBests(){
 /* ---------- charts ---------- */
 function histBins(attempts, window){ // −6f..+9f bins; each attempt with an offset lands in one bin
   const bins = []; for(let f=-6; f<=9; f++) bins.push({f, n:0, kind: Math.abs(f*FRAME)<=window?'ewgf':f<0?'early':'wgf'});
-  attempts.forEach(a => { if(a.off==null) return; const f = clamp(Math.round(a.off/FRAME), -6, 9); bins[f+6].n++; });
+  attempts.forEach(a => { if(a.off==null) return; const f = clamp(a.frameOff ?? Math.round(a.off/FRAME), -6, 9); bins[f+6].n++; });
   return bins;
 }
 function renderHist(){
@@ -2271,7 +2678,7 @@ function renderHist(){
   const bins = histBins(at, store.window);
   const max = Math.max(3, ...bins.map(b=>b.n));
   const bw = (W-padL-padR)/bins.length, innerH = H-padT-padB;
-  const winF = store.window/FRAME;
+  const winF = 0.5;
   const x0 = padL + (0+6)*bw + bw/2;
   const wl = padL + (-winF+6+0.5)*bw, wr = padL + (winF+6+0.5)*bw;
   const col = k => k==='ewgf'?'var(--accent)':k==='early'?'var(--warn)':'var(--red)';
@@ -2340,7 +2747,7 @@ const SITE_URL = 'https://mishimaryu.com/';
 function buildCard(src){
   // src: {kind:'trial'|'session', mode, rec?, attempts, cycles, session?, window, date}
   const m = src.mode, win = src.window ?? store.window, s = src.session || session;
-  const winText = T('set.win'+win), modeName = T('mode.'+m+'.name');
+  const winText = T('ewgf.grid'), modeName = T('mode.'+m+'.name');
   const metric = (k, v) => ({label:T(k), value:String(v)});
   const attempts = src.attempts || [], cycles = src.cycles || [];
   const bestChainOf = list => list.reduce((b,a)=>Math.max(b, a.chain||0), 0);
@@ -2370,7 +2777,7 @@ function buildCard(src){
     const r = src.rec;
     hero = {value:r.score+'%', label:T('card.rate')};
     metrics = [metric('card.hits', r.hits+' / '+r.target), metric('card.mean', fmtF(r.mean)), metric('card.chain', bestChainOf(attempts))];
-    chart = {type:'hist', bins:histBins(attempts, win), window:win};
+    chart = {type:'hist', bins:histBins(attempts, win), window:FRAME/2};
     summary = r.score+'% · '+T('rec.ewgfSub', r.hits, r.target, fmtF(r.mean));
     sub = T('trial.end', r.hits, r.target, r.score);
   } else {
@@ -2382,7 +2789,7 @@ function buildCard(src){
       ? [metric('card.hits', s.hits+' / '+s.tries), metric('card.mean', mean), metric('card.bestDps', dps), metric('card.chain', s.bestChain)]
       : [metric('card.dashes', s.dashes), metric('card.chain', s.bestChain), metric('card.tries', s.tries), metric('card.mean', mean)];
     const withOff = attempts.filter(a=>a.off!=null).slice(-60);
-    chart = withOff.length ? {type:'hist', bins:histBins(withOff, win), window:win}
+    chart = withOff.length ? {type:'hist', bins:histBins(withOff, win), window:FRAME/2}
           : cycles.length>=2 ? {type:'wave', pts:cycles.slice(-40).map(c=>c.dps), top:waveTop()} : null;
     summary = rate!=null ? rate+' · '+T('rec.ewgfSub', s.hits, s.tries, mean) : T('rec.dps',dps)+' · '+T('rec.waveSub', s.dashes, s.bestChain);
     sub = T('card.session');
@@ -2417,9 +2824,9 @@ function segSel(id, attr, cb){
   }));
   el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr])===String(store[attr==='win'?'window':attr])?'true':'false'));
 }
-segSel('winSel','win', v => { store.window=+v; save(); renderHist(); });
+// The saved window is retained for legacy data/Worker compatibility only; EWGF uses frameSlot().
 segSel('touchSel','touch', v => { store.touch=v; save(); applyTouchUI(); });
-segSel('sideSel','side', v => { endTrial(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); });
+segSel('sideSel','side', v => { endTrial(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); renderWsc(); });
 segSel('fxSel','fx', v => { store.fx=+v; save(); rewardNoticeClear(); renderRewards(); });
 segSel('langSel','lang', v => { setLang(v); });
 $('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDlg'); if(!d.open){ endTrial(true); resetInput(); d.showModal(); jackpotPause(); } });
@@ -2462,6 +2869,7 @@ $('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', (
 $('modes').addEventListener('wheel', e => { const m = e.currentTarget; if(e.deltaX || !e.deltaY || m.scrollWidth <= m.clientWidth) return; m.scrollLeft += e.deltaY; e.preventDefault(); }, {passive:false}); // a plain mouse wheel over the list scrolls it sideways
 $('dStart').addEventListener('click', startTrial);
 $('dReset').addEventListener('click', () => {
+  if(mode==='wsc'){ resetInput(); wsc.session=wscStats(); wsc.challenge={status:'idle',stats:null}; wsc.last=null; wsc.notice='ready'; renderWsc(); return; }
   endTrial(true); clearShare(); resetInput();
   Object.assign(session, sessionDefault()); history.length=0; lastInputT=performance.now();
   updateStats(); updateHud(); renderHistory(); renderLog(); renderHist(); renderWave(); coachTrend();
@@ -2471,6 +2879,7 @@ $('dReset').addEventListener('click', () => {
 /* ---------- share card: dialog + actions ---------- */
 let shareSrc = null, shareModel = null, shareSeq = 0;
 function shareSource(){
+  if(mode==='wsc') return null;
   if(MODES[mode].start){
     if(!trial.result) return null;
     const r = trial.result, s = r.submit && r.submit.state==='done' ? r.submit : null;
@@ -2491,6 +2900,7 @@ async function renderShare(){
 }
 function setShareMsg(m){ ui.shareMsg = m; $('shareMsg').textContent = msg(m); }
 function openShare(){
+  if(mode==='wsc') return;
   shareSrc = shareSource(); if(!shareSrc) return Promise.resolve();
   setShareMsg(''); renderShareRank();
   return renderShare().then(() => { const d = $('shareDlg'); if(!d.open){ resetInput(); d.showModal(); jackpotPause(); } }); // like setOpen/openDonate: a finger still on the pad must not keep driving onDir behind the card
@@ -2596,7 +3006,7 @@ function petalsStart(){ const c = $('jpFall'), g = canDraw(c); if(!g || petalRaf
     if(petals.length || petalSpawn) petalRaf = requestAnimationFrame(tick); else { petalRaf = 0; g.clearRect(0,0,w,h); } };
   petalRaf = requestAnimationFrame(tick); }
 function petalsStop(){ petalSpawn = false; }
-function rewardBlocked(){ return jackpotBusy || jackpotHold || trial.running || !!trial.cdTimer || !!trial.openTimer || !!modalOpen(); }
+function rewardBlocked(){ return ['countdown','running'].includes(wsc.challenge.status) || jackpotBusy || jackpotHold || trial.running || !!trial.cdTimer || !!trial.openTimer || !!modalOpen(); }
 function renderRewards(){
   const b = $('rewardOpen'), n = store.pendingRewards.length, blocked = rewardBlocked();
   b.disabled = !n || blocked; b.dataset.count = String(n); b.dataset.ready = String(n>0); b.dataset.motion = String(!reduced && !!store.fx);
@@ -2740,6 +3150,7 @@ function renderNick(){
 function openNick(msgKey){
   if(!BOARD_URL) return;
   if(trial.running || trial.cdTimer) endTrial(true); // a modal pauses input but not the clock: cancel rather than let the trial end blind
+  if(mode==='wsc') resetInput();
   live.nickMsg = msgKey ? [msgKey] : ''; live.nickLater = false; $('nickInput').value = store.nick || ''; renderNick();
   const d = $('nickDlg'); if(!d.open && typeof d.showModal==='function') d.showModal(); jackpotPause();
 }
@@ -2790,10 +3201,10 @@ function renderBoard(){
   $('boardMe').textContent = !d ? '' : me ? T('board.me', me.rank, d.total, pctTop(me.rank, d.total)) : T('board.meNone');
   $('boardMsg').textContent = msg(board.msg);
   const rows = d ? d.rows : [];
-  const tr = r => { const mine = me && r.id===me.id, x = boardRowText(t, r), del = mine ? `<button class="board-delete" data-delete-score aria-label="${escapeHTML(T('board.deleteAria'))}"${board.deleting||board.submitting?' disabled':''}>${escapeHTML(T('board.delete'))}</button>` : ''; return `<tr${mine?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="w">${(r.win/FRAME).toFixed(1)}f</td><td class="act">${del}</td></tr>`; };
-  const below = me && !rows.some(r => r.id===me.id) ? `<tr class="sep"><td colspan="5">⋯</td></tr>` + tr(me) : ''; // my row when it sits under the top list
+  const tr = r => { const mine = me && r.id===me.id, x = boardRowText(t, r), del = mine ? `<button class="board-delete" data-delete-score aria-label="${escapeHTML(T('board.deleteAria'))}"${board.deleting||board.submitting?' disabled':''}>${escapeHTML(T('board.delete'))}</button>` : ''; return `<tr${mine?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="act">${del}</td></tr>`; };
+  const below = me && !rows.some(r => r.id===me.id) ? `<tr class="sep"><td colspan="4">⋯</td></tr>` + tr(me) : ''; // my row when it sits under the top list
   $('boardList').innerHTML = !d ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('board.empty'))}</div>` :
-    `<table><thead><tr><th>${escapeHTML(T('board.hRank'))}</th><th>${escapeHTML(T('board.hNick'))}</th><th>${escapeHTML(T('board.hScore'))}</th><th>${escapeHTML(T('board.hWin'))}</th><th></th></tr></thead><tbody>` +
+    `<table><thead><tr><th>${escapeHTML(T('board.hRank'))}</th><th>${escapeHTML(T('board.hNick'))}</th><th>${escapeHTML(T('board.hScore'))}</th><th></th></tr></thead><tbody>` +
     rows.map(tr).join('') + below + '</tbody></table>';
 }
 async function boardLoad(){
@@ -2961,6 +3372,7 @@ function renderAll(){
   $('shareMsg').textContent = msg(ui.shareMsg); if($('shareDlg').open) renderShare();
   renderBoard(); renderTrialRank(); renderVisits(); renderPosts(); if(BOARD_URL) renderNick(); renderDonate(); if($('fitDlg').open) renderFit();
   if(trial.running) trialTick(performance.now());
+  renderWsc();
 }
 function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); renderAll(); }
 /* ================= STAGE (canvas) ================= */
@@ -2974,7 +3386,7 @@ const HIT_TYPE = {ewgf:'high', wgf:'high', tongbal:'mid', hellsweep:'low'}; // w
 const DUMMY_TYPES = ['high','mid','low'];
 const DUMMY_STOP = 36; // px the fighter keeps in front of a live dummy (walking, and every move in rush30)
 const anim = { kind:'idle', t0:0, from:0, to:0, moveT0:0, moveFrom:0, moveTo:0 };
-const ghosts = [], pops = [], sparks = [], dust = [], bolts = [];
+const ghosts = [], pops = [], sparks = [], dust = [], bolts = [], impacts = [];
 let flash = 0, shake = 0, flashGold = false; // flashGold: jackpot flashes gold instead of the EWGF blue
 // character colours live in ITEMS[slot].base (wardrobe); drawFighter reads them through the look
 
@@ -3000,21 +3412,23 @@ const fx = {
     playSfx('ewgf'); if(!world.dummy.type) tryHit('ewgf'); // typed dummies are judged by rushStrike
   },
   wgf(){ startAnim('ewgf'); anim.electric=false; moveChar(28, 120); pop(T('pop.wgf'), '#F5A524', 34); if(!world.dummy.type) tryHit('wgf'); },
-  tongbal(){ startAnim('tongbal'); moveChar(48, 110); puff(3, 1); pop(T('pop.tongbal'), cssVar('--gold','#F5C542'), 40); if(!world.dummy.type) tryHit('tongbal'); }, // fast forward snap
-  hellsweep(){ startAnim('hellsweep'); moveChar(22, 110); puff(4, 1); setTimeout(()=>puff(5, 1), 80); pop(T('pop.hellsweep'), cssVar('--red','#E5484D'), 40, {y:-70}); if(!world.dummy.type) tryHit('hellsweep'); }, // fast low sweep: quick forward slide and a second dust burst as the leg comes around
+  tongbal(){ playSfx('tongbal'); startAnim('tongbal'); moveChar(48, 110); puff(3, 1); pop(T('pop.tongbal'), cssVar('--gold','#F5C542'), 40); if(!world.dummy.type) tryHit('tongbal'); }, // fast forward snap
+  hellsweep(){ playSfx('hellsweep'); startAnim('hellsweep'); moveChar(22, 110); puff(4, 1); setTimeout(()=>puff(5, 1), 80); pop(T('pop.hellsweep'), cssVar('--red','#E5484D'), 40, {y:-70}); if(!world.dummy.type) tryHit('hellsweep'); }, // fast low sweep: quick forward slide and a second dust burst as the leg comes around
   jab(){ startAnim('jab'); pop('?', '#E5484D', 30); },
   stumble(){ startAnim('stumble'); pop('MISS', '#E5484D', 30); },
   dash(short){ if(anim.kind==='ewgf' && performance.now()-anim.t0<260) return; startAnim('dash'); if(short) moveChar(24, 120); else moveChar(64, 150); puff(3, 1); }, // short: the wave restart dash (a full 64px per cycle would double wave travel)
-  backdash(){ startAnim('backdash'); moveChar(-56, 150); puff(3, -1); },
+  backdash(){ playSfx('backdash'); startAnim('backdash'); moveChar(-56, 150); puff(3, -1); },
 };
 function pop(text,color,size,opts){ pops.push({text,color,size,t0:performance.now(),x:world.charX+30*store.side, ...(opts||{})}); } // opts: lvl, glow, rings, core, life, x (world px), y (px above the floor, default −118)
-function tryHit(move){ // move: 'ewgf'|'wgf'|'tongbal'|'hellsweep'. Returns true when the dummy is knocked. Plain dummy: any move within reach; typed dummy: only HIT_TYPE[move]
+// Presentation contact points in milliseconds, tuned to each pose (not game frame data).
+const HIT_CONTACT_MS = {ewgf:180,wgf:180,tongbal:180,hellsweep:160,wsc:200};
+function tryHit(move){ // move: 'ewgf'|'wgf'|'tongbal'|'hellsweep'|'wsc'. Returns true when the dummy is knocked. Plain dummy: any move within reach; typed dummy: only HIT_TYPE[move]
   const d = world.dummy; const dist = (world.dummyX - world.charX)*store.side;
   if(!d.alive || d.hit || dist<10 || dist>130) return false;
   if(d.type && HIT_TYPE[move]!==d.type) return false;
   const electric = move==='ewgf';
-  d.hit=1; // consume immediately; the launch animation still waits 110ms
-  d.launchAt = performance.now() + 110;
+  d.hit=1; // reserve immediately; sound, burst and knockback share the contact time
+  d.launchAt = performance.now() + (HIT_CONTACT_MS[move]??180);
   d.respawn = performance.now() + 700; // rush30 timing: the next target comes 700ms after the hit, not after the bag lands
   d.vy = electric?-11:-6; d.vx=(electric?3.2:1.8)*store.side; d.rot=0;
   d.electric=electric;
@@ -3026,7 +3440,13 @@ function updateDummy(now){
   if(d.hit && now>=d.launchAt){
     if(d.launchAt){
       const electric=d.electric;
-    for(let i=0;i<(electric?18:9);i++) sparks.push({x:world.dummyX, y:-46, vx:(Math.random()-0.5)*9, vy:-Math.random()*8-1, t:1, c: electric?(Math.random()<.5?'#DFF6FF':'#4CC9FF'):'#FFE9A8'});
+      playSfx('hit');
+      if(store.fx&&!reduced){
+        const look=d.type?DUMMY_LOOK[d.type]:null, y=look?look.top+look.h/2:-64;
+        const color=cssVar(electric?'--accent':'--gold');
+        impacts.push({x:world.dummyX,y,t0:now,color}); if(impacts.length>8) impacts.shift();
+        for(let i=0;i<(electric?18:9);i++) sparks.push({x:world.dummyX,y,vx:(Math.random()-0.5)*9,vy:-Math.random()*8-1,t:1,c:color});
+      }
       d.launchAt=0;
     }
     d.y += d.vy; d.vy += 0.45; world.dummyX += d.vx; d.rot += 0.12*store.side;
@@ -3141,6 +3561,11 @@ function poseAt(now){
   switch(anim.kind){
     case 'cd': { if(t<300){ const c = t<160? 0.85 : Math.max(0, 0.85-(t-160)/140);
       return {crouch:c, lean:28*c, armR:-25+60*(1-c), armL:-45+15*(1-c), spread:0.8*c}; } break; }
+    case 'wsc': {
+      if(t<65) return {crouch:0.9,lean:24,armR:-35,armL:-45,spread:0.65};
+      if(t<225){ const k=e((t-65)/160); return {crouch:0.9*(1-k),lean:24-32*k,armR:-35+220*k,armL:-35,spread:0.5,reach:8*k,jump:6*k}; }
+      if(t<480){ const k=(t-225)/255; return {crouch:0,lean:-8*(1-k),armR:185-150*k,armL:-35+5*k,spread:0.5-0.25*k,reach:8*(1-k),jump:6*(1-k)}; }
+      break; }
     case 'ewgf': {
       if(t<70) return {crouch:0.95, lean:32, armR:-40, armL:-30, spread:0.9, eyeGlow:anim.electric};
       if(t<260){ const k = e((t-70)/190); return {crouch:0.9*(1-k), lean:32-42*k, armR:-40+240*k, armL:-20, jump:38*Math.sin(k*Math.PI*0.5), tuck:k, spread:0.4, eyeGlow:anim.electric}; }
@@ -3191,7 +3616,7 @@ function drawDummy(g, sx, gy, d){
   g.fillStyle = L ? cssVar(L.color, L.fb) : '#B0332F'; g.beginPath(); g.roundRect(-14,top,28,h,7); g.fill();
   g.fillStyle = L ? L.stripe : '#8E2724'; g.fillRect(-14,top+h*0.45,28,4); if(h>50) g.fillRect(-14,top+h*0.75,28,4);
   g.fillStyle = L ? '#0B1118' : '#E8D9C5'; g.font=`bold ${L?10:9}px JetBrains Mono, monospace`; g.textAlign='center'; g.fillText(L ? T('dummy.'+d.type) : 'DUMMY', 0, top+h*0.45-3);
-  if(d.hit){ g.fillStyle='#fff'; g.font='bold 14px Black Han Sans, sans-serif'; g.fillText('><',0,top+18); }
+  if(d.hit&&!d.launchAt){ g.fillStyle='#fff'; g.font='bold 14px Black Han Sans, sans-serif'; g.fillText('><',0,top+18); }
   g.restore();
 }
 
@@ -3409,6 +3834,17 @@ function frame(now){
       // body aura
       ctx.save(); ctx.globalCompositeOperation='lighter'; for(let i=0;i<3;i++) drawBolt(ctx, sx+(Math.random()-0.5)*30, gy-40-Math.random()*40, 30, Math.random()*Math.PI*2, 1.2, 'rgba(76,201,255,.5)'); ctx.restore();
     }
+  }
+  // Small contact burst, anchored where the hit landed; time based, independent of render rate.
+  for(let i=impacts.length-1;i>=0;i--){
+    const p=impacts[i], u=(now-p.t0)/180;
+    if(u>=1||!store.fx||reduced){impacts.splice(i,1);continue;}
+    const radius=9+u*25;
+    ctx.save();ctx.translate(p.x-world.camX,gy+p.y);ctx.globalAlpha=1-u;
+    ctx.strokeStyle=p.color;ctx.lineWidth=3*(1-u)+1;ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle=cssVar('--ink');ctx.beginPath();
+    for(let ray=0;ray<8;ray++){const a=ray*Math.PI/4;ctx.moveTo(Math.cos(a)*radius*.6,Math.sin(a)*radius*.6);ctx.lineTo(Math.cos(a)*(radius+9),Math.sin(a)*(radius+9));}
+    ctx.stroke();ctx.restore();
   }
   // sparks
   for(let i=sparks.length-1;i>=0;i--){ const p=sparks[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.35; p.t-=0.035; if(p.t<=0){sparks.splice(i,1);continue;} ctx.fillStyle=p.c; ctx.globalAlpha=p.t; ctx.fillRect(p.x-world.camX-2, gy+p.y-2, 4, 4); ctx.globalAlpha=1; }
