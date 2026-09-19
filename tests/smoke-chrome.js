@@ -43,9 +43,12 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html'), returningPage = path.join(dir,'returning.html');
   const scratchSrc = src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`);
   fs.writeFileSync(page, scratchSrc); fs.writeFileSync(returningPage, scratchSrc.replace(`{id:'${latestNoticeId}'`, `{id:'${returningNoticeId}'`));
-  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3','donate-kakao.png','favicon.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
-  try{ fs.rmSync(path.join(os.tmpdir(),'dojo-smoke-profile'),{recursive:true,force:true}); }catch(e){} // fresh localStorage every run (a navigation at the end of the run flushes it to disk)
-  const b = await launch({port:9333, profile:'dojo-smoke-profile'});
+  for(const f of ['sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3','donate-kakao.png','favicon.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
+  fs.cpSync(path.join(path.join(__dirname,'..'),'bgm'),path.join(dir,'bgm'),{recursive:true});
+  // Isolate each run: a concurrent worktree's Chrome may already own the old fixed port/profile.
+  const probe=http.createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));
+  const port=probe.address().port;await new Promise(r=>probe.close(r));
+  const b = await launch({port, profile:'dojo-smoke-profile-'+process.pid+'-'+Date.now()});
   browser = b;
   console.log('Smoke: browser connected');
   const {send, evalJs, errors} = b;
@@ -184,7 +187,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.sound.on = await soundSnap();
   // f,N,f double tap → dash visual in a real browser (no judging change)
   await tap('KeyO',20); await sleep(40); await tap('KeyO',20); await sleep(100);
-  out.altUse = await evalJs(`[...document.querySelectorAll('#inputs .chip .g')].slice(-4).map(x=>x.textContent).join('')`);
+  out.altUse = await evalJs(`[...document.querySelectorAll('#inputs .chip .g')].slice(0,4).reverse().map(x=>x.textContent).join('')`);
   // f,f+2 and 6N23+4 in free practice, then a rush30 trial: a crouch dash scores, the HUD shows points, leaving the mode clears it without a record (2026-09-13)
   await sleep(700); await tap('KeyD',20); await sleep(40); await key('KeyD'); await sleep(30); await key('KeyI'); await sleep(20); await key('KeyI','keyup'); await key('KeyD','keyup'); await sleep(300);
   out.moves = {tongbal: await evalJs(`${q('#rTitle')}.textContent`)};
@@ -294,7 +297,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.ko2 = await evalJs(`({title:${q('#boardCard h2')}.textContent, empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, rank:${q('#dRank')}.textContent, visits:${q('#visits')}.textContent, postsTitle:${q('#postsCard h2')}.textContent, nickBtn:${q('#nickBtn')}.textContent})`);
   out.db = {scores:db.rows.map(r => ({board:r.board, nick:r.nick, score:r.score, tie:r.tie, win:r.win, week:r.week})), posts:db.posts.map(p => [p.nick, p.text]), replies:db.replies.map(r => [r.post_id,r.nick,r.text]), visits:db.visits, nicks:db.db.prepare('SELECT key,nick FROM nicks ORDER BY key').all().map(r => [r.key, r.nick])};
   const bd = out.board, auto = bd.auto;
-  if(bd.tabs.length!==5 || !/rush30|Dummy Rush/.test(bd.tabs[3]||'') || !/bd10|Backdash/.test(bd.tabs[4]||'')) errors.push('leaderboard tabs check failed: '+JSON.stringify(bd.tabs));
+  if(bd.tabs.length!==6 || !/Wave-cancel upper/.test(bd.tabs[5]||'') || !/rush30|Dummy Rush/.test(bd.tabs[3]||'') || !/bd10|Backdash/.test(bd.tabs[4]||'')) errors.push('leaderboard tabs check failed: '+JSON.stringify(bd.tabs));
   if(bd.cardHidden || bd.postsHidden || !/rank 1 of 1 · top 100%/.test(bd.rank) || !bd.retryHidden || bd.info!=='1 entries' || !/rank 1 of 1 · top 100%/.test(bd.me) || !bd.meRow || bd.rows.length!==1 || bd.rows[0][1]!=='스모크 테스트' || bd.rows[0][0]!=='1' || !/^Today 1 · total 1 visits$/.test(bd.visits)) errors.push('leaderboard check failed: '+JSON.stringify(bd));
   if(!auto || auto.during.rank!=='' || auto.during.open || !/best stands · rank 1 of 1/.test(auto.after.rank) || auto.after.rows!==1 || !auto.after.open || !/best stands/.test(auto.after.line) || auto.after.tier!=='S') errors.push('leaderboard auto-submit check failed: '+JSON.stringify(auto));
   if(!bd.deleted || bd.deleted.msg!=='Your result was deleted.' || !/No entry from you/.test(bd.deleted.me) || bd.deleted.rows!==0 || bd.deleted.button || bd.deleted.db!==0) errors.push('leaderboard self-delete check failed: '+JSON.stringify(bd.deleted));
@@ -308,6 +311,24 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(out.db.scores.length!==0 || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']]) || JSON.stringify(out.db.replies)!==JSON.stringify([[1,'스모크 테스트','스모크 답글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
      || JSON.stringify(out.db.nicks)!==JSON.stringify([['스모크 테스트','스모크 테스트'],['스모크2','스모크2'],['점유됨','점유됨']])) errors.push('backend storage check failed: '+JSON.stringify(out.db));
   for(const s of JSON.stringify([out.gate, bd, out.posts, out.nick2, out.ko2, out.trialEnd]).match(/\b(board|mode|share|rec|posts|nick|tier)\.[a-zA-Z0-9.]+/g)||[]) errors.push('raw i18n key leaked into backend UI: '+s);
+  // Complete the separate WSC challenge through keyboard events and verify real Worker registration.
+  console.log('Smoke: WSC challenge leaderboard');
+  await evalJs(`document.querySelector('[data-mode="wsc"]').click();document.querySelector('#wscChallengeBtn').click()`);await sleep(3300);
+  for(let attempt=0;attempt<10;attempt++){
+    await sleep(600);
+    await evalJs(`(()=>{const waves=Number(document.querySelector('#wscTask').dataset.n)+1,F=1000/60;let t=performance.now()-550;
+      const key=(code,at,up=false)=>{const e=new KeyboardEvent(up?'keyup':'keydown',{code,bubbles:true,cancelable:true});Object.defineProperty(e,'timeStamp',{value:at});window.dispatchEvent(e);};
+      for(let wave=0;wave<waves;wave++){key('KeyD',t);key('KeyD',t+10,true);key('KeyS',t+20);key('KeyD',t+30);if(wave+1<waves){key('KeyS',t+40,true);key('KeyD',t+50,true);t+=80;}}
+      key('KeyS',t+40,true);key('KeyD',t+50,true);key('KeyA',t+30+7*F);key('KeyI',t+30+8*F);key('KeyI',t+31+8*F,true);key('KeyA',t+32+8*F,true);
+    })()`);
+  }
+  await waitFor(`document.querySelector('#boardTabs [data-board="wsc"]').getAttribute('aria-pressed')==='true' && /1위/.test(document.querySelector('#dRank').textContent)`);
+  out.wscBoard=await evalJs(`({status:document.querySelector('#wscChallengeStatus').textContent,rank:document.querySelector('#dRank').textContent,row:document.querySelector('#boardList .me').textContent,shown:getComputedStyle(document.querySelector('.records')).display})`);
+  if(!/10\/10/.test(out.wscBoard.status)||!/10 \/ 10/.test(out.wscBoard.row)||!/최고 10연속/.test(out.wscBoard.row)||out.wscBoard.shown==='none')errors.push('WSC challenge board failed: '+JSON.stringify(out.wscBoard));
+  const wscRow=db.rows.find(r=>r.board==='wsc');if(!wscRow||wscRow.score!==10||wscRow.tie!==10)errors.push('WSC persisted score mismatch');
+  await evalJs(`document.querySelector('#boardList .board-delete').click()`);await waitFor(`!document.querySelector('#boardList .me')`);
+  if(db.rows.some(r=>r.board==='wsc'))errors.push('WSC owner deletion failed');
+  await evalJs(`document.querySelector('[data-mode="free"]').click()`);
   // touch controls: three direction buttons feed the normal path; down+right forms d/f
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
   await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
@@ -317,8 +338,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
     return {ui:document.documentElement.classList.contains('touch-ui'), compat:document.compatMode, width:innerWidth, scrollW:document.documentElement.scrollWidth, shown:getComputedStyle(${q('#touch')}).display,
       stage:r('#stageBox'), dirs:r('#tdirs'), btns:r('#tbtns'), left:r('#tdirs [data-dir="left"]'), down:r('#tdirs [data-dir="down"]'), right:r('#tdirs [data-dir="right"]'), b2:r('#tbtns [data-btn="2"]'), note:${q('.touch-note')}.textContent, sel:${q('#touchSel [data-touch="auto"]')}.getAttribute('aria-pressed'), badge:${q('#srcBadge')}.textContent, hint:r('#hudHint'), touchTop:r('#touch').y,
       tune:[${q('#touchSize')}.value,${q('#touchX')}.value,${q('#touchY')}.value]}; })()`);
-  tc.reward = await evalJs(`(() => { const el=document.querySelector('#rewardOpen'), r=el.getBoundingClientRect(), fit=document.querySelector('#fitOpen').getBoundingClientRect(); return {hit:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2).closest('#rewardOpen')===el,top:r.top,bottom:r.bottom,fitBottom:fit.bottom}; })()`);
-  if(!tc.reward.hit || tc.reward.top<tc.reward.fitBottom || tc.reward.bottom>tc.touchTop) errors.push('portrait reward button overlap: '+JSON.stringify(tc.reward));
+  tc.reward = await evalJs(`(() => { const el=document.querySelector('#rewardOpen'), r=el.getBoundingClientRect(), fit=document.querySelector('#fitOpen').getBoundingClientRect(); return {hit:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2).closest('#rewardOpen')===el,top:r.top,bottom:r.bottom,overlapsFit:r.left<fit.right&&r.right>fit.left&&r.top<fit.bottom&&r.bottom>fit.top}; })()`);
+  if(!tc.reward.hit || tc.reward.overlapsFit || tc.reward.bottom>tc.touchTop) errors.push('portrait reward button overlap: '+JSON.stringify(tc.reward));
   const center = r => ({x:r.x+r.w/2,y:r.y+r.h/2}), rc=center(tc.right), dc=center(tc.down);
   const tp = (x,y,id) => ({x, y, id, radiusX:6, radiusY:6, force:1});
   const touch = (type, pts) => send('Input.dispatchTouchEvent',{type, touchPoints:pts});
@@ -329,7 +350,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await touch('touchEnd',[]); await sleep(300);
   // the reward card must sit above the touch overlay so 확인 is tappable on a phone (the card is centred, so its button lands in the pad zone)
   tc.jpHit = await evalJs(`(() => { const j=document.querySelector('#jackpot'), ok=document.querySelector('#jpOk'); j.hidden=false; j.dataset.phase='reveal'; const r=ok.getBoundingClientRect(); const el=document.elementFromPoint(r.x+r.width/2, r.y+r.height/2); const pad=document.elementFromPoint(${rc.x}, ${rc.y}); j.hidden=true; delete j.dataset.phase; return {hit:el===ok, hitId:el&&el.id, inTouchZone:r.y+r.height/2>${tc.touchTop}, padStillReachable:!!pad&&!!pad.closest('#tdirs')}; })()`);
-  tc.after = await evalJs(`({chips:[...document.querySelectorAll('#inputs .chip')].map(c => c.textContent.replace(/\\s+/g,'')).join(' '), title:${q('#rTitle')}.textContent, src:${q('#srcBadge')}.textContent,
+  tc.after = await evalJs(`({chips:[...document.querySelectorAll('#inputs .chip')].reverse().map(c => c.textContent.replace(/\\s+/g,'')).join(' '), title:${q('#rTitle')}.textContent, src:${q('#srcBadge')}.textContent,
     active:document.querySelectorAll('#tdirs button.on').length, log:${q('#logBody')}.textContent.slice(0,60)})`);
   tc.customMove = await evalJs(`(() => { const s=document.querySelector('#touchSize'), x=document.querySelector('#touchX'), dirs=document.querySelector('#tdirs'); s.value='140'; s.dispatchEvent(new Event('input',{bubbles:true})); const size=getComputedStyle(dirs).getPropertyValue('--touch-dir-size').trim(), left0=dirs.getBoundingClientRect().x; x.value='100'; x.dispatchEvent(new Event('input',{bubbles:true})); const left100=dirs.getBoundingClientRect().x; x.value='0'; x.dispatchEvent(new Event('input',{bubbles:true})); s.value='100'; s.dispatchEvent(new Event('input',{bubbles:true})); return {size,left0,left100}; })()`);
   // The new 100% baseline matches the former 140% visual size but auto-fits; explicit sizes remain unclamped and can move across the overlay.
@@ -343,7 +364,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   tc.land = await evalJs(`(() => { const r = s => { const x = document.querySelector(s).getBoundingClientRect(); return {x:x.x, y:x.y, w:x.width, h:x.height, r:x.right, b:x.bottom}; };
     return {reward:r('#rewardOpen'), fit:r('#fitOpen'), stage:r('#stageBox'), touch:r('#touch'), note:r('.touch-note'), dirs:r('#tdirs'), btns:r('#tbtns'), hint:r('#hudHint'), hintShown:getComputedStyle(${q('#hudHint')}).display, hintText:${q('#hudHint')}.textContent}; })()`);
   const L = tc.land, inside = (a, o) => a.y>=o.y-0.5 && a.b<=o.b+0.5 && a.x>=o.x-0.5 && a.r<=o.r+0.5;
-  if(L.reward.y<L.fit.b || L.reward.b>L.touch.y || !inside(L.reward,L.stage)) errors.push('landscape reward button overlap: '+JSON.stringify(L));
+  if((L.reward.x<L.fit.r && L.reward.r>L.fit.x && L.reward.y<L.fit.b && L.reward.b>L.fit.y) || L.reward.b>L.touch.y || !inside(L.reward,L.stage)) errors.push('landscape reward button overlap: '+JSON.stringify(L));
   if(!(L.stage.w>L.stage.h) || !inside(L.dirs,L.touch) || !inside(L.btns,L.touch) || L.dirs.y<L.note.b-0.5 || L.btns.y<L.note.b-0.5 || L.dirs.r>L.btns.x || L.dirs.w<140 || L.btns.w<80
      || L.hintShown==='none' || L.hint.b>L.touch.y+0.5 || L.hint.y<L.stage.y+L.stage.h*0.46-1 || !L.hintText) errors.push('touch landscape layout check failed: '+JSON.stringify(L));
   await send('Emulation.setEmulatedMedia',{features:[{name:'pointer',value:'fine'},{name:'hover',value:'hover'}]});
@@ -361,8 +382,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   for(const width of [1366,390]){
     await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===390});
     await sleep(250);
-    const layout=await evalJs(`(() => {const r=s=>{const b=document.querySelector(s).getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,height:b.height};};return {btn:r('#bgmBtn'),lang:r('#langSel'),scroll:document.documentElement.scrollWidth};})()`);
-    if(layout.btn.right>width || layout.btn.x<0 || layout.scroll>width || layout.btn.height!==45 || layout.btn.right>layout.lang.x || Math.abs((layout.btn.y+layout.btn.height/2)-(layout.lang.y+layout.lang.height/2))>2) errors.push('BGM header layout failed: '+JSON.stringify({width,...layout}));
+    const layout=await evalJs(`(() => {const r=s=>{const b=document.querySelector(s).getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,height:b.height};};return {btn:r('#bgmBtn'),play:r('#bgmPlay'),next:r('#bgmNext'),player:r('.bgm-player'),lang:r('#langSel'),scroll:document.documentElement.scrollWidth};})()`);
+    if(layout.btn.right>width || layout.btn.x<0 || layout.scroll>width || layout.btn.height<30 || layout.btn.right>layout.play.x || layout.play.right>layout.next.x || layout.next.right>layout.player.right || layout.player.right>width || Math.abs(layout.btn.y-layout.next.y)>2) errors.push('BGM header layout failed: '+JSON.stringify({width,...layout}));
     const shot=await send('Page.captureScreenshot',{format:'png'});
     fs.writeFileSync(path.join(shotDir,`header-${width}.png`),Buffer.from(shot.result.data,'base64'));
   }

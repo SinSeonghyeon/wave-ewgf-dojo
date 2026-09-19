@@ -422,3 +422,19 @@ test('origin lock: only allowed origins get CORS headers and may POST; * opens i
   const broken = {DB: {prepare() { throw new Error('boom'); }}};
   r = await w.default.fetch(req('/top?board=wave10'), broken); assert.equal(r.status, 500); assert.equal(r.headers.get('access-control-allow-origin'), ORIGIN);
 });
+
+
+test('WSC leaderboard validates completed counts, ranks by hits then streak and supports owner deletion',async()=>{
+  const w=await worker(),env={DB:fakeD1()},api=owned(w,env);
+  const score=(nick,hits,best)=>({board:'wsc',nick,score:hits,tie:best,detail:{hits,target:10,best}});
+  for(const [nick,hits,best] of [['alpha',8,3],['bravo',8,5],['charlie',9,2]]){
+    const r=await api.submit(score(nick,hits,best));assert.equal(r.status,200);
+  }
+  const top=await (await w.handle(req('/top?board=wsc&nick=alpha'),env,NOW)).json();
+  assert.deepEqual(top.rows.map(r=>r.nick),['charlie','bravo','alpha']);assert.equal(top.me.rank,3);
+  assert.equal((await (await api.submit(score('alpha',8,2),NOW+1000)).json()).improved,false);
+  assert.equal((await (await api.submit(score('alpha',8,6),NOW+2000)).json()).improved,true);
+  for(const over of [{score:11},{score:8.5},{tie:9},{detail:{hits:7,target:10,best:3}},{detail:{hits:8,target:9,best:3}}])assert.ok(w.validate(entry({...score('alpha',8,3),...over})).error);
+  const denied=await w.handle(req('/score',{method:'DELETE',body:JSON.stringify({board:'wsc',nick:'alpha',token:api.tokens.bravo})}),env,NOW);assert.equal(denied.status,403);
+  const removed=await w.handle(req('/score',{method:'DELETE',body:JSON.stringify({board:'wsc',nick:'alpha',token:api.tokens.alpha})}),env,NOW);assert.equal(removed.status,200);assert.equal((await removed.json()).total,2);
+});

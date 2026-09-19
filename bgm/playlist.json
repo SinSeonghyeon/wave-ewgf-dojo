@@ -1,0 +1,16 @@
+---
+layout: null
+---
+[
+{%- assign tracks = site.static_files | sort: 'path' -%}
+{%- assign separator = '' -%}
+{%- for file in tracks -%}
+  {%- assign prefix = file.path | slice: 0, 5 -%}
+  {%- assign extension = file.extname | downcase -%}
+  {%- assign parts = file.path | split: '/' -%}
+  {%- if prefix == '/bgm/' and extension == '.mp3' and parts.size == 3 -%}
+    {{- separator -}}{{- file.path | remove_first: '/' | jsonify -}}
+    {%- assign separator = ',' -%}
+  {%- endif -%}
+{%- endfor -%}
+]

@@ -23,7 +23,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>{const previous=events[name];events[name]=(...args)=>{if(previous)previous(...args);fn(...args);};},
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={SFX_START,HIT_CONTACT_MS,impacts,sparks,wsc,wscStartChallenge,WSC_TARGET,wscJudge,wscFrames,wscA,frameSlot,resetInput,renderWsc,onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,boardDelete,renderBoard,visitsLoad,claimNick,openNick,postVote,replySend,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,takeResultDonate,practiceInput,practiceTick,DONATE_ACTIVE_MS,touchKeys,touchPress,applyTouchUI,applyTouchLayout,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={BGM_GAIN,bgmApplyTracks,bgmLoadTracks,BGM_TRACKS,bgmPick,bgmNext,bgmTogglePlay,rankingResult,TRIAL_MODES,resetSession,fighterPoint,roomMesh,roomShift,roomCamera,roomProject,ROOM,historyRows,history,renderHistory,SFX_START,HIT_CONTACT_MS,impacts,sparks,wsc,wscStartChallenge,WSC_TARGET,wscJudge,wscFrames,wscA,frameSlot,resetInput,renderWsc,onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,boardDelete,renderBoard,visitsLoad,claimNick,openNick,postVote,replySend,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,takeResultDonate,practiceInput,practiceTick,DONATE_ACTIVE_MS,touchKeys,touchPress,applyTouchUI,applyTouchLayout,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,document:context.document,time:t=>now=t,pads:p=>pads=p};
 }
@@ -173,7 +173,7 @@ test('expired pending button cannot become an EWGF',()=>{
 test('mode switch and session reset cancel countdowns',()=>{
   const a=boot();a.setMode('wave10');a.startTrial();const id=a.trial.cdTimer;a.setMode('free');
   assert.equal(a.timers.has(id),false);assert.equal(a.trial.running,false);assert.equal(a.get('dStart').disabled,false);
-  a.setMode('ewgf20');a.startTrial();a.get('dReset').click();assert.equal(a.trial.cdTimer,null);assert.equal(a.cd.state,0);
+  a.setMode('ewgf20');a.startTrial();a.resetSession();assert.equal(a.trial.cdTimer,null);assert.equal(a.cd.state,0);
 });
 test('trial start discards commands begun during countdown',()=>{
   const a=boot();a.setMode('ewgf20');a.startTrial();dash(a);const countdown=a.timers.get(a.trial.cdTimer);
@@ -241,7 +241,7 @@ test('session totals survive the 300-attempt history limit',()=>{
   for(let i=0;i<301;i++) a.onButton(2,2000+i*10);
   assert.equal(a.session.attempts.length,300);assert.equal(a.session.tries,302);assert.equal(a.session.hits,1);
   assert.equal(a.get('stTry').textContent,302);
-  a.get('dReset').click();assert.equal(a.session.tries,0);assert.equal(a.session.hits,0);
+  a.resetSession();assert.equal(a.session.tries,0);assert.equal(a.session.hits,0);
 });
 test('language falls back to English without navigator.language and honours saved lang',()=>{
   const a=boot();assert.equal(a.store.lang,'en');assert.equal(a.get('dName').textContent,'Free practice');
@@ -466,7 +466,7 @@ test('trial end submits only with a claimed nickname (token); a failed submit sh
   const m=card.buildCard(card.shareSource());
   assert.equal(m.rankText,'3위 / 42명 · 상위 8% · S');assert.match(m.tweet,/\n3위 \/ 42명 · 상위 8% · S\n/);
   // the banner comment is per trial mode (tier.N.<mode>): the same grade reads differently in wave10 and rush30, and every mode has all six in every language
-  for(const l of ['ko','en','ja']){card.setLang(l);for(const mode of card.BOARDS)for(let i=0;i<6;i++)assert.notEqual(card.T('tier.'+i+'.'+mode),'tier.'+i+'.'+mode,l+' '+mode+' '+i);}
+  for(const l of ['ko','en','ja']){card.setLang(l);for(const mode of card.TRIAL_MODES)for(let i=0;i<6;i++)assert.notEqual(card.T('tier.'+i+'.'+mode),'tier.'+i+'.'+mode,l+' '+mode+' '+i);}
   card.setLang('ko');const banner=card.get('shareTierMsg');
   await card.openShare().catch(()=>{}); // the banner is filled synchronously; the canvas draw rejects in this harness (no 2d context)
   assert.equal(card.trial.result.personalBest,true);assert.equal(card.get('donateShare').hidden,false,'the first personal best gets today\'s result prompt');
@@ -571,7 +571,7 @@ test('leaderboard submit and delete are serialized in both directions',async()=>
   // If deletion starts first, a newly completed trial waits and submits only after deletion finishes.
   b=backend(); a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch,{confirm:()=>true});
   a.board.data.wave10=topRes('me'); deleting=a.boardDelete(); await b.flush(); run(a); await b.flush();
-  assert.equal(a.board.submitAfterDelete,true); assert.equal(b.find('/submit','POST'),undefined,'submit is queued behind delete');
+  assert.equal(a.board.submitQueue.length,1); assert.equal(b.find('/submit','POST'),undefined,'submit is queued behind delete');
   b.answer('/score','DELETE',{season:'all',board:'wave10',ok:true,deleted:1,total:0,rows:[],me:null,cut10:null}); await deleting; await b.flush();
   assert.ok(b.find('/submit','POST'),'queued trial submits after delete settles');
   b.answer('/submit','POST',{ok:true,id:9,rank:1,total:1,improved:true,...topRes('me')}); await b.flush();
@@ -674,8 +674,8 @@ test('sound settings: defaults, invalid saves fall back, valid saves survive, sl
   a.get('bgmVol').value='abc';a.get('bgmVol').input();assert.equal(a.store.bgmVol,0);
   // fx paths that call playSfx must be harmless without Audio
   a.fx.crouchDash();a.fx.ewgf(5);a.fx.ewgf(1,true);a.fx.dash();a.fx.backdash();
-  assert.deepEqual(Object.keys(html.match(/const SND = \{([^}]*)\}/)[1].split(',').reduce((o,kv)=>{o[kv.split(':')[0].trim()]=1;return o;},{})),['bgm','wave','ewgf','wsc','hellsweep','tongbal','hit','backdash']);
-  for(const f of ['bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3']) assert.ok(fs.existsSync(require('node:path').join(__dirname,'..',f)),f+' exists');
+  assert.deepEqual(Object.keys(html.match(/const SND = \{([^}]*)\}/)[1].split(',').reduce((o,kv)=>{o[kv.split(':')[0].trim()]=1;return o;},{})),['wave','ewgf','wsc','hellsweep','tongbal','hit','backdash']);
+  for(const f of ['bgm/bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3']) assert.ok(fs.existsSync(require('node:path').join(__dirname,'..',f)),f+' exists');
 });
 test('EWGF streak counts consecutive successes, resets on failure, fault, 3s gap, mode/reset/blur, and caps the look at level 6',()=>{
   const a=boot();
@@ -689,7 +689,7 @@ test('EWGF streak counts consecutive successes, resets on failure, fault, 3s gap
   dash(a,13000);a.onButton(2,13100);assert.equal(a.session.attempts.at(-1).kind,'wgf');assert.equal(a.combo.n,0,'a late WGF breaks the streak');
   hit(14000);a.onDir('f',15000);a.onDir('df',15010);assert.equal(a.combo.n,0,'a fault breaks the streak');
   hit(16000);a.setMode('ewgf20');assert.equal(a.combo.n,0);a.setMode('free');
-  hit(17000);a.get('dReset').click();assert.equal(a.combo.n,0);
+  hit(17000);a.resetSession();assert.equal(a.combo.n,0);
   hit(18000);a.events.blur();assert.equal(a.combo.n,0);
   a.setLang('ko');hit(19000);hit(20000);hit(21000);assert.equal(a.pops.at(-1).text,'3초');hit(22000);assert.equal(a.pops.at(-1).text,'4초!');hit(23000);assert.equal(a.pops.at(-1).text,'5초!!');
 });
@@ -798,7 +798,7 @@ test('rush30: typed dummies, wave points by chain, 10 for the right move, 5 for 
   assert.doesNotMatch(JSON.stringify(card),/(^|[\s"])(card|rec|trial|mode)\.[a-zA-Z0-9]+/);
   a.setLang('ko');assert.ok(a.get('bests').innerHTML.includes('46점'));
   // cancel paths hand the stage back to the plain dummy
-  for(const cancel of [a=>a.get('dReset').click(),a=>a.events.blur(),a=>a.get('setOpen').click(),a=>a.setMode('free')]){
+  for(const cancel of [a=>a.resetSession(),a=>a.events.blur(),a=>a.get('setOpen').click(),a=>a.setMode('free')]){
     const b=boot();b.setMode('rush30');b.startTrial();const c=b.timers.get(b.trial.cdTimer);b.time(4000);c();c();c();assert.ok(b.world.dummy.type);
     cancel(b);assert.equal(b.trial.running,false);assert.equal(b.world.dummy.type,null);assert.equal(b.get('hudScore').textContent,'');assert.equal(b.store.records.rush30.length,0);
   }
@@ -1083,7 +1083,7 @@ test('wardrobe: lifetime counters grow with dashes, EWGFs and strikes, survive a
   assert.equal(a.store.life.dashes,1);assert.equal(a.store.life.ewgf,1);assert.equal(a.store.life.tries,1);assert.equal(a.store.life.maxStreak,1);
   assert.ok(a.pendingReward('red_top'),'first EWGF reserves the crimson top');assert.equal(a.store.ach.red_head,undefined,'10 dashes not yet');
   assert.equal(a.store.pendingRewards.length,1);assert.equal(a.get('jackpot').hidden,true);assert.equal(a.owned('red_top'),false);assert.equal(a.setFit('top','red_top'),false);a.claimRewards();assert.equal(a.get('jpItem').textContent,'Crimson Dobok Top');
-  a.get('dReset').click();assert.equal(a.store.life.ewgf,1,'session reset keeps lifetime counters');assert.equal(a.session.hits,0);
+  a.resetSession();assert.equal(a.store.life.ewgf,1,'session reset keeps lifetime counters');assert.equal(a.session.hits,0);
   for(let i=0;i<9;i++){const t=3000+i*1000;a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}
   assert.equal(a.store.life.dashes,10);assert.ok(a.pendingReward('red_head'),'10 dashes → pending headband');assert.equal(a.store.life.maxChain,1);
   assert.deepEqual(J(a.store.pendingRewards.map(j=>j.id)),['red_head'],'queued behind the reveal still playing');
@@ -1328,8 +1328,8 @@ test('review fixes (2026-09-13): one 4N4 pairing rule, provisional no-cancel met
   a.time(14100);a.trialTick(14100);assert.equal(a.trial.running,false);assert.equal(a.store.records.bd10[0].chain,3);
   assert.equal(a.get('hudChainN').textContent,0);assert.equal(a.get('hudChainL').textContent,'WAVE','endTrial redraws the chain widget');
   // records, lifetime trial counters and the reset button all follow the one trial-mode list; the admin CLI knows every board
-  assert.deepEqual(Object.keys(a.store.records),[...a.BOARDS]);assert.deepEqual(Object.keys(a.store.life.trials),[...a.BOARDS]);
-  const b=boot(undefined,undefined,{confirm:()=>true});b.get('dataReset').click();assert.deepEqual(Object.keys(b.store.records),[...b.BOARDS]);assert.deepEqual(Object.keys(b.store.life.trials),[...b.BOARDS]);
+  assert.deepEqual(Object.keys(a.store.records),[...a.TRIAL_MODES]);assert.deepEqual(Object.keys(a.store.life.trials),[...a.TRIAL_MODES]);
+  const b=boot(undefined,undefined,{confirm:()=>true});b.get('dataReset').click();assert.deepEqual(Object.keys(b.store.records),[...b.TRIAL_MODES]);assert.deepEqual(Object.keys(b.store.life.trials),[...b.TRIAL_MODES]);
   const adm=fs.readFileSync(require('node:path').join(__dirname,'../tools/board-admin.js'),'utf8');for(const id of a.BOARDS) assert.ok(adm.includes("['"+id+"', '"),'board-admin.js lists '+id);
 });
 
@@ -1445,8 +1445,8 @@ test('WSC isolates all existing statistics, achievements, records, board and sha
   const a=boot();dash(a);a.onButton(2,1060);const before=JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]);
   a.setMode('wsc');wscRun(a,8,1,2000);wscRun(a,9,3,3000);
   assert.equal(JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]),before);
-  assert.equal(a.shareSource(),null);assert.equal(a.boardEntry({rec:{score:1}},'wsc'),null);assert.equal(a.get('dShare').hidden,true);assert.equal(a.BOARDS.includes('wsc'),false);
-  a.get('dReset').click();assert.equal(a.wsc.session.tries,0);assert.equal(JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]),before);
+  assert.equal(a.shareSource(),null);assert.equal(a.boardEntry({rec:{score:1}},'wsc'),null);assert.equal(a.get('dShare').hidden,true);assert.equal(a.BOARDS.includes('wsc'),true);
+  a.setMode('free');assert.equal(JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]),before,'leaving WSC preserves existing practice data');
   assert.equal(boot().wsc.session.tries,0);
 });
 test('WSC always evaluates the full command and only completed attempts enter the single session rate',()=>{
@@ -1523,7 +1523,7 @@ function wscTaskRun(a,waves,B=1,t=7000){
   }
   a.onDir('b',df+7*F);a.onButton(2,df+(7+B)*F);return a.wsc.last;
 }
-test('WSC 10 random tasks count down, complete once, remain local and preserve practice totals',()=>{
+test('WSC 10 random tasks count down, complete once, expose a separate ranking result and preserve practice totals',()=>{
   const a=boot();a.setMode('wsc');wscRun(a,8,1);const before=JSON.stringify([a.session,a.store.life,a.store.records,a.store.ach,a.store.pendingRewards]);
   a.time(2000);a.wscStartChallenge();assert.equal(a.wsc.challenge.status,'countdown');
   wscRun(a,8,1,2100);assert.equal(a.wsc.challenge.stats.tries,0);assert.equal(a.wsc.session.tries,1);
@@ -1584,7 +1584,7 @@ test('WSC challenge cancels on blur, hidden, mode, side reset, modal and explici
     if(reason==='side'){a.store.side=-1;a.resetInput();}
     if(reason==='modal')a.get('setOpen').click();
     if(reason==='cancel')a.wscStartChallenge();
-    if(reason==='reset')a.get('dReset').click();
+    if(reason==='reset')a.resetSession();
     assert.equal(a.wsc.challenge.status,reason==='reset'?'idle':'cancelled',reason);a.tick(10000);assert.notEqual(a.wsc.challenge.status,'running');assert.equal(a.trial.result,null);assert.equal(a.get('hudCenter').textContent,'');
   }
 });
@@ -1725,4 +1725,223 @@ test('WSC challenge defers automatic notices and donation nudges through countdo
   }
   a.wscStartChallenge();assert.equal(a.practiceTick(),true);
   assert.equal(a.noticeAutoTry(),true);
+});
+
+
+test('input ledger: direction hold excludes button gaps, newest row is first and 2P arrows mirror',()=>{
+  const a=boot();a.onDir('f',1000);a.onButton(1,1020);a.onDir('n',1050);
+  const rows=a.historyRows(1100);
+  assert.equal(rows[0].label,'★');assert.equal(rows[0].frames,'3f');
+  assert.equal(rows[1].label,'1');assert.equal(rows[1].frames,'1f');assert.equal(rows[1].title,a.T('inputs.gap'));
+  assert.equal(rows[2].label,'→');assert.equal(rows[2].frames,'3f');assert.equal(rows[2].title,a.T('inputs.hold'));
+  a.store.side=-1;assert.equal(a.historyRows(1100)[2].label,'←');
+  const tries=a.session.tries;for(let i=0;i<15;i++)a.historyRows(1200+i*100);assert.equal(a.session.tries,tries);
+});
+test('input ledger freezes on reset, retains the full forty-entry buffer and translates descriptions',()=>{
+  const a=boot();a.onDir('f',1000);a.time(1100);a.resetInput();
+  assert.equal(a.historyRows(9000)[0].frames,'6f');
+  a.onDir('d',9100);assert.equal(a.historyRows(9200)[1].frames,'6f','a reset must not count time spent in a dialog as a held direction');
+  for(let i=0;i<60;i++)a.onDir(i%2?'d':'n',9300+i*20);
+  assert.equal(a.historyRows(11000).length,40);a.setLang('ja');
+  assert.equal(a.historyRows(9600)[0].title,a.T('inputs.hold'));
+});
+
+
+test('3D dojo camera projects the ground lane onto the 2D fighter coordinates at every viewport and camera offset',()=>{
+  const a=boot();
+  for(const [w,h,ratio] of [[1200,330,.8],[820,350,.8],[406,508,.46],[330,380,.46]]){
+    const ground=h*ratio;
+    for(const cameraX of [-1500,0,340,9000]){
+      const camera=a.roomCamera(w,h,ground,cameraX);
+      for(const screenX of [0,w*.43,w*.62,w]){
+        const p=a.roomProject([(screenX+cameraX)/a.ROOM.unit,0,0],camera,w,h);
+        assert.ok(Math.abs(p[0]-screenX)<1e-8);assert.ok(Math.abs(p[1]-ground)<1e-8);assert.ok(p[2]>0);
+      }
+      const wallFoot=a.roomProject([cameraX/a.ROOM.unit,0,a.ROOM.back],camera,w,h);
+      assert.ok(wallFoot[1]<ground,'rear wall meets the floor behind the fighter lane');
+    }
+  }
+});
+
+
+test('3D wall decorations stay at the same world coordinates across camera recycling in both directions',()=>{
+  const a=boot(),mesh=a.roomMesh();
+  const visible=(cam,center)=>{
+    const points=new Set();
+    for(let i=0;i<mesh.length;i+=9){
+      const x=mesh[i]+a.roomShift(cam);
+      if(x>center-10 && x<center+10 && mesh[i+1]<2.4 && mesh[i+2]>-2.98)
+        points.add([x,mesh[i+1],mesh[i+2],mesh[i+8]].map(n=>n.toFixed(4)).join(','));
+    }
+    return [...points].sort();
+  };
+  for(let bay=-12;bay<=12;bay++){
+    const x=bay*a.ROOM.bay;
+    assert.deepEqual(visible(x-.001,x),visible(x+.001,x),`wall landmarks must not jump at bay ${bay}`);
+  }
+});
+
+
+test('WSC timeline includes frame 15 but never piles later inputs into it',()=>{
+  const a=boot();a.setMode('wsc');
+  a.wsc.last={a:15,b:2,aRaw:14*F,bRaw:2*F,aOK:false,bOK:false,ok:false,reason:'late',df:1000,
+    events:[{t:1000,dir:'df'},{t:1000+14*F,dir:'b'},{t:1000+15*F,btn:2},{t:1000+20*F,btn:1}]};
+  a.renderWsc();
+  const axis=a.get('wscAxis').innerHTML;
+  assert.match(axis,/data-frame="15"><b>←<\/b>15f/);
+  assert.doesNotMatch(axis,/RP|LP|15\+/);
+  assert.match(a.get('wscAB').innerHTML,/15f/);assert.match(a.get('wscAB').innerHTML,/2f/);
+});
+
+test('electric fist coordinates undo only the caller transform, including DPR, scaling and shake',()=>{
+  const a=boot();
+  for(const scale of [.9,1,1.15,2.3,2.4])for(const side of [-1,1]){
+    const base={a:scale,b:0,c:0,d:scale,e:7,f:-4};
+    const local={a:side*.8,b:side*.6,c:-.6,d:.8,e:320,f:180};
+    const m={a:scale*local.a,b:scale*local.b,c:scale*local.c,d:scale*local.d,e:scale*local.e+base.e,f:scale*local.f+base.f};
+    const point=a.fighterPoint(base,m,6,-25);
+    assert.ok(Math.abs(point[0]-(local.a*6+local.c*-25+320))<1e-9);
+    assert.ok(Math.abs(point[1]-(local.b*6+local.d*-25+180))<1e-9);
+  }
+  assert.doesNotMatch(html,/id="dReset"/,'session reset is no longer a public control');
+});
+
+
+test('BGM playlist excludes the previous track, pauses independently and advances at track end',()=>{
+  const a=boot(undefined,undefined,{Audio:AudioStub});
+  assert.equal(a.snd.bgm,null,'no audio at boot');
+  for(let prev=0;prev<a.BGM_TRACKS.length;prev++)for(const random of [0,.2,.5,.999999])assert.notEqual(a.bgmPick(prev,random),prev);
+  for(const f of a.BGM_TRACKS)assert.ok(fs.existsSync(require('node:path').join(__dirname,'..',f)));
+  a.unlockAudio();assert.equal(a.snd.bgm.loop,false);
+  const first=a.snd.track;a.snd.bgm.currentTime=35;
+  a.bgmTogglePlay();assert.equal(a.snd.bgm.paused,true);assert.equal(a.snd.bgm.currentTime,35);assert.equal(a.store.bgm,1);
+  a.bgmSync();assert.equal(a.snd.bgm.paused,true,'focus/volume sync cannot undo explicit pause');
+  a.bgmNext();assert.notEqual(a.snd.track,first);assert.equal(a.snd.bgm.paused,true,'skip preserves pause');
+  a.bgmTogglePlay();assert.equal(a.snd.bgm.paused,false);
+  const next=a.snd.track;a.snd.bgm.onended();assert.notEqual(a.snd.track,next);assert.equal(a.snd.bgm.paused,false);
+  assert.equal(a.store.bgmLast,a.BGM_TRACKS[a.snd.track]);
+  a.setBgm(0);a.bgmNext();assert.equal(a.snd.bgm.paused,true,'skip does not unmute');
+  a.bgmTogglePlay();assert.equal(a.store.bgm,1);assert.equal(a.snd.bgm.paused,false);
+  const reloaded=boot({bgmLast:a.store.bgmLast},undefined,{Audio:AudioStub});reloaded.unlockAudio();assert.notEqual(reloaded.snd.track,a.snd.track,'reload avoids the previous track');
+});
+
+test('measured BGM gains follow user volume through track changes without affecting effects',()=>{
+  const a=boot(undefined,undefined,{Audio:AudioStub});a.unlockAudio();
+  assert.equal(a.BGM_GAIN['bgm/bgm.mp3'],1);
+  for(let track=0;track<a.BGM_TRACKS.length;track++){
+    const gain=a.BGM_GAIN[a.BGM_TRACKS[track]];assert.ok(gain>0&&gain<=1);
+    a.snd.track=track;a.store.bgmVol=40;a.bgmSync();
+    assert.ok(Math.abs(a.snd.bgm.volume-.4*gain)<1e-8);
+  }
+  assert.equal(a.store.sfxVol,100);
+  a.bgmApplyTracks(['bgm/unmeasured.mp3']);assert.equal(a.snd.bgm.volume,.4,'unmeasured tracks use the user volume');
+});
+
+test('folder playlist updates preserve current track, handle one/zero songs and reject unsafe paths',()=>{
+  const a=boot(undefined,undefined,{Audio:AudioStub});a.unlockAudio();
+  const current=a.BGM_TRACKS[a.snd.track],audio=a.snd.bgm;
+  assert.equal(a.bgmApplyTracks(['bgm/new #日本語.MP3',current,current]),true);
+  assert.equal(a.BGM_TRACKS.length,2);assert.equal(a.snd.bgm,audio);assert.equal(a.snd.track,1);
+  assert.equal(a.bgmApplyTracks(['https://example.com/song.mp3']),false);
+  assert.equal(a.bgmApplyTracks(['bgm/../song.mp3']),false);
+  a.bgmApplyTracks(['bgm/new #日本語.MP3']);assert.equal(a.bgmPick(0),0);
+  assert.equal(a.snd.bgm.src,'bgm/new%20%23%E6%97%A5%E6%9C%AC%E8%AA%9E.MP3');
+  a.snd.bgm.onended();assert.equal(a.snd.track,0);assert.equal(a.snd.bgm.paused,false);
+  const last=a.snd.bgm;a.bgmApplyTracks([]);assert.equal(last.paused,true);assert.equal(a.snd.bgm,null);assert.equal(a.bgmPick(0),-1);
+  a.bgmNext();a.bgmSync();assert.equal(a.snd.bgm,null);
+});
+
+test('HTTP playlist loading waits before playback and reads new songs without the local fallback',async()=>{
+  let resolve;
+  const a=boot(undefined,url=>url==='bgm/playlist.json'?new Promise(r=>resolve=r):Promise.resolve({ok:true,json:async()=>({rows:[],total:0})}),{Audio:AudioStub,AbortController});
+  const loading=a.bgmLoadTracks();a.unlockAudio();assert.equal(a.snd.bgm,null,'stale fallback must not play while manifest loads');
+  resolve({ok:true,json:async()=>['bgm/added later.mp3']});await loading;
+  assert.equal(a.snd.bgm.src,'bgm/added%20later.mp3');assert.equal(a.snd.bgm.paused,false);
+});
+
+test('folder scanner matches local fallback and excludes directories/non-MP3 files',()=>{
+  const {tracksAt}=require('../tools/update-bgm');const path=require('node:path');
+  assert.deepEqual(tracksAt(path.join(__dirname,'../bgm')),Array.from(boot().BGM_TRACKS));
+  const dir=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'dojo-bgm-'));
+  try{fs.writeFileSync(path.join(dir,'日本語 #1.MP3'),'');fs.writeFileSync(path.join(dir,'notes.txt'),'');fs.mkdirSync(path.join(dir,'folder.mp3'));assert.deepEqual(tracksAt(dir),['bgm/日本語 #1.MP3']);}
+  finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('WSC submits only a completed challenge, retries failure once and remains separate from ordinary trials',async()=>{
+  const sent=[];let fail=true;
+  const a=boot({nick:'tester',nickToken:'a'.repeat(48),fx:0},async(url,init)=>{
+    if(url.endsWith('/submit')){sent.push(JSON.parse(init.body));if(fail)return {ok:false,json:async()=>({error:'server'})};return {ok:true,json:async()=>({rank:1,total:1,improved:true,rows:[],me:null})};}
+    return {ok:true,json:async()=>({rows:[],total:0})};
+  });
+  a.setMode('wsc');a.wscStartChallenge();a.tick(4000);
+  for(let i=0;i<9;i++)wscTaskRun(a,a.wsc.challenge.taskN+1,i===4?2:1,5000+i*1000);
+  assert.equal(sent.length,0);assert.equal(a.rankingResult(),undefined);
+  wscTaskRun(a,a.wsc.challenge.taskN+1,1,14000);await new Promise(setImmediate);
+  assert.equal(sent.length,1);assert.equal(a.rankingResult().submit.state,'fail');
+  assert.deepEqual(sent[0].detail,{hits:9,target:10,best:5});assert.equal(sent[0].board,'wsc');assert.equal(sent[0].score,9);assert.equal(sent[0].tie,5);
+  assert.equal(a.trial.result,null);assert.equal(a.session.tries,0);assert.equal(a.shareSource(),null);
+  fail=false;await a.boardSubmit();assert.equal(sent.length,2);assert.equal(a.rankingResult().submit.state,'done');await a.boardSubmit();assert.equal(sent.length,2);
+  a.wscStartChallenge();a.tick(17000);a.wscStartChallenge();await a.boardSubmit();assert.equal(sent.length,2,'cancelled challenges never submit');
+});
+
+test('completed WSC submissions survive a busy request, mode changes and a new challenge',async()=>{
+  const b=backend(), a=boot({nick:'tester',nickToken:'a'.repeat(48)},b.fetch);
+  const result=hits=>({completed:true,window:8,rec:{hits,target:10,best:hits}});
+  a.setMode('wsc');const first=a.wsc.challenge.result=result(5);a.boardSubmit();
+  const second=a.wsc.challenge.result=result(7);a.boardSubmit();a.boardSubmit();
+  a.wscStartChallenge();a.setMode('free');
+  b.answer('/submit','POST',{rank:1,total:1,rows:[],me:null});await b.flush();
+  assert.equal(first.submit.state,'done');
+  assert.equal(b.find('/submit','POST')?.body.score,7,'queued payload survives the UI result being replaced');
+  b.answer('/submit','POST',{rank:1,total:1,rows:[],me:null});await b.flush();
+  assert.equal(second.submit.state,'done');
+  assert.equal(b.calls.filter(c=>c.url.includes('/submit')).length,2,'duplicate enqueue is ignored');
+});
+
+test('data reset clears the retained WSC ranking result and both sessions from every mode',()=>{
+  for(const mode of ['free','wsc']){
+    const a=boot(undefined,undefined,{confirm:()=>true});a.setMode(mode);
+    a.session.tries=5;a.wsc.session.tries=4;
+    a.wsc.challenge={status:'done',stats:{tries:10,hits:8,best:4},result:{completed:true,window:8,rec:{hits:8,target:10,best:4}}};
+    a.onDir('f',1000);a.get('dataReset').click();
+    assert.equal(a.session.tries,0,mode);assert.equal(a.wsc.session.tries,0,mode);
+    assert.equal(a.wsc.challenge.result,undefined,mode);assert.equal(a.history.length,0,mode);
+    assert.equal(a.wsc.notice,'ready',mode);
+    assert.equal(a.get('dRank').textContent,'',mode);
+  }
+});
+
+test('unchanged input history does not replace DOM on animation ticks',()=>{
+  const a=boot();a.onDir('f',1000);a.time(1100);a.resetInput();a.renderHistory(1100);
+  const box=a.get('inputs');let writes=0,markup=box.innerHTML;
+  Object.defineProperty(box,'innerHTML',{get:()=>markup,set:v=>{writes++;markup=v;}});
+  a.renderHistory(1200);a.renderHistory(1300);
+  assert.equal(writes,0,'stopped hold frames are unchanged');
+  a.setLang('ja');assert.ok(writes>0,'localized titles still update');
+});
+
+test('WSC queue keeps completed payloads during deletion and drops unsent work on data reset',async()=>{
+  for(const reset of [false,true]){
+    const b=backend(),a=boot({nick:'tester',nickToken:'a'.repeat(48)},b.fetch,{confirm:()=>true});
+    a.board.data.wave10=topRes('tester');const deleting=a.boardDelete();
+    a.setMode('wsc');a.wsc.challenge.result={completed:true,window:8,rec:{hits:6,target:10,best:3}};
+    a.boardSubmit();a.setMode('free');
+    if(reset)a.get('dataReset').click();
+    b.answer('/score','DELETE',{rows:[],total:0,me:null});await deleting;await b.flush();
+    assert.equal(b.find('/submit','POST')?.body.score,reset?undefined:6);
+    if(!reset){b.answer('/submit','POST',{rank:1,total:1,rows:[],me:null});await b.flush();}
+  }
+});
+
+test('a stale WSC auth failure cannot log out a newly claimed identity or submit its queued results',async()=>{
+  const b=backend(),a=boot({nick:'old',nickToken:'a'.repeat(48)},b.fetch);
+  a.setMode('wsc');a.wsc.challenge.result={completed:true,window:8,rec:{hits:5,target:10,best:3}};a.boardSubmit();
+  const queued=a.wsc.challenge.result={completed:true,window:8,rec:{hits:7,target:10,best:4}};a.boardSubmit();
+  a.store.nick='new';a.store.nickToken='b'.repeat(48);
+  b.answer('/submit','POST',{error:'auth'},403);await b.flush();
+  assert.equal(a.store.nick,'new');assert.equal(a.store.nickToken,'b'.repeat(48));
+  assert.equal(b.calls.filter(c=>c.url.includes('/submit')).length,1);
+  assert.equal(queued.submit.state,'fail');
+  a.boardSubmit();assert.equal(b.find('/submit','POST').body.nick,'new','explicit retry uses the current identity');
+  b.answer('/submit','POST',{rank:1,total:1,rows:[],me:null});await b.flush();
 });
