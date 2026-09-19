@@ -415,6 +415,9 @@
   .top-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-left:auto} /* stays on the right when it wraps to its own row */
   .notice-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;height:45px;padding:0 11px;border:1px solid var(--line2);border-radius:4px;background:transparent;color:var(--ink2);cursor:pointer}
   .notice-btn:hover,.notice-btn:focus-visible{color:var(--accent);border-color:var(--accent)}
+  .youtube-btn{text-decoration:none;font:inherit}
+  .youtube-btn svg{color:var(--red)}
+  @media(max-width:750px){.youtube-btn .youtube-label{display:none}}
   .notice-new{position:absolute;right:-5px;top:-8px;padding:1px 5px;border-radius:999px;background:var(--red);color:#fff;font-family:var(--mono);font-size:8px;font-weight:700;line-height:15px;letter-spacing:.4px;box-shadow:0 0 0 2px var(--bg)}
   .bgm-btn{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:45px;height:45px;padding:0;border:1px solid var(--line2);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer}
   .bgm-btn[aria-pressed="false"]{color:var(--muted)}
@@ -626,6 +629,7 @@
     </nav>
     <div class="top-right">
       <button class="notice-btn" id="noticeOpen" type="button" data-i18n-aria="notice.open" data-i18n-title="notice.open" aria-label="공지사항 열기"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span data-i18n="notice.button">공지</span><span class="notice-new" id="noticeBadge" data-i18n="notice.new">NEW</span></button>
+      <a class="notice-btn youtube-btn" id="youtubeLink" href="https://www.youtube.com/@master_shin" target="_blank" rel="noopener noreferrer" data-i18n-aria="youtube.open" data-i18n-title="youtube.open" aria-label="제작자 YouTube 채널 열기 (새 탭)"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 4h14a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4Zm5 4v8l7-4-7-4Z"/></svg><span class="youtube-label" data-i18n="youtube.button">YouTube</span></a>
       <div class="bgm-player" role="group" data-i18n-aria="bgm.player">
       <button class="bgm-btn" id="bgmBtn" type="button" aria-pressed="true" data-i18n-aria="bgm.aria" data-i18n-title="bgm.aria" aria-label="배경음 켜기/끄기"><svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4 6 8H3v8h3l5 4z"/><g class="on"><path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/></g><g class="off"><path d="m16 9 6 6m0-6-6 6"/></g></svg></button>
         <button id="bgmPlay" type="button"><span aria-hidden="true">Ⅱ</span></button>
@@ -1114,6 +1118,7 @@ const I18N = {
 ko:{
   'app.title':'미시마 도장',
   'app.tagline':'미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정',
+  'youtube.button':'YouTube', 'youtube.open':'제작자 YouTube 채널 열기 (새 탭)',
   'notice.button':'공지', 'notice.open':'공지사항 열기', 'notice.new':'NEW', 'notice.title':'공지사항', 'notice.sub':'미시마 도장의 업데이트와 패치 노트입니다.', 'notice.kind.update':'업데이트',
   "notice.20260919.title":"새 도장과 웨캔기어 도전 순위",
   "notice.20260919.summary":"연습 화면과 입력 안내를 정리하고 웨캔기어 도전 순위와 음악 조작을 추가했습니다.",
@@ -1404,6 +1409,7 @@ ko:{
 en:{
   'app.title':'Mishima Dojo',
   'app.tagline':'Mishima-style input trainer · Judges 6N23 6 N 6N23 … wave dashes and 6N23+2 EWGF frame by frame',
+  'youtube.button':'YouTube', 'youtube.open':"Open the creator's YouTube channel (new tab)",
   'notice.button':'News', 'notice.open':'Open announcements', 'notice.new':'NEW', 'notice.title':'Announcements', 'notice.sub':'Updates and patch notes for Mishima Dojo.', 'notice.kind.update':'Update',
   "notice.20260919.title":"A new dojo and wave-cancel uppercut rankings",
   "notice.20260919.summary":"Updated the practice layout and input feedback, and added challenge rankings and music controls.",
@@ -1692,6 +1698,7 @@ en:{
 ja:{
   'app.title':'三島道場',
   'app.tagline':'三島流入力トレーナー · 6N23 6 N 6N23 … のウェーブと 6N23+2 の最風をフレーム単位で判定',
+  'youtube.button':'YouTube', 'youtube.open':'制作者のYouTubeチャンネルを開く（新しいタブ）',
   'notice.button':'お知らせ', 'notice.open':'お知らせを開く', 'notice.new':'NEW', 'notice.title':'お知らせ', 'notice.sub':'三島道場のアップデートとパッチノートです。', 'notice.kind.update':'アップデート',
   "notice.20260919.title":"新しい道場とキャンセルアッパーランキング",
   "notice.20260919.summary":"練習画面と入力案内を整理し、チャレンジランキングと音楽操作を追加しました。",
