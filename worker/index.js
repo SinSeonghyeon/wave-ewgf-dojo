@@ -32,6 +32,7 @@ export const BOARDS = {
   combo10: {score: [0, 100], tie: [0, 20],    detail: {hits: [0, 10], target: [10, 10], mean: [-500, 500], dps: [0, 20]}},
   rush30:  {score: [0, 2000], tie: [0, 500],  detail: {kills: [0, 500], whiffs: [0, 2000], dashPts: [0, 1000]}}, // 더미 격파 30초 (2026-09-13): score = points, tie = dummies destroyed
   bd10:    {score: [0, 60],   tie: [0, 200],  detail: {dashes: [0, 200], top: [0, 200], chain: [0, 200]}},      // 백대시 10초 (2026-09-13): score = metres retreated, tie = 'very fast' sets (theoretical max ≈ 46 m)
+  wsc: {score:[0,10],tie:[0,10],detail:{hits:[0,10],target:[10,10],best:[0,10]}}, // completed 10-try challenge; hits then best streak
 };
 export const WINDOWS = [8, 12, 15];
 const LANGS = ['ko', 'en', 'ja'];
@@ -108,6 +109,9 @@ export function validate(body) {
   for (const [k, range] of Object.entries(spec.detail)) {
     const v = num(body.detail?.[k], range); if (v === undefined) return {error: 'detail.' + k};
     detail[k] = v;
+  }
+  if(body.board==='wsc'){
+    if(!Number.isInteger(score)||!Number.isInteger(tie)||!Number.isInteger(detail.hits)||!Number.isInteger(detail.best)||score!==detail.hits||tie!==detail.best||tie>score||(score>0&&tie<1))return {error:'detail'};
   }
   return {value: {board: body.board, nick, score, tie, win: body.win, lang: LANGS.includes(body.lang) ? body.lang : 'ko', detail}};
 }

@@ -18,7 +18,7 @@ const BOARD_URL = (process.env.BOARD_URL || 'https://mishima-dojo-board.mishima-
 const tokenFile = path.join(__dirname, '..', '.sandbox', 'admin-token.txt');
 const token = (process.env.ADMIN_TOKEN || (fs.existsSync(tokenFile) ? fs.readFileSync(tokenFile, 'utf8') : '')).trim();
 const [cmd, ...args] = process.argv.slice(2);
-const BOARDS = [['wave10', '웨이브 10초'], ['ewgf20', '초풍 20회'], ['combo10', '웨이브 초풍 10회'], ['rush30', '더미 격파 30초'], ['bd10', '백대시 10초']]; // worker BOARDS keys + the app's mode.<id>.name (ko); the menu is built from this list
+const BOARDS = [['wave10', '웨이브 10초'], ['ewgf20', '초풍 20회'], ['combo10', '웨이브 초풍 10회'], ['rush30', '더미 격파 30초'], ['bd10', '백대시 10초'], ['wsc', '웨캔기어 10회']]; // worker BOARDS keys + the app's mode.<id>.name (ko); the menu is built from this list
 
 const usage = () => { // the comment block at the top of this file is the help text
   const head = []; for (const l of fs.readFileSync(__filename, 'utf8').split('\n')) { if (!l.startsWith('//')) break; head.push(l.slice(3)); }

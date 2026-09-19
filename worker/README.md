@@ -128,3 +128,13 @@ workers.dev 서브도메인이 없으면 deploy가 멈춘다. 대시보드 Worke
 - 관측: 변경 전후 `npx wrangler d1 insights mishima-dojo-board --timePeriod=1d --sort-type=sum --sort-by=reads --sort-direction=DESC --limit=20`로 쿼리별 읽기 행·실행 횟수를 확인한다. 2026-09-15 실제 1일치에서 기존 `/top` 분리 쿼리 4종이 약 560만 행(2,027,017 + 1,626,322 + 1,560,904 + 388,551), `/posts` 약 327,543행, 방문 집계 약 10,492행을 읽어 순위 조회가 한도를 소진했다.
 - 조회 절약 원칙(2026-09-15): `/top`은 window CTE 한 쿼리로 상위 10·참가 수·내 순위·cut10을 함께 계산한다. `/posts`는 최신 50개를 먼저 제한하고 그 글에만 투표를 조인한다. 앱은 한마디·순위 자동 폴링을 하지 않는다(한마디는 최초 로드/새로고침 버튼/변경, 순위는 최초 로드/탭/새로고침/점수 변경). 새 쿼리는 인덱스를 타는 범위 조건과 작은 CTE를 우선하고 Insights로 실제 스캔량을 확인한다.
 - 테스트: `node --test tests/board.test.cjs` (`tests/fake-d1.js` = node:sqlite 인메모리에 schema.sql을 그대로 적용한 가짜 D1, Node 22.13+). 스모크 테스트는 같은 핸들러를 로컬 http로 감싸 실제 브라우저에서 등록·조회·게시·대댓글·방문 집계를 돈다.
+
+## 2026-09-19 웨캔기어 보드 추가
+
+`wsc` = 랜덤 과제 10회 완주. `score`는 성공 횟수, `tie`는 최고 연속 성공. `detail={hits,target:10,best}`이며 정수·일치·범위를 검증한다. 기존 `/top`, `/submit`, `DELETE /score`, 섀도 밴을 사용하고 scores 스키마는 그대로다. **사이트 푸시 전에 워커만 재배포**한다. 별도 마이그레이션 없음.
+
+```powershell
+Push-Location worker
+npx wrangler deploy
+Pop-Location
+```

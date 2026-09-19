@@ -1,95 +1,98 @@
-# 후원 안내 개선 인수인계
+# workspace05 기능 변경 병합 인수인계 — 2026-09-19
 
-## 기준
+## 기준과 권한
 
-- 브랜치: `SinSeonghyeon/workspace05`
-- 기능 최종 커밋: `e8f45bf` (`feat: improve donation prompts`)
-- 한 줄 목적: 개인 최고 결과와 실제 연습 시간에 맞춰 후원을 안내하되, 측정·대화상자·보상 연출을 방해하지 않고 일일 노출 및 연습 시간을 브라우저에 복원한다.
+- 브랜치: `SinSeonghyeon/workspace05`.
+- 검증한 로컬 HEAD: `2ffe47c342c72a0b1369fa556dfd4b320dc3e622`.
+- 인수인계 대상: **기준 HEAD 위의 검토 완료 기능 변경 전체**. 사용자 후속 승인으로 본 문서와 기능을 함께 커밋·푸시한다. 전달 커밋은 `git log -1 --format=%H -- .agents/handoffs/SinSeonghyeon-workspace05.md`로 식별하고, 통합 전 fetch한 브랜치 tip과 파일 목록을 대조한다.
+- 목적: 도장 화면·입력 기록 재구성, WSC 전용 순위, 폴더 기반 랜덤 BGM 및 음량 보정, 비동기 등록/초기화 리뷰 수정.
+- 사용자 승인 범위: 로컬 변경 리뷰·수정·검증·인계 작성 및 후속 요청의 현재 기능 브랜치 커밋·푸시. 원격 fetch 후 현재 HEAD보다 앞선 기능 브랜치 커밋이 없음을 확인했다. main 병합/서비스 배포/인계 삭제는 범위 밖이다.
+- 사용 스킬: `release-branch-integrator`의 handoff contract. 실제 통합 작업은 하지 않았다.
 
-## 합류 순서와 의존성
+## 합류 순서·의존성
 
-- 의존 브랜치: 없음. `origin/main`의 `89abe35`에서 독립적으로 구현했다.
-- `feature/notices`의 현재 기능 위에 이 브랜치를 합류해도 된다.
-- 다른 기능 브랜치(`SinSeonghyeon/workspace00`~`workspace03`)와 기능상 순서 의존성은 없다.
-- 이 브랜치를 합친 뒤, 여러 기능의 공지를 하나로 묶을지 사용자에게 확인하고 `NOTICES` 및 ko/en/ja I18N 공지를 최종 편집한다.
+1. workspace00 통합본 `2ffe47c`의 WSC·동일 60Hz 칸 초풍·모바일·기술음이 선행 기준이다. 현재 HEAD에 이미 포함되어 있다.
+2. 사용자가 승인한 이 브랜치의 기능 커밋을 통합 브랜치에 합류한다. 별도 후원 기능 브랜치를 다시 병합할 필요가 없다(옛 인계의 후원 변경은 기준 HEAD에 포함됨).
+3. 통합 담당자는 다른 인계를 읽고 실제 원격 tip/의존 관계를 다시 확인한다. 전달 기능 커밋 SHA를 이 문서의 기준 HEAD와 혼동하지 않는다.
 
-## 사용자에게 보이는 변경과 공지
+## 현재 기능 범위·보존 사항
 
-- 공지 필요: 예.
-- 측정 모드에서 첫 기록 또는 개인 최고 기록을 달성하면 결과창에 구체적인 후원 용도와 소액 후원 안내가 KST 하루 한 번 표시된다.
-- 실제 입력이 이어진 연습 시간이 하루 10분에 도달하면 헤더 후원 버튼과 말풍선이 8초 동안 강조된다.
-- 측정·카운트다운·결과/설정/후원/옷장 창·보상 연출 중에는 말풍선을 미루며, 이미 표시 중 차단 UI가 시작돼도 당일 기회를 소모하지 않고 종료 후 다시 표시한다.
-- 연습 시간과 일일 노출 여부는 새로고침 뒤에도 유지된다. 동작 줄이기 또는 연출 끄기에서는 정적으로 표시된다.
+- G 도장: 먹색/목재/붉은 강조, 작은 기존 2D 캐릭터, native WebGL 도장과 내장 WebP 재질. 미지원/유실 시 동일 투영의 Canvas 폴백, 복구 시 GPU 자원 재생성.
+- 입력 기록: 왼쪽 최신순 최대 40행·내부 스크롤, 방향 유지 프레임/버튼 직전 간격. 다음 방향 시각은 역순 1회 순회, 같은 표시의 80ms DOM 재작성 생략.
+- 도전/측정 시작은 1P/2P 왼쪽, 카운트다운/타이머는 씬 중앙 상단. 한마디는 1100px 이상 오른쪽·미만 바로 아래. WSC 타임라인/A·B는 플레이 아래, 1~15f만 표시하되 실제 숫자·판정은 유지.
+- 캐릭터 재디자인은 철회 상태. 기존 그림/옷장/공유 카드/OG 사용, 손 번개 좌표 중복 배율 보정은 보존.
+- WSC 10회 완주만 전용 순위: score=성공 횟수, tie=최고 연속. 둘 다 0~10 정수. 취소/자유 연습은 등록하지 않으며 기존 trial/로컬 측정 기록/업적/공유 카드와 분리.
+- 등록 큐: `boardSubmit`이 `{r,e,nick,token,tab0}`를 예약하고 `boardDrain`이 직렬 전송. 등록/삭제 대기 중 모드 변경·새 도전에도 완주 payload 보존. 중복 예약 차단. 계정 변경 후 옛 예약 자동 전송 금지·옛 auth 오류로 새 계정 로그아웃 금지.
+- 초기화: 세션 초기화 버튼은 제거. 설정의 기록·업적 초기화는 일반/WSC 세션·완주 결과·입력 이력·미전송 큐까지 함께 지운다. 이미 전송한 요청/서버 순위는 별도이며 서버 기록 삭제 기능은 그대로 유지.
+- BGM: 루트 `bgm.mp3`를 `bgm/bgm.mp3`로 이동, High Rollers Club/DUOMO DI SIRIO/Mishima DOJO 포함 현재 4곡. 원본 보존. Moonlit Wilderness는 제외된 비커밋 파일.
+- `bgm/playlist.json`은 Jekyll 템플릿, `tools/update-bgm.js`는 로컬 fallback 갱신. HTTP는 목록을 기다리고 실패/4초 타임아웃 시 fallback. 경로로 직전 곡 제외, 빈 목록 무음/한 곡 반복, 일시정지·음소거·다음 곡 분리, Web Lock 한 창 재생 유지.
+- BGM_GAIN은 기본 곡 -19.17 LUFS 기준 감쇠. `tools/measure-bgm.js`는 FFmpeg가 있을 때 수동 재측정, 새 곡 목록 등록과 별도. 원본 재인코딩 없음.
+- 기존 623/6N23·캔슬6/시작6, A=8/9/10와 B=1/1~2/1~3, 공통 60Hz 초풍, rush 10/5/3점, 독립 백대시, 터치70~300%·보조 키, ko/en/ja, 후원/공지/D1 조회 절약 정책 보존.
 
-### 공지 초안
+## 배포 순서 — Worker 선행, DB 변경 없음
+
+1. 통합 결과를 로컬에서 단위 → 브라우저 스모크로 검증한다.
+2. **사용자 작업:** `worker/`에서 `npx wrangler deploy`. `BOARDS.wsc`와 정수/완주 검증이 추가되어 구 Worker는 WSC 제출을 거부한다.
+3. D1 스키마/마이그레이션/비밀값/도메인/ALLOWED_ORIGINS 변경 없음.
+4. 사용자 직접 확인·최종 공지 승인 후 사이트 main을 반영한다. 기존 main/root Pages + Jekyll 유지. `.nojekyll`을 추가하면 playlist 자동 생성이 중단된다.
+5. 사용자가 푸시했다고 알린 뒤 통합 담당자가 Pages 빌드 성공·실제 `bgm/playlist.json`의 JSON/4곡 및 WSC 순위 왕복을 확인한다. 이번 로컬 검증은 실 Jekyll 배포 검증이 아니다.
+6. 최종 통합/공지 승인 뒤 저장소 절차에 맞춰 임시 handoff들을 제거한다. 이번 세션에서는 인계를 남긴다.
+
+## 공지 초안
+
+공지 필요: 예. 아래 문구는 초안이며 NOTICES/I18N에 적용하지 않았다. 통합자는 다른 기능 초안과 합쳐 사용자에게 최종 문구를 보여준다.
 
 | 언어 | 제목 | 요약 | 항목 |
 |---|---|---|---|
-| ko | 후원 안내가 더 자연스러워졌습니다 | 기록과 연습 흐름을 방해하지 않는 선에서 도장 운영을 응원할 수 있도록 후원 안내를 다듬었습니다. | 1. 개인 최고 기록 결과창에서 하루 한 번 후원 안내를 확인할 수 있습니다.<br>2. 실제 연습 10분 뒤 헤더에 짧은 후원 말풍선이 표시됩니다.<br>3. 측정이나 대화상자 중에는 안내가 미뤄지고 연습 시간은 새로고침 후에도 유지됩니다. |
-| en | Support prompts now fit your practice | Donation prompts now appear at natural milestones without interrupting practice. | 1. A once-daily support note appears after a personal best.<br>2. A short header nudge appears after 10 minutes of active practice.<br>3. Prompts wait for trials and dialogs to finish, and practice time survives reloads. |
-| ja | 支援案内を練習の流れに合わせました | 練習を妨げず、自然なタイミングで道場を応援できるよう支援案内を改善しました。 | 1. 自己ベストの結果画面で1日1回だけ支援案内を表示します。<br>2. 実際の練習が10分に達するとヘッダーに短い吹き出しを表示します。<br>3. 測定やダイアログ中は表示を延期し、練習時間は再読み込み後も維持します。 |
+| ko | 새 도장과 웨캔기어 순위 | 연습 화면을 정리하고 음악과 도전 순위를 추가했습니다. | 1. 3D 도장과 왼쪽 입력 기록, 플레이 아래 분석을 확인하세요.<br>2. 한마디는 넓은 화면에서 플레이 오른쪽에 표시됩니다.<br>3. 웨캔기어 10회 완주 기록을 성공 횟수·최고 연속 기준으로 등록합니다.<br>4. 배경음을 랜덤 재생하고 일시정지·다음 곡으로 조절할 수 있습니다. |
+| en | A new dojo and wave-cancel rankings | An updated practice view, music controls, and challenge rankings. | 1. Practice in a 3D dojo with input history on the left and analysis below.<br>2. The shoutbox sits beside practice on wide screens.<br>3. Completed 10-try wave-cancel challenges rank by successes, then best streak.<br>4. Shuffle the music, pause it, or skip to the next track. |
+| ja | 新しい道場とキャンセルアッパーランキング | 練習画面を整理し、音楽操作とチャレンジランキングを追加しました。 | 1. 3D道場、左側の入力履歴、プレイ下の分析を確認できます。<br>2. 広い画面ではひとことをプレイ右側に表示します。<br>3. 10回チャレンジの完走記録を成功数・最高連続成功で登録します。<br>4. BGMをランダム再生し、一時停止・次の曲で操作できます。 |
 
-통합 담당자는 같은 배포 묶음의 다른 기능과 공지를 합칠지 사용자에게 확인한 뒤, 최종 문자열을 `index.html`의 ko/en/ja I18N과 최신 `NOTICES` 항목에 같은 의미로 반영한다.
+## 충돌 예상 파일·심볼
 
-## 배포·마이그레이션
+| 파일 | 합류 시 확인 |
+|---|---|
+| index.html | :root/누적 레이아웃 CSS·stage/coach/posts DOM, historyRows/renderHistory/resetInput, wscFinish/challenge.result, boardSubmit/boardDrain/boardDelete, resetSession, BGM_TRACKS/BGM_GAIN/bgmSync, resize/roomMesh/createDojo3D/drawFighter |
+| worker/index.js, tools/board-admin.js | wsc 보드·검증·관리자 목록을 앱과 함께 유지. scores 스키마 변경 금지 |
+| tests/* | 큐·신원·초기화 회귀, 6개 순위 탭, 세로 입력 기록·새 BGM 폴더·WebGL 폴백 기대값 유지 |
+| bgm/, bgm.mp3, tools/update-bgm.js, tools/measure-bgm.js | 루트 파일 삭제와 하위 폴더 이동을 함께 반영. 4개 파일명과 fallback/gain 경로 일치 |
+| 문서·en/index.html·ja/index.html·og.png | 최신 디자인/판정/순위 문구 보존, 오래된 'Worker 배포 없음'이나 단일 루프 BGM 설명을 되살리지 않음 |
 
-- Worker 재배포: 없음.
-- D1 마이그레이션: 없음.
-- 비밀값·도메인·외부 서비스 설정 변경: 없음.
-- 순서: 이 브랜치 병합 → 통합 공지 작성 → 통합 테스트 및 수동 확인 → 일반 사이트 배포. 선행 백엔드 작업은 없다.
+## 검증·남은 일
 
-## 충돌 예상 지점
+- 단위: `node --test tests/dojo.test.cjs tests/board.test.cjs` → 149/149 통과.
+- `node tests/smoke-chrome.js` → 통과, errors=[]; 로컬 실제 Worker의 WSC 자동 등록/삭제 포함.
+- `node tests/smoke-wsc.js` → 통과, errors=[]; 데스크톱/모바일·3언어·양 방향.
+- `node tests/smoke-sound.js` → 통과; 4곡 디코딩/재생/게인·다중 창·음소거/일시정지/다음 곡.
+- `node tests/smoke-design.js` → 통과, errors=[]; 30개 배치·WebGL/재질·유실/복구·미지원·설정 초기화 확인. 데스크톱/모바일 캡처도 열어 확인했다.
+- `git diff --check` → 통과(LF→CRLF 안내만 존재).
+- 재현 실패/첫 단위 실패 경위: `.agents/docs/reviews/2026-09-19-workspace05-local.md`.
+- 로그: `.sandbox/review-local-{unit,chrome,wsc,sound,design}.log`(비커밋).
+- 통합 담당자의 남은 일: 사용자 직접 조작 확인, 전달된 기능 커밋/원격 tip 대조, 통합 후 재검증·공지 확정, 사용자 Worker 배포, Pages/Jekyll 실 배포 확인. 라이브 검증을 했다고 간주하지 않는다.
 
-- `index.html`
-  - 헤더의 `#donateTop` 주변과 새 `#donateNudge`/`#donateBubble` 마크업·CSS
-  - `#shareDlg`, `#donateDlg`, 푸터의 후원 문구 및 `donate.*` ko/en/ja I18N 키
-  - `store` 기본값/로드 검증, `saveSoon`, `pagehide`
-  - `onDir`, `onButton`, `endTrial`, `openShare`
-  - `DONATE` 런타임과 `takeResultDonate`, `practiceInput`, `practiceTick`, `donateNudgeMaybe`/`donateNudgeDefer`
-  - 설정·닉네임·옷장·보상 열기 경로의 활성 말풍선 연기 호출
-- `tests/dojo.test.cjs`: `boot()`의 export 목록, 저장·결과창·후원 테스트 인접 구간.
-- `AGENTS.md`: 설계 결정 20.
-- `.agents/docs/PLAN.md`, `.agents/docs/CODE_MAP.md`: 통합 담당자가 다른 브랜치 내용과 함께 최종 정리해야 한다.
+## 문서·설계 결정
 
-## 병합 시 반드시 보존할 동작
+- 기존 로컬 변경이 AGENTS 결정5/8/25/26과 README·PLAN·CODE_MAP·WSC_PRACTICE·DESIGN_2026-09-19를 갱신했다.
+- 이번 리뷰는 설계 정책을 바꾸지 않았다. CODE_MAP의 제출 큐/전체 초기화/입력 렌더 설명을 갱신하고 PLAN과 리뷰 보고서를 추가했다.
 
-- 첫 완주도 개인 최고로 취급하고, 개인 최고 결과 후원 안내는 KST 하루 한 번만 소비한다.
-- 자동 결과 열기와 수동 클릭/더블클릭이 겹쳐도 같은 결과에서 이미 표시된 후원 안내가 사라지지 않는다.
-- 연습 시간은 실제 방향/버튼 입력 후 30초 동안만 쌓이며, 숨긴 페이지·모달·측정 중에는 누적하지 않는다.
-- 10분 말풍선은 KST 하루 한 번만 완료 노출되며, 표시 도중 측정·카운트다운·대화상자·보상 연출이 시작되면 즉시 숨기고 당일 소비를 되돌려 차단 종료 후 다시 표시한다.
-- `pagehide`는 30초 체크포인트 사이의 미저장 연습 시간도 저장한다.
-- 동작 줄이기와 연출 끄기에서는 애니메이션 없이 정적으로 표시한다.
-- 후원 안내는 판정 상태 머신, 세션 통계, 측정 점수, 순위, Worker를 바꾸지 않는다.
-- 기존 후원 선택창의 한국어 카카오페이 우선, 영어/일본어 Ko-fi 우선 순서와 세 진입 버튼을 유지한다.
+## 합류 후 직접 확인
 
-## 테스트
+1. 자유 연습 → 웨이브/초풍, 입력 프레임·스크롤·손 번개·캐릭터/바닥 일치.
+2. WSC 10회 완주 → 전용 순위 등록, 실패 시 재시도, 본인 기록 삭제. 기존 로컬 측정/업적과 분리.
+3. 두 모드에 기록을 만든 뒤 각각 설정 → 기록·업적 초기화. 두 세션과 입력 이력/이전 WSC 등록 문구 모두 제거, 서버 순위 유지.
+4. 모바일 세로/가로·1P/2P·ko/en/ja의 터치/한마디/시계/도구 배치.
+5. BGM 4곡·음량·일시정지 중 다음 곡·음소거·다중 창 한 곳 재생.
 
-- `node --test tests/dojo.test.cjs tests/board.test.cjs`
-  - 결과: 95개 통과, 실패 0.
-  - 중복 결과 열기, 활성 말풍선 차단/재표시, 30초 체크포인트 전 `pagehide` 저장 회귀 테스트 포함.
-- `node tests/smoke-chrome.js`
-  - 결과: 통과, 브라우저 오류 0.
-- `git diff --check`
-  - 결과: 오류 없음. Windows 작업 트리의 LF→CRLF 안내만 출력됨.
+## 승인된 커밋·푸시 파일 목록과 명령 (PowerShell, 저장소 루트)
 
-## 알려진 실패·미완료
+사용자 후속 요청으로 아래 파일들을 명시해서 커밋·푸시한다. 이번 리뷰 수정만이 아니라 검토 대상 로컬 기능 전체를 추가한다. 기존 미추적 MP3 4개를 정확한 경로로 지정했고 `.sandbox`는 포함하지 않는다. Worker 선행 배포는 main/사이트 반영 전에 필요하다. 이 명령은 현재 기능 브랜치를 푸시하며 main 병합 명령이 아니다.
 
-- 기능 실패 및 미완료 없음.
-- 검증 도중 다른 작업 세션이 동일한 CDP 9333 포트와 프로필로 Chrome 스모크를 동시에 실행해 일시적인 타임아웃이 있었으나, 그 프로세스 종료 후 단독 실행을 두 차례 완주했다. 앱 오류는 아니었다.
-- 공지의 `NOTICES`/I18N 최종 반영은 여러 기능 공지를 합치는 통합 담당 작업으로 남긴다.
-
-## 바뀐 설계 결정과 문서
-
-- `AGENTS.md`에 설계 결정 20(개인 최고 일 1회, 실제 연습 10분 말풍선, 차단 UI 연기, 새로고침 복원)을 추가했다.
-- `.agents/docs/PLAN.md`의 2-3-1을 완료 처리하고 리뷰 P2 수정 및 검증 로그를 기록했다.
-- `.agents/docs/CODE_MAP.md`에 저장 필드, 결과 프롬프트 중복 열기, 연습 시간 누적/저장, 활성 말풍선 연기 경로를 기록했다.
-
-## 합류 후 브라우저 수동 확인
-
-1. 오늘 첫 개인 최고 측정 결과를 만들고 자동 결과창이 열리기 전 `공유 카드`를 클릭하거나 더블클릭해도 후원 안내가 계속 보이는지 확인한다.
-2. 같은 결과창을 닫았다 다시 열거나 같은 날 다음 개인 최고를 만들었을 때 안내가 반복되지 않는지 확인한다.
-3. 실제 입력으로 연습 시간 10분을 채웠을 때 헤더 버튼이 8초 강조되고 현재 언어의 말풍선이 보이는지 확인한다.
-4. 말풍선 표시 중 측정 시작 또는 설정/옷장 열기를 수행하면 즉시 숨고, 차단 UI를 닫거나 측정을 취소한 뒤 다시 표시되는지 확인한다.
-5. 30초 저장 체크포인트 전에 새로고침한 뒤에도 당일 연습 시간이 이어지는지 확인한다.
-6. 연출 끄기 및 OS 동작 줄이기에서 말풍선과 버튼이 애니메이션 없이 표시되는지 확인한다.
-7. ko/en/ja 전환 시 결과 안내·말풍선·후원 선택창에 원시 I18N 키가 없고 문구와 선택 순서가 맞는지 확인한다.
+```powershell
+git add -- '.agents/docs/CODE_MAP.md' '.agents/docs/PLAN.md' '.agents/docs/WSC_PRACTICE.md' '.agents/docs/DESIGN_2026-09-19.md' '.agents/docs/reviews/2026-09-19-workspace05-local.md' '.agents/handoffs/SinSeonghyeon-workspace05.md'
+git add -- 'AGENTS.md' 'README.md' 'index.html' 'en/index.html' 'ja/index.html' 'og.png'
+git add -- 'bgm.mp3' 'bgm/README.md' 'bgm/playlist.json' 'bgm/bgm.mp3' 'bgm/TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3' 'bgm/Tekken 6 Soundtrack High Rollers Club.mp3' 'bgm/Tekken 7 OST  Mishima DOJO.mp3'
+git add -- 'tests/board.test.cjs' 'tests/dojo.test.cjs' 'tests/smoke-chrome.js' 'tests/smoke-sound.js' 'tests/smoke-wsc.js' 'tests/smoke-design.js'
+git add -- 'tools/board-admin.js' 'tools/update-bgm.js' 'tools/measure-bgm.js' 'worker/README.md' 'worker/index.js'
+git commit -m "feat: refresh dojo layout, add WSC rankings and folder BGM"
+git push origin HEAD
+```

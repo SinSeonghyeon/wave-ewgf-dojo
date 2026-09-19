@@ -5,7 +5,8 @@ const out=path.resolve(__dirname,'../.sandbox/wsc/browser');fs.mkdirSync(out,{re
 const html=fs.readFileSync(path.resolve(__dirname,'../index.html'),'utf8').replace(/const BOARD_URL = '[^']*';/,"const BOARD_URL = '';");
 const latestNoticeId=html.match(/const NOTICES = \[\s*\{id:'([^']+)'/)[1];
 const page=path.join(out,'index.html');fs.writeFileSync(page,html);
-for(const name of ['donate-kakao.png','bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3'])fs.copyFileSync(path.resolve(__dirname,'..',name),path.join(out,name));
+for(const name of ['donate-kakao.png','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3'])fs.copyFileSync(path.resolve(__dirname,'..',name),path.join(out,name));
+  fs.cpSync(path.join(path.resolve(__dirname,'..'),'bgm'),path.join(out,'bgm'),{recursive:true});
 (async()=>{
  const b=await launch({port:9335,profile:'dojo-wsc-smoke',windowSize:'1366,1000'});
  try{
@@ -32,6 +33,11 @@ for(const name of ['donate-kakao.png','bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','s
   for(const [A,B] of [[8,1],[9,1],[9,2],[10,1],[10,2],[10,3]]){
    const r=await command(A,B);assert.match(r.result,/웨캔기어 성공/);assert.match(r.ab,new RegExp(`${A}f`));assert.match(r.ab,new RegExp(`${B}f`));assert.deepEqual(r.old,['0','0']);
   }
+  await command(15,1);
+  const lastCell=await b.evalJs(`document.querySelector('#wscAxis [data-frame="15"]').textContent`);
+  assert.match(lastCell,/←/);assert.doesNotMatch(lastCell,/RP|15\+/);
+  await command(16,1);
+  assert.equal(await b.evalJs(`document.querySelector('#wscAxis [data-frame="15"] b').textContent`),'');
   assert.match((await command(8,2)).detail,/RP가 늦/);
   assert.match((await command(8,0)).detail,/동시/);
   assert.equal(await b.evalJs(`document.querySelector('#wscSteps')===null`),true);
@@ -49,7 +55,7 @@ for(const name of ['donate-kakao.png','bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','s
    await click('#wscChallengeBtn');
    assert.equal(await b.evalJs(`document.querySelector('#wscTask').hidden`),false);
    const layout=await b.evalJs(`(()=>{const q=s=>document.querySelector(s),r=q('#wscPanel').getBoundingClientRect(),axis=q('.wsc-scroll');return {width:document.documentElement.scrollWidth,panelRight:r.right,panelX:r.x,panelY:r.y,stageRight:q('#stageBox').getBoundingClientRect().right,stageBottom:q('#stageBox').getBoundingClientRect().bottom,negative:q('#wscAxis').querySelector('[data-frame^="-"]')!==null,command:q('#wscCommand').textContent,cells:q('#wscAxis').children.length,scroll:axis.scrollWidth>axis.clientWidth,records:getComputedStyle(q('.records')).display,missing:[...q('#wscPanel').querySelectorAll('[data-i18n]')].filter(e=>!e.textContent||e.textContent.startsWith('wsc.')).length};})()`);
-   assert.ok(layout.width<=width,JSON.stringify(layout));assert.ok(layout.panelRight<=width);assert.equal(layout.command,'6N23 · '+(side===1?'←':'→')+' · RP');assert.equal(layout.cells,15);assert.equal(layout.negative,false);assert.equal(await b.evalJs(`document.querySelector('#wscAxis').firstElementChild.dataset.frame`),'1');if(width===1366)assert.ok(layout.panelX>layout.stageRight);else assert.ok(layout.panelY>layout.stageBottom);assert.equal(layout.missing,0);assert.equal(layout.records,'none');if(width===390)assert.ok(layout.scroll);
+   assert.ok(layout.width<=width,JSON.stringify(layout));assert.ok(layout.panelRight<=width);assert.equal(layout.command,'6N23 · '+(side===1?'←':'→')+' · RP');assert.equal(layout.cells,15);assert.equal(layout.negative,false);assert.equal(await b.evalJs(`document.querySelector('#wscAxis').firstElementChild.dataset.frame`),'1');assert.ok(layout.panelY>layout.stageBottom);assert.equal(layout.missing,0);assert.equal(layout.records,'grid');if(width===390)assert.ok(layout.scroll);
    await b.evalJs(`document.querySelector('#wscPanel').scrollIntoView({block:'center'})`);await sleep(100);
    const shot=await b.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});
    const name=`wsc-${width}-${lang}-${side===1?'1p':'2p'}.png`;fs.writeFileSync(path.join(out,name),Buffer.from(shot.result.data,'base64'));shots.push(name);await click('#wscChallengeBtn');
@@ -57,7 +63,7 @@ for(const name of ['donate-kakao.png','bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','s
    await b.evalJs(`(()=>{const t=performance.now()-30,f=${side}===1?'KeyD':'KeyA';for(const [code,dt,up] of [[f,0,false],[f,10,true],['KeyS',20,false],[f,30,false]]){const e=new KeyboardEvent(up?'keyup':'keydown',{code,bubbles:true});Object.defineProperty(e,'timeStamp',{value:t+dt});dispatchEvent(e);}})()`);
    const initial=Number(await b.evalJs(`document.querySelector('#wscLive').dataset.frame`));await sleep(70);
    const live=await b.evalJs(`(()=>{const q=s=>document.querySelector(s),c=q('#wscAxis .current'),r=c&&c.getBoundingClientRect(),b=q('.wsc-scroll').getBoundingClientRect();return {frame:Number(q('#wscLive').dataset.frame),text:q('#wscLive').textContent,current:c&&Number(c.dataset.frame),visible:r&&r.left>=b.left-1&&r.right<=b.right+1};})()`);
-   assert.ok(live.frame>initial,JSON.stringify(live));assert.equal(live.current,Math.min(live.frame,15));assert.ok(live.visible);assert.match(live.text,/A [0-9]+f/);
+   assert.ok(live.frame>initial,JSON.stringify(live));assert.equal(live.current,live.frame<=15?live.frame:null);if(live.frame<=15)assert.ok(live.visible);assert.match(live.text,/A [0-9]+f/);
    await b.evalJs(`document.querySelector('#wscLive').scrollIntoView({block:'center'})`);
    const liveShot=await b.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(out,'live-'+name),Buffer.from(liveShot.result.data,'base64'));
    await click('#setOpen');await click('#setClose');
