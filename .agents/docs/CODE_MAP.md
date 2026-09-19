@@ -122,6 +122,8 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 
 ## 검증
 
+- 한마디 밀도(2026-09-19): `.posts-card` 안에서 목록 gap 0·글 padding 3px·본문 12px/1.4와 작은 문단 여백, 투표 margin 제거. 글은 flex-shrink:0으로 전체 내용을 보존하며 목록 내부에서 스크롤한다. 작성자 이름은 입력칸 옆에서 최대90px로 줄바꿈, 기존 버튼 높이28px·댓글/답글 DOM/API 유지.
+
 - 검색 설명·아이콘 회귀: 단위 테스트가 루트/en/ja의 meta·OG 설명과 각 언어의 `app.description` 일치, 공유 PNG 경로·실제 크기와 `sizes` 일치를 검사한다. Chrome 스모크는 en→ja→ko 전환 뒤 실제 DOM의 meta·OG 설명을 정적 페이지와 대조한다. WSC 스모크 사본에도 `favicon.png`를 복사한다.
 - `node --test tests/dojo.test.cjs`: 배포 HTML의 실제 스크립트를 읽어 DOM·게임패드·시간을 모사. 판정, 측정 모드 경계, 패드 동시 입력·재연결, 저장 데이터 검증, 누적 통계, 공통 60Hz 슬롯 경계, 언어 전환, 세 사전 키 집합 일치, 공유 카드 모델(histBins/buildCard/shareSource), OG 카드 모델(buildOgCard)과 `<head>`의 정적 SEO/OG 태그(og:image 절대 주소·1200×630·theme-color가 `--bg`와 일치·외부 스크립트 없음)를 검증한다. 테스트 하네스의 `querySelectorAll`은 빈 배열을 돌려주므로 정적 텍스트 치환은 여기서 검증되지 않는다. 하네스에는 `createElement`·캔버스 컨텍스트가 없으므로 그리기·클립보드 코드는 클릭 핸들러 안에서만 호출해야 한다.
 - `node --test tests/board.test.cjs`: Worker 핸들러를 `tests/fake-d1.js`(node:sqlite 인메모리 + 실제 schema.sql, D1 prepare/bind/run/all/first 모양)로 직접 호출. 주차·일 키 경계(15:00 UTC), 닉네임·본문 정규화·범위 검증, 닉네임 등록(대소문자·전각 무시 유니크, 토큰 없거나 틀리면 submit/posts/reply 403, 등록 철자로 저장, 레이트 리밋 스텁), 닉네임당 1행 업서트(더 나쁘면 유지·improved=false), 동점 순위 공유·보드/주차 격리, 10위 캡 + 10위 밖 내 순위, 방문 집계, 게시판(50개 캡·검증·레이트 리밋 스텁·관리자 삭제 403/404), 대댓글(다중·시간순·원글과 레이트 리밋 공유·원글 삭제 시 삭제), 좋아요/싫어요(닉당 1표·멱등 설정·변경·취소·검증 400/403/404·레이트 리밋 스텁·글 삭제 시 표 삭제), CORS·상속 키 400·404/413·500(스택 비노출). 두 파일을 함께 돌리려면 `node --test tests/dojo.test.cjs tests/board.test.cjs`.
@@ -166,7 +168,7 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 
 - `.main`은 backend 활성 + 1100px 이상에서 플레이/한마디 2열, 그 외 1열. 한마디는 원래 postsCard DOM을 이동해 글쓰기/답글/투표 API를 유지한다. `.coach`는 아래 전체 폭. `#resultCard`를 스테이지 오른쪽 위로 이동. `.coach`는 하단 6열 통계 + 코치/구간 분석 2열(모바일 3열 통계 + 1열). `.section-links`는 분석/순위/한마디 앵커, records는 차트·로컬 기록 다음 온라인 영역 순서. backend 비활성 시 온라인 앵커도 숨긴다.
 - WSC는 모든 화면에서 `.coach`에 타임라인 + A/B 평가를 배치한다. 750px 이상 하단 2열, 작은 화면 하단 1열. `.stage-actions`의 dStart/wscChallengeBtn은 1P/2P 왼쪽에서 모드에 맞게 노출, 중앙 상단은 hudTimer/hudCenter. dReset DOM은 제거, `resetSession()`은 설정 dataReset이 호출하는 내부 함수로 유지.
-- `stageScale`은 데스크톱 캔버스의 표시 배율(1~1.15), 터치는 0.9. 데스크톱 스테이지 높이는 clamp(300px,40vh,390px), 모바일 터치 영역 크기는 유지. canvas의 물리 픽셀 크기는 DOM×DPR, 논리 W/H는 표시 배율로 나눈다. drawFighter와 기본 복장·옷장 훅·공유 카드 캐릭터는 기존 그림으로 유지(2026-09-19 재디자인 철회). 카메라 목표 위치 1P 43% / 2P 62%, 판정 시각·세계 이동량·충돌 거리 상수는 그대로다.
+- `stageScale`은 데스크톱 캔버스의 표시 배율(1~1.15), 터치는 0.9. 데스크톱 스테이지 높이는 :root의 --scene-height=clamp(465px,52vh,510px), 한마디는 같은 값+55px. 1100px 미만 한마디는520px, 터치 세로 씬은2/3 비율·최대78vh, 가로는16/9·최대72vh. canvas의 물리 픽셀 크기는 DOM×DPR, 논리 W/H는 표시 배율로 나눈다. drawFighter와 기본 복장·옷장 훅·공유 카드 캐릭터는 기존 그림으로 유지(2026-09-19 재디자인 철회). 카메라 목표 위치 1P 43% / 2P 62%, 판정 시각·세계 이동량·충돌 거리 상수는 그대로다.
 - `ResizeObserver`는 WSC 모드/터치 설정으로 DOM 스테이지 크기가 변할 때 canvas 및 터치 배치를 갱신. window resize도 유지.
 - 본문은 기존 Noto Sans, 한국어/영어 브랜드만 Nanum Brush Script(Google Fonts 기존 허용 출처), 일본어 브랜드는 기존 Dela Gothic. 먹색·목재색·붉은 강조 토큰은 :root. en/ja 정적 소개도 같은 기본 색상 사용.
 - `node tests/smoke-design.js`: WebGL 초기화·내장 재질 로드·카메라 전진·입력 기록 고정, 320/390/768/1024/1440px × ko/en/ja × free/wsc의 넘침·겹침·캔버스 크기를 확인. 캡처는 `.sandbox/dojo-design/`. 기존 smoke-chrome의 가로 입력 순서/세로 도구 배치 가정은 새 순서와 실제 사각형 교차 검사로 변경.

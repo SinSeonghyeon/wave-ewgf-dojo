@@ -558,6 +558,19 @@ test('leaderboard delete reloads after a rename and never marks the old nickname
   assert.equal(a.board.data.wave10.me,null); assert.equal(a.get('boardMe').textContent,'등록한 기록이 없습니다');
 });
 
+test('a delayed board load cannot overwrite a newer submit for the same board',async()=>{
+  const tok='ab'.repeat(24), b=backend();
+  const a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch);
+  b.answer('/top?board=wave10&nick=me','GET',topRes('me')); await b.flush();
+  a.setMode('wave10'); a.startTrial(); const cd=a.timers.get(a.trial.cdTimer);
+  a.time(4000); cd(); cd(); cd(); dash(a,4100); a.time(14100); a.endTrial(); await b.flush();
+  const submit=a.boardSubmit(); await b.flush();
+  a.board.tab='wave10'; const load=a.boardLoad(); await b.flush();
+  b.answer('/submit','POST',{ok:true,id:7,rank:1,total:1,improved:true,...topRes('me')}); await submit; await b.flush();
+  b.answer('/top?board=wave10&nick=me','GET',{season:'all',board:'wave10',total:0,rows:[],me:null,cut10:null}); await load; await b.flush();
+  assert.equal(a.board.data.wave10.me.nick,'me');
+});
+
 test('leaderboard submit and delete are serialized in both directions',async()=>{
   const tok='ab'.repeat(24), run=a=>{a.setMode('wave10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();dash(a,4100);a.time(14100);a.endTrial();};
   // An existing in-flight submit disables and rejects deletion until its response has settled.
@@ -623,6 +636,13 @@ test('post votes: cancel/switch through an idempotent set, validated local cache
   a=boot({v:4,lang:'ko',window:12,votes:{'7':1}},b.fetch); assert.deepEqual(JSON.parse(JSON.stringify(a.store.votes)),{});
   // old worker without counts: buttons still render with 0
   a.live.posts=[{id:7,nick:'x',text:'hi',created_at:1}]; a.renderPosts(); assert.match(a.get('postList').innerHTML,/>👍 0<[\s\S]*>👎 0</);
+
+  // An old vote response must not log out a newly claimed nickname.
+  b=backend(); a=boot({v:4,lang:'ko',window:12,nick:'old',nickToken:tok},b.fetch);
+  a.postVote(7,1); await b.flush();
+  a.store.nick='new'; a.store.nickToken='cd'.repeat(24);
+  b.answer('/vote','POST',{error:'auth'},403); await b.flush();
+  assert.equal(a.store.nick,'new'); assert.equal(a.store.nickToken,'cd'.repeat(24));
 });
 
 test('post replies: render many, submit one level deep, keep text on failure, close on success, and gate by nickname',async()=>{
