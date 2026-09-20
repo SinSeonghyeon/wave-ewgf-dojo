@@ -160,6 +160,8 @@
 
 ## 진행 로그
 
+- [x] 2026-09-21: d7cc7a2 이후 main 합류 기능의 통합 공지 `2026-09-21-roundup` 추가(ko/en/ja). 무족초·중립 필수 규칙·동일 프레임 입력 기록·BGM 셔플/신곡·순위 조회 개선 5항목, 기존 공지 보존 및 새 ID로 읽음 상태 갱신. 단위 178/178·Chrome 스모크 통과, 커밋·푸시는 사용자 작업.
+
 - [x] 2026-09-21 입력 기록 main 병합 검증: origin/main(bb83a07)의 기존 변경을 보존해 합류, PLAN 양쪽 로그 유지·임시 handoff 삭제. 병합 상태 단위 160/160 → Chrome errors=[]·디자인 30조합 errors=[]·diff 검사 통과. main 대비 앱/테스트/문서 7개 파일만 변경, Worker·DB 변경 없음. 로그 .sandbox/review-input-merged-{unit,chrome,design}.log. 사용자 명시 승인에 따라 기능 브랜치와 main으로 게시.
 
 - [x] 2026-09-21 입력 기록 로컬 리뷰: 늦게 도착한 장치 이벤트의 동일 슬롯 분리·버튼 간격 오류를 시각순 삽입으로 수정, 만료 이벤트가 최근 40행에 영향을 주지 않는 회귀 검사 추가. 실제 패드 연결 이벤트가 getGamepads 스텁을 우회해 releasePad로 터치 커맨드를 지우던 스모크 격리 오류 수정. 초기 Chrome 실패 재현 후 최종 단위 151/151 → Chrome errors=[] → 디자인 30조합 errors=[] 통과, 모바일 캡처 확인. 로그 .sandbox/review-input-{unit,chrome-fixed,design}.log. 사용자 후속 요청으로 커밋·푸시·main 병합 진행.

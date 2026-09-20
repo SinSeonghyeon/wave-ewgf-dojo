@@ -1036,6 +1036,7 @@ function setFit(slot, id){ if(!ITEMS[slot] || !ITEMS[slot][id] || !owned(id)) re
 // Newest first. For each patch, add one entry and the matching notice.<id> strings to all three I18N dictionaries.
 // The latest id is the read marker saved in this browser; no backend or deployment-time request is involved.
 const NOTICES = [
+  {id:'2026-09-21-roundup', date:'2026-09-21', kind:'notice.kind.update', title:'notice.20260921roundup.title', summary:'notice.20260921roundup.summary', items:['notice.20260921roundup.1','notice.20260921roundup.2','notice.20260921roundup.3','notice.20260921roundup.4','notice.20260921roundup.5']},
   {id:'2026-09-21-mist', date:'2026-09-21', kind:'notice.kind.update', title:'notice.20260921.title', summary:'notice.20260921.summary', items:['notice.20260921.1','notice.20260921.2','notice.20260921.3']},
   {id:'2026-09-19-dojo', date:'2026-09-19', kind:'notice.kind.update', title:'notice.20260919.title', summary:'notice.20260919.summary', items:['notice.20260919.1','notice.20260919.2','notice.20260919.3','notice.20260919.4','notice.20260919.5','notice.20260919.6']},
   {id:'2026-09-15-notices', date:'2026-09-15', kind:'notice.kind.update', title:'notice.20260915.title', summary:'notice.20260915.summary', items:['notice.20260915.1','notice.20260915.2','notice.20260915.3','notice.20260915.4','notice.20260915.5']},
@@ -1124,6 +1125,13 @@ const LOCALE = {ko:'ko-KR', en:'en-US', ja:'ja-JP'};
 const I18N = {
 ko:{
   "notice.20260921.title":"무족초 연습과 중립 입력 규칙",
+  "notice.20260921roundup.title":"무족초·입력 기록·BGM 업데이트",
+  "notice.20260921roundup.summary":"최근 추가된 무족초 연습과 입력 규칙, 입력 기록·음악·순위 개선을 한곳에 정리했습니다.",
+  "notice.20260921roundup.1":"독립적인 6N3+RP 무족초를 연습할 수 있습니다. 대각·RP가 같은 프레임이면 성공, 앞·중립도 각각 1f이면 최속으로 표시합니다. 결과에서 각 입력 프레임을 확인하고 캐릭터 위 무족초! 팝도 볼 수 있습니다. 대시·웨이브에서 이어지는 무족초는 아직 지원하지 않습니다.",
+  "notice.20260921roundup.2":"웨이브·일반 초풍·나락·웨캔기어는 6N23의 중립이 필수입니다. 623은 중립 누락으로 실패하며 웨이브 수·기술 성공·점수를 올리지 않습니다. 이전 공지의 623 허용 안내는 이 규칙으로 변경되었습니다.",
+  "notice.20260921roundup.3":"같은 60Hz 프레임에 들어온 방향과 버튼을 ↘+2처럼 한 행에 묶습니다. 방향은 유지 프레임, 버튼만 있는 행은 직전 입력 간격을 표시하며 최근 40행을 스크롤해 확인할 수 있습니다.",
+  "notice.20260921roundup.4":"BGM은 전체 곡을 섞어 한 곡씩 모두 재생한 뒤 다시 섞습니다. 다음 곡 버튼도 같은 순서를 따르며 재접속 첫 곡은 직전 곡을 피합니다. Infinite Azure - Round 1 (Moonsiders 1st)도 추가했습니다.",
+  "notice.20260921roundup.5":"순위 조회의 중복 요청과 서버 읽기 부담을 줄이고, 인증 만료 후 로딩 표시나 새로고침 버튼이 대기 상태로 남는 문제를 수정했습니다.",
   "notice.20260921.summary":"무족초 입력을 추가하고 웨이브·기술의 중립 입력 검사를 강화했습니다.",
   "notice.20260921.1":"독립적인 6N3+RP 무족초를 연습할 수 있습니다. 대각과 RP가 같은 프레임이면 성공하며, 앞·중립도 각각 1f이면 최속으로 표시합니다.",
   "notice.20260921.2":"결과·구간 막대에 앞·중립·RP 프레임을 표시합니다. 대시·웨이브에서 이어지는 무족초는 아직 지원하지 않습니다.",
@@ -1430,6 +1438,13 @@ ko:{
 },
 en:{
   "notice.20260921.title":"Mist Step EWGF practice and neutral input rules",
+  "notice.20260921roundup.title":"Mist Step EWGF, input history and BGM updates",
+  "notice.20260921roundup.summary":"A roundup of new Mist Step EWGF practice, input rules, and improvements to input history, music and rankings.",
+  "notice.20260921roundup.1":"Practice standalone 6N3+RP. Diagonal and RP must share a frame; one frame each of forward and neutral earns the fastest label. Check input frames in the result and a Mist EWGF! pop above your fighter. Links from a dash or wave are not supported yet.",
+  "notice.20260921roundup.2":"Wave, standard EWGF, Hellsweep and WSC require neutral in 6N23. Inputting 623 fails for missing neutral and earns no wave count, move success or points. This replaces the earlier announcement that allowed 623.",
+  "notice.20260921roundup.3":"Directions and buttons in the same 60Hz frame now share one history row, such as ↘+2. Direction rows show held frames; button-only rows show the gap from the preceding input. Scroll through the latest 40 rows.",
+  "notice.20260921roundup.4":"BGM shuffles the full playlist and plays every track once before reshuffling. Next track follows the same queue, and the first track on your next visit avoids the last one played. Added Infinite Azure - Round 1 (Moonsiders 1st).",
+  "notice.20260921roundup.5":"Reduced duplicate ranking requests and database reads, and fixed loading indicators or refresh buttons remaining stuck after authentication expires.",
   "notice.20260921.summary":"Added Mist Step EWGF practice and stricter neutral input checks for waves and moves.",
   "notice.20260921.1":"Practice standalone 6N3+RP. Diagonal and RP must share a frame; one frame each of forward and neutral earns the fastest label.",
   "notice.20260921.2":"Results and the segment bar show forward, neutral and RP frames. Mist Step EWGF from dash or wave links is not supported yet.",
@@ -1734,6 +1749,13 @@ en:{
 },
 ja:{
   "notice.20260921.title":"無足最風の練習と中立入力ルール",
+  "notice.20260921roundup.title":"無足最風・入力履歴・BGMアップデート",
+  "notice.20260921roundup.summary":"無足最風の練習と入力ルール、入力履歴・音楽・ランキングの改善をまとめました。",
+  "notice.20260921roundup.1":"単独の6N3+RPを練習できます。斜めとRPが同一フレームなら成功し、前・中立も各1fなら最速と表示します。結果で各入力のフレームを確認でき、キャラクターの上にも無足最風！と表示されます。ダッシュ・ウェーブからの接続はまだ未対応です。",
+  "notice.20260921roundup.2":"ウェーブ・通常の最風・奈落・WSCは6N23の中立が必須です。623は中立抜けで失敗し、ウェーブ数・技の成功・得点には加算されません。以前のお知らせにある623対応の案内は、このルールに変更されました。",
+  "notice.20260921roundup.3":"同じ60Hzフレームの方向とボタンを↘+2のように1行にまとめます。方向を含む行は保持フレーム、ボタンのみの行は直前の入力との間隔を表示し、最新40行をスクロールして確認できます。",
+  "notice.20260921roundup.4":"BGMは全曲をシャッフルし、1曲ずつすべて再生してから再びシャッフルします。次の曲ボタンも同じ順番で進み、再訪時の最初の曲は直前の曲を避けます。Infinite Azure - Round 1 (Moonsiders 1st)も追加しました。",
+  "notice.20260921roundup.5":"ランキング取得の重複リクエストとデータベースの読み取り負荷を減らし、認証期限切れ後に読み込み表示や更新ボタンが待機状態のままになる問題を修正しました。",
   "notice.20260921.summary":"無足最風の練習を追加し、ウェーブ・技の中立入力チェックを強化しました。",
   "notice.20260921.1":"単独の6N3+RPを練習できます。斜めとRPが同一フレームなら成功し、前・中立も各1fなら最速と表示します。",
   "notice.20260921.2":"結果と区間バーに前・中立・RPのフレームを表示します。ダッシュ・ウェーブからつなぐ無足最風はまだ未対応です。",

@@ -516,7 +516,7 @@ test('the three dictionaries share exactly the same key set',()=>{
 test('announcements render in every language and persist the latest read marker',()=>{
   let saved;
   const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
-  assert.ok(a.NOTICES.length);assert.equal(a.NOTICES[0].id,'2026-09-21-mist');assert.equal(a.NOTICES[0].items.length,3);assert.equal(a.NOTICES[1].id,'2026-09-19-dojo');assert.equal(a.NOTICES[2].id,'2026-09-15-notices');assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
+  assert.ok(a.NOTICES.length);assert.equal(a.NOTICES[0].id,'2026-09-21-roundup');assert.equal(a.NOTICES[0].items.length,5);assert.equal(a.NOTICES[1].id,'2026-09-21-mist');assert.equal(a.NOTICES[2].id,'2026-09-19-dojo');assert.equal(a.NOTICES[3].id,'2026-09-15-notices');assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
   assert.ok(a.get('noticeList').innerHTML.includes(a.T(a.NOTICES[0].title)));
   a.setMode('wave10');a.startTrial();a.openNotices();
   assert.equal(a.get('noticeDlg').open,true);assert.equal(a.trial.cdTimer,null,'opening an announcement cancels a countdown');
