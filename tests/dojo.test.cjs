@@ -385,8 +385,8 @@ test('static head carries the SEO and Open Graph tags that crawlers read without
   assert.ok(head.includes('<meta name="twitter:card" content="summary_large_image">'));
   const bg=html.match(/:root\{[^}]*--bg:(#[0-9A-Fa-f]{6})/)[1];assert.ok(head.includes(`<meta name="theme-color" content="${bg}">`));
   assert.equal(head.includes('http://'),false,'head must not contain http://');
-  // exactly two script tags in the whole file, in this order: the head JSON-LD data block (no code) and the single inline app script — no <script src>, no module (single file, no libraries)
-  assert.deepEqual(html.match(/<script\b[^>]*>/g),['<script type="application/ld+json">','<script>'],'only the JSON-LD data block and one inline app script');
+  // Only the approved AdSense loader, JSON-LD data and the single inline app script are allowed.
+  assert.deepEqual(html.match(/<script\b[^>]*>/g),['<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8394509799881324" crossorigin="anonymous">', '<script type="application/ld+json">', '<script>'],'only the approved AdSense loader, JSON-LD and inline app script');
   const ldm=head.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);assert.ok(ldm,'the JSON-LD block sits in the head');
   const ld=JSON.parse(ldm[1]);
   assert.equal(ld['@type'],'WebApplication');assert.equal(ld.url,url);assert.equal(ld.image,url+'og.png');assert.equal(ld.isAccessibleForFree,true);
@@ -1368,12 +1368,13 @@ test('search text: about block, hreflang set, ?lang= override and the /en/ /ja/ 
     assert.equal((head.match(/rel="canonical"/g)||[]).length,1,name+' has exactly one canonical');
     assert.equal(head.includes('http://'),false,name+' head must not contain http://');
   }
-  // landing pages: static, script-free, canonical to themselves, open the app in their language (and ko on request), no official character names (design decision 3), mode names as the app shows them
+  // landing pages: static with the approved AdSense loader, canonical to themselves, open the app in their language (and ko on request), no official character names (design decision 3), mode names as the app shows them
   for(const l of ['en','ja']){
     const page=pages[l+'/index.html'];
     assert.ok(page.includes(`<html lang="${l}">`),l+' lang attribute');
     assert.ok(page.includes(`<link rel="canonical" href="${alt[l]}">`),l+' canonical');
-    assert.equal((page.match(/<script/g)||[]).length,0,l+' landing page has no script');
+    assert.deepEqual(page.match(/<script\b[^>]*>/g),['<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8394509799881324" crossorigin="anonymous">'],l+' landing page has only the approved AdSense loader');
+    assert.ok(page.slice(page.indexOf('<head>'),page.indexOf('</head>')).includes('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8394509799881324" crossorigin="anonymous"></script>'),l+' AdSense loader is in head');
     assert.ok(page.includes(`href="../?lang=${l}"`),l+' start button opens the app in '+l);
     assert.ok(page.includes('href="../?lang=ko"'),l+' Korean link asks for ko instead of the saved language');
     assert.ok(page.includes('https://ko-fi.com/misimadojo')&&page.includes('mailto:tlstjdgus3@gmail.com'),l+' donate + contact match the app');
