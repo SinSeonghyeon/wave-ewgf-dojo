@@ -1718,6 +1718,33 @@ test('input ledger: direction hold excludes button gaps, newest row is first and
   a.store.side=-1;assert.equal(a.historyRows(1100)[2].label,'←');
   const tries=a.session.tries;for(let i=0;i<15;i++)a.historyRows(1200+i*100);assert.equal(a.session.tries,tries);
 });
+test('input ledger groups same-slot directions and buttons while preserving frame boundaries and forty rows',()=>{
+  const a=boot();
+  a.onDir('d',1000);a.onButton(2,1001);a.onDir('df',1002);a.onButton(1,1003);
+  let rows=a.historyRows(1052);
+  assert.equal(rows.length,1);assert.equal(rows[0].label,'↘+1+2');assert.equal(rows[0].frames,'3f');
+  a.store.side=-1;assert.equal(a.historyRows(1052)[0].label,'↙+1+2');
+  a.onButton(3,1009);rows=a.historyRows(1052);
+  assert.equal(rows.length,2,'nearby inputs across a 60Hz boundary stay separate');assert.equal(rows[0].label,'3');
+  for(let i=0;i<45;i++){a.onButton(1,1100+i*20);a.onButton(2,1100+i*20);}
+  rows=a.historyRows(2100);assert.equal(rows.length,40);assert.ok(rows.every(r=>r.label==='1+2'));
+  assert.equal(rows[0].frames,'1f','button groups use the gap before the first button');
+});
+test('input ledger merges delayed device events into their slot and updates chronological gaps',()=>{
+  const a=boot();
+  a.onDir('d',1000);a.onButton(1,1020);a.onDir('df',1002);a.onButton(2,1001);
+  let rows=a.historyRows(1052);
+  assert.equal(rows.length,2);assert.equal(rows[1].label,'↘+2');
+  assert.equal(rows[1].frames,'3f');assert.equal(rows[0].frames,'1f');
+  a.onDir('n',1040);a.onDir('f',1030);
+  rows=a.historyRows(1052);
+  assert.equal(rows.length,3);assert.equal(rows[0].label,'★','last timestamp wins within a direction group');
+  assert.equal(rows[2].frames,'2f','hold ends at the first direction in the next group');
+  for(let i=0;i<45;i++)a.onButton(1,1100+i*20);
+  const before=JSON.stringify(a.historyRows(2100));
+  a.onButton(2,1001);
+  assert.equal(JSON.stringify(a.historyRows(2100)),before,'expired device samples cannot evict recent rows');
+});
 test('input ledger freezes on reset, retains the full forty-entry buffer and translates descriptions',()=>{
   const a=boot();a.onDir('f',1000);a.time(1100);a.resetInput();
   assert.equal(a.historyRows(9000)[0].frames,'6f');
