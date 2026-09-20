@@ -11,7 +11,7 @@
 <link rel="icon" type="image/png" sizes="1254x1254" href="favicon.png">
 <meta name="theme-color" content="#141311">
 <link rel="canonical" href="https://mishimaryu.com/">
-<link rel="alternate" hreflang="ko" href="https://mishimaryu.com/">
+<link rel="alternate" hreflang="ko" href="https://mishimaryu.com/ko/">
 <link rel="alternate" hreflang="en" href="https://mishimaryu.com/en/">
 <link rel="alternate" hreflang="ja" href="https://mishimaryu.com/ja/">
 <link rel="alternate" hreflang="x-default" href="https://mishimaryu.com/">
@@ -891,7 +891,7 @@
         <dt data-i18n="about.q4">기록은 어디에 저장되나요?</dt><dd data-i18n="about.a4">설정과 기록은 이 브라우저에만 저장됩니다. 순위에 올린 점수와 닉네임만 서버에 보관합니다.</dd>
         <dt data-i18n="about.q5">무료인가요?</dt><dd data-i18n="about.a5">전부 무료이고 광고가 없습니다. 후원으로 운영합니다.</dd>
       </dl>
-      <p class="note"><span data-i18n="about.links">소개 페이지</span>: <a href="en/" hreflang="en">English</a> · <a href="ja/" hreflang="ja">日本語</a></p>
+      <p class="note"><span data-i18n="about.links">언어별 연습 화면</span>: <a href="ko/" hreflang="ko">한국어</a> · <a href="en/" hreflang="en">English</a> · <a href="ja/" hreflang="ja">日本語</a></p>
     </div>
   </details>
 
@@ -1046,6 +1046,9 @@ const NOTICE_LATEST = NOTICES[0]?.id || '';
 /* ---------- persistent settings ---------- */
 const STORE = 'wave-ewgf-dojo-v1';
 const LANGS = ['ko','en','ja'];
+// Localized HTML is generated from this file; an explicit page language wins over browser/saved preferences.
+const PAGE_LANG = document.documentElement?.dataset?.pageLang || '';
+const ASSET_ROOT = PAGE_LANG ? '../' : '';
 const detectLang = () => { const l = (typeof navigator!=='undefined' && navigator.language || '').toLowerCase(); return l.startsWith('ko')?'ko':l.startsWith('ja')?'ja':'en'; };
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // Legacy saved values / unchanged Worker contract; not used by the current EWGF judge
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
@@ -1115,9 +1118,14 @@ try{
 const save = () => { try{ localStorage.setItem(STORE, JSON.stringify(store)); }catch(e){} };
 let saveTimer = null; // saveSoon: lifetime counters change on every dash/attempt; the synchronous localStorage write waits 1.5s so it never sits in the input path
 const saveSoon = () => { if(saveTimer) return; saveTimer = setTimeout(() => { saveTimer = null; save(); }, 1500); };
-if(typeof location!=='undefined'){ // /en/ and /ja/ landing pages open the app with ?lang=: a one-shot command — saved like the settings toggle, then dropped from the URL so a later toggle survives reload/bookmark
-  const q = new URLSearchParams(location.search).get('lang');
-  if(LANGS.includes(q)){ store.lang = q; save(); try{ window.history.replaceState(null, '', location.pathname + location.hash); }catch(e){} } // window.history: this IIFE declares its own `history` array below
+if(LANGS.includes(PAGE_LANG)){ store.lang=PAGE_LANG; save(); }
+if(typeof location!=='undefined'){ // Legacy ?lang= remains a one-shot override on the automatic root page.
+  const params = new URLSearchParams(location.search), q = params.get('lang');
+  if(LANGS.includes(q)){
+    if(!PAGE_LANG){ store.lang=q; save(); }
+    params.delete('lang');
+    try{ window.history.replaceState(null, '', location.pathname + (params.size?'?'+params.toString():'') + location.hash); }catch(e){}
+  }
 }
 
 /* ---------- i18n ---------- */
@@ -1386,7 +1394,7 @@ ko:{
   'about.a4':'설정과 기록은 이 브라우저에만 저장됩니다. 순위에 올린 점수와 닉네임만 서버에 보관합니다.',
   'about.q5':'무료인가요?',
   'about.a5':'전부 무료이고 광고가 없습니다. 후원으로 운영합니다.',
-  'about.links':'소개 페이지',
+  'about.links':'언어별 연습 화면',
   "mode.wsc.name":"웨캔기어 연습",
   "mode.wsc.desc":"뒤 입력과 RP 연결을 따로 익히는 무제한 연습",
   "hint.wsc":"↘ → 뒤 8·9·10f / RP 1·1~2·1~3f",
@@ -1697,7 +1705,7 @@ en:{
   'about.a4':'Settings and records stay in this browser. Only leaderboard scores and nicknames are kept on the server.',
   'about.q5':'Is it free?',
   'about.a5':'Completely free, no ads. It runs on donations.',
-  'about.links':'Intro pages',
+  'about.links':'Practice in your language',
   "mode.wsc.name":"Wave-cancel WS upper",
   "mode.wsc.desc":"Untimed practice for back timing and the RP follow-up",
   "hint.wsc":"d/f → back 8/9/10f · RP 1 / 1–2 / 1–3f",
@@ -2008,7 +2016,7 @@ ja:{
   'about.a4':'設定と記録はこのブラウザにのみ保存されます。サーバーに保管するのはランキングに登録したスコアとニックネームだけです。',
   'about.q5':'無料ですか？',
   'about.a5':'すべて無料で広告もありません。支援で運営しています。',
-  'about.links':'紹介ページ',
+  'about.links':'言語別の練習画面',
   "mode.wsc.name":"ウェーブキャンセル立ち途中RP",
   "mode.wsc.desc":"後ろ入力とRPのタイミングを学ぶ時間無制限の練習",
   "hint.wsc":"↘ → 後ろ8・9・10f / RP 1・1～2・1～3f",
@@ -2086,7 +2094,7 @@ function bgmApplyTracks(tracks){
 async function bgmLoadTracks(){
   snd.catalogReady=false;
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),4000);
-  try{const response=await fetch('bgm/playlist.json',{cache:'no-store',signal:controller.signal});if(response.ok)bgmApplyTracks(await response.json());}catch(e){} // Raw local previews use the generated fallback.
+  try{const response=await fetch(ASSET_ROOT+'bgm/playlist.json',{cache:'no-store',signal:controller.signal});if(response.ok)bgmApplyTracks(await response.json());}catch(e){} // Raw local previews use the generated fallback.
   finally{clearTimeout(timeout);snd.catalogReady=true;renderBgmPlayer();bgmSync();}
 }
 const SFX_GAIN = {tongbal:0.8,wsc:0.8};
@@ -2094,7 +2102,7 @@ const SFX_GAIN = {tongbal:0.8,wsc:0.8};
 const SFX_START = {hit:0.12};
 const sfxVolume = name => (store.sound?store.sfxVol/100:0)*(SFX_GAIN[name]??1);
 const snd = { ok: typeof Audio!=='undefined', unlocked:false, catalogReady:true, bgm:null, track:-1, queue:[], paused:false, pool:{}, idx:{}, lock:null, release:null };
-function mkAudio(src, loop){ const a = new Audio(); a.preload='auto'; a.loop=!!loop; a.src=src; return a; }
+function mkAudio(src, loop){ const a = new Audio(); a.preload='auto'; a.loop=!!loop; a.src=ASSET_ROOT+src; return a; }
 function sfxPool(name){ return snd.pool[name] || (snd.pool[name] = [0,1,2].map(() => mkAudio(SND[name], false))); } // 3 voices so a fast wave can overlap
 function playSfx(name){
   if(!snd.ok || !store.sound || !snd.unlocked || store.sfxVol<=0) return;
@@ -2128,7 +2136,7 @@ function bgmSelect(){
   store.bgmLast=BGM_TRACKS[snd.track];save();
   const src=BGM_TRACKS[snd.track].split('/').map(encodeURIComponent).join('/');
   if(!snd.bgm){snd.bgm=mkAudio(src,false);snd.bgm.onended=()=>{bgmSelect();bgmSync();};}
-  else{snd.bgm.pause();snd.bgm.src=src;}
+  else{snd.bgm.pause();snd.bgm.src=ASSET_ROOT+src;}
   renderBgmPlayer();
 }
 function bgmNext(){unlockAudio();if(!snd.ok||!snd.catalogReady)return;bgmSelect();bgmSync();}
@@ -3607,7 +3615,7 @@ const BOARD_URL = 'https://mishima-dojo-board.mishima-dojo.workers.dev'; // Clou
 // Two ways to give; every donate button (#donateTop header, #donateShareBtn result dialog, #donateBtn footer) opens #donateDlg to pick one.
 // KakaoPay transfer links are phone-only (404 on desktop), so that choice shows a static QR (donate-kakao.png, regenerate if the URL
 // changes) plus the direct link for phones. Ko-fi is a plain new-tab link. Order: ko puts KakaoPay first, other languages Ko-fi first.
-const DONATE = { kakao:{url:'https://qr.kakaopay.com/Ej8EBCpJu', qr:'donate-kakao.png'}, kofi:{url:'https://ko-fi.com/misimadojo'} };
+const DONATE = { kakao:{url:'https://qr.kakaopay.com/Ej8EBCpJu', qr:ASSET_ROOT+'donate-kakao.png'}, kofi:{url:'https://ko-fi.com/misimadojo'} };
 const donateOptions = lang => (lang==='ko' ? ['kakao','kofi'] : ['kofi','kakao']).filter(k => DONATE[k].url); // pure; unit-tested
 const DONATE_ACTIVE_MS = 10*60*1000, DONATE_IDLE_MS = 30*1000;
 let donateResultVisible = false, donateResultRec = null, donateNudgeTimer = null, practiceLastAt = 0, practiceTickAt = performance.now(), practiceSavedMs = store.donatePlayMs;
@@ -4126,6 +4134,13 @@ function applyStatic(){
   renderBgmPlayer();
   if(document.documentElement) document.documentElement.lang = store.lang;
   document.title = T('app.docTitle');
+  document.querySelectorAll('meta[property="og:title"]').forEach(el => { el.content=T('app.docTitle'); });
+  if(PAGE_LANG){
+    const url=SITE_URL+store.lang+'/';
+    document.querySelectorAll('link[rel="canonical"]').forEach(el => { el.href=url; });
+    document.querySelectorAll('meta[property="og:url"]').forEach(el => { el.content=url; });
+    document.querySelectorAll('meta[property="og:locale"]').forEach(el => { el.content=LOCALE[store.lang].replace('-','_'); });
+  }
   document.querySelectorAll('meta[name="description"], meta[property="og:description"]').forEach(el => { el.content = T('app.description'); });
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = T(el.dataset.i18nHtml); });
@@ -4146,7 +4161,14 @@ function renderAll(){
   if(trial.running) trialTick(performance.now());
   renderWsc();
 }
-function setLang(l){ if(!LANGS.includes(l)) return; store.lang=l; save(); renderAll(); }
+function setLang(l){
+  if(!LANGS.includes(l)) return;
+  if(PAGE_LANG && typeof location!=='undefined'){
+    // Keep the current session, query and fragment; reload/bookmark now opens the selected language.
+    try{ window.history.replaceState(null, '', '../'+l+'/'+location.search+location.hash); }catch(e){}
+  }
+  store.lang=l; save(); renderAll();
+}
 /* ================= STAGE (canvas) ================= */
 const canvas = $('stage'), ctx = canvas.getContext('2d');
 let W=800, H=360, dpr=1, stageScale=1;

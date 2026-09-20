@@ -1,6 +1,6 @@
 # BGM 추가·삭제
 
-이 폴더에 MP3를 넣고 커밋·푸시하면 GitHub Pages가 배포하면서 재생목록을 자동 생성합니다. 곡을 빼려면 이 폴더에서 제거하세요. 사이트를 새로 열면 새 목록을 읽습니다. `playlist.json`은 자동 목록을 만드는 템플릿이므로 직접 편집하지 마세요.
+이 폴더에 MP3를 넣고 커밋·푸시하면 GitHub Actions가 배포하면서 재생목록을 자동 생성합니다. 곡을 빼려면 이 폴더에서 제거하세요. 사이트를 새로 열면 새 목록을 읽습니다. 배포용 `_site/bgm/playlist.json`은 `tools/build-site.js`가 생성하므로 직접 편집하지 마세요.
 
 - 이 폴더 바로 안의 `.mp3` / `.MP3` 파일만 사용합니다. 하위 폴더는 제외합니다.
 - 파일명이 곡 제목으로 표시됩니다. 공백·한글·일본어를 지원합니다. 파일명 첫 글자에 `.`, `_`, `#`는 쓰지 마세요(GitHub Pages 제외 규칙).
@@ -13,9 +13,9 @@
 node tools/update-bgm.js
 ```
 
-이 명령은 `index.html`의 로컬 미리보기 목록만 갱신합니다. 배포된 사이트는 폴더에서 생성된 `bgm/playlist.json`을 우선 사용하므로 목록을 코드로 관리할 필요가 없습니다. GitHub Pages의 기존 main/root + Jekyll 배포를 유지해야 하며 `.nojekyll`을 추가하면 자동 생성이 중단됩니다.
+이 명령은 `index.html`의 로컬 미리보기 목록만 갱신합니다. 배포된 사이트는 폴더에서 생성된 `bgm/playlist.json`을 우선 사용하므로 목록을 코드로 관리할 필요가 없습니다. 언어별 페이지와 함께 `node tools/build-site.js`로 생성하며, GitHub Pages는 GitHub Actions의 `_site` 결과물을 배포합니다. 기존 Jekyll 템플릿은 제거했습니다.
 
-구현 근거: [GitHub Pages와 Jekyll](https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/about-github-pages-and-jekyll), [Jekyll site.static_files](https://jekyllrb.com/docs/variables/).
+전체 배포 전환 방법은 [배포 안내](../.agents/docs/LOCALIZED_PAGES.md)를 참고하세요.
 
 ## 곡 사이 음량 맞추기
 

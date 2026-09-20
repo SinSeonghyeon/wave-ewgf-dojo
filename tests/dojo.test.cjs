@@ -17,7 +17,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
   const get=id=>{if(!elements.has(id)) elements.set(id,element()); return elements.get(id);};
   get('jackpot').hidden=true;
   for(const id of ['setDlg','donateDlg','fitDlg','noticeDlg']) get(id).showModal=function(){this.open=true;};
-  const context=vm.createContext({performance:{now:()=>now},document:{getElementById:get,querySelectorAll:()=>[],hasFocus:()=>true,hidden:false},
+  const context=vm.createContext({performance:{now:()=>now},document:{documentElement:{dataset:{pageLang:env.pageLang||''}},getElementById:get,querySelectorAll:()=>[],hasFocus:()=>true,hidden:false},
     navigator:{getGamepads:()=>pads},localStorage:{getItem:()=>saved===undefined?null:JSON.stringify(saved),setItem(){}},
     matchMedia:()=>({matches:false}),devicePixelRatio:1,requestAnimationFrame(){},
     addEventListener:(name,fn)=>{const previous=events[name];events[name]=(...args)=>{if(previous)previous(...args);fn(...args);};},
@@ -639,7 +639,7 @@ test('static head carries the SEO and Open Graph tags that crawlers read without
   // robots.txt / sitemap.xml are static crawler files at the site root: they must exist and carry the same canonical URL as SITE_URL
   const root=f=>fs.readFileSync(require('node:path').join(__dirname,'..',f),'utf8');
   assert.ok(root('robots.txt').includes(`Sitemap: ${url}sitemap.xml`),'robots.txt points at the sitemap on the canonical host');
-  const sm=root('sitemap.xml');assert.deepEqual(sm.match(/<loc>[^<]*<\/loc>/g),[`<loc>${url}</loc>`,`<loc>${url}en/</loc>`,`<loc>${url}ja/</loc>`],'sitemap lists the app and the two landing pages once each');
+  const sm=root('sitemap.xml');assert.deepEqual(sm.match(/<loc>[^<]*<\/loc>/g),[`<loc>${url}</loc>`,`<loc>${url}ko/</loc>`,`<loc>${url}en/</loc>`,`<loc>${url}ja/</loc>`],'sitemap lists automatic root and three language apps');
   assert.doesNotMatch(sm,/<lastmod>|<changefreq>/,'no hand-maintained lastmod/changefreq (nothing regenerates them; Google ignores changefreq and distrusts stale lastmod)');
   assert.match(html,/document\.title = T\('app\.docTitle'\)/);
 });
@@ -651,7 +651,7 @@ test('localized static descriptions match the app dictionary and all pages refer
   const width=png.readUInt32BE(16), height=png.readUInt32BE(20);
   assert.ok(width>0);assert.equal(width,height,'the icon is square');
   for(const [lang,file] of [['ko','index.html'],['en','en/index.html'],['ja','ja/index.html']]){
-    const filename=path.join(root,file), src=fs.readFileSync(filename,'utf8');
+    const filename=path.join(root,file), src=file==='index.html'?html:require('../tools/build-site').localizedPage(html,lang);
     a.setLang(lang);
     for(const attr of ['name="description"','property="og:description"']){
       assert.equal(src.match(new RegExp('<meta '+attr+' content="([^"]*)"'))?.[1],a.T('app.description'),file+' '+attr);
@@ -1647,39 +1647,74 @@ test('review fixes (2026-09-13): one 4N4 pairing rule, provisional no-cancel met
   const adm=fs.readFileSync(require('node:path').join(__dirname,'../tools/board-admin.js'),'utf8');for(const id of a.BOARDS) assert.ok(adm.includes("['"+id+"', '"),'board-admin.js lists '+id);
 });
 
-test('search text: about block, hreflang set, ?lang= override and the /en/ /ja/ landing pages',()=>{
+test('language URLs override saved/browser language and settings preserve the active session',()=>{
+  for(const lang of ['ko','en','ja']){
+    const changed=[];
+    const env={pageLang:lang,URLSearchParams,navigator:{language:'en-US',getGamepads:()=>[]},
+      location:{pathname:'/'+lang+'/',search:'?ref=test&lang=en',hash:'#about'},
+      window:{history:{replaceState:(_,__,url)=>changed.push(url)}}};
+    const a=boot({v:4,lang:lang==='ja'?'ko':'ja',nick:'tester',nickToken:'ab'.repeat(24),bgmVol:37},undefined,env);
+    assert.equal(a.store.lang,lang,'explicit route wins, including legacy query');
+    assert.equal(a.store.nick,'tester');assert.equal(a.store.bgmVol,37);
+    assert.equal(a.DONATE.kakao.qr,'../donate-kakao.png');
+    assert.equal(changed[0],'/'+lang+'/?ref=test#about','query removal keeps unrelated parameters');
+    env.location.search='?ref=test';dash(a);const before=a.session.dashes;
+    a.setLang('en');assert.equal(changed.at(-1),'../en/?ref=test#about');
+    assert.equal(a.session.dashes,before,'switching language keeps current practice');
+    assert.equal(a.document.title,a.I18N.en['app.docTitle']);
+  }
+  const automatic=boot(undefined,undefined,{navigator:{language:'ja-JP',getGamepads:()=>[]}});
+  assert.equal(automatic.store.lang,'ja','root still detects the browser language');
+  assert.equal(boot({v:4,lang:'ko'},undefined,{navigator:{language:'en-US',getGamepads:()=>[]}}).store.lang,'ko','root keeps saved preferences');
+});
+
+test('Pages build publishes only app assets, locale pages and the generated music catalog',()=>{
+  const path=require('node:path'), {buildSite}=require('../tools/build-site');
+  const {output}=buildSite();
+  for(const lang of ['ko','en','ja'])assert.ok(fs.existsSync(path.join(output,lang,'index.html')));
+  for(const name of ['CNAME','robots.txt','sitemap.xml','googlec1d8aba57474fdc5.html','naverc136a4867080d3062b3628800923af51.html','sfx-wave.mp3','donate-kakao.png'])
+    assert.deepEqual(fs.readFileSync(path.join(output,name)),fs.readFileSync(path.join(__dirname,'..',name)),name);
+  for(const name of ['worker','tests','.agents','.sandbox','AGENTS.md','tools'])assert.equal(fs.existsSync(path.join(output,name)),false,name+' stays private to the repo');
+  const tracks=JSON.parse(fs.readFileSync(path.join(output,'bgm/playlist.json'),'utf8'));
+  assert.deepEqual(tracks,require('../tools/update-bgm').tracksAt(path.join(__dirname,'../bgm')));
+  for(const track of tracks)assert.ok(fs.existsSync(path.join(output,track)));
+});
+
+test('search text: static localized apps, hreflang and legacy query override',()=>{
   const path=require('node:path');
   const a=boot({v:4,lang:'ko'});
-  const u=a.SITE_URL, alt={ko:u,en:u+'en/',ja:u+'ja/','x-default':u};
+  const u=a.SITE_URL, alt={ko:u+'ko/',en:u+'en/',ja:u+'ja/','x-default':u};
   const MODES=['mode.wave10.name','mode.ewgf20.name','mode.combo10.name','mode.rush30.name','mode.bd10.name'];
   const pages={'index.html':html};
-  for(const l of ['en','ja']) pages[l+'/index.html']=fs.readFileSync(path.join(__dirname,'..',l,'index.html'),'utf8');
+  for(const l of ['ko','en','ja']) pages[l+'/index.html']=require('../tools/build-site').localizedPage(html,l);
   for(const [name,page] of Object.entries(pages)){
     const head=page.slice(0,page.indexOf('<style>'));
     for(const [l,h] of Object.entries(alt)) assert.ok(head.includes(`<link rel="alternate" hreflang="${l}" href="${h}">`),name+' hreflang '+l);
     assert.equal((head.match(/rel="canonical"/g)||[]).length,1,name+' has exactly one canonical');
     assert.equal(head.includes('http://'),false,name+' head must not contain http://');
   }
-  // landing pages: static with the approved AdSense loader, canonical to themselves, open the app in their language (and ko on request), no official character names (design decision 3), mode names as the app shows them
-  for(const l of ['en','ja']){
-    const page=pages[l+'/index.html'];
-    assert.ok(page.includes(`<html lang="${l}">`),l+' lang attribute');
-    assert.ok(page.includes(`<link rel="canonical" href="${alt[l]}">`),l+' canonical');
-    assert.deepEqual(page.match(/<script\b[^>]*>/g),['<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8394509799881324" crossorigin="anonymous">'],l+' landing page has only the approved AdSense loader');
-    assert.ok(page.slice(page.indexOf('<head>'),page.indexOf('</head>')).includes('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8394509799881324" crossorigin="anonymous"></script>'),l+' AdSense loader is in head');
-    assert.ok(page.includes(`href="../?lang=${l}"`),l+' start button opens the app in '+l);
-    assert.ok(page.includes('href="../?lang=ko"'),l+' Korean link asks for ko instead of the saved language');
-    assert.ok(page.includes('https://ko-fi.com/misimadojo')&&page.includes('mailto:tlstjdgus3@gmail.com'),l+' donate + contact match the app');
-    assert.doesNotMatch(page,BANNED,l+' landing page uses no official character names');
-    assert.ok(page.includes(u+'og.png'),l+' og image');
-    for(const k of MODES) assert.ok(page.includes(a.I18N[l][k]),l+' landing names the mode as the app does: '+a.I18N[l][k]);
+  for(const l of ['ko','en','ja']){
+    const page=pages[l+'/index.html'], markup=page.slice(0,page.indexOf('<script>'));
+    assert.ok(page.includes(`<html lang="${l}" data-page-lang="${l}">`));
+    assert.ok(page.includes(`<link rel="canonical" href="${alt[l]}">`));
+    assert.deepEqual(page.match(/<script\b[^>]*>/g),html.match(/<script\b[^>]*>/g),'all pages contain the app and approved scripts');
+    assert.equal(page.slice(page.indexOf('<script>')),html.slice(html.indexOf('<script>')),'one identical app script');
+    assert.ok(markup.includes('id="stage"'),'practice canvas, not a landing page');
+    assert.ok(markup.includes('href="../favicon.png"'));
+    for(const lang of ['ko','en','ja'])assert.ok(markup.includes(`href="../${lang}/"`));
+    assert.ok(markup.includes('href="#histCard"'),'fragment links stay on this page');
+    const ld=JSON.parse(markup.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+    assert.equal(ld.url,alt[l]);assert.equal(ld.inLanguage,l);assert.equal(ld.description,a.I18N[l]['app.description']);
+    assert.doesNotMatch(markup,BANNED);
+    for(const k of MODES)assert.ok(markup.includes(a.I18N[l][k]),'localized mode names before JS');
+    assert.ok(markup.includes(a.I18N[l]['about.what.p']),'localized introduction before JS');
   }
   // sitemap: the three URLs, each carrying the same four hreflang alternates as the page heads (decision 4)
   const sitemap=fs.readFileSync(path.join(__dirname,'..','sitemap.xml'),'utf8');
   assert.ok(sitemap.includes('xmlns:xhtml="http://www.w3.org/1999/xhtml"'),'sitemap declares the xhtml namespace for hreflang links');
   const blocks=sitemap.match(/<url>[\s\S]*?<\/url>/g)||[];
   const locOf=b=>b.match(/<loc>([^<]*)<\/loc>/)[1];
-  assert.deepEqual(blocks.map(locOf),[alt.ko,alt.en,alt.ja],'sitemap lists the app and the two landing pages once each');
+  assert.deepEqual(blocks.map(locOf),[u,alt.ko,alt.en,alt.ja],'sitemap lists the app and the two landing pages once each');
   for(const b of blocks){ const links={}; for(const m of b.matchAll(/<xhtml:link rel="alternate" hreflang="([^"]+)" href="([^"]+)"\/>/g)) links[m[1]]=m[2]; assert.deepEqual(links,alt,'sitemap hreflang set for '+locOf(b)); }
   // about block: crawlable Korean text in the markup equals the ko dictionary, sits before the footer; every about.* key exists in all three languages and quotes real labels
   const keys=Object.keys(a.I18N.ko).filter(k=>k.startsWith('about.'));

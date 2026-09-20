@@ -68,6 +68,8 @@
 
 ## 개발
 
+- 언어별 바로 연습: `/ko/` 한국어 · `/en/` 영어 · `/ja/` 일본어. 루트 `/`는 기존처럼 저장된 언어 또는 브라우저 언어로 열린다. 언어별 주소에서도 같은 브라우저의 기록·닉네임을 공유한다.
+- 배포 페이지 생성: `node tools/build-site.js` → `_site/`. 원본은 `index.html` 하나이며 세 언어의 HTML과 BGM 목록을 함께 만든다. GitHub Pages는 GitHub Actions로 배포한다. **최초 전환 설정과 검색 등록 절차**는 [배포 안내](.agents/docs/LOCALIZED_PAGES.md)를 참고한다.
 - 테스트: `node --test tests/dojo.test.cjs tests/board.test.cjs` (Node 22.13 이상, 의존성 없음) · 브라우저 스모크: `node tests/smoke-chrome.js` (로컬 Chrome/Edge).
 - 공지 추가: `index.html`의 `NOTICES` 배열 맨 앞에 고유 ID·날짜·I18N 키를 넣고, 같은 `notice.<날짜>.*` 키를 ko/en/ja 사전에 모두 추가한다. 최신 ID가 바뀌면 기존 방문자에게 `NEW`가 다시 표시된다.
 - AI 에이전트 규칙은 [AGENTS.md](AGENTS.md), 진행 계획은 [.agents/docs/PLAN.md](.agents/docs/PLAN.md), 코드 구조는 [.agents/docs/CODE_MAP.md](.agents/docs/CODE_MAP.md).

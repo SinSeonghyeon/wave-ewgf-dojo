@@ -2,21 +2,28 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://mishimaryu.com/</loc>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://mishimaryu.com/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://mishimaryu.com/ko/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mishimaryu.com/en/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://mishimaryu.com/ja/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mishimaryu.com/"/>
+  </url>
+  <url>
+    <loc>https://mishimaryu.com/ko/</loc>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://mishimaryu.com/ko/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mishimaryu.com/en/"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://mishimaryu.com/ja/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://mishimaryu.com/"/>
   </url>
   <url>
     <loc>https://mishimaryu.com/en/</loc>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://mishimaryu.com/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://mishimaryu.com/ko/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mishimaryu.com/en/"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://mishimaryu.com/ja/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://mishimaryu.com/"/>
   </url>
   <url>
     <loc>https://mishimaryu.com/ja/</loc>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://mishimaryu.com/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://mishimaryu.com/ko/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mishimaryu.com/en/"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://mishimaryu.com/ja/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://mishimaryu.com/"/>

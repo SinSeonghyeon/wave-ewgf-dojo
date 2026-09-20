@@ -6,6 +6,7 @@ Desktop.ini
 # Local scratch: session notes, experiments, generated images. Never committed.
 # Put persistent docs in .agents/docs/ instead.
 .sandbox/
+_site/
 
 # Local Claude Code environment (personal permission settings, skill links). CLAUDE.md itself is committed (one-line @AGENTS.md import).
 .claude/

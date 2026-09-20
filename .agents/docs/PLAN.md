@@ -160,6 +160,10 @@
 
 ## 진행 로그
 
+- [x] 2026-09-21: 사용자 요청으로 언어별 앱 배포 직접 진행. GitHub API로 Pages Source를 workflow로 전환하고 기존 mishimaryu.com·HTTPS 유지 확인. 검증 완료한 변경을 main에 커밋/푸시하여 자동 배포한다. Google·네이버 검색 계정 연결은 없어 콘솔의 수집 요청은 사용자 작업으로 남는다.
+
+- [x] 2026-09-21: `/ko/`·`/en/`·`/ja/` 즉시 연습 앱 구현. 단일 index 원본에서 I18N 기반 최초 HTML/메타/JSON-LD·공유 자원·BGM 목록을 `_site`로 생성하고 Pages Actions 워크플로 추가. 루트 자동 언어 유지, 언어별 주소 우선·전환 시 세션/쿼리/해시 유지, 저장소 공유, canonical/hreflang/4 URL 사이트맵 정리. 기존 소개 2개/Jekyll 템플릿 제거. 최종 단위 180/180·Chrome 전체/언어별 스모크 errors=[]·diff 검사 통과. 최초 단위 1건은 제거된 소개 파일 참조, 최초 언어별 스모크는 이전 페이지의 pagehide 저장과 테스트 데이터 주입 경합으로 실패해 테스트를 보완했다. 사용자 작업: Pages Source를 GitHub Actions로 변경 → 커밋/푸시 → 검색 수집 요청(`LOCALIZED_PAGES.md`). 운영 배포·Worker/DB 변경 없음.
+
 - [x] 2026-09-21: d7cc7a2 이후 main 합류 기능의 통합 공지 `2026-09-21-roundup` 추가(ko/en/ja). 무족초·중립 필수 규칙·동일 프레임 입력 기록·BGM 셔플/신곡·순위 조회 개선 5항목, 기존 공지 보존 및 새 ID로 읽음 상태 갱신. 단위 178/178·Chrome 스모크 통과, 커밋·푸시는 사용자 작업.
 
 - [x] 2026-09-21 입력 기록 main 병합 검증: origin/main(bb83a07)의 기존 변경을 보존해 합류, PLAN 양쪽 로그 유지·임시 handoff 삭제. 병합 상태 단위 160/160 → Chrome errors=[]·디자인 30조합 errors=[]·diff 검사 통과. main 대비 앱/테스트/문서 7개 파일만 변경, Worker·DB 변경 없음. 로그 .sandbox/review-input-merged-{unit,chrome,design}.log. 사용자 명시 승인에 따라 기능 브랜치와 main으로 게시.

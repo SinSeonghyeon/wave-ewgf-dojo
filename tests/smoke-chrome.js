@@ -222,7 +222,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   for(const l of ['en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);
     out[l] = await snap();
-    const landing=fs.readFileSync(path.join(__dirname,'..',l==='ko'?'index.html':l+'/index.html'),'utf8');
+    const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+    const landing=l==='ko'?source:require('../tools/build-site').localizedPage(source,l);
     const expectedDescription=landing.match(/<meta name="description" content="([^"]*)"/)[1];
     out[l].descriptions=await evalJs(`({meta:document.querySelector('meta[name="description"]').content,og:document.querySelector('meta[property="og:description"]').content})`);
     if(out[l].descriptions.meta!==expectedDescription || out[l].descriptions.og!==expectedDescription) errors.push('localized description mismatch: '+l+' '+JSON.stringify(out[l].descriptions));

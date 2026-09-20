@@ -1,4 +1,4 @@
-// Local/file:// preview fallback. GitHub Pages independently scans bgm/ at build time.
+// Local/file:// preview fallback. tools/build-site.js independently scans bgm/ for the Pages artifact.
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.join(__dirname, '..');
