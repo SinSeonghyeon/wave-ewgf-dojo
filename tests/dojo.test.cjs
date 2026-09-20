@@ -66,6 +66,19 @@ test('mist uses shared slot boundaries and accepts either RP/diagonal event orde
   }
 });
 
+test('mist success pop uses its own label and the same streak priority as dash EWGF',()=>{
+  for(const lang of ['ko','en','ja']){
+    const a=boot();a.setLang(lang);mistInput(a);
+    assert.equal(a.pops.at(-1).text,a.T('pop.mistEwgf'));
+    assert.equal(a.get('rTitle').textContent,a.T('mist.fastest'));
+    a.onDir('n',1100);mistInput(a,{start:1300});
+    assert.equal(a.pops.at(-1).text,a.T('pop.streak',2));
+    a.onDir('n',1400);mistInput(a,{start:5000,f:2,n:2});
+    assert.equal(a.pops.at(-1).text,a.T('pop.mistEwgf'));
+    assert.equal(a.get('rTitle').textContent,a.T('mist.title'));
+  }
+});
+
 test('mist staging cannot hide a forward/down reversal inside the final slot',()=>{
   for(const directions of [['f','d'],['d','f']])for(const rpFirst of [false,true]){
     const a=boot();a.onDir('f',1000);a.onDir('n',1017);
@@ -503,7 +516,7 @@ test('the three dictionaries share exactly the same key set',()=>{
 test('announcements render in every language and persist the latest read marker',()=>{
   let saved;
   const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
-  assert.ok(a.NOTICES.length);assert.equal(a.NOTICES[0].id,'2026-09-19-dojo');assert.equal(a.NOTICES[0].items.length,6);assert.equal(a.NOTICES[1].id,'2026-09-15-notices');assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
+  assert.ok(a.NOTICES.length);assert.equal(a.NOTICES[0].id,'2026-09-21-mist');assert.equal(a.NOTICES[0].items.length,3);assert.equal(a.NOTICES[1].id,'2026-09-19-dojo');assert.equal(a.NOTICES[2].id,'2026-09-15-notices');assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
   assert.ok(a.get('noticeList').innerHTML.includes(a.T(a.NOTICES[0].title)));
   a.setMode('wave10');a.startTrial();a.openNotices();
   assert.equal(a.get('noticeDlg').open,true);assert.equal(a.trial.cdTimer,null,'opening an announcement cancels a countdown');
@@ -926,7 +939,7 @@ test('sound settings: defaults, invalid saves fall back, valid saves survive, sl
   a.get('sfxVol').value='35';a.get('sfxVol').input();assert.equal(a.store.sfxVol,35);assert.equal(a.get('sfxVolOut').textContent,'35%');
   a.get('bgmVol').value='abc';a.get('bgmVol').input();assert.equal(a.store.bgmVol,0);
   // fx paths that call playSfx must be harmless without Audio
-  a.fx.crouchDash();a.fx.ewgf(5);a.fx.ewgf(1,true);a.fx.dash();a.fx.backdash();
+  a.fx.crouchDash();a.fx.ewgf(5);a.fx.ewgf(1,'pop.dashEwgf');a.fx.dash();a.fx.backdash();
   assert.deepEqual(Object.keys(html.match(/const SND = \{([^}]*)\}/)[1].split(',').reduce((o,kv)=>{o[kv.split(':')[0].trim()]=1;return o;},{})),['wave','ewgf','wsc','hellsweep','tongbal','hit','backdash']);
   for(const f of ['bgm/bgm.mp3','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3']) assert.ok(fs.existsSync(require('node:path').join(__dirname,'..',f)),f+' exists');
 });

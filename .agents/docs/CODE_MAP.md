@@ -214,3 +214,5 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 - BGM 음량(2026-09-19): tools/measure-bgm.js → FFmpeg loudnorm input_i 측정 → BGM_GAIN 상수 생성. bgmVolume()은 사용자 볼륨×경로별 gain(미측정 기본1), bgmSync마다 반영해 다음 곡/종료/재생 재개/볼륨 변경에 유지. 기준 -19.17 LUFS, High Rollers -11.33dB, DUOMO -8.95dB, 새 Mishima DOJO -11.14dB. 파일 재인코딩 없음.
 
 - 2026-09-19 로컬 리뷰: `resetSession()`은 제거된 세션 버튼 대신 설정의 전체 초기화 전용이다. 모드와 무관하게 session/WSC session/완주 순위 결과/입력 이력/미전송 submitQueue를 지운다. 이미 전송한 서버 요청과 서버 최고 기록은 취소·삭제하지 않는다.
+
+- 2026-09-21 성공 팝: `fx.ewgf(n,popKey)`가 일반/대초/무족초 첫 성공 키를 받는다. n>1은 기존 `pop.streak` 우선. 무족 결과 카드의 최속 구분은 그대로 유지한다.

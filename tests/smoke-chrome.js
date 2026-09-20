@@ -52,6 +52,13 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   browser = b;
   console.log('Smoke: browser connected');
   const {send, evalJs, errors} = b;
+  // This suite supplies keyboard/touch input. A connected physical controller
+  // must not inject unrelated input; dedicated pad coverage lives in smoke-mist.
+  await send('Page.addScriptToEvaluateOnNewDocument',{source:`
+    Object.defineProperty(navigator,'getGamepads',{value:()=>[]});
+    for(const type of ['gamepadconnected','gamepaddisconnected'])
+      window.addEventListener(type,e=>e.stopImmediatePropagation(),true);
+  `});
   const waitFor = async (expr, timeout=5000) => {
     const until=Date.now()+timeout;
     while(Date.now()<until){ try{ if(await evalJs(expr)) return; }catch(e){ if(!/Execution context was destroyed|Cannot find context/.test(String(e))) throw e; } await sleep(100); }
@@ -268,6 +275,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   for(let i=0;i<40;i++){ if(/rank/.test(await evalJs(`${q('#dRank')}.textContent`)) && await evalJs(`${q('#shareDlg')}.open`)) break; await sleep(300); }
   await sleep(400);
   out.board.auto.after = await evalJs(`({rank:${q('#dRank')}.textContent, me:${q('#boardMe')}.textContent, rows:document.querySelectorAll('#boardList tbody tr').length, open:${q('#shareDlg')}.open, line:${q('#shareRankLine')}.textContent, tier:${q('#shareTier')}.textContent})`);
+  out.board.auto.records = await evalJs(`JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.wave10`);
+  out.board.auto.stored = db.rows.map(({score,tie,created_at})=>({score,tie,created_at}));
   await evalJs(`${q('#shareClose')}.click()`); await sleep(100);
   // the highlighted owner row alone has Delete; confirming removes only this nickname's wave10 row and refreshes the board response
   for(let i=0;i<30;i++){ if(await evalJs(`!!${q('#boardList .board-delete')}`)) break; await sleep(300); }

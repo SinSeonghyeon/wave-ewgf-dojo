@@ -1036,6 +1036,7 @@ function setFit(slot, id){ if(!ITEMS[slot] || !ITEMS[slot][id] || !owned(id)) re
 // Newest first. For each patch, add one entry and the matching notice.<id> strings to all three I18N dictionaries.
 // The latest id is the read marker saved in this browser; no backend or deployment-time request is involved.
 const NOTICES = [
+  {id:'2026-09-21-mist', date:'2026-09-21', kind:'notice.kind.update', title:'notice.20260921.title', summary:'notice.20260921.summary', items:['notice.20260921.1','notice.20260921.2','notice.20260921.3']},
   {id:'2026-09-19-dojo', date:'2026-09-19', kind:'notice.kind.update', title:'notice.20260919.title', summary:'notice.20260919.summary', items:['notice.20260919.1','notice.20260919.2','notice.20260919.3','notice.20260919.4','notice.20260919.5','notice.20260919.6']},
   {id:'2026-09-15-notices', date:'2026-09-15', kind:'notice.kind.update', title:'notice.20260915.title', summary:'notice.20260915.summary', items:['notice.20260915.1','notice.20260915.2','notice.20260915.3','notice.20260915.4','notice.20260915.5']},
 ];
@@ -1122,6 +1123,11 @@ if(typeof location!=='undefined'){ // /en/ and /ja/ landing pages open the app w
 const LOCALE = {ko:'ko-KR', en:'en-US', ja:'ja-JP'};
 const I18N = {
 ko:{
+  "notice.20260921.title":"무족초 연습과 중립 입력 규칙",
+  "notice.20260921.summary":"무족초 입력을 추가하고 웨이브·기술의 중립 입력 검사를 강화했습니다.",
+  "notice.20260921.1":"독립적인 6N3+RP 무족초를 연습할 수 있습니다. 대각과 RP가 같은 프레임이면 성공하며, 앞·중립도 각각 1f이면 최속으로 표시합니다.",
+  "notice.20260921.2":"결과·구간 막대에 앞·중립·RP 프레임을 표시합니다. 대시·웨이브에서 이어지는 무족초는 아직 지원하지 않습니다.",
+  "notice.20260921.3":"웨이브·일반 초풍·나락·웨캔기어는 모두 6N23의 중립이 필수입니다. 623은 중립 누락으로 실패하며 웨이브 수·기술 성공으로 집계하지 않습니다.",
   'fault.no_neutral.title':'중립 누락', 'fault.no_neutral.coach':'앞(6)을 놓아 중립(N)을 거친 뒤 아래(2) → 대각(3)을 입력하세요. 6N23의 N은 생략할 수 없습니다.',
   'res.no_neutral':'중립 누락', 'a.no_neutral.title':'중립 누락', 'a.no_neutral.sub':'웨이브·일반 초풍·나락·웨캔기어는 6N23이 필요합니다.', 'a.no_neutral.coach':'앞(6)을 놓아 중립(N)을 거친 뒤 아래(2) → 대각(3)+RP를 입력하세요. 623은 웨이브나 기술의 선행 입력으로 인정하지 않습니다.',
   'mist.title':'무족초!', 'mist.fastest':'최속 무족초!', 'route.mist':'무족 입력 · 6N3+RP', 'route.standard':'일반 입력 · 6N23+RP', 'route.noNeutral':'중립 생략 · 623+RP',
@@ -1232,7 +1238,7 @@ ko:{
   'chain.end':(n,dps,name,ms)=>'웨이브 '+n+'연속 종료 · 평균 '+dps+' 대시/초. 평균적으로 가장 긴 구간은 '+name+' ('+ms+'ms)',
   'chain.fix':' — 여기를 줄이면 속도가 바로 올라갑니다.', 'chain.ok':' — 균형이 좋습니다.',
   'trial.waveEnd':(n,dps)=>'10초 종료 · '+n+'회 ('+dps+' 대시/초)', 'trial.end':(ok,tg,r)=>'종료 · 성공 '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' 대시',
-  'pop.ewgf':'초풍!', 'pop.wgf':'풍신권',
+  'pop.mistEwgf':'무족초!', 'pop.ewgf':'초풍!', 'pop.wgf':'풍신권',
   'pop.streak':n=>n+'초'+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'대초!', 'a.dashEwgf.title':'대초!', 'res.dash_ewgf':'대초', 'a.streak.sub':n=>' · '+n+'연속',
   /* 통발 · 나락 · 더미 격파 (2026-09-13) */
   'mode.rush30.name':'더미 격파 30초', 'mode.rush30.desc':'30초 동안 상단·중단·하단 더미가 무작위로 나옵니다. 상단=초풍, 중단=통발(66+2), 하단=나락(6N23+4)으로 격파하면 10점(저스트를 놓친 풍신권은 5점), 크라우치 대시마다 연속 수만큼(최대 3점) 점수.',
@@ -1423,6 +1429,11 @@ ko:{
   'wsc.elapsed':(f,ms)=>'경과 '+f+'f / '+ms+'ms',
 },
 en:{
+  "notice.20260921.title":"Mist Step EWGF practice and neutral input rules",
+  "notice.20260921.summary":"Added Mist Step EWGF practice and stricter neutral input checks for waves and moves.",
+  "notice.20260921.1":"Practice standalone 6N3+RP. Diagonal and RP must share a frame; one frame each of forward and neutral earns the fastest label.",
+  "notice.20260921.2":"Results and the segment bar show forward, neutral and RP frames. Mist Step EWGF from dash or wave links is not supported yet.",
+  "notice.20260921.3":"Wave, standard EWGF, Hellsweep and WSC all require neutral in 6N23. Inputting 623 fails for missing neutral and earns no wave or move success.",
   'fault.no_neutral.title':'Missing neutral', 'fault.no_neutral.coach':'Release forward (6) to neutral (N), then enter down (2) → d/f (3). The N in 6N23 is required.',
   'res.no_neutral':'Missing neutral', 'a.no_neutral.title':'Missing neutral', 'a.no_neutral.sub':'Wave, standard EWGF, Hellsweep and WSC require 6N23.', 'a.no_neutral.coach':'Release forward (6) to neutral (N), then enter down (2) → d/f (3)+RP. 623 is not a valid wave or move prefix.',
   'mist.title':'Mist Step EWGF!', 'mist.fastest':'Fastest Mist Step EWGF!', 'route.mist':'Mist input · 6N3+RP', 'route.standard':'Standard · 6N23+RP', 'route.noNeutral':'No neutral · 623+RP',
@@ -1533,7 +1544,7 @@ en:{
   'chain.end':(n,dps,name,ms)=>'Wave chain of '+n+' ended · avg '+dps+' dashes/s. Longest segment on average: '+name+' ('+ms+'ms)',
   'chain.fix':' — shorten this and speed goes up immediately.', 'chain.ok':' — well balanced.',
   'trial.waveEnd':(n,dps)=>'10s over · '+n+' dashes ('+dps+' dashes/s)', 'trial.end':(ok,tg,r)=>'Done · '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' dashes',
-  'pop.ewgf':'EWGF!', 'pop.wgf':'WGF',
+  'pop.mistEwgf':'Mist Step EWGF!', 'pop.ewgf':'EWGF!', 'pop.wgf':'WGF',
   'pop.streak':n=>'EWGF ×'+n+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'Dash EWGF!', 'a.dashEwgf.title':'Dash EWGF!', 'res.dash_ewgf':'Dash EWGF', 'a.streak.sub':n=>' · streak '+n,
   /* f,f+2 · hell sweep · dummy rush (2026-09-13) */
   'mode.rush30.name':'Dummy Rush 30s', 'mode.rush30.desc':'High, mid and low dummies appear at random for 30 seconds. High = EWGF, mid = f,f+2, low = hell sweep (f,N,d,df+4): 10 points each (a non-just WGF scores 5), plus 1–3 points per crouch dash by chain length.',
@@ -1722,6 +1733,11 @@ en:{
   'wsc.elapsed':(f,ms)=>'Elapsed '+f+'f / '+ms+'ms',
 },
 ja:{
+  "notice.20260921.title":"無足最風の練習と中立入力ルール",
+  "notice.20260921.summary":"無足最風の練習を追加し、ウェーブ・技の中立入力チェックを強化しました。",
+  "notice.20260921.1":"単独の6N3+RPを練習できます。斜めとRPが同一フレームなら成功し、前・中立も各1fなら最速と表示します。",
+  "notice.20260921.2":"結果と区間バーに前・中立・RPのフレームを表示します。ダッシュ・ウェーブからつなぐ無足最風はまだ未対応です。",
+  "notice.20260921.3":"ウェーブ・通常の最風・奈落・WSCはすべて6N23の中立が必須です。623は中立抜けで失敗し、ウェーブ数・技の成功には数えません。",
   'fault.no_neutral.title':'中立抜け', 'fault.no_neutral.coach':'前(6)を離して中立(N)を挟み、下(2)→斜め(3)を入力してください。6N23のNは省略できません。',
   'res.no_neutral':'中立抜け', 'a.no_neutral.title':'中立抜け', 'a.no_neutral.sub':'ウェーブ・通常の最風・奈落・WSCには6N23が必要です。', 'a.no_neutral.coach':'前(6)を離して中立(N)を挟み、下(2)→斜め(3)+RPを入力してください。623はウェーブや技の先行入力として認めません。',
   'mist.title':'無足最風！', 'mist.fastest':'最速無足最風！', 'route.mist':'無足入力 · 6N3+RP', 'route.standard':'通常入力 · 6N23+RP', 'route.noNeutral':'中立省略 · 623+RP',
@@ -1832,7 +1848,7 @@ ja:{
   'chain.end':(n,dps,name,ms)=>'ウェーブ'+n+'連続終了 · 平均 '+dps+' ダッシュ/秒。平均で一番長い区間は'+name+' ('+ms+'ms)',
   'chain.fix':' — ここを縮めれば速度がすぐ上がります。', 'chain.ok':' — バランスが良いです。',
   'trial.waveEnd':(n,dps)=>'10秒終了 · '+n+'回 ('+dps+' ダッシュ/秒)', 'trial.end':(ok,tg,r)=>'終了 · 成功 '+ok+'/'+tg+' ('+r+'%)', 'trial.dashes':n=>n+' ステップ',
-  'pop.ewgf':'最風!', 'pop.wgf':'風神拳',
+  'pop.mistEwgf':'無足最風!', 'pop.ewgf':'最風!', 'pop.wgf':'風神拳',
   'pop.streak':n=>'最風×'+n+(n>=5?'!!':n===4?'!':''), 'pop.dashEwgf':'ダッシュ最風!', 'a.dashEwgf.title':'ダッシュ最風!', 'res.dash_ewgf':'ダッシュ最風', 'a.streak.sub':n=>' · '+n+'連続',
   /* 66+2 · 奈落 · ダミー撃破 (2026-09-13) */
   'mode.rush30.name':'ダミー撃破30秒', 'mode.rush30.desc':'30秒間、上段・中段・下段のダミーがランダムに現れます。上段=最風、中段=66+2、下段=奈落(6N23+4)で撃破すると10点(ジャスト外れの風神拳は5点)、風神ステップごとに連続数ぶん(最大3点)加点。',
@@ -2953,7 +2969,7 @@ function attempt(kind, off, t, input){
       sub = () => T('a.ewgf.sub', f, ms) + (chainBefore>1 ? T('a.afterWave', chainBefore) : '') + (a.streak>1 ? T('a.streak.sub', a.streak) : '');
       coach = Math.abs(off)<=4 ? ['a.ewgf.perfect'] : (off>0 ? ['a.ewgf.late', f] : ['a.ewgf.early', f]);
       if(mode==='combo10' && !comboOK) { coach = ['a.combo.coach', chainBefore]; title=['a.combo.title']; cls='wgf'; res='combo_short'; rowCls='wg'; }
-      fx.ewgf(a.streak, a.dash); rushStrike('ewgf', t); break;
+      fx.ewgf(a.streak, a.inputRoute==='mist'?'pop.mistEwgf':a.dash?'pop.dashEwgf':'pop.ewgf'); rushStrike('ewgf', t); break;
     case 'wgf':
       cls='wgf'; title=['a.wgf.title']; res='wgf'; rowCls='wg';
       sub = ['a.wgf.sub', f, ms];
@@ -4105,10 +4121,10 @@ const streakStyle = n => STREAK[clamp(n,1,6)];
 const puff = (n, dirSign) => { for(let i=0;i<n;i++) dust.push({x:world.charX, y:0, vx:(-1-Math.random()*1.5)*store.side*dirSign, vy:-0.6-Math.random()*1.2, r:3+Math.random()*4, t:1}); };
 const fx = {
   crouchDash(){ startAnim('cd'); moveChar(46, 130); puff(4, 1); playSfx('wave'); },
-  ewgf(n=1, fromDash){
+  ewgf(n=1, popKey='pop.ewgf'){
     const L = streakStyle(n), color = cssVar(L.color[0], L.color[1]);
     startAnim('ewgf'); anim.electric=true; moveChar(28, 120); if(store.fx && !reduced){ flash=1; flashGold=false; shake=L.shake; }
-    pop(n>1 ? T('pop.streak', n) : T(fromDash ? 'pop.dashEwgf' : 'pop.ewgf'), color, L.size, {lvl:clamp(n,1,6), glow:L.glow, rings:reduced?0:L.rings, core:L.core, life:n>=4?1100:900});
+    pop(n>1 ? T('pop.streak', n) : T(popKey), color, L.size, {lvl:clamp(n,1,6), glow:L.glow, rings:reduced?0:L.rings, core:L.core, life:n>=4?1100:900});
     if(!reduced) for(let i=0;i<L.sparks;i++) sparks.push({x:world.charX+30*store.side, y:-118, vx:(Math.random()-0.5)*10, vy:-Math.random()*7-2, t:1, c:Math.random()<.5?'#FFFFFF':color});
     playSfx('ewgf'); if(!world.dummy.type) tryHit('ewgf'); // typed dummies are judged by rushStrike
   },
