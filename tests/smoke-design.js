@@ -6,7 +6,7 @@ fs.mkdirSync(out,{recursive:true});
 const source=fs.readFileSync(path.join(root,'index.html'),'utf8')
   .replace(/function renderPosts\(\)\{\s*if\(!BOARD_URL\) return;/,'function renderPosts(){')
   .replace(/const BOARD_URL = '[^']*';/,"const BOARD_URL = '';")
-  .replace(/\}\)\(\);\s*<\/script>/,'window.designTest={session,wsc,world,store,onDir,historyRows,dojo3d,roomCamera,roomProject,ROOM,roomAtlas,live,renderPosts,drawFighter,poseAt,anim,get scale(){return stageScale;}};})();</script>');
+  .replace(/\}\)\(\);\s*<\/script>/,'window.designTest={session,wsc,world,store,onDir,onButton,historyRows,dojo3d,roomCamera,roomProject,ROOM,roomAtlas,live,renderPosts,drawFighter,poseAt,anim,get scale(){return stageScale;}};})();</script>');
 const noticeId=source.match(/const NOTICES = \[\s*\{id:'([^']+)'/)[1];
 fs.writeFileSync(path.join(out,'index.html'),source);
 for(const file of ['favicon.png','donate-kakao.png','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-tongbal.mp3','sfx-hellsweep.mp3','sfx-hit.mp3','sfx-backdash.mp3'])fs.copyFileSync(path.join(root,file),path.join(out,file));
@@ -46,6 +46,8 @@ for(const file of ['favicon.png','donate-kakao.png','sfx-wave.mp3','sfx-ewgf.mp3
     assert.equal(trackLayout.short,trackLayout.long,`${width}/${lang}: song title must not move the play/touch area`);
     for(const mode of ['free','wsc']){
      await b.evalJs(`document.querySelector('[data-mode="${mode}"]').click()`);await sleep(80);
+     const grouped=await b.evalJs(`(()=>{const a=designTest,t=Math.ceil(performance.now()/(1000/60))*(1000/60);a.onDir('df',t);for(const n of [4,2,1,3])a.onButton(n,t);const row=document.querySelector('#inputs .chip'),g=row.querySelector('.g').getBoundingClientRect(),f=row.querySelector('.f').getBoundingClientRect();return {label:row.querySelector('.g').textContent,frames:row.querySelectorAll('.f').length,overlap:g.right>f.left,overflow:row.scrollWidth>row.clientWidth};})()`);
+     assert.equal(grouped.label,'↘+1+2+3+4');assert.equal(grouped.frames,1);assert.equal(grouped.overlap,false);assert.equal(grouped.overflow,false);
      const layout=await b.evalJs(`(()=>{const r=id=>document.getElementById(id).getBoundingClientRect().toJSON();return {stage:r('stageBox'),posts:r('postsCard'),panel:r('wscPanel'),start:r('wscChallengeBtn')};})()`);
      if(width>=1100)assert.ok(layout.posts.left>=layout.stage.right,'community beside stage');
      else assert.ok(layout.posts.top>=layout.stage.bottom,'community below stage on smaller screens');

@@ -498,7 +498,7 @@
   .inputs{display:flex;flex-direction:column;align-items:stretch;gap:0;margin:0;min-height:0;max-height:245px;overflow:hidden}
   .chip{flex-direction:row;justify-content:space-between;gap:8px;min-width:0;padding:5px 12px;border-top:1px solid var(--line);min-height:32px}
   .chip .g{display:block;width:auto;height:auto;background:none!important;border:0!important;border-radius:0;font-size:19px;line-height:1.1;color:var(--ink)!important;box-shadow:none!important}
-  .chip .f{font-size:11px;color:var(--ink2)}.chip.new{background:var(--accent-soft);border-left:2px solid var(--accent);padding-left:10px}
+  .chip .g{min-width:0;overflow-wrap:anywhere}.chip .f{flex-shrink:0;font-size:11px;color:var(--ink2)}.chip.new{background:var(--accent-soft);border-left:2px solid var(--accent);padding-left:10px}
   .input-empty{padding:12px;color:var(--muted);font-size:11px}
   .trial{margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:12px 4px;background:none;gap:10px}
   .trial .d-name{font:700 14px var(--body)}.trial .d-desc{font-size:12px}.trial .btn{font-size:12px;padding:7px 12px}
@@ -2373,18 +2373,41 @@ const glyphFor = d => { // convert to facing-aware arrow for display
 let historyStopT=-Infinity, historyPaintT=0, historyMarkup=null;
 function pushHistory(ev){
   historyStopT=-Infinity;
-  ev.gap = ev.t - lastInputT; lastInputT = ev.t;
-  history.push(ev); if(history.length>40) history.shift();
+  // Device timestamps can arrive out of order across keyboard, touch and pad.
+  // Keep only the display ledger chronological; judgment still uses arrival order.
+  let at=history.length;
+  while(at>0 && history[at-1].t>ev.t) at--;
+  ev.gap = Math.max(0,ev.t-(at>0 ? history[at-1].t : lastInputT));
+  const following=history[at];
+  lastInputT=Math.max(lastInputT,ev.t);
+  history.splice(at,0,ev);
+  let groups=0, slot=null;
+  for(let i=history.length-1;i>=0;i--){
+    const current=frameSlot(history[i].t);
+    if(current!==slot){ slot=current; groups++; }
+    if(groups>40){ history.splice(0,i+1); break; }
+  }
+  // An already expired sample must not rewrite the oldest retained row's gap.
+  if(following && history.includes(ev)) following.gap=following.t-ev.t;
   renderHistory();
 }
 function historyRows(now=performance.now()){
   let nextT=null;
-  return history.slice().reverse().map(ev => {
-    const end=ev.endT ?? (nextT ?? (historyStopT>=ev.t ? historyStopT : now));
-    const duration=ev.btn ? ev.gap : end-ev.t;
-    if(ev.dir) nextT=ev.t;
-    return {label:ev.btn ? String(ev.btn) : glyphFor(ev.dir), cls:ev.btn ? 'b'+ev.btn : ev.dir==='n'?'n':'dir',
-      frames:ev.btn&&duration>2000 ? '–' : Math.max(0,Math.round(duration/FRAME))+'f', title:T(ev.btn?'inputs.gap':'inputs.hold')};
+  const groups=[];
+  for(const ev of history){
+    const slot=frameSlot(ev.t);
+    let group=groups[groups.length-1];
+    if(!group || group.slot!==slot){ group={slot,first:ev,dir:null,buttons:new Set()}; groups.push(group); }
+    if(ev.dir){ group.firstDir ??= ev; group.dir=ev; }
+    if(ev.btn) group.buttons.add(ev.btn);
+  }
+  return groups.reverse().map(group => {
+    const ev=group.dir, buttons=[...group.buttons].sort();
+    const end=ev ? ev.endT ?? (nextT ?? (historyStopT>=ev.t ? historyStopT : now)) : null;
+    const duration=ev ? end-ev.t : group.first.gap;
+    if(ev) nextT=group.firstDir.t;
+    return {label:[...(ev?[glyphFor(ev.dir)]:[]),...buttons].join('+'), cls:ev ? ev.dir==='n'?'n':'dir' : 'b'+buttons[0],
+      frames:!ev&&duration>2000 ? '–' : Math.max(0,Math.round(duration/FRAME))+'f', title:T(ev?'inputs.hold':'inputs.gap')};
   });
 }
 function renderHistory(now=performance.now()){

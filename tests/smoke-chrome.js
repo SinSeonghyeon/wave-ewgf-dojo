@@ -52,18 +52,18 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   browser = b;
   console.log('Smoke: browser connected');
   const {send, evalJs, errors} = b;
-  // This suite supplies keyboard/touch input. A connected physical controller
-  // must not inject unrelated input; dedicated pad coverage lives in smoke-mist.
-  await send('Page.addScriptToEvaluateOnNewDocument',{source:`
-    Object.defineProperty(navigator,'getGamepads',{value:()=>[]});
-    for(const type of ['gamepadconnected','gamepaddisconnected'])
-      window.addEventListener(type,e=>e.stopImmediatePropagation(),true);
-  `});
   const waitFor = async (expr, timeout=5000) => {
     const until=Date.now()+timeout;
     while(Date.now()<until){ try{ if(await evalJs(expr)) return; }catch(e){ if(!/Execution context was destroyed|Cannot find context/.test(String(e))) throw e; } await sleep(100); }
     throw new Error('browser condition timed out: '+expr);
   };
+  // Keyboard/touch smoke inputs must not mix with a physically connected controller.
+  await send('Page.addScriptToEvaluateOnNewDocument',{source:`
+    Object.defineProperty(navigator,'getGamepads',{value:()=>[]});
+    // Chrome still emits connection events after a user gesture when enumeration is stubbed.
+    for(const type of ['gamepadconnected','gamepaddisconnected'])
+      window.addEventListener(type,e=>e.stopImmediatePropagation(),true);
+  `});
   await b.navigate(fileUrl(page), 0);
   await waitFor(`location.pathname.endsWith('/index.html') && !!document.querySelector('#noticeDlg') && document.querySelector('#nickDlg')?.open && !document.querySelector('#nickBtn')?.hidden`);
   const out = {};
@@ -390,7 +390,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(!tc.jpHit.hit) errors.push('reward 확인 button is covered by the touch overlay: '+JSON.stringify(tc.jpHit));
   if(!tc.ui || tc.compat!=='CSS1Compat' || tc.width!==390 || tc.scrollW>390 || tc.shown!=='block' || tc.sel!=='true' || tc.dirs.w<160 || tc.dirs.x+tc.dirs.w>tc.btns.x || tc.right.w<46 || tc.b2.w<56 || tc.dirs.y<tc.stage.y+tc.stage.h*0.5 || tc.badge!=='👆 터치 대기' || tc.hint.y<tc.stage.y+tc.stage.h*0.46-1 || tc.hint.y+tc.hint.h>tc.touchTop+0.5 || JSON.stringify(tc.tune)!=='["100","0","0"]'
      || tc.customMove.size!=='99px' || tc.customMove.left100<=tc.customMove.left0 || tc.narrow.dirs.r>tc.narrow.btns.x || tc.narrowCustom.size!=='185px'
-     || tc.after.title!=='초풍!' || tc.after.src!=='👆 터치' || !/^→[0-9f]* ★[0-9]+f ↓[0-9]+f ↘[0-9]+f/.test(tc.after.chips) || tc.after.active!==0 || tc.desktop.ui || tc.desktop.shown!=='none')
+     || tc.after.title!=='초풍!' || tc.after.src!=='👆 터치' || !/^→[0-9f]* ★[0-9]+f ↓[0-9]+f ↘\+2[0-9]+f/.test(tc.after.chips) || tc.after.active!==0 || tc.desktop.ui || tc.desktop.shown!=='none')
     errors.push('touch controls check failed: '+JSON.stringify(tc));
   const shotDir=path.join(__dirname,'../.sandbox/bgm-toggle');fs.mkdirSync(shotDir,{recursive:true});
   for(const width of [1366,390]){
