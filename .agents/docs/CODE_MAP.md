@@ -90,6 +90,19 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 부트      renderAll(); setMode('free'); renderHistory(); updateStats(); bumpVisitDay(); backendInit(); requestAnimationFrame(frame)
 ```
 
+## 무족초 (2026-09-20)
+
+- 2026-09-21 최종 중립 규칙: 웨이브·일반 초풍·나락·WSC 모두 `6N23` 필수. `commandDir`의 시작 앞→아래에서 `fault(no_neutral)`과 `wscCancel(false)`로 후보를 취소한다. `cd.omittedNeutral`은 유효 커맨드가 아니라 후속 RP에 실패 사유를 표시할 250ms 표시 상태다(`cd.tD` 기준). 새 앞 입력·초기화에서 해제한다. `commandButton`은 이 상태에서 RP만 `no_neutral` 실패로 기록하고 다른 버튼을 무시한다. `wscDir`도 N 이후에만 아래를 허용하고 연결 정규식에 N을 필수로 둔다. 중립 오류는 웨이브 수·기술 명중 점수·성공 업적을 올리지 않는다. WSC 과제는 취소하지 않고 같은 과제를 재시도한다. 무족초와 명시적 N/아래의 동일 시각 입력은 유지.
+- 설계/구현 경계: `MIST_EWGF.md` 8절, AGENTS 결정 27. 독립 `6N3+RP`, 같은 슬롯 성공 + 앞/N 각각 1칸일 때 최속. 실제 명중 프레임은 측정하지 않음.
+- `onDir/onButton`은 시각·기록·측정 기한 처리 후 `mistDir/mistButton`에 먼저 전달한다. 기존 본문은 `commandDir/commandButton`으로 분리. 독립 시작이 아닌 대시·웨이브·활성 WSC에서는 무족 후보를 만들지 않는다.
+- `mist{f,n,df,rp,slot,released,queue}`: 중립 다음 d 또는 f 중간 방향 한 번만 한 슬롯 보류해 마지막 세 버튼 순서를 흡수한다. 대각 전에 두 번째 단독 방향이 오면 큐를 재전달하고 일반 순서 검사를 적용한다(같은 슬롯의 6→2도 중립 누락). 같은 슬롯 df/RP로 끝나면 `mistFinish` → 기존 `classify/attempt`에 선택 input 문맥 전달. `completeCD` 미호출이므로 무족 자체로 웨이브·대시 점수는 없음. `released`는 대각 뒤 중립 도착 여부이며 RP보다 먼저 해제했으면 완료 후 다음 시작 앞을 막지 않는다.
+- RP 없이 보류 슬롯 종료 시 `mistReplay`가 원래 시각으로 기존 명령을 재전달한다. 짧은 ↓의 기존 WSC/웨이브/통발 보존. 직접 N→df는 대각 450ms, RP 선행 120ms(성공 폭 아님), 앞/N 각각 250ms. `mistTick`은 입력과 렌더 tick에서 처리하며 `trialTick`도 종료 판정 전에 호출해 종료 직전 입력의 점수 누락 방지.
+- 후보 타임아웃도 `mistTick`에서 보류 이벤트를 처리한 뒤 기존 `cd` 타임아웃에 넘긴다. 방향 없는 RP 대기는 원래 버튼 시각으로 `no_df` 한 번, 방향이 있는 큐는 버튼까지 원래 순서로 `mistReplay`에 전달한다. 큐를 단순 폐기하면 중립 250ms 직전의 유효한 ↓까지 사라진다.
+- `backdashMotion`은 실제 방향 입력마다 한 번 처리. 큐에서 재전달할 때 `commandDir(...,true)`로 중복 방지. `mistRelease`는 기술 종료 후 중립까지 방향 해제를 새 시작으로 인식하지 않도록 함. `clearCommand/resetInput`과 측정 종료에서 후보 정리.
+- 레코드 `inputRoute: standard|noNeutral|mist`; 무족만 `fFrames/nFrames/fastest`. kind/서버 payload/영구 저장 구조 유지. WSC는 기존 통계·업적 차단 정책 유지.
+- `renderSeg({mist:true,f,n,rp})`: 프레임 단위 세 칸, 기존 대시 범례 숨김. `mist.*`, `route.*` ko/en/ja 키, 접이식 연습 안내. 결과 kind도 키 배열을 허용하여 언어 전환 시 다시 번역. 로그는 경로와 기존 선행 웨이브 메모 함께 표시.
+- 검증: 단위 테스트의 mist 그룹 + `node tests/smoke-mist.js`(키보드 6순서/1P·2P/터치/다국어/화면 캡처), 기존 Chrome/WSC 스모크.
+
 ## 판정 상수 (경험값. 너무 엄격·느슨하면 여기부터)
 
 - 상태 타임아웃 250ms, d/f 유지 상태 450ms, d/f 뗀 뒤 캔슬 대기 120ms, pending 버튼 120ms, 체인 종료 700ms.

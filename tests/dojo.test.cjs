@@ -29,6 +29,237 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
 }
 function dash(a,t=1000){a.onDir('f',t);a.onDir('n',t+20);a.onDir('d',t+40);a.onDir('df',t+60);}
 const F=1000/60, fr=n=>Math.round(n*F); // backdash tests speak in frames
+function mistInput(a,{start=1000,f=1,n=1,rp=0,intermediate=null,rpFirst=false}={}){
+  const nt=start+f*F,df=nt+n*F,rt=df+rp;
+  a.onDir('f',start);a.onDir('n',nt);
+  if(rpFirst||rt<df)a.onButton(2,rt);
+  if(intermediate)a.onDir(intermediate,df-.1);
+  a.onDir('df',df);
+  if(!rpFirst&&rt>=df)a.onButton(2,rt);
+  return a.session.attempts.at(-1);
+}
+
+test('mist EWGF distinguishes fastest input, timing failures and missing forward/neutral frames',()=>{
+  for(const [f,n,rp,kind,fastest] of [[1,1,0,'ewgf',true],[3,2,0,'ewgf',false],[1,1,F,'wgf',false],[1,1,-F,'early',false],[0,1,0,'early_stage',false],[1,0,0,'early_stage',false]]){
+    const a=boot(),r=mistInput(a,{f,n,rp});
+    assert.equal(r.kind,kind);assert.equal(r.fastest,fastest);assert.equal(r.inputRoute,'mist');
+    assert.equal(r.fFrames,f);assert.equal(r.nFrames,n);assert.equal(r.frameOff,Math.round(rp/F));
+    assert.equal(a.session.tries,1);assert.equal(a.session.dashes,0);assert.equal(a.cd.chain,0);
+    assert.equal(a.store.life.dashes,0);assert.equal(a.session.hits,kind==='ewgf'?1:0);
+    if(f===0||n===0)assert.equal(a.get('rTitle').textContent,a.T('mist.missingFrame'));
+  }
+});
+
+test('mist uses shared slot boundaries and accepts either RP/diagonal event order',()=>{
+  const edge=62.5*F;
+  for(const [df,rp] of [[edge-.001,edge-.002],[edge,edge-.001],[edge-.001,edge],[edge,edge],[edge,edge+.001]]){
+    const a=boot();a.onDir('f',1000);a.onDir('n',1017);
+    if(rp<df){a.onButton(2,rp);a.onDir('df',df);}else{a.onDir('df',df);a.onButton(2,rp);}
+    const r=a.session.attempts[0],delta=a.frameSlot(rp)-a.frameSlot(df);
+    assert.equal(r.kind,delta===0?'ewgf':delta<0?'early':'wgf');assert.equal(r.frameOff,delta);
+  }
+  for(const middle of ['d','f',null])for(const rpFirst of [true,false]){
+    const a=boot();const r=mistInput(a,{intermediate:middle,rpFirst});
+    assert.equal(r.kind,'ewgf');assert.equal(r.fastest,true);assert.equal(a.session.tries,1);
+    assert.equal(a.session.dashes,0);assert.equal(a.wsc.active,null);assert.equal(a.anim.kind,'ewgf');
+    a.tick(1100);assert.equal(a.session.tries,1,'no replay after resolution');
+  }
+});
+
+test('mist staging cannot hide a forward/down reversal inside the final slot',()=>{
+  for(const directions of [['f','d'],['d','f']])for(const rpFirst of [false,true]){
+    const a=boot();a.onDir('f',1000);a.onDir('n',1017);
+    if(rpFirst)a.onButton(2,1032);
+    a.onDir(directions[0],1033);a.onDir(directions[1],1034);a.onDir('df',1035);
+    if(!rpFirst)a.onButton(2,1035);
+    a.tick(1100);
+    assert.equal(a.session.hits,0,JSON.stringify({directions,rpFirst}));
+    assert.equal(a.session.dashes,0);assert.equal(a.store.life.ewgf,0);
+    assert.equal(a.session.tries,1,'the RP is replayed only once');
+    if(directions[0]==='f'&&!rpFirst)assert.equal(a.session.attempts[0].kind,'no_neutral');
+    a.onDir('n',1200);mistInput(a,{start:1300});assert.equal(a.session.hits,1);
+  }
+});
+
+test('mist slot differences are not rounded elapsed intervals; zero-slot neutral cannot be promoted',()=>{
+  const a=boot();a.onDir('f',1008);a.onDir('n',1009);a.onDir('df',1026);a.onButton(2,1026);
+  assert.equal(a.session.attempts[0].fastest,true);assert.equal(a.session.attempts[0].fFrames,1);
+  const b=boot();b.onDir('f',1000);b.onDir('n',1026);b.onDir('df',1041);b.onButton(2,1041);
+  assert.equal(b.session.attempts[0].nFrames,0);assert.equal(b.session.hits,0);
+});
+
+test('unresolved same-slot directions replay the original wave, WSC or tongbal exactly once',()=>{
+  for(const mode of ['free','wsc']){
+    const a=boot();a.setMode(mode);a.onDir('f',1000);a.onDir('n',1017);a.onDir('d',1033);a.onDir('df',1034);
+    assert.equal(a.session.dashes,0);a.tick(1050);
+    assert.equal(a.session.dashes,mode==='free'?1:0);assert.equal(a.wsc.active.df,1034);
+    a.onDir('b',1034+7*F);a.onButton(2,1034+8*F);assert.equal(a.get('rTitle').textContent,a.T('wsc.success'));
+  }
+  const a=boot();a.onDir('f',1000);a.onDir('n',1017);a.onDir('f',1033);a.onButton(2,1033);a.tick(1050);
+  assert.equal(a.store.life.tongbal,1);assert.equal(a.session.tries,0);assert.equal(a.session.dashes,0);
+});
+
+test('mist candidate expiration, repetition and cancellation never leak a later success',()=>{
+  let a=boot();a.onDir('f',1000);a.onDir('n',1017);a.onButton(2,1033);a.tick(1154);
+  assert.equal(a.session.attempts[0].kind,'no_df');a.onDir('df',1155);assert.equal(a.session.tries,1);
+  a=boot();a.onDir('f',1000);a.onDir('n',1017);a.onDir('df',1033);a.tick(1484);a.onButton(2,1485);
+  assert.equal(a.session.attempts[0].kind,'no_cd');assert.equal(a.session.hits,0);
+  a=boot();mistInput(a);a.onButton(2,1034);assert.deepEqual(Array.from(a.session.attempts,r=>r.kind),['ewgf','no_cd']);
+  for(const cancel of [a=>a.resetInput(),a=>a.clearCommand(),a=>a.setMode('ewgf20'),a=>a.events.blur(),a=>a.get('setOpen').click()]){
+    a=boot();a.onDir('f',1000);a.onDir('n',1017);a.onButton(2,1032);a.onDir('d',1033);cancel(a);a.tick(1050);a.onDir('df',1060);
+    assert.equal(a.session.tries,0);assert.equal(a.session.dashes,0);
+  }
+  a=boot();a.onDir('f',1000);a.onDir('n',1017);a.onDir('df',1033);a.onButton(4,1033);a.tick(1600);
+  assert.equal(a.session.tries,0);assert.equal(a.store.life.hellsweep,0);
+});
+
+test('mist neutral timeout does not drop a staged down or a pending RP',()=>{
+  const a=boot();a.onDir('f',1000);a.onDir('n',1017);a.onDir('d',1265);
+  a.tick(1270);a.onDir('df',1285);a.onButton(2,1285);
+  assert.equal(a.session.dashes,1);assert.equal(a.session.hits,1);
+  assert.equal(a.session.attempts[0].inputRoute,'standard');
+  const b=boot();b.onDir('f',1000);b.onDir('n',1017);b.onButton(2,1260);
+  b.tick(1270);b.tick(1400);
+  assert.equal(b.session.tries,1);assert.equal(b.session.attempts[0].kind,'no_df');
+  assert.equal(b.session.attempts[0].t,1260,'retain the original button time');
+  const c=boot();c.onDir('f',1000);c.onDir('n',1017);c.onDir('d',1265);c.onButton(2,1266);
+  c.tick(1270);c.onDir('df',1271);
+  assert.equal(c.session.tries,1);assert.equal(c.session.hits,1,'replay staged down before its pending RP');
+  assert.equal(c.session.attempts[0].inputRoute,'standard');
+});
+
+test('mist release before RP does not swallow the next standalone command',()=>{
+  for(const intermediate of [null,'d']){
+    const a=boot();a.onDir('f',1000);a.onDir('n',1017);
+    if(intermediate)a.onDir(intermediate,1032);
+    a.onDir('df',1033);a.onDir('n',1034);a.onButton(2,1035);
+    assert.equal(a.session.hits,1);
+    mistInput(a,{start:1100});
+    assert.equal(a.session.hits,2);assert.equal(a.session.attempts[1].inputRoute,'mist');
+  }
+});
+
+test('mist never replaces real down holds, omitted-neutral inputs, dash EWGF or wave links',()=>{
+  const a=boot();dash(a);a.onButton(2,1060);assert.equal(a.session.attempts[0].inputRoute,'standard');
+  const b=boot();b.onDir('f',1000);b.onDir('d',1017);b.onDir('df',1033);b.onButton(2,1033);
+  assert.equal(b.session.attempts[0].inputRoute,'noNeutral');assert.equal(b.session.dashes,0);
+  assert.equal(b.session.attempts[0].kind,'no_neutral');assert.equal(b.session.hits,0);
+  const c=boot();c.onDir('f',1000);c.onDir('n',1017);c.onDir('f',1033);c.onDir('n',1050);c.onDir('df',1067);c.onButton(2,1067);
+  assert.equal(c.session.hits,0);assert.notEqual(c.session.attempts[0].inputRoute,'mist');
+  const d=boot();dash(d);d.onDir('f',1080);d.onDir('n',1100);d.onDir('f',1120);d.onDir('n',1140);d.onDir('df',1160);d.onButton(2,1160);
+  assert.equal(d.session.dashes,1);assert.equal(d.session.hits,0);
+});
+
+test('standard EWGF rejects omitted neutral in every mode and RP order without hit rewards',()=>{
+  for(const mode of ['free','wave10','ewgf20','combo10','rush30','bd10','wsc'])for(const offset of [-2,0,20]){
+    const a=boot();a.setMode(mode);
+    if(!['free','wsc'].includes(mode)){a.startTrial();const go=a.timers.get(a.trial.cdTimer);go();go();go();}
+    a.onDir('f',1100);a.onDir('d',1120);
+    if(offset<0)a.onButton(2,1140+offset);
+    a.onDir('df',1140);
+    if(offset>=0)a.onButton(2,1140+offset);
+    assert.equal(a.get('rTitle').textContent,a.T('a.no_neutral.title'));
+    assert.equal(a.session.hits,0);assert.equal(a.store.life.ewgf,0);assert.equal(a.store.life.tightEwgf,0);assert.equal(a.combo.n,0);
+    assert.equal(a.session.tries,mode==='wsc'?0:1);assert.equal(a.session.offsetCount,0);
+    if(mode==='wsc'){assert.equal(a.wsc.session.tries,0);assert.equal(a.wsc.challenge.status,'idle');}
+    else assert.equal(a.session.attempts[0].kind,'no_neutral');
+    if(mode==='ewgf20'||mode==='combo10')assert.equal(a.trial.count,1);
+    if(mode==='rush30'){assert.equal(a.trial.kills,0);assert.equal(a.trial.score,a.trial.dashPts);}
+    for(const lang of ['ko','en','ja']){a.setLang(lang);assert.equal(a.get('rTitle').textContent,a.T('a.no_neutral.title'));assert.equal(a.get('coachMsg').innerHTML,a.T('a.no_neutral.coach'));}
+  }
+});
+
+test('neutral provenance survives release/cancel and does not reject an explicit zero-duration neutral',()=>{
+  for(const release of ['n','f']){
+    const a=boot();a.onDir('f',1000);a.onDir('d',1020);a.onDir('df',1040);a.onDir(release,1041);a.onButton(2,1042);
+    assert.equal(a.session.attempts[0].kind,release==='f'?'early_stage':'no_neutral');
+    a.resetInput();a.onDir('f',1100);a.onDir('n',1120);a.onDir('d',1120);a.onDir('df',1140);a.onButton(2,1140);
+    assert.equal(a.session.attempts[1].kind,'ewgf');assert.equal(a.session.attempts[1].inputRoute,'standard');
+    a.onDir('n',1200);mistInput(a,{start:1300});assert.equal(a.session.attempts[2].inputRoute,'mist');assert.equal(a.session.hits,2);
+  }
+  const a=boot();a.onDir('f',1000);a.onDir('d',1020);a.onDir('df',1040);a.onButton(4,1040);
+  assert.equal(a.store.life.hellsweep,0,'omitted neutral cannot produce a Hellsweep');
+});
+
+test('623 earns no wave or Hellsweep credit and cannot seed or replace a WSC challenge prefix',()=>{
+  for(const mode of ['free','wave10','rush30','wsc'])for(const earlyButton of [false,true]){
+    const a=boot();a.setMode(mode);
+    if(mode==='wsc'){a.wscStartChallenge();a.time(4100);a.tick(4100);}
+    else if(mode!=='free'){a.startTrial();const go=a.timers.get(a.trial.cdTimer);go();go();go();}
+    const task=a.wsc.challenge.taskN;
+    a.onDir('f',4200);a.onDir('d',4220);
+    assert.equal(a.get('rTitle').textContent,a.T('fault.no_neutral.title'));
+    if(earlyButton)a.onButton(4,4230);
+    a.onDir('df',4240);if(!earlyButton)a.onButton(4,4240);
+    assert.equal(a.session.dashes,0);assert.equal(a.store.life.dashes,0);assert.equal(a.store.life.hellsweep,0);
+    assert.equal(a.wsc.active,null);
+    if(mode==='wave10'||mode==='rush30'){assert.equal(a.trial.score,0);assert.equal(a.trial.count,0);}
+    a.onDir('b',4240+7*F);a.onButton(2,4240+8*F);
+    assert.equal(a.wsc.session.tries,0);assert.equal(a.wsc.challenge.taskN,task);assert.equal(a.session.hits,0);
+    if(mode==='wsc')assert.equal(a.wsc.challenge.stats.tries,0);
+    a.onDir('n',4500);dash(a,4600);a.onButton(4,4660);
+    assert.equal(a.store.life.hellsweep,mode==='wsc'?0:1,'next complete command recovers without reset');
+  }
+  const a=boot();a.setMode('wsc');wscPrefix(a);
+  a.onDir('f',1080);a.onDir('n',1090);a.onDir('f',1100);a.onDir('d',1120);a.onDir('df',1140);
+  a.onDir('b',1140+7*F);a.onButton(2,1140+8*F);
+  assert.equal(a.wsc.active,null);assert.equal(a.wsc.session.tries,0,'invalid replacement cannot finish an older WSC');
+});
+
+test('mist uses existing trial scores without wave credits and does not consume WSC tasks',()=>{
+  for(const mode of ['wave10','ewgf20','combo10','rush30','bd10']){
+    const a=boot();a.setMode(mode);a.startTrial();const go=a.timers.get(a.trial.cdTimer);go();go();go();
+    const before=a.trial.count;mistInput(a,{start:4100});
+    assert.equal(a.session.dashes,0);assert.equal(a.store.life.dashes,0);
+    if(mode==='ewgf20'||mode==='combo10')assert.equal(a.trial.count,before+1);else assert.equal(a.trial.count,before);
+    if(mode==='rush30')assert.equal(a.trial.dashPts,0);
+    if(mode==='combo10')assert.notEqual(a.get('rTitle').textContent,'최속 무족초!');
+    if(mode==='bd10')assert.equal(a.trial.dist,0);
+  }
+  const a=boot();a.setMode('wsc');a.wscStartChallenge();a.time(4100);a.tick(4100);
+  const task=a.wsc.challenge.taskN;mistInput(a,{start:4200});
+  assert.equal(a.wsc.challenge.taskN,task);assert.equal(a.wsc.challenge.stats.tries,0);assert.equal(a.wsc.session.tries,0);
+  assert.equal(a.session.tries,0);assert.equal(a.store.life.ewgf,0);assert.equal(a.anim.kind,'ewgf');
+});
+
+test('mist result, log, coach and segments translate without losing timing or streak',()=>{
+  const a=boot();a.get('segBar').children=Array.from({length:5},()=>({style:{}}));mistInput(a,{f:3,n:2});
+  for(const lang of ['en','ja','ko']){
+    a.setLang(lang);assert.equal(a.get('rTitle').textContent,a.T('mist.title'));
+    assert.equal(a.get('rKind').textContent,a.T('route.mist'));assert.equal(a.get('rOff').textContent,a.T('mist.frames',3,2,0));
+    assert.equal(a.get('coachMsg').innerHTML,a.T('mist.improve',2,1));assert.equal(a.get('segTitle').textContent,a.T('mist.segTitle'));
+    assert.ok(a.get('logBody').innerHTML.includes(a.T('route.mist')));assert.equal(a.get('segBar').children[3].textContent,'');
+  }
+  a.onDir('n',1100);mistInput(a,{start:2000});assert.equal(a.combo.n,2);assert.equal(a.session.hits,2);
+});
+
+test('staged wave input before a trial deadline is counted, but input on the boundary is excluded',()=>{
+  for(const df of [10991,11000]){
+    const a=boot();a.setMode('wave10');a.startTrial();const go=a.timers.get(a.trial.cdTimer);go();go();go();
+    a.onDir('f',10940);a.onDir('n',10960);a.onDir('d',10990);a.onDir('df',df);a.trialTick(11010);
+    assert.equal(a.store.records.wave10[0].dashes,df<11000?1:0);
+  }
+});
+
+test('mist gamepad late RP retains its path and release order does not create a false dash',()=>{
+  const a=boot();
+  const sample=(t,indices)=>{a.time(t);a.pads([{index:0,id:'pad',mapping:'standard',axes:[0,0],timestamp:t,buttons:Array.from({length:16},(_,i)=>({pressed:indices.includes(i),value:0}))}]);a.pollPad();};
+  sample(1000,[15]);sample(1017,[]);sample(1034,[13,15]);sample(1050,[13,15,3]);
+  assert.equal(a.session.attempts[0].inputRoute,'mist');assert.equal(a.session.attempts[0].kind,'wgf');assert.equal(a.session.dashes,0);
+  sample(1051,[15]);sample(1052,[]);sample(1100,[15]);sample(1117,[]);sample(1134,[13,15,3]);
+  assert.equal(a.session.attempts[1].inputRoute,'mist');assert.equal(a.session.attempts[1].fastest,true);
+});
+
+test('staged directions reach backdash recovery immediately and replay without duplicate correction',()=>{
+  for(const intermediate of [false,true]){
+    const a=boot();a.bdRec.until=2000;
+    a.onDir('f',1000);a.onDir('n',1017);
+    if(intermediate)a.onDir('d',1033);
+    a.onDir('df',1034);assert.ok(a.bdRec.until<=1034);
+    a.onButton(2,1034);a.onDir('f',1035);a.onDir('n',1036);a.tick(1100);
+    assert.equal(a.session.dashes,0);assert.equal(a.session.hits,1);assert.equal(a.session.bd.dist,0);
+  }
+});
 function bdOut(a,t,tap=2,n=2){a.onDir('b',t);a.onDir('n',t+fr(tap));const o=t+fr(tap)+fr(n);a.onDir('b',o);return o;} // b,N,b → the backdash comes out at the returned time
 function bdSet(a,o,h,db=2,tap=2,n=2){const c=o+fr(h);a.onDir('db',c);a.onDir('b',c+fr(db));a.onDir('n',c+fr(db)+fr(tap));const o2=c+fr(db)+fr(tap)+fr(n);a.onDir('b',o2);return o2;} // cancel h frames after the backdash, roll into the next one
 
@@ -135,7 +366,7 @@ test('valid saved window choices survive the default change',()=>{
 test('EWGF compares absolute rounded 60Hz slots, independently of legacy window and render ticks',()=>{
   const slot=t=>Math.floor(t/F+0.5), edge=63.5*F;
   for(const window of [8,12,15]) for(const [df,rp] of [[1007,1009],[1000,1007],[edge-.001,edge],[edge,edge+.001],[edge,edge-.001],[1060,1056],[1060,1060],[1060,1070]]){
-    const a=boot({v:4,window});a.onDir('f',df-60);a.onDir('d',df-20);
+    const a=boot({v:4,window});a.onDir('f',df-60);a.onDir('n',df-40);a.onDir('d',df-20);
     if(rp<df){a.onButton(2,rp);a.onDir('df',df);}else{a.onDir('df',df);a.onButton(2,rp);}
     const expected=slot(rp)===slot(df)?'ewgf':slot(rp)<slot(df)?'early':'wgf';
     assert.equal(a.session.attempts.length,1);assert.equal(a.session.attempts[0].kind,expected,JSON.stringify({df,rp,window}));
@@ -717,6 +948,7 @@ test('EWGF streak counts consecutive successes, resets on failure, fault, 3s gap
 });
 test('f,N,f is a dash; the wave cancel 6 alone is not but cancel 6 → N → start 6 is a short dash without the Dash EWGF label; slow or broken pairs do nothing',()=>{
   let a=boot();a.onDir('f',1000);a.onDir('n',1020);a.onDir('f',1040);
+  a.tick(1050); // the final forward slot can also become the three-button mist diagonal
   assert.equal(a.anim.kind,'dash');assert.ok(a.anim.moveTo>a.anim.moveFrom);assert.equal(a.cd.dashT,1040);assert.equal(a.cd.dashWave,false);assert.equal(a.cd.state,1,'second f is still the start 6');
   a=boot();dash(a);a.onDir('f',1100);
   assert.equal(a.anim.kind,'cd','the cancel 6 alone is not a dash');assert.ok(a.cd.dashT<0);
@@ -1491,21 +1723,21 @@ test('WSC always evaluates the full command and only completed attempts enter th
 
 test('WSC permits neutral and one forward, rejects other directions, replaces only complete wave prefixes',()=>{
   for(const dirs of [[],['n'],['f'],['f','n']]) for(const release of [false,true]){
-    const a=boot();a.setMode('wsc');const df=wscPrefix(a,1000,false);
+    const a=boot();a.setMode('wsc');const df=wscPrefix(a,1000);
     dirs.forEach((d,i)=>a.onDir(d,df+20+i*20));a.onDir('b',df+8*F);if(release)a.onDir('n',df+8*F+2);a.onButton(2,df+9*F);assert.equal(a.wsc.last.ok,true,dirs+' / '+release);
   }
   for(const dirs of [['f','n','f'],['d'],['db'],['u'],['uf'],['ub'],['n','df']]){
     const a=boot();a.setMode('wsc');const df=wscPrefix(a);dirs.forEach((d,i)=>a.onDir(d,df+10+i*10));a.onDir('b',df+7*F);a.onButton(2,df+8*F);assert.equal(a.wsc.last.ok,false,dirs.join(','));
   }
   for(const d of ['f','df','d','db','u','ub','uf']){const a=boot();a.setMode('wsc');const df=wscPrefix(a);a.onDir('b',df+7*F);a.onDir(d,df+7*F+1);a.onButton(2,df+8*F);assert.equal(a.wsc.last.reason,'direction');}
-  const a=boot();a.setMode('wsc');wscPrefix(a);a.onDir('f',1080);a.onDir('n',1090);const df=wscPrefix(a,1100,false);a.onDir('b',df+9*F);a.onButton(2,df+12*F);
+  const a=boot();a.setMode('wsc');wscPrefix(a);a.onDir('f',1080);a.onDir('n',1090);const df=wscPrefix(a,1100);a.onDir('b',df+9*F);a.onButton(2,df+12*F);
   assert.equal(a.wsc.last.ok,true);assert.equal(a.wsc.last.df,df);assert.equal(a.wsc.session.tries,1);
   const b=boot();b.setMode('wsc');b.onDir('f',1000);b.onDir('df',1020);b.onButton(2,1100);assert.equal(b.wsc.session.tries,0);assert.equal(b.wsc.session.errors,1);
 });
-test('neutral omission works for regular wave chains without merging cancel and start forward',()=>{
+test('neutral omission never completes a wave or a linked wave',()=>{
   const a=boot();a.onDir('f',1000);a.onDir('d',1020);a.onDir('df',1040);
   a.onDir('f',1100);a.onDir('n',1120);a.onDir('f',1140);a.onDir('d',1160);a.onDir('df',1180);
-  assert.equal(a.session.dashes,2);assert.equal(a.cd.chain,2);assert.equal(a.cd.chainCycles[0].nGap,0);
+  assert.equal(a.session.dashes,0);assert.equal(a.cd.chain,0);assert.equal(a.store.life.dashes,0);
 });
 test('WSC translated results, touch/keyboard/pad input paths, side mirroring and no repeated held RP',()=>{
   for(const side of [1,-1]){
@@ -1528,7 +1760,7 @@ test('WSC translated results, touch/keyboard/pad input paths, side mirroring and
 test('WSC deadlines are independent of 60/120Hz ticks; hidden tabs cancel and a new full command replaces an unfinished RP',()=>{
   for(const hz of [60,120]){
     const a=boot();a.setMode('wsc');
-    const events=[[1000,()=>a.onDir('f',1000)],[1020,()=>a.onDir('d',1020)],[1030,()=>a.onDir('df',1030)],
+    const events=[[1000,()=>a.onDir('f',1000)],[1010,()=>a.onDir('n',1010)],[1020,()=>a.onDir('d',1020)],[1030,()=>a.onDir('df',1030)],
       [1030+8*F,()=>a.onDir('b',1030+8*F)],[1030+10*F,()=>a.onButton(2,1030+10*F)]];
     for(let t=1000;t<1300;t+=1000/hz) events.push([t,()=>a.tick(t)]);
     events.sort((x,y)=>x[0]-y[0]).forEach(x=>x[1]());assert.equal(a.wsc.last.ok,true);assert.equal(a.wsc.last.b,2);
@@ -1542,7 +1774,7 @@ function wscTaskRun(a,waves,B=1,t=7000){
   let df=wscPrefix(a,t);
   for(let n=1;n<waves;n++){
     a.onDir('f',df+20);a.onDir('n',df+30);
-    df=wscPrefix(a,df+50,n%2===0);
+    df=wscPrefix(a,df+50);
   }
   a.onDir('b',df+7*F);a.onButton(2,df+(7+B)*F);return a.wsc.last;
 }

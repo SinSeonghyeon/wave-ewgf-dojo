@@ -96,7 +96,8 @@ for(const name of ['donate-kakao.png','favicon.png','sfx-wave.mp3','sfx-ewgf.mp3
     const t=performance.now(),key=(code,dt,up=false)=>{const e=new KeyboardEvent(up?'keyup':'keydown',{code,bubbles:true});Object.defineProperty(e,'timeStamp',{value:t+dt});dispatchEvent(e);};
     key('KeyD',0);key('KeyD',10,true);
     if('${move}'!=='tongbal')key('KeyS',20);
-    key('KeyD',30);key('${move}'==='hellsweep'?'KeyK':'KeyI',30);key('${move}'==='hellsweep'?'KeyK':'KeyI',31,true);key('KeyD',32,true);key('KeyS',32,true);
+    // Keep d on its own frame: a zero-frame d followed by same-frame RP is now a mist input.
+    key('KeyD',50);key('${move}'==='hellsweep'?'KeyK':'KeyI',50);key('${move}'==='hellsweep'?'KeyK':'KeyI',51,true);key('KeyD',52,true);key('KeyS',52,true);
     return document.querySelector('#rTitle').textContent;
    })()`);
    assert.match(result,move==='ewgf'?/초풍/:move==='hellsweep'?/나락/:/통발/);
