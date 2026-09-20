@@ -1,11 +1,14 @@
 <!doctype html>
 <!-- 미시마 도장 (Mishima Dojo) © 2026 신성현 (Seonghyeon Shin). All rights reserved. Not open source: see LICENSE in the repository. Copying, modifying or re-hosting is not permitted. -->
 <html lang="ko">
+<head>
 <meta charset="utf-8">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8394509799881324" crossorigin="anonymous"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>미시마 도장 | 철권 초풍·웨이브 대시 연습 (Mishima Dojo EWGF Trainer)</title>
-<meta name="description" content="철권 미시마류 초풍(EWGF)·웨이브 대시(6N23) 입력을 브라우저에서 프레임 단위로 판정하는 무료 연습 도구. 키보드·게임패드 지원, 60Hz 동일 프레임 판정, 타이밍 히스토그램과 측정 모드. Free Tekken EWGF trainer & wave dash practice tool with frame-accurate input judging.">
+<meta name="description" content="설치 없이 즐기는 무료 철권 초풍·웨이브 연습 사이트, 미시마 도장. 브라우저에서 입력 타이밍과 실패 원인을 확인하고 최고 기록에 도전하세요. 키보드·게임패드 지원.">
 <meta name="robots" content="index,follow">
+<link rel="icon" type="image/png" sizes="1254x1254" href="favicon.png">
 <meta name="theme-color" content="#141311">
 <link rel="canonical" href="https://mishimaryu.com/">
 <link rel="alternate" hreflang="ko" href="https://mishimaryu.com/">
@@ -15,7 +18,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="미시마 도장 · Mishima Dojo">
 <meta property="og:title" content="미시마 도장 | 철권 초풍·웨이브 대시 연습 (Mishima Dojo EWGF Trainer)">
-<meta property="og:description" content="철권 초풍·웨이브 대시 입력을 브라우저에서 프레임 단위로 판정하는 무료 연습 도구. Free Tekken EWGF trainer & wave dash practice tool.">
+<meta property="og:description" content="설치 없이 즐기는 무료 철권 초풍·웨이브 연습 사이트, 미시마 도장. 브라우저에서 입력 타이밍과 실패 원인을 확인하고 최고 기록에 도전하세요. 키보드·게임패드 지원.">
 <meta property="og:url" content="https://mishimaryu.com/">
 <meta property="og:image" content="https://mishimaryu.com/og.png">
 <meta property="og:image:width" content="1200">
@@ -25,7 +28,7 @@
 <meta property="og:locale:alternate" content="en_US">
 <meta property="og:locale:alternate" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"미시마 도장 (Mishima Dojo)","alternateName":["Mishima Dojo","三島道場","Mishima Dojo EWGF Trainer"],"url":"https://mishimaryu.com/","image":"https://mishimaryu.com/og.png","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","browserRequirements":"Requires JavaScript","inLanguage":["ko","en","ja"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"철권 미시마류 초풍(EWGF)·웨이브 대시(6N23) 입력을 브라우저에서 프레임 단위로 판정하는 무료 연습 도구. 키보드·게임패드 지원, 60Hz 동일 프레임 판정, 타이밍 히스토그램과 측정 모드. Free Tekken EWGF trainer & wave dash practice tool with frame-accurate input judging.","keywords":"Tekken, EWGF, Electric Wind God Fist, wave dash, Mishima, 철권, 초풍, 웨이브, 鉄拳, 最速風神拳, 風神ステップ"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"미시마 도장 (Mishima Dojo)","alternateName":["Mishima Dojo","三島道場","Mishima Dojo EWGF Trainer"],"url":"https://mishimaryu.com/","image":"https://mishimaryu.com/og.png","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","browserRequirements":"Requires JavaScript","inLanguage":["ko","en","ja"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"설치 없이 즐기는 무료 철권 초풍·웨이브 연습 사이트, 미시마 도장. 브라우저에서 입력 타이밍과 실패 원인을 확인하고 최고 기록에 도전하세요. 키보드·게임패드 지원.","keywords":"Tekken, EWGF, Electric Wind God Fist, wave dash, Mishima, 철권, 초풍, 웨이브, 鉄拳, 最速風神拳, 風神ステップ"}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Brush+Script&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Dela+Gothic+One&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
@@ -45,6 +48,7 @@
     --brand:'Nanum Brush Script','Black Han Sans',serif;
     --body:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
     --mono:'JetBrains Mono','Cascadia Mono',Consolas,monospace;
+    --scene-height:clamp(465px,52vh,510px);
     color-scheme:dark;
   }
   *{box-sizing:border-box}
@@ -413,6 +417,9 @@
   .top-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-left:auto} /* stays on the right when it wraps to its own row */
   .notice-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;height:45px;padding:0 11px;border:1px solid var(--line2);border-radius:4px;background:transparent;color:var(--ink2);cursor:pointer}
   .notice-btn:hover,.notice-btn:focus-visible{color:var(--accent);border-color:var(--accent)}
+  .youtube-btn{text-decoration:none;font:inherit}
+  .youtube-btn svg{color:var(--red)}
+  @media(max-width:750px){.youtube-btn .youtube-label{display:none}}
   .notice-new{position:absolute;right:-5px;top:-8px;padding:1px 5px;border-radius:999px;background:var(--red);color:#fff;font-family:var(--mono);font-size:8px;font-weight:700;line-height:15px;letter-spacing:.4px;box-shadow:0 0 0 2px var(--bg)}
   .bgm-btn{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:45px;height:45px;padding:0;border:1px solid var(--line2);border-radius:4px;background:transparent;color:var(--accent);cursor:pointer}
   .bgm-btn[aria-pressed="false"]{color:var(--muted)}
@@ -524,7 +531,7 @@
   /* Compact 2D practice foreground over a shared 3D room camera. */
   body{padding-top:16px}.top{gap:10px 24px}.brand h1{font-size:46px}.brand p{max-width:370px;font-size:10px}.brand .kanji{width:28px;height:30px;font-size:22px}
   .top .modes button{padding-top:11px;padding-bottom:11px}
-  .stage,body.wsc-mode .stage{height:clamp(300px,40vh,390px);aspect-ratio:auto}
+  .stage,body.wsc-mode .stage{height:var(--scene-height);aspect-ratio:auto}
   #stageBack[hidden]{display:none}
   #stageBack{position:absolute;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none}
   #stage{position:relative;z-index:0}
@@ -533,9 +540,9 @@
   .stage .result .r-off{font-size:11px;margin-top:5px}.hud-chain span{font-size:26px}
   .coach>.stats{padding:16px 0}.stat b{font-size:clamp(24px,2.1vw,30px);margin-bottom:6px}
   .coach-box{padding-top:13px;padding-bottom:13px}.section-links{padding-top:14px;padding-bottom:14px}.card{padding-top:18px;padding-bottom:18px}.chart svg{max-height:185px}
-  @media(max-width:650px){.brand h1{font-size:40px}.brand p{font-size:9px}.top{gap:8px}.top-right{gap:4px}.stage,body.wsc-mode .stage{height:300px}.stage .result{top:61px;right:12px;width:53%}.input-ledger{left:8px;top:54px;width:92px}.inputs{max-height:150px}.chip{min-height:25px}.chip .g{font-size:15px}.stat b{font-size:25px}}
-  html.touch-ui .stage,html.touch-ui.wsc-mode .stage{height:auto;aspect-ratio:4/5;max-height:72vh}
-  @media(orientation:landscape){html.touch-ui .stage{aspect-ratio:16/9}}
+  @media(max-width:650px){.brand h1{font-size:40px}.brand p{font-size:9px}.top{gap:8px}.top-right{gap:4px}.stage,body.wsc-mode .stage{height:360px}.stage .result{top:61px;right:12px;width:53%}.input-ledger{left:8px;top:54px;width:92px}.inputs{max-height:150px}.chip{min-height:25px}.chip .g{font-size:15px}.stat b{font-size:25px}}
+  html.touch-ui .stage,html.touch-ui.wsc-mode .stage{height:auto;aspect-ratio:2/3;max-height:78vh}
+  @media(orientation:landscape){html.touch-ui .stage,html.touch-ui.wsc-mode .stage{aspect-ratio:16/9;max-height:72vh}}
 
 
   /* One stage layout in every mode; the community stays beside play. */
@@ -552,22 +559,22 @@
   .wsc-timeline{padding-left:4px}.wsc-timeline+.wsc-panel{border-left:1px solid var(--line)}
   .wsc-axis{min-width:640px}.wsc-result{font-size:20px}.wsc-panel h2{font-size:15px;color:var(--ink2)}
   .wsc-ab{margin:12px 0}.wsc-panel .note{font-size:11px}
-  .posts-card{display:flex;flex-direction:column;grid-column:2;grid-row:1;height:clamp(355px,46vh,445px);padding:18px 20px 12px;margin:0;border:0;border-left:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel);min-width:0}
+  .posts-card{display:flex;flex-direction:column;grid-column:2;grid-row:1;height:calc(var(--scene-height) + 55px);padding:12px 16px 10px;margin:0;border:0;border-left:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel);min-width:0}
   .posts-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
   .posts-heading h2{font-size:17px;margin:0;letter-spacing:-.5px}.posts-heading .btn{font-size:10px;padding:5px 8px;background:none;border-color:var(--line)}
-  .posts-card .sub{font-size:10px;line-height:1.6;color:var(--muted);margin:8px 0 12px}
-  .posts-card .posts{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line2) transparent;padding-right:5px}
-  .posts-card .post{padding:12px 0}.posts-card .post:first-child{padding-top:3px}.posts-card .post>b{font-size:12px;color:var(--ink2)}
-  .posts-card .post time{font-size:9px}.posts-card .post p{font-size:12px;line-height:1.7;margin:6px 0 9px;overflow-wrap:anywhere}
-  .posts-card .post-actions{opacity:.85}.posts-card .post .vote,.posts-card .post .reply-open{font-size:10px;padding:3px 7px;border-color:var(--line);background:none}
-  .posts-card .reply-list{margin-left:8px;padding-left:10px}.posts-card .reply p{font-size:11px}
-  .posts-card .posts-form{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);gap:7px}
-  .posts-card .post-nick{width:100%;font-size:10px;color:var(--muted)}
+  .posts-card .sub{font-size:10px;line-height:1.5;color:var(--muted);margin:4px 0 6px}
+  .posts-card .posts{flex:1;min-height:0;gap:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line2) transparent;padding-right:5px}
+  .posts-card .post{flex-shrink:0;padding:3px 0;font-size:12px;line-height:1.25}.posts-card .post:first-child{padding-top:3px}.posts-card .post>b{font-size:12px;color:var(--ink2)}
+  .posts-card .post time{font-size:9px}.posts-card .post p{font-size:12px;line-height:1.4;margin:2px 0;overflow-wrap:anywhere}
+  .posts-card .post-actions{opacity:.85;gap:5px}.posts-card .post-votes{margin-top:0;gap:5px}.posts-card .post .vote,.posts-card .post .reply-open{font-size:10px;padding:3px 7px;border-color:var(--line);background:none}
+  .posts-card .reply-list{margin:5px 0 0 8px;padding-left:8px}.posts-card .reply{padding:4px 0}.posts-card .reply p{font-size:11px;margin:2px 0 0}
+  .posts-card .posts-form{margin:6px 0 0;padding-top:6px;border-top:1px solid var(--line);gap:5px}
+  .posts-card .post-nick{width:auto;max-width:90px;white-space:normal;overflow-wrap:anywhere;font-size:10px;line-height:1.3;color:var(--muted)}
   .posts-card .posts-form input.text{flex:1;min-width:0;width:0;font-size:12px;border-radius:2px;padding:8px}
   .posts-card .posts-form .btn{font-size:11px;padding:8px 10px}.posts-card .card-msg{font-size:11px;margin-top:5px}
   @media(min-width:1100px){body.has-community .main{grid-template-columns:minmax(0,1fr) 330px}}
-  @media(max-width:1099px){.posts-card{grid-column:1;grid-row:2;height:360px;border-left:0}.has-community .main>.coach{grid-row:3}}
-  @media(max-width:750px){body.wsc-mode .coach{grid-template-columns:minmax(0,1fr)}.wsc-timeline+.wsc-panel{border-left:0;border-top:1px solid var(--line)}.wsc-panel{padding:16px 4px}.posts-card{padding:16px}.stage-actions{top:46px;max-width:65%}.stage-actions .btn{min-height:30px;font-size:11px;padding:5px 12px}.stage .result,html.touch-ui .stage .result{top:94px}.hud-timer{top:50px;font-size:14px}.input-ledger,html.touch-ui .input-ledger{top:89px}.inputs,html.touch-ui .inputs{max-height:125px}}
+  @media(max-width:1099px){.posts-card{grid-column:1;grid-row:2;height:520px;border-left:0}.has-community .main>.coach{grid-row:3}}
+  @media(max-width:750px){body.wsc-mode .coach{grid-template-columns:minmax(0,1fr)}.wsc-timeline+.wsc-panel{border-left:0;border-top:1px solid var(--line)}.wsc-panel{padding:16px 4px}.posts-card{padding:12px}.stage-actions{top:46px;max-width:65%}.stage-actions .btn{min-height:30px;font-size:11px;padding:5px 12px}.stage .result,html.touch-ui .stage .result{top:94px}.hud-timer{top:50px;font-size:14px}.input-ledger,html.touch-ui .input-ledger{top:89px}.inputs,html.touch-ui .inputs{max-height:125px}}
 
 
   /* Use the full free vertical lane, with all 40 retained inputs available by scrolling. */
@@ -602,6 +609,7 @@
   body.wsc-mode .records{display:grid}
   body.wsc-mode .records>.card:not(#boardCard){display:none}
 </style>
+</head>
 
 
 <div class="wrap">
@@ -624,6 +632,7 @@
     </nav>
     <div class="top-right">
       <button class="notice-btn" id="noticeOpen" type="button" data-i18n-aria="notice.open" data-i18n-title="notice.open" aria-label="공지사항 열기"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span data-i18n="notice.button">공지</span><span class="notice-new" id="noticeBadge" data-i18n="notice.new">NEW</span></button>
+      <a class="notice-btn youtube-btn" id="youtubeLink" href="https://www.youtube.com/@master_shin" target="_blank" rel="noopener noreferrer" data-i18n-aria="youtube.open" data-i18n-title="youtube.open" aria-label="제작자 YouTube 채널 열기 (새 탭)"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 4h14a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4Zm5 4v8l7-4-7-4Z"/></svg><span class="youtube-label" data-i18n="youtube.button">YouTube</span></a>
       <div class="bgm-player" role="group" data-i18n-aria="bgm.player">
       <button class="bgm-btn" id="bgmBtn" type="button" aria-pressed="true" data-i18n-aria="bgm.aria" data-i18n-title="bgm.aria" aria-label="배경음 켜기/끄기"><svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4 6 8H3v8h3l5 4z"/><g class="on"><path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/></g><g class="off"><path d="m16 9 6 6m0-6-6 6"/></g></svg></button>
         <button id="bgmPlay" type="button"><span aria-hidden="true">Ⅱ</span></button>
@@ -1024,6 +1033,7 @@ function setFit(slot, id){ if(!ITEMS[slot] || !ITEMS[slot][id] || !owned(id)) re
 // Newest first. For each patch, add one entry and the matching notice.<id> strings to all three I18N dictionaries.
 // The latest id is the read marker saved in this browser; no backend or deployment-time request is involved.
 const NOTICES = [
+  {id:'2026-09-19-dojo', date:'2026-09-19', kind:'notice.kind.update', title:'notice.20260919.title', summary:'notice.20260919.summary', items:['notice.20260919.1','notice.20260919.2','notice.20260919.3','notice.20260919.4','notice.20260919.5','notice.20260919.6']},
   {id:'2026-09-15-notices', date:'2026-09-15', kind:'notice.kind.update', title:'notice.20260915.title', summary:'notice.20260915.summary', items:['notice.20260915.1','notice.20260915.2','notice.20260915.3','notice.20260915.4','notice.20260915.5']},
 ];
 const NOTICE_LATEST = NOTICES[0]?.id || '';
@@ -1111,7 +1121,16 @@ const I18N = {
 ko:{
   'app.title':'미시마 도장',
   'app.tagline':'미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정',
+  'youtube.button':'YouTube', 'youtube.open':'제작자 YouTube 채널 열기 (새 탭)',
   'notice.button':'공지', 'notice.open':'공지사항 열기', 'notice.new':'NEW', 'notice.title':'공지사항', 'notice.sub':'미시마 도장의 업데이트와 패치 노트입니다.', 'notice.kind.update':'업데이트',
+  "notice.20260919.title":"새 도장과 웨캔기어 도전 순위",
+  "notice.20260919.summary":"연습 화면과 입력 안내를 정리하고 웨캔기어 도전 순위와 음악 조작을 추가했습니다.",
+  "notice.20260919.1":"3D 도장, 왼쪽 입력 기록, 플레이 아래 타이밍 분석과 넓은 화면의 오른쪽 한마디를 확인할 수 있습니다.",
+  "notice.20260919.2":"웨캔기어의 A/B 타이밍을 연습하고 랜덤 과제 10회 완주 기록을 성공 횟수·최고 연속 성공으로 겨룰 수 있습니다.",
+  "notice.20260919.3":"초풍은 공통 60Hz의 같은 프레임 입력으로 판정합니다. 판정 폭 설정을 없앴고 선행 중립을 생략한 623도 지원합니다.",
+  "notice.20260919.4":"기술별 효과음·피격 연출과 랜덤 BGM, 일시정지·다음 곡 조작을 추가했습니다.",
+  "notice.20260919.5":"모바일 방향 버튼은 새 100% 기준에서 좁은 화면에 자동으로 맞춰지며, 70~300%로 조절할 수 있습니다.",
+  "notice.20260919.6":"더미 격파는 올바른 기술 10점, 저스트를 놓친 풍신권의 상단 격파 5점입니다. 웨이브는 최대 3점입니다.",
   'notice.20260915.title':'9월 15일 기능 업데이트', 'notice.20260915.summary':'모바일 조작과 키 설정, 한마디·순위 기능을 다듬고 앱 안 공지를 추가했습니다.',
   'notice.20260915.1':'화면 위쪽의 종 버튼에서 업데이트 내용을 확인할 수 있으며, 읽지 않은 공지에는 NEW가 표시됩니다.',
   'notice.20260915.2':'모바일 방향 입력을 ←·↓·→ 독립 버튼으로 바꾸고, 대각선 동시 입력과 크기·위치 저장을 지원합니다.',
@@ -1315,6 +1334,7 @@ ko:{
   'card.hist':'버튼 타이밍 분포 (d/f 기준, 프레임)', 'card.wave':'웨이브 속도 (대시/초)', 'card.noData':'아직 기록이 없습니다',
   'card.tweet':(name,summary,win)=>'미시마 도장 · '+name+' · '+summary+' · 판정 '+win+' #철권 #초풍 #TEKKEN',
   'app.docTitle':'미시마 도장 | 철권 초풍·웨이브 대시 연습',
+  'app.description':"설치 없이 즐기는 무료 철권 초풍·웨이브 연습 사이트, 미시마 도장. 브라우저에서 입력 타이밍과 실패 원인을 확인하고 최고 기록에 도전하세요. 키보드·게임패드 지원.",
   'og.chipWave':'웨이브', 'og.chipEwgf':'초풍', 'og.altNames':'Mishima Dojo · 三島道場',
   'og.line1':'철권 초풍·웨이브 대시 연습', 'og.line2':'브라우저에서 프레임 단위로 판정',
   'og.keywords':'EWGF trainer · wave dash practice · 무료 · 키보드 / 게임패드',
@@ -1392,7 +1412,16 @@ ko:{
 en:{
   'app.title':'Mishima Dojo',
   'app.tagline':'Mishima-style input trainer · Judges 6N23 6 N 6N23 … wave dashes and 6N23+2 EWGF frame by frame',
+  'youtube.button':'YouTube', 'youtube.open':"Open the creator's YouTube channel (new tab)",
   'notice.button':'News', 'notice.open':'Open announcements', 'notice.new':'NEW', 'notice.title':'Announcements', 'notice.sub':'Updates and patch notes for Mishima Dojo.', 'notice.kind.update':'Update',
+  "notice.20260919.title":"A new dojo and wave-cancel uppercut rankings",
+  "notice.20260919.summary":"Updated the practice layout and input feedback, and added challenge rankings and music controls.",
+  "notice.20260919.1":"Explore the 3D dojo, input history on the left, timing analysis below, and the shoutbox on the right on wide screens.",
+  "notice.20260919.2":"Practice A/B timing and rank your completed 10-task wave-cancel uppercut challenges by successes and best streak.",
+  "notice.20260919.3":"EWGF requires inputs in the same frame of a shared 60Hz grid. The timing-window setting is removed, and 623 without the initial neutral is supported.",
+  "notice.20260919.4":"Added move sounds, impact effects, random BGM playback, pause, and next-track controls.",
+  "notice.20260919.5":"Mobile direction buttons auto-fit narrow screens at the new 100% baseline and can be adjusted from 70% to 300%.",
+  "notice.20260919.6":"Dummy Rush awards 10 points for the correct move, 5 for a non-just WGF against a high dummy, and up to 3 for waves.",
   'notice.20260915.title':'September 15 feature update', 'notice.20260915.summary':'We improved mobile controls, key settings, the shoutbox and leaderboards, and added in-app announcements.',
   'notice.20260915.1':'Check updates from the bell button at the top of the screen. A NEW badge marks unread announcements.',
   'notice.20260915.2':'Mobile directions now use separate ←, ↓ and → buttons, with diagonal presses and saved size and position settings.',
@@ -1594,6 +1623,7 @@ en:{
   'card.hist':'Button timing (frames from d/f)', 'card.wave':'Wave speed (dashes/s)', 'card.noData':'No data yet',
   'card.tweet':(name,summary,win)=>'Mishima Dojo · '+name+' · '+summary+' · window '+win+' #TEKKEN #EWGF',
   'app.docTitle':'Mishima Dojo | Tekken EWGF & Wave Dash Trainer',
+  'app.description':"Practice Tekken EWGF and wave dashes for free in your browser. Check your input timing and improve your personal best. Keyboard and gamepad support. No installation needed.",
   'og.chipWave':'wave', 'og.chipEwgf':'EWGF', 'og.altNames':'미시마 도장 · 三島道場',
   'og.line1':'Tekken EWGF & wave dash practice', 'og.line2':'Frame-accurate judging in your browser',
   'og.keywords':'EWGF trainer · wave dash practice · free · keyboard / gamepad',
@@ -1671,7 +1701,16 @@ en:{
 ja:{
   'app.title':'三島道場',
   'app.tagline':'三島流入力トレーナー · 6N23 6 N 6N23 … のウェーブと 6N23+2 の最風をフレーム単位で判定',
+  'youtube.button':'YouTube', 'youtube.open':'制作者のYouTubeチャンネルを開く（新しいタブ）',
   'notice.button':'お知らせ', 'notice.open':'お知らせを開く', 'notice.new':'NEW', 'notice.title':'お知らせ', 'notice.sub':'三島道場のアップデートとパッチノートです。', 'notice.kind.update':'アップデート',
+  "notice.20260919.title":"新しい道場とキャンセルアッパーランキング",
+  "notice.20260919.summary":"練習画面と入力案内を整理し、チャレンジランキングと音楽操作を追加しました。",
+  "notice.20260919.1":"3D道場、左側の入力履歴、プレイ下のタイミング分析、広い画面で右側に表示されるひとことを確認できます。",
+  "notice.20260919.2":"A/Bのタイミングを練習し、ランダム課題10回の完走記録を成功数・最高連続成功で競えます。",
+  "notice.20260919.3":"最風は共通60Hzの同じフレーム入力で判定します。判定幅の設定を廃止し、最初のニュートラルを省略した623にも対応しました。",
+  "notice.20260919.4":"技ごとの効果音・ヒット演出と、BGMのランダム再生・一時停止・次の曲の操作を追加しました。",
+  "notice.20260919.5":"モバイル方向ボタンは新しい100%基準で狭い画面に自動調整され、70～300%に変更できます。",
+  "notice.20260919.6":"ダミー撃破は正しい技で10点、ジャストを外した風神拳で上段を撃破すると5点、ウェーブは最大3点です。",
   'notice.20260915.title':'9月15日 機能アップデート', 'notice.20260915.summary':'モバイル操作とキー設定、ひとこと・ランキング機能を改善し、アプリ内のお知らせを追加しました。',
   'notice.20260915.1':'画面上部のベルボタンから更新内容を確認でき、未読のお知らせにはNEWが表示されます。',
   'notice.20260915.2':'モバイルの方向入力を←・↓・→の独立ボタンに変更し、斜め同時押しと大きさ・位置の保存に対応しました。',
@@ -1873,6 +1912,7 @@ ja:{
   'card.hist':'ボタンタイミング分布 (3基準、フレーム)', 'card.wave':'ウェーブ速度 (ダッシュ/秒)', 'card.noData':'まだ記録がありません',
   'card.tweet':(name,summary,win)=>'三島道場 · '+name+' · '+summary+' · 判定 '+win+' #鉄拳 #最風 #TEKKEN',
   'app.docTitle':'三島道場 | 鉄拳 最風・ウェーブ練習ツール',
+  'app.description':"鉄拳の最速風神拳（最風）と風神ステップ（ウェーブ）を無料で練習できる三島道場。ブラウザで入力タイミングや失敗の原因を確認し、自己ベストに挑戦。キーボード・ゲームパッド対応、インストール不要。",
   'og.chipWave':'ウェーブ', 'og.chipEwgf':'最風', 'og.altNames':'미시마 도장 · Mishima Dojo',
   'og.line1':'鉄拳 最風・ウェーブ練習', 'og.line2':'ブラウザでフレーム単位に判定',
   'og.keywords':'EWGF trainer · wave dash practice · 無料 · キーボード / ゲームパッド',
@@ -1959,14 +1999,16 @@ const displayFont = () => store.lang==='ja' ? '"Dela Gothic One", "Noto Sans JP"
 
 /* ---------- sound (local audio assets). Nothing is created until the first user gesture, so the unit-test vm and og generation never touch media. ---------- */
 const SND = { wave:'sfx-wave.mp3', ewgf:'sfx-ewgf.mp3', wsc:'sfx-wsc.mp3', hellsweep:'sfx-hellsweep.mp3', tongbal:'sfx-tongbal.mp3', hit:'sfx-hit.mp3', backdash:'sfx-backdash.mp3' };
-const BGM_TRACKS=["bgm/TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3","bgm/Tekken 6 Soundtrack High Rollers Club.mp3","bgm/Tekken 7 OST  Mishima DOJO.mp3","bgm/bgm.mp3"]; // Generated local fallback: node tools/update-bgm.js
-const BGM_GAIN={"bgm/TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3":0.356862,"bgm/Tekken 6 Soundtrack High Rollers Club.mp3":0.271331,"bgm/Tekken 7 OST  Mishima DOJO.mp3":0.277332,"bgm/bgm.mp3":1}; // Generated loudness gains: node tools/measure-bgm.js
+const BGM_TRACKS=["bgm/TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3","bgm/TEKKEN 7 鉄拳7 Infinite Azure - Round 1 (Moonsiders 1st).mp3","bgm/Tekken 6 Soundtrack High Rollers Club.mp3","bgm/Tekken 7 OST  Mishima DOJO.mp3","bgm/bgm.mp3"]; // Generated local fallback: node tools/update-bgm.js
+const BGM_GAIN={"bgm/TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3":0.356862,"bgm/TEKKEN 7 鉄拳7 Infinite Azure - Round 1 (Moonsiders 1st).mp3":0.356451,"bgm/Tekken 6 Soundtrack High Rollers Club.mp3":0.271331,"bgm/Tekken 7 OST  Mishima DOJO.mp3":0.277332,"bgm/bgm.mp3":1}; // Generated loudness gains: node tools/measure-bgm.js
 const bgmVolume = () => store.bgmVol/100*(BGM_GAIN[BGM_TRACKS[snd.track]]??1);
 function bgmApplyTracks(tracks){
   if(!Array.isArray(tracks)||!tracks.every(p=>typeof p==='string'&&/^bgm\/[^/\\]+\.mp3$/i.test(p)))return false;
-  const current=BGM_TRACKS[snd.track];
-  BGM_TRACKS.splice(0,BGM_TRACKS.length,...new Set(tracks));
+  const current=BGM_TRACKS[snd.track], unique=[...new Set(tracks)];
+  const changed=unique.length!==BGM_TRACKS.length||unique.some(p=>!BGM_TRACKS.includes(p));
+  BGM_TRACKS.splice(0,BGM_TRACKS.length,...unique);
   snd.track=BGM_TRACKS.indexOf(current);
+  if(changed)snd.queue=bgmShuffle(BGM_TRACKS.filter(p=>p!==current));
   if(snd.track<0&&snd.bgm){snd.bgm.pause();snd.bgm.onended=null;snd.bgm=null;}
   renderBgmPlayer();bgmSync();return true;
 }
@@ -1980,7 +2022,7 @@ const SFX_GAIN = {tongbal:0.8,wsc:0.8};
 // Decoded MP3: the cleaned hit transient begins at 120ms; skip its quiet lead-in, not the visual contact.
 const SFX_START = {hit:0.12};
 const sfxVolume = name => (store.sound?store.sfxVol/100:0)*(SFX_GAIN[name]??1);
-const snd = { ok: typeof Audio!=='undefined', unlocked:false, catalogReady:true, bgm:null, track:-1, paused:false, pool:{}, idx:{}, lock:null, release:null };
+const snd = { ok: typeof Audio!=='undefined', unlocked:false, catalogReady:true, bgm:null, track:-1, queue:[], paused:false, pool:{}, idx:{}, lock:null, release:null };
 function mkAudio(src, loop){ const a = new Audio(); a.preload='auto'; a.loop=!!loop; a.src=src; return a; }
 function sfxPool(name){ return snd.pool[name] || (snd.pool[name] = [0,1,2].map(() => mkAudio(SND[name], false))); } // 3 voices so a fast wave can overlap
 function playSfx(name){
@@ -1995,11 +2037,19 @@ function sfxSync(){
     if(!store.sound || store.sfxVol<=0){ a.pause(); try{ a.currentTime=0; }catch(e){} }
   }
 }
-function bgmPick(previous,random=Math.random()){
-  const count=BGM_TRACKS.length, valid=Number.isInteger(previous)&&previous>=0&&previous<count;
-  if(count<2)return count-1;
-  const n=Math.min((valid?count-1:count)-1,Math.floor(random*(valid?count-1:count)));
-  return valid&&n>=previous?n+1:n;
+function bgmShuffle(tracks){
+  const queue=[...tracks];
+  for(let i=queue.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[queue[i],queue[j]]=[queue[j],queue[i]];}
+  return queue;
+}
+function bgmPick(previous){
+  if(!snd.queue.length)snd.queue=bgmShuffle(BGM_TRACKS);
+  // Only a fresh round can start with the previous track. Swap its first entry.
+  if(snd.queue.length===BGM_TRACKS.length&&snd.queue.length>1&&snd.queue[0]===BGM_TRACKS[previous]){
+    const j=1+Math.floor(Math.random()*(snd.queue.length-1));
+    [snd.queue[0],snd.queue[j]]=[snd.queue[j],snd.queue[0]];
+  }
+  return BGM_TRACKS.indexOf(snd.queue.shift());
 }
 function bgmSelect(){
   snd.track=bgmPick(snd.track<0?BGM_TRACKS.indexOf(store.bgmLast):snd.track);
@@ -3566,7 +3616,7 @@ $('fitReset').addEventListener('click', () => { for(const s of SLOTS) store.fit[
 ['setDlg','donateDlg','fitDlg'].forEach(id => $(id).addEventListener('close', () => setTimeout(renderRewards, 0))); // refresh claiming availability (#shareDlg/#nickDlg: their own close handlers)
 
 const BOARDS = [...TRIAL_MODES,'wsc']; // classic trials plus the separate completed WSC challenge; matches worker and tabs
-const board = { tab:'wave10', data:{}, msg:'', seq:0, deleting:false, submitting:false, loadAfterDelete:false, submitQueue:[] }; // queued writes own their result/payload/identity; changing the visible mode cannot replace them
+const board = { tab:'wave10', data:{}, msg:'', seq:0, rev:{}, loads:new Map(), deleting:false, submitting:false, loadAfterDelete:false, submitQueue:[] }; // queued writes own their result/payload/identity; changing the visible mode cannot replace them
 const live = { visits:null, posts:null, postsMsg:'', postsLoading:false, posting:false, voting:false, replying:false, postsSeq:0, replyTo:0, replyText:'', visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // post mutations share one busy gate; postsSeq keeps an older list load from replacing a newer response
 // nickLater: the gate offers "practise without ranking" after the server itself failed · nickLost: a 403 arrived while the result card was up
 const TIERS = [1, 10, 20, 50, 70]; // upper bounds of "top N%" for grades SS S A B C (tier 0..4); anything above is D (tier 5). Titles: tier.N.title, comments: tier.N.<mode>
@@ -3632,6 +3682,9 @@ async function claimNick(n){
 }
 function lostNick(){ // server no longer recognises our token
   store.nick = ''; store.nickToken = ''; store.votes = {}; save(); renderNick(); renderPosts();
+  ++board.seq; // pending reads belong to the expired identity; release their UI immediately
+  if(board.msg && board.msg[0]==='board.loading') setBoardMsg('');
+  renderBoard();
   if($('shareDlg').open || trial.openTimer) live.nickLost = true; else openNick('nick.expired'); // the result card is up or about to open: ask after it closes instead of stacking modals
 }
 $('nickForm').addEventListener('submit', ev => {
@@ -3657,11 +3710,12 @@ async function boardFetch(path, init){
   if(!res.ok || !j) throw new Error(quota ? 'quota' : (j && j.error) || ('http '+res.status));
   return j;
 }
+const boardLoadKey = () => JSON.stringify([board.tab,hasNick()?store.nick:'',hasNick()?store.nickToken:'',board.rev[board.tab]||0]);
 function renderBoard(){
   if(!BOARD_URL) return;
   const t = board.tab, d = board.data[t], me = hasNick() && d && d.me && nickKey(d.me.nick)===nickKey(store.nick) ? d.me : null;
   document.querySelectorAll('#boardTabs button').forEach(b => { b.setAttribute('aria-pressed', b.dataset.board===t?'true':'false'); b.disabled=board.deleting; });
-  $('boardRefresh').disabled = board.deleting;
+  $('boardRefresh').disabled = board.deleting || board.loads.has(boardLoadKey());
   $('boardInfo').textContent = d && d.total ? T('board.total', d.total) : '';
   $('boardMe').textContent = !d ? '' : me ? T('board.me', me.rank, d.total, pctTop(me.rank, d.total)) : T('board.meNone');
   $('boardMsg').textContent = msg(board.msg);
@@ -3675,10 +3729,17 @@ function renderBoard(){
 async function boardLoad(){
   if(!BOARD_URL) return;
   if(board.deleting){ board.loadAfterDelete = true; renderBoard(); return; }
-  const t = board.tab, seq = ++board.seq; setBoardMsg(['board.loading']); renderBoard();
-  let d = null;
-  try{ d = await boardFetch('/top?board='+t+(hasNick() ? '&nick='+encodeURIComponent(store.nick) : '')); } catch(e){} // an unclaimed name may belong to someone else
-  if(seq!==board.seq) return; // superseded by a newer load or a submit: drop this response entirely
+  const t = board.tab, seq = ++board.seq, key = boardLoadKey();
+  // Share only in-flight reads. Completed reads are never cached; identity/revision changes get a fresh request.
+  let pending = board.loads.get(key);
+  if(!pending){
+    pending = boardFetch('/top?board='+t+(hasNick() ? '&nick='+encodeURIComponent(store.nick) : ''))
+      .catch(()=>null).finally(()=>{ board.loads.delete(key); });
+    board.loads.set(key,pending);
+  }
+  setBoardMsg(['board.loading']); renderBoard();
+  const d = await pending;
+  if(seq!==board.seq || key!==boardLoadKey()) return; // key includes identity/revision; only the latest consumer renders the shared response
   if(d){ boardSet(t, d); setBoardMsg(''); if(t==='wave10') renderWave(); } else setBoardMsg(['board.loadFail']); // wave10 carries cut10: the chart's top band follows it
   renderBoard();
 }
@@ -3686,7 +3747,7 @@ async function boardDelete(){
   const t = board.tab, d = board.data[t];
   if(!BOARD_URL || board.deleting || board.submitting || !hasNick() || !d || !d.me || nickKey(d.me.nick)!==nickKey(store.nick)) return;
   if(typeof confirm==='function' && !confirm(T('board.deleteConfirm'))) return;
-  const nick = store.nick, token = store.nickToken; board.deleting = true; ++board.seq; setBoardMsg(['board.deleting']); renderBoard();
+  const nick = store.nick, token = store.nickToken; board.deleting = true; ++board.seq; board.rev[t]=(board.rev[t]||0)+1; setBoardMsg(['board.deleting']); renderBoard();
   try{
     const res = await boardFetch('/score', {method:'DELETE', body:JSON.stringify({board:t, nick, token})});
     if(nick===store.nick && token===store.nickToken){ boardSet(t, res); if(t==='wave10') renderWave(); if(board.tab===t) setBoardMsg(['board.deleted']); }
@@ -3736,7 +3797,10 @@ async function boardDrain(){
       r.submit={state:'done',rank:res.rank,total:res.total,improved:res.improved};
       if(sameIdentity()){
         boardSet(e.board,res); if(e.board==='wave10') renderWave();
-        if(board.tab===tab0){ board.seq++; board.tab=e.board; setBoardMsg(''); }
+        // Invalidate only loads for this board. A request for another visible
+        // tab may still complete and should not be discarded.
+        board.rev[e.board]=(board.rev[e.board]||0)+1;
+        if(board.tab===tab0){ board.tab=e.board; setBoardMsg(''); }
       }
     }catch(err){ r.submit={state:'fail',error:err.message}; if(err.message==='auth'&&sameIdentity()) lostNick(); }
     finally{ board.submitting=false; }
@@ -3801,16 +3865,17 @@ function renderPosts(){
 async function postVote(id, v){
   if(!BOARD_URL || postsMutating() || !Number.isInteger(id) || ![1,-1].includes(v)) return;
   if(!hasNick()) return openNick();
-  const want = (store.votes[id]||0)===v ? 0 : v, nick = store.nick; // the answer is only ours while the nickname is still the one that voted (boardSubmit has the same guard)
+  const want = (store.votes[id]||0)===v ? 0 : v, nick = store.nick, token = store.nickToken;
+  const sameIdentity = () => nick===store.nick && token===store.nickToken;
   live.voting = true; const seq = ++live.postsSeq; renderPosts();
   try{
-    const r = await boardFetch('/vote', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, id, v:want})});
+    const r = await boardFetch('/vote', {method:'POST', body:JSON.stringify({nick, token, id, v:want})});
     if(seq===live.postsSeq) setPosts(r.rows);
-    if(nickKey(store.nick)===nickKey(nick)){ if(r.mine) store.votes[id] = r.mine; else delete store.votes[id]; save(); }
+    if(sameIdentity()){ if(r.mine) store.votes[id] = r.mine; else delete store.votes[id]; save(); }
     if(live.postsMsg && /^posts\.vote/.test(live.postsMsg[0])) setPostsMsg('');
   }catch(err){
     setPostsMsg([err.message==='rate' ? 'posts.voteFast' : 'posts.voteFail']);
-    if(err.message==='auth') lostNick();
+    if(err.message==='auth' && sameIdentity()) lostNick();
     if(err.message==='post'){ delete store.votes[id]; save(); live.voting = false; return postsLoad(); } // the post was deleted meanwhile: refresh the list (renders)
   }
   live.voting = false; renderPosts();
@@ -3825,16 +3890,17 @@ $('postList').addEventListener('input', ev => { if(ev.target.closest && ev.targe
 async function replySend(id, raw){
   if(!BOARD_URL || postsMutating() || !Number.isInteger(id)) return;
   if(!hasNick()) return openNick();
-  const nick = store.nick, text = String(raw||'').replace(/\s+/g,' ').trim();
+  const nick = store.nick, token = store.nickToken, sameIdentity = () => nick===store.nick && token===store.nickToken;
+  const text = String(raw||'').replace(/\s+/g,' ').trim();
   if(!text || [...text].length>200) return setPostsMsg(['posts.textBad']);
   live.replying = true; const seq = ++live.postsSeq; live.replyText = text; setPostsMsg(['posts.replying']); renderPosts();
   try{
-    const rows = (await boardFetch('/reply', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, id, text})})).rows;
+    const rows = (await boardFetch('/reply', {method:'POST', body:JSON.stringify({nick, token, id, text})})).rows;
     if(seq===live.postsSeq) setPosts(rows);
     live.replyTo = 0; live.replyText = ''; setPostsMsg('');
   }catch(err){
     setPostsMsg([err.message==='rate' ? 'posts.tooFast' : err.message==='text' ? 'posts.textBad' : 'posts.replyFail']);
-    if(err.message==='auth') lostNick();
+    if(err.message==='auth' && sameIdentity()) lostNick();
     if(err.message==='post'){ live.replyTo = 0; live.replyText = ''; live.replying = false; return postsLoad(); }
   }
   live.replying = false; renderPosts();
@@ -3843,11 +3909,12 @@ $('postList').addEventListener('submit', ev => { const f = ev.target.closest && 
 async function postSend(){
   if(!BOARD_URL || postsMutating()) return;
   if(!hasNick()) return openNick();
-  const nick = store.nick, text = $('postText').value.replace(/\s+/g,' ').trim();
+  const nick = store.nick, token = store.nickToken, sameIdentity = () => nick===store.nick && token===store.nickToken;
+  const text = $('postText').value.replace(/\s+/g,' ').trim();
   if(!text || [...text].length>200) return setPostsMsg(['posts.textBad']);
   live.posting = true; const seq = ++live.postsSeq; setPostsMsg(['posts.sending']); renderPosts();
-  try{ const rows = (await boardFetch('/posts', {method:'POST', body:JSON.stringify({nick, token:store.nickToken, text})})).rows; if(seq===live.postsSeq) setPosts(rows); $('postText').value = ''; setPostsMsg(''); }
-  catch(err){ setPostsMsg([err.message==='rate' ? 'posts.tooFast' : err.message==='text' ? 'posts.textBad' : 'posts.sendFail']); if(err.message==='auth') lostNick(); }
+  try{ const rows = (await boardFetch('/posts', {method:'POST', body:JSON.stringify({nick, token, text})})).rows; if(seq===live.postsSeq) setPosts(rows); $('postText').value = ''; setPostsMsg(''); }
+  catch(err){ setPostsMsg([err.message==='rate' ? 'posts.tooFast' : err.message==='text' ? 'posts.textBad' : 'posts.sendFail']); if(err.message==='auth' && sameIdentity()) lostNick(); }
   live.posting = false; renderPosts();
 }
 $('postForm').addEventListener('submit', ev => { ev.preventDefault(); postSend(); });
@@ -3867,6 +3934,7 @@ function applyStatic(){
   renderBgmPlayer();
   if(document.documentElement) document.documentElement.lang = store.lang;
   document.title = T('app.docTitle');
+  document.querySelectorAll('meta[name="description"], meta[property="og:description"]').forEach(el => { el.content = T('app.description'); });
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = T(el.dataset.i18nHtml); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = T(el.dataset.i18nTitle); });

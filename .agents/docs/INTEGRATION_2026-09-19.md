@@ -1,5 +1,58 @@
 # workspace00 통합 검증 — 2026-09-19
 
+## 배포 승인·준비 기록
+
+사용자가 0번의 main 합류·배포와 아래 최신 6항목 공지의 그대로 적용을 승인했다. `index.html`에 `2026-09-19-dojo`와 ko/en/ja 24개 키를 추가했고 이전 공지는 유지했다. 임시 handoff 6개는 main 합류 준비 단계에서 삭제했다. 아래 각 통합 단계의 ‘미승인·미반영·인수인계 유지’는 당시 이력이며 현재 상태는 이 절을 따른다.
+
+공지 적용 후 최종 단위 150/150 및 Chrome 스모크(errors=[]) 통과. 로컬 main 미커밋 12개 파일의 SHA-256 보존 확인.
+
+Worker는 2026-09-19 07:11 UTC에 버전 `85358e89-efc1-4994-9d20-db8a61799049`로 배포 완료(100% 트래픽). `/`, `/top?board=wsc`, `/top?board=wave10`, `/posts`, `/visits` 200 및 사이트 Origin 허용 확인. D1 Insights 전후 조회 완료, 스키마·데이터 마이그레이션 없음.
+
+`D:/dojo`의 로컬 main에는 기존 미커밋 파일 12개가 있어 작업 폴더와 branch ref를 변경하지 않는다. workspace00의 검증된 커밋을 원격 main에 일반 fast-forward push로 게시한다. 이후 로컬 main을 갱신할 때는 사용자가 기존 변경부터 정리해야 하며 reset/stash로 지우지 않는다. 3번 워크트리의 영상 작업도 제외한다. 정확한 게시 커밋·Pages 빌드·실사이트 검증 결과는 최종 배포 보고를 따른다.
+
+## 후속 통합: workspace05
+
+아래 최초 1·2번 통합 기록 이후 추가된 변경이다. 배포 요구와 공지 제안은 이 절이 최신이며, 최초 기록의 ‘Worker 배포 없음’은 1·2번 변경에만 해당한다.
+
+- 시작: workspace00 `0b927e4`, 대상: workspace05 `8efb8d4b718c30e9ef10d053cb4fed2ee5c0609d`. fetch 후 로컬·원격 tip 일치, 양쪽 작업 트리 깨끗함 확인. 3번 미커밋 영상 작업은 제외.
+- 변경: 도장 화면·WebGL 배경·입력 기록, WSC 10회 전용 순위, 4곡 폴더 BGM·일시정지·다음 곡·음량 보정. 1번 검색 설명·favicon 보존.
+- 충돌: index/en/ja의 head는 기존 favicon과 새 theme-color `#141311`을 결합. Chrome/WSC 스모크는 favicon·효과음 복사와 bgm 폴더 복사를 함께 유지. PLAN은 양쪽 이력 보존. 디자인 스모크에도 favicon 복사 추가.
+- 병합 커밋은 검증 후 생성하며 ID는 최종 보고와 `git log`에서 확인. main 합류·푸시·원격 Worker/D1/Pages 변경은 실행하지 않는다. 인수인계는 모두 유지한다.
+- 배포 순서: 통합 검증 → 사용자가 `worker/`에서 `npx wrangler deploy` → WSC API 확인 → 최종 공지·통합 결과 승인 → 인수인계 정리 및 승인된 main 합류·푸시 → Pages/Jekyll과 `bgm/playlist.json`, WSC 순위 확인. D1 마이그레이션·새 비밀값 없음. `.nojekyll` 추가 금지(폴더 목록이 Jekyll을 사용).
+- 검증: 단위 150/150, Chrome·WSC·소리·디자인 스모크 모두 종료 코드 0. 브라우저 errors=[], 30개 화면 조합·WebGL 유실/복구·폴백·로컬 Worker WSC 등록/삭제·BGM 재생/게인/전환 통과. 1440px 자유 연습·390px WSC 캡처 육안 확인. 충돌 마커·diff 검사 통과. 실서버 배포와 직접 청취 검증을 수행한 것으로 간주하지 않는다.
+
+### 배포 묶음 공지 제안 — 이전 초안을 대체, 미승인·앱 미반영
+
+ko — **새 도장과 웨캔기어 도전 순위**
+
+연습 화면과 입력 안내를 정리하고 웨캔기어 도전 순위와 음악 조작을 추가했습니다.
+1. 3D 도장, 왼쪽 입력 기록, 플레이 아래 타이밍 분석과 넓은 화면의 오른쪽 한마디를 확인할 수 있습니다.
+2. 웨캔기어의 A/B 타이밍을 연습하고 랜덤 과제 10회 완주 기록을 성공 횟수·최고 연속 성공으로 겨룰 수 있습니다.
+3. 초풍은 공통 60Hz의 같은 프레임 입력으로 판정합니다. 판정 폭 설정을 없앴고 선행 중립을 생략한 623도 지원합니다.
+4. 기술별 효과음·피격 연출과 랜덤 BGM, 일시정지·다음 곡 조작을 추가했습니다.
+5. 모바일 방향 버튼은 새 100% 기준에서 좁은 화면에 자동으로 맞춰지며, 70~300%로 조절할 수 있습니다.
+6. 더미 격파는 올바른 기술 10점, 저스트를 놓친 풍신권의 상단 격파 5점입니다. 웨이브는 최대 3점입니다.
+
+en — **A new dojo and wave-cancel uppercut rankings**
+
+Updated the practice layout and input feedback, and added challenge rankings and music controls.
+1. Explore the 3D dojo, input history on the left, timing analysis below, and the shoutbox on the right on wide screens.
+2. Practice A/B timing and rank your completed 10-task wave-cancel uppercut challenges by successes and best streak.
+3. EWGF requires inputs in the same frame of a shared 60Hz grid. The timing-window setting is removed, and 623 without the initial neutral is supported.
+4. Added move sounds, impact effects, random BGM playback, pause, and next-track controls.
+5. Mobile direction buttons auto-fit narrow screens at the new 100% baseline and can be adjusted from 70% to 300%.
+6. Dummy Rush awards 10 points for the correct move, 5 for a non-just WGF against a high dummy, and up to 3 for waves.
+
+ja — **新しい道場とキャンセルアッパーランキング**
+
+練習画面と入力案内を整理し、チャレンジランキングと音楽操作を追加しました。
+1. 3D道場、左側の入力履歴、プレイ下のタイミング分析、広い画面で右側に表示されるひとことを確認できます。
+2. A/Bのタイミングを練習し、ランダム課題10回の完走記録を成功数・最高連続成功で競えます。
+3. 最風は共通60Hzの同じフレーム入力で判定します。判定幅の設定を廃止し、最初のニュートラルを省略した623にも対応しました。
+4. 技ごとの効果音・ヒット演出と、BGMのランダム再生・一時停止・次の曲の操作を追加しました。
+5. モバイル方向ボタンは新しい100%基準で狭い画面に自動調整され、70～300%に変更できます。
+6. ダミー撃破は正しい技で10点、ジャストを外した風神拳で上段を撃破すると5点、ウェーブは最大3点です。
+
 ## 범위와 상태
 
 - 대상: `SinSeonghyeon/workspace00`, 시작 HEAD `96f1e9023c0e5d805cb231c8f1aad7d7dd5ee7e9`.

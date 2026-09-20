@@ -43,7 +43,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html'), returningPage = path.join(dir,'returning.html');
   const scratchSrc = src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`);
   fs.writeFileSync(page, scratchSrc); fs.writeFileSync(returningPage, scratchSrc.replace(`{id:'${latestNoticeId}'`, `{id:'${returningNoticeId}'`));
-  for(const f of ['sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3','donate-kakao.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
+  for(const f of ['sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3','donate-kakao.png','favicon.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
   fs.cpSync(path.join(path.join(__dirname,'..'),'bgm'),path.join(dir,'bgm'),{recursive:true});
   // Isolate each run: a concurrent worktree's Chrome may already own the old fixed port/profile.
   const probe=http.createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));
@@ -222,6 +222,10 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   for(const l of ['en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);
     out[l] = await snap();
+    const landing=fs.readFileSync(path.join(__dirname,'..',l==='ko'?'index.html':l+'/index.html'),'utf8');
+    const expectedDescription=landing.match(/<meta name="description" content="([^"]*)"/)[1];
+    out[l].descriptions=await evalJs(`({meta:document.querySelector('meta[name="description"]').content,og:document.querySelector('meta[property="og:description"]').content})`);
+    if(out[l].descriptions.meta!==expectedDescription || out[l].descriptions.og!==expectedDescription) errors.push('localized description mismatch: '+l+' '+JSON.stringify(out[l].descriptions));
     if(out[l].bgmTitle!==({ko:'배경음 켜기/끄기',en:'BGM on/off',ja:'BGMのオン/オフ'})[l]) errors.push('BGM tooltip translation failed: '+l);
     out[l].stored = await evalJs(`JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).lang`);
   }
@@ -325,7 +329,12 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
       key('KeyS',t+40,true);key('KeyD',t+50,true);key('KeyA',t+30+7*F);key('KeyI',t+30+8*F);key('KeyI',t+31+8*F,true);key('KeyA',t+32+8*F,true);
     })()`);
   }
-  await waitFor(`document.querySelector('#boardTabs [data-board="wsc"]').getAttribute('aria-pressed')==='true' && /1위/.test(document.querySelector('#dRank').textContent)`);
+  try{
+    await waitFor(`document.querySelector('#boardTabs [data-board="wsc"]').getAttribute('aria-pressed')==='true' && /1위/.test(document.querySelector('#dRank').textContent)`);
+  }catch(err){
+    const state=await evalJs(`({status:document.querySelector('#wscChallengeStatus').textContent,task:document.querySelector('#wscTask').textContent,rank:document.querySelector('#dRank').textContent,board:document.querySelector('#boardMsg').textContent,tab:document.querySelector('#boardTabs [aria-pressed="true"]')?.dataset.board,dialogs:[...document.querySelectorAll('dialog[open]')].map(d=>d.id)})`);
+    throw new Error(err.message+'; WSC state='+JSON.stringify(state)+'; rows='+JSON.stringify(db.rows.filter(r=>r.board==='wsc')));
+  }
   out.wscBoard=await evalJs(`({status:document.querySelector('#wscChallengeStatus').textContent,rank:document.querySelector('#dRank').textContent,row:document.querySelector('#boardList .me').textContent,shown:getComputedStyle(document.querySelector('.records')).display})`);
   if(!/10\/10/.test(out.wscBoard.status)||!/10 \/ 10/.test(out.wscBoard.row)||!/최고 10연속/.test(out.wscBoard.row)||out.wscBoard.shown==='none')errors.push('WSC challenge board failed: '+JSON.stringify(out.wscBoard));
   const wscRow=db.rows.find(r=>r.board==='wsc');if(!wscRow||wscRow.score!==10||wscRow.tie!==10)errors.push('WSC persisted score mismatch');

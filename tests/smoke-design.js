@@ -9,7 +9,7 @@ const source=fs.readFileSync(path.join(root,'index.html'),'utf8')
   .replace(/\}\)\(\);\s*<\/script>/,'window.designTest={session,wsc,world,store,onDir,onButton,historyRows,dojo3d,roomCamera,roomProject,ROOM,roomAtlas,live,renderPosts,drawFighter,poseAt,anim,get scale(){return stageScale;}};})();</script>');
 const noticeId=source.match(/const NOTICES = \[\s*\{id:'([^']+)'/)[1];
 fs.writeFileSync(path.join(out,'index.html'),source);
-for(const file of ['donate-kakao.png','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-tongbal.mp3','sfx-hellsweep.mp3','sfx-hit.mp3','sfx-backdash.mp3'])fs.copyFileSync(path.join(root,file),path.join(out,file));
+for(const file of ['favicon.png','donate-kakao.png','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-tongbal.mp3','sfx-hellsweep.mp3','sfx-hit.mp3','sfx-backdash.mp3'])fs.copyFileSync(path.join(root,file),path.join(out,file));
   fs.cpSync(path.join(root,'bgm'),path.join(out,'bgm'),{recursive:true});
 (async()=>{
  const b=await launch({port:9357,profile:'dojo-design-smoke',windowSize:'1440,1000'});
@@ -19,11 +19,12 @@ for(const file of ['donate-kakao.png','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3
   assert.equal(await b.evalJs('designTest.dojo3d && designTest.dojo3d.ready'),true,'native WebGL dojo initializes');
   assert.equal(await b.evalJs('designTest.roomAtlas.complete && designTest.roomAtlas.naturalWidth>0'),true,'embedded material atlas decodes');
   // Local fixture only: no publishing or backend calls. Exercise the visible community layout.
-  await b.evalJs(`(()=>{const a=designTest;document.body.classList.add('has-community');document.querySelector('#postsCard').hidden=false;a.live.posts=[{id:1,nick:'도장 수련생',text:'오늘 처음으로 웨이브가 이어졌어요. 꾸준히 연습해봅니다!',created_at:Date.now(),likes:3,dislikes:0,replies:[]},{id:2,nick:'새벽 연습',text:'뒤 입력 타이밍을 조금 늦추니 웨캔기어가 되네요.',created_at:Date.now(),likes:2,dislikes:0,replies:[]}];a.renderPosts();document.querySelector('#postNickLabel').textContent='도장 수련생';})()`);
+  await b.evalJs(`(()=>{const a=designTest;document.body.classList.add('has-community');document.querySelector('#postsCard').hidden=false;a.live.posts=[{id:1,nick:'도장 수련생',text:'오늘 처음으로 웨이브가 이어졌어요. 꾸준히 연습해봅니다!',created_at:Date.now(),likes:3,dislikes:0,replies:[]},{id:2,nick:'새벽 연습',text:'뒤 입력 타이밍을 조금 늦추니 웨캔기어가 되네요.',created_at:Date.now(),likes:2,dislikes:0,replies:[]}];a.live.posts.push(...Array.from({length:6},(_,i)=>({id:i+3,nick:'수련생'+i,text:'오늘도 초풍 연습하고 갑니다!',created_at:Date.now(),up:0,down:0,replies:[]})));a.renderPosts();document.querySelector('#postNickLabel').textContent='도장 수련생';})()`);
   assert.equal(await b.evalJs(`document.querySelector('#dReset')`),null);
-  assert.equal(await b.evalJs(`document.querySelectorAll('#postList .post').length`),2);
+  assert.equal(await b.evalJs(`document.querySelectorAll('#postList .post').length`),8);
+  assert.ok(await b.evalJs(`(()=>{const r=document.querySelector('#postList').getBoundingClientRect();return [...document.querySelectorAll('#postList .post')].filter(e=>{const p=e.getBoundingClientRect();return p.top>=r.top-1&&p.bottom<=r.bottom+1;}).length>=5;})()`),'at least five short posts fit beside the taller scene');
   const bounds=()=>b.evalJs(`(()=>{const r=s=>document.querySelector(s).getBoundingClientRect().toJSON();return {width:innerWidth,scroll:document.documentElement.scrollWidth,stage:r('#stageBox'),ledger:r('.input-ledger'),result:r('#resultCard'),stats:r('.stats'),canvas:r('#stage')};})()`);
-  const first=await bounds();assert.ok(first.stage.height<=390,'compact desktop stage');assert.ok(await b.evalJs('designTest.scale<=1.15'),'smaller 2D fighter');assert.ok(first.stats.top>=first.stage.bottom,'statistics below stage');
+  const first=await bounds();assert.ok(first.stage.height>=465 && first.stage.height<=510,'taller desktop stage');assert.ok(await b.evalJs('designTest.scale<=1.15'),'smaller 2D fighter');assert.ok(first.stats.top>=first.stage.bottom,'statistics below stage');
   const before=await b.evalJs('({x:designTest.world.charX,cam:designTest.world.camX})');
   for(let i=0;i<8;i++){
    await b.evalJs(`(()=>{const t=performance.now();for(const [d,dt] of [['f',0],['n',20],['d',40],['df',60],['f',80],['n',100]])designTest.onDir(d,t+dt);})()`);await sleep(150);
@@ -106,6 +107,6 @@ for(const file of ['donate-kakao.png','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3
   await b.send('Page.addScriptToEvaluateOnNewDocument',{source:`const nativeContext=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...args){return kind==='webgl'?null:nativeContext.call(this,kind,...args);};`});
   await b.navigate(fileUrl(path.join(out,'index.html')));
   assert.equal(await b.evalJs(`document.querySelector('#stageBox').dataset.renderer`),'canvas','no-WebGL browser stays usable');
-  assert.deepEqual(b.errors,[]);console.log('PASS: WebGL/materials, compact stage, camera/2D alignment, fixed ledger; 30 responsive combinations; context loss/restore and no-WebGL fallback; errors=[]');
+  assert.deepEqual(b.errors,[]);console.log('PASS: WebGL/materials, taller stage and five visible posts, camera/2D alignment, fixed ledger; 30 responsive combinations; context loss/restore and no-WebGL fallback; errors=[]');
  }finally{b.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

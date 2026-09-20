@@ -4,8 +4,8 @@
 
 - 이 폴더 바로 안의 `.mp3` / `.MP3` 파일만 사용합니다. 하위 폴더는 제외합니다.
 - 파일명이 곡 제목으로 표시됩니다. 공백·한글·일본어를 지원합니다. 파일명 첫 글자에 `.`, `_`, `#`는 쓰지 마세요(GitHub Pages 제외 규칙).
-- 두 곡 이상이면 직전 곡을 제외해 랜덤 선택합니다. 한 곡이면 반복하고, 빈 폴더면 BGM만 멈춥니다.
-- 현재 목록: `bgm.mp3`, `Tekken 6 Soundtrack High Rollers Club.mp3`, `TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3`, `Tekken 7 OST  Mishima DOJO.mp3`.
+- 접속할 때 전체 목록을 섞어 순서대로 재생하며, 한 바퀴 안에서는 곡이 중복되지 않습니다. 다음 곡 버튼도 같은 순서를 따릅니다. 전곡 재생 후 다시 섞고 직전 곡과 연속되지 않게 하며, 재접속 첫 곡도 직전 곡을 피합니다. 한 곡이면 반복하고, 빈 폴더면 BGM만 멈춥니다.
+- 현재 목록: `bgm.mp3`, `Tekken 6 Soundtrack High Rollers Club.mp3`, `TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3`, `Tekken 7 OST  Mishima DOJO.mp3`, `TEKKEN 7 鉄拳7 Infinite Azure - Round 1 (Moonsiders 1st).mp3`.
 
 로컬에서 `index.html`을 직접 열거나 일반 정적 서버로 미리 볼 때는 파일을 추가·삭제한 뒤 루트에서 한 번 실행하세요:
 
@@ -27,6 +27,7 @@ node tools/update-bgm.js
 | High Rollers Club | -7.84 LUFS | -11.33 dB |
 | DUOMO DI SIRIO | -10.22 LUFS | -8.95 dB |
 | Mishima DOJO | -8.03 LUFS | -11.14 dB |
+| Infinite Azure - Round 1 (Moonsiders 1st) | -10.21 LUFS | -8.96 dB |
 
 새 곡 추가 또는 음원 교체 후 음량도 맞추려면 FFmpeg가 설치된 환경에서 아래를 실행하세요. 곡 전체를 분석하므로 잠시 걸립니다. 측정되지 않은 곡은 재생목록에는 자동 추가되지만 음량 보정은 적용되지 않습니다. 기준보다 조용한 곡은 증폭하지 않습니다.
 

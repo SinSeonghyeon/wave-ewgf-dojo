@@ -272,12 +272,14 @@ test('the three dictionaries share exactly the same key set',()=>{
 test('announcements render in every language and persist the latest read marker',()=>{
   let saved;
   const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
-  assert.ok(a.NOTICES.length);assert.equal(a.NOTICES[0].items.length,5);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
+  assert.ok(a.NOTICES.length);assert.equal(a.NOTICES[0].id,'2026-09-19-dojo');assert.equal(a.NOTICES[0].items.length,6);assert.equal(a.NOTICES[1].id,'2026-09-15-notices');assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
+  assert.ok(a.get('noticeList').innerHTML.includes(a.T(a.NOTICES[0].title)));
   a.setMode('wave10');a.startTrial();a.openNotices();
   assert.equal(a.get('noticeDlg').open,true);assert.equal(a.trial.cdTimer,null,'opening an announcement cancels a countdown');
   assert.equal(a.store.noticeSeen,a.NOTICE_LATEST);assert.equal(saved.noticeSeen,a.NOTICE_LATEST);assert.equal(a.get('noticeBadge').hidden,true);
   a.setLang('en');assert.match(a.get('noticeList').innerHTML,/September 15 feature update/);
   a.setLang('ja');assert.match(a.get('noticeList').innerHTML,/9月15日 機能アップデート/);
+  for(const lang of ['ko','en','ja']){a.setLang(lang);for(const key of [a.NOTICES[0].title,a.NOTICES[0].summary,...a.NOTICES[0].items])assert.ok(a.get('noticeList').innerHTML.includes(a.T(key)),lang+' '+key);}
   const read=boot({v:4,noticeSeen:a.NOTICE_LATEST});assert.equal(read.get('noticeBadge').hidden,true);
   const invalid=boot({v:4,noticeSeen:'removed-notice'});assert.equal(invalid.store.noticeSeen,'');assert.equal(invalid.get('noticeBadge').hidden,false);
 });
@@ -383,8 +385,8 @@ test('static head carries the SEO and Open Graph tags that crawlers read without
   assert.ok(head.includes('<meta name="twitter:card" content="summary_large_image">'));
   const bg=html.match(/:root\{[^}]*--bg:(#[0-9A-Fa-f]{6})/)[1];assert.ok(head.includes(`<meta name="theme-color" content="${bg}">`));
   assert.equal(head.includes('http://'),false,'head must not contain http://');
-  // exactly two script tags in the whole file, in this order: the head JSON-LD data block (no code) and the single inline app script — no <script src>, no module (single file, no libraries)
-  assert.deepEqual(html.match(/<script\b[^>]*>/g),['<script type="application/ld+json">','<script>'],'only the JSON-LD data block and one inline app script');
+  // Only the approved AdSense loader, JSON-LD data and the single inline app script are allowed.
+  assert.deepEqual(html.match(/<script\b[^>]*>/g),['<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8394509799881324" crossorigin="anonymous">', '<script type="application/ld+json">', '<script>'],'only the approved AdSense loader, JSON-LD and inline app script');
   const ldm=head.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);assert.ok(ldm,'the JSON-LD block sits in the head');
   const ld=JSON.parse(ldm[1]);
   assert.equal(ld['@type'],'WebApplication');assert.equal(ld.url,url);assert.equal(ld.image,url+'og.png');assert.equal(ld.isAccessibleForFree,true);
@@ -396,6 +398,25 @@ test('static head carries the SEO and Open Graph tags that crawlers read without
   const sm=root('sitemap.xml');assert.deepEqual(sm.match(/<loc>[^<]*<\/loc>/g),[`<loc>${url}</loc>`,`<loc>${url}en/</loc>`,`<loc>${url}ja/</loc>`],'sitemap lists the app and the two landing pages once each');
   assert.doesNotMatch(sm,/<lastmod>|<changefreq>/,'no hand-maintained lastmod/changefreq (nothing regenerates them; Google ignores changefreq and distrusts stale lastmod)');
   assert.match(html,/document\.title = T\('app\.docTitle'\)/);
+});
+
+test('localized static descriptions match the app dictionary and all pages reference the shared PNG icon',()=>{
+  const path=require('node:path'), root=path.resolve(__dirname,'..'), a=boot();
+  const png=fs.readFileSync(path.join(root,'favicon.png'));
+  assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+  const width=png.readUInt32BE(16), height=png.readUInt32BE(20);
+  assert.ok(width>0);assert.equal(width,height,'the icon is square');
+  for(const [lang,file] of [['ko','index.html'],['en','en/index.html'],['ja','ja/index.html']]){
+    const filename=path.join(root,file), src=fs.readFileSync(filename,'utf8');
+    a.setLang(lang);
+    for(const attr of ['name="description"','property="og:description"']){
+      assert.equal(src.match(new RegExp('<meta '+attr+' content="([^"]*)"'))?.[1],a.T('app.description'),file+' '+attr);
+    }
+    const icon=src.match(/<link\b[^>]*rel="icon"[^>]*>/)?.[0];assert.ok(icon,file+' has an icon');
+    const href=icon.match(/href="([^"]+)"/)?.[1];assert.ok(href);
+    assert.equal(path.resolve(path.dirname(filename),href),path.join(root,'favicon.png'),file+' icon path');
+    assert.equal(icon.match(/sizes="([^"]+)"/)?.[1],width+'x'+height,file+' declared icon size');
+  }
 });
 
 test('leaderboard entry is built only from a finished trial, one metric pair per board',()=>{
@@ -468,6 +489,53 @@ function backend(){
   return {fetch,calls,find,answer,flush:()=>new Promise(r=>setImmediate(r))};
 }
 const topRes=(nick,rank=1,total=1)=>({season:'all',board:'wave10',total,rows:[{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}],me:{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}});
+test('board reads share in-flight requests across tab round trips and allow fresh retries after failure',async()=>{
+  const b=backend(), a=boot({v:4,nick:'me',nickToken:'ab'.repeat(24)},b.fetch);
+  const count=()=>b.calls.filter(c=>c.url.includes('/top?board=wave10')).length;
+  a.boardLoad(); a.boardLoad(); assert.equal(count(),1); assert.equal(a.get('boardRefresh').disabled,true);
+  a.board.tab='ewgf20'; a.boardLoad();
+  a.board.tab='wave10'; const back=a.boardLoad(); assert.equal(count(),1);
+  b.answer('/top?board=wave10','GET',topRes('me')); await back;
+  assert.equal(a.board.data.wave10.me.nick,'me'); assert.equal(a.get('boardRefresh').disabled,false);
+  b.answer('/top?board=ewgf20','GET',{...topRes('me'),board:'ewgf20'}); await b.flush();
+  assert.equal(a.board.tab,'wave10'); assert.equal(a.board.msg,'');
+  const failed=a.boardLoad(); assert.equal(count(),2);
+  b.answer('/top?board=wave10','GET',{error:'server'},500); await failed;
+  assert.equal(a.get('boardRefresh').disabled,false); assert.equal(a.board.msg[0],'board.loadFail');
+  const retry=a.boardLoad(); assert.equal(count(),3);
+  b.answer('/top?board=wave10','GET',topRes('me')); await retry; assert.equal(a.board.msg,'');
+});
+
+test('expired identity releases the leaderboard loading state and ignores its late response',async()=>{
+  const b=backend(), a=boot({v:4,nick:'me',nickToken:'ab'.repeat(24)},b.fetch);
+  const loading=a.boardLoad();
+  const vote=a.postVote(7,1);
+  b.answer('/vote','POST',{error:'auth'},403); await vote;
+  assert.equal(a.store.nickToken,'');
+  assert.equal(a.board.msg,'','an invalidated identity must not leave a permanent loading message');
+  assert.equal(a.get('boardRefresh').disabled,false,'retry is immediately available without waiting for the old request');
+  const retry=a.boardLoad();
+  b.answer('/top?board=wave10','GET',topRes('me')); await loading;
+  assert.equal(a.board.data.wave10,undefined,'the expired identity response is discarded');
+  assert.equal(a.get('boardRefresh').disabled,true,'the anonymous retry still owns the loading state');
+  b.answer('/top?board=wave10','GET',{...topRes('other'),me:null}); await retry;
+  assert.equal(a.board.msg,''); assert.equal(a.get('boardRefresh').disabled,false);
+});
+
+test('deleting a score prevents reuse of an older in-flight board read',async()=>{
+  const b=backend(), a=boot({v:4,nick:'me',nickToken:'ab'.repeat(24)},b.fetch,{confirm:()=>true});
+  a.board.data.wave10=topRes('me');
+  const deleting=a.boardDelete(); a.boardLoad();
+  const empty={season:'all',board:'wave10',total:0,rows:[],me:null,cut10:null};
+  b.answer('/score','DELETE',{...empty,ok:true,deleted:1}); await deleting; await b.flush();
+  assert.equal(b.calls.filter(c=>c.url.includes('/top?board=wave10')).length,2,'post-delete read is fresh');
+  b.answer('/top?board=wave10','GET',topRes('me')); await b.flush();
+  assert.equal(a.board.data.wave10.me,null,'old read cannot restore the deleted row');
+  assert.equal(a.get('boardRefresh').disabled,true,'fresh request remains in flight');
+  b.answer('/top?board=wave10','GET',empty); await b.flush();
+  assert.equal(a.board.data.wave10.me,null); assert.equal(a.get('boardRefresh').disabled,false);
+});
+
 test('backend races: a late submit after a rename or a tab switch does not overwrite the board; a 403 mid-card waits; visits count once',async()=>{
   const tok='ab'.repeat(24), run=a=>{a.setMode('wave10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();dash(a,4100);a.time(14100);a.endTrial();};
   // rename while the submit is in flight: the submit's board snapshot belongs to the old nickname and is discarded
@@ -537,6 +605,19 @@ test('leaderboard delete reloads after a rename and never marks the old nickname
   assert.equal(a.board.data.wave10.me,null); assert.equal(a.get('boardMe').textContent,'등록한 기록이 없습니다');
 });
 
+test('a delayed board load cannot overwrite a newer submit for the same board',async()=>{
+  const tok='ab'.repeat(24), b=backend();
+  const a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch);
+  b.answer('/top?board=wave10&nick=me','GET',topRes('me')); await b.flush();
+  a.setMode('wave10'); a.startTrial(); const cd=a.timers.get(a.trial.cdTimer);
+  a.time(4000); cd(); cd(); cd(); dash(a,4100); a.time(14100); a.endTrial(); await b.flush();
+  const submit=a.boardSubmit(); await b.flush();
+  a.board.tab='wave10'; const load=a.boardLoad(); await b.flush();
+  b.answer('/submit','POST',{ok:true,id:7,rank:1,total:1,improved:true,...topRes('me')}); await submit; await b.flush();
+  b.answer('/top?board=wave10&nick=me','GET',{season:'all',board:'wave10',total:0,rows:[],me:null,cut10:null}); await load; await b.flush();
+  assert.equal(a.board.data.wave10.me.nick,'me');
+});
+
 test('leaderboard submit and delete are serialized in both directions',async()=>{
   const tok='ab'.repeat(24), run=a=>{a.setMode('wave10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();dash(a,4100);a.time(14100);a.endTrial();};
   // An existing in-flight submit disables and rejects deletion until its response has settled.
@@ -602,6 +683,13 @@ test('post votes: cancel/switch through an idempotent set, validated local cache
   a=boot({v:4,lang:'ko',window:12,votes:{'7':1}},b.fetch); assert.deepEqual(JSON.parse(JSON.stringify(a.store.votes)),{});
   // old worker without counts: buttons still render with 0
   a.live.posts=[{id:7,nick:'x',text:'hi',created_at:1}]; a.renderPosts(); assert.match(a.get('postList').innerHTML,/>👍 0<[\s\S]*>👎 0</);
+
+  // An old vote response must not log out a newly claimed nickname.
+  b=backend(); a=boot({v:4,lang:'ko',window:12,nick:'old',nickToken:tok},b.fetch);
+  a.postVote(7,1); await b.flush();
+  a.store.nick='new'; a.store.nickToken='cd'.repeat(24);
+  b.answer('/vote','POST',{error:'auth'},403); await b.flush();
+  assert.equal(a.store.nick,'new'); assert.equal(a.store.nickToken,'cd'.repeat(24));
 });
 
 test('post replies: render many, submit one level deep, keep text on failure, close on success, and gate by nickname',async()=>{
@@ -1327,12 +1415,13 @@ test('search text: about block, hreflang set, ?lang= override and the /en/ /ja/ 
     assert.equal((head.match(/rel="canonical"/g)||[]).length,1,name+' has exactly one canonical');
     assert.equal(head.includes('http://'),false,name+' head must not contain http://');
   }
-  // landing pages: static, script-free, canonical to themselves, open the app in their language (and ko on request), no official character names (design decision 3), mode names as the app shows them
+  // landing pages: static with the approved AdSense loader, canonical to themselves, open the app in their language (and ko on request), no official character names (design decision 3), mode names as the app shows them
   for(const l of ['en','ja']){
     const page=pages[l+'/index.html'];
     assert.ok(page.includes(`<html lang="${l}">`),l+' lang attribute');
     assert.ok(page.includes(`<link rel="canonical" href="${alt[l]}">`),l+' canonical');
-    assert.equal((page.match(/<script/g)||[]).length,0,l+' landing page has no script');
+    assert.deepEqual(page.match(/<script\b[^>]*>/g),['<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8394509799881324" crossorigin="anonymous">'],l+' landing page has only the approved AdSense loader');
+    assert.ok(page.slice(page.indexOf('<head>'),page.indexOf('</head>')).includes('<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8394509799881324" crossorigin="anonymous"></script>'),l+' AdSense loader is in head');
     assert.ok(page.includes(`href="../?lang=${l}"`),l+' start button opens the app in '+l);
     assert.ok(page.includes('href="../?lang=ko"'),l+' Korean link asks for ko instead of the saved language');
     assert.ok(page.includes('https://ko-fi.com/misimadojo')&&page.includes('mailto:tlstjdgus3@gmail.com'),l+' donate + contact match the app');
@@ -1818,7 +1907,6 @@ test('electric fist coordinates undo only the caller transform, including DPR, s
 test('BGM playlist excludes the previous track, pauses independently and advances at track end',()=>{
   const a=boot(undefined,undefined,{Audio:AudioStub});
   assert.equal(a.snd.bgm,null,'no audio at boot');
-  for(let prev=0;prev<a.BGM_TRACKS.length;prev++)for(const random of [0,.2,.5,.999999])assert.notEqual(a.bgmPick(prev,random),prev);
   for(const f of a.BGM_TRACKS)assert.ok(fs.existsSync(require('node:path').join(__dirname,'..',f)));
   a.unlockAudio();assert.equal(a.snd.bgm.loop,false);
   const first=a.snd.track;a.snd.bgm.currentTime=35;
@@ -1831,6 +1919,56 @@ test('BGM playlist excludes the previous track, pauses independently and advance
   a.setBgm(0);a.bgmNext();assert.equal(a.snd.bgm.paused,true,'skip does not unmute');
   a.bgmTogglePlay();assert.equal(a.store.bgm,1);assert.equal(a.snd.bgm.paused,false);
   const reloaded=boot({bgmLast:a.store.bgmLast},undefined,{Audio:AudioStub});reloaded.unlockAudio();assert.notEqual(reloaded.snd.track,a.snd.track,'reload avoids the previous track');
+});
+
+test('BGM shuffled rounds play every track once and preserve order across pause and sync',()=>{
+  const a=boot(undefined,undefined,{Audio:AudioStub});a.unlockAudio();
+  let previous=-1;
+  for(let round=0;round<12;round++){
+    const heard=[];
+    for(let i=0;i<a.BGM_TRACKS.length;i++){
+      assert.notEqual(a.snd.track,previous,'no repeat across round boundaries');
+      heard.push(a.snd.track);previous=a.snd.track;
+      const remaining=Array.from(a.snd.queue);
+      a.bgmTogglePlay();a.bgmSync();a.bgmTogglePlay();
+      assert.deepEqual(Array.from(a.snd.queue),remaining,'pause and resume preserve the queue');
+      if(i%2)a.bgmNext();else a.snd.bgm.onended();
+      if(remaining.length)assert.equal(a.BGM_TRACKS[a.snd.track],remaining[0],'next and ended follow the shuffled order');
+    }
+    assert.equal(new Set(heard).size,a.BGM_TRACKS.length,'each round contains every track once');
+  }
+});
+
+test('BGM round boundary swaps a repeated first track and reload avoids the last track',()=>{
+  const math=Object.create(Math);math.random=()=>.999999; // Fisher-Yates leaves the source order unchanged.
+  const a=boot(undefined,undefined,{Audio:AudioStub,Math:math});
+  a.bgmApplyTracks(['bgm/A.mp3','bgm/B.mp3','bgm/C.mp3']);a.unlockAudio();
+  assert.equal(a.BGM_TRACKS[a.snd.track],'bgm/A.mp3');
+  a.bgmNext();a.bgmNext();a.bgmNext(); // Second round starts A, then B, then C.
+  // Force the next shuffle to start with C, the final song of this round.
+  a.bgmApplyTracks(['bgm/C.mp3','bgm/A.mp3','bgm/B.mp3']);
+  a.bgmNext();a.bgmNext();assert.equal(a.BGM_TRACKS[a.snd.track],'bgm/C.mp3');
+  a.snd.bgm.onended();assert.equal(a.BGM_TRACKS[a.snd.track],'bgm/B.mp3');
+  const reloaded=boot({bgmLast:'bgm/C.mp3'},undefined,{Audio:AudioStub,Math:math});
+  reloaded.bgmApplyTracks(['bgm/C.mp3','bgm/A.mp3','bgm/B.mp3']);reloaded.unlockAudio();
+  assert.equal(reloaded.BGM_TRACKS[reloaded.snd.track],'bgm/B.mp3');
+});
+
+test('BGM playlist normalization removes stale queue entries and preserves order-only updates',()=>{
+  const math=Object.create(Math);math.random=()=>.999999;
+  const a=boot(undefined,undefined,{Audio:AudioStub,Math:math});
+  a.bgmApplyTracks(['bgm/A.mp3','bgm/C.mp3','bgm/B.mp3']);a.unlockAudio();
+  const audio=a.snd.bgm;audio.currentTime=35;
+  a.bgmApplyTracks(['bgm/B.mp3','bgm/A.mp3','bgm/C.mp3']);
+  assert.deepEqual(Array.from(a.snd.queue),['bgm/C.mp3','bgm/B.mp3']);
+  assert.equal(a.BGM_TRACKS[a.snd.track],'bgm/A.mp3');
+  assert.equal(a.snd.bgm,audio);assert.equal(audio.currentTime,35);
+  a.bgmApplyTracks(['bgm/A.mp3','bgm/A.mp3','bgm/B.mp3']);
+  assert.deepEqual(Array.from(a.snd.queue),['bgm/B.mp3']);
+  a.bgmNext();assert.equal(a.BGM_TRACKS[a.snd.track],'bgm/B.mp3');
+  assert.equal(a.snd.bgm.src,'bgm/B.mp3');
+  a.bgmApplyTracks(['bgm/B.mp3','bgm/A.mp3','bgm/A.mp3']);
+  assert.deepEqual(Array.from(a.snd.queue),[],'duplicate-only changes must not start a new round');
 });
 
 test('measured BGM gains follow user volume through track changes without affecting effects',()=>{
