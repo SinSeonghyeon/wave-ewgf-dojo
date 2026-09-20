@@ -93,7 +93,8 @@ const ip = request => request.headers.get('cf-connecting-ip') || '';
 const isAdmin = (request, env) => !!env.ADMIN_TOKEN && (request.headers.get('authorization') || '') === 'Bearer ' + env.ADMIN_TOKEN;
 // Banned spellings: what `bans` stores plus, when that key is registered, the registered spelling (/submit stores rows under it). So a
 // nick banned before anyone claimed it stays hidden after someone claims it in another case. Unregistered legacy rows match by exact spelling.
-const BANNED = 'SELECT nick FROM bans UNION SELECT n.nick FROM nicks n JOIN bans b ON b.key=n.key';
+// CROSS JOIN fixes the loop order: scan the small ban list, then look up each registered key (never scan all nicks).
+const BANNED = 'SELECT nick FROM bans UNION SELECT n.nick FROM bans b CROSS JOIN nicks n ON n.key=b.key';
 const VISIBLE = `nick NOT IN (${BANNED})`; // rows of banned nicks exist but never reach other players
 const SCOPE = 'FROM scores WHERE week=? AND board=?', BY_RANK = 'ORDER BY score DESC, tie DESC, id ASC'; // scores.week holds the season key (see seasonKey)
 

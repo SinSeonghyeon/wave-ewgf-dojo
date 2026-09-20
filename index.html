@@ -3763,7 +3763,7 @@ $('fitReset').addEventListener('click', () => { for(const s of SLOTS) store.fit[
 ['setDlg','donateDlg','fitDlg'].forEach(id => $(id).addEventListener('close', () => setTimeout(renderRewards, 0))); // refresh claiming availability (#shareDlg/#nickDlg: their own close handlers)
 
 const BOARDS = [...TRIAL_MODES,'wsc']; // classic trials plus the separate completed WSC challenge; matches worker and tabs
-const board = { tab:'wave10', data:{}, msg:'', seq:0, rev:{}, deleting:false, submitting:false, loadAfterDelete:false, submitQueue:[] }; // queued writes own their result/payload/identity; changing the visible mode cannot replace them
+const board = { tab:'wave10', data:{}, msg:'', seq:0, rev:{}, loads:new Map(), deleting:false, submitting:false, loadAfterDelete:false, submitQueue:[] }; // queued writes own their result/payload/identity; changing the visible mode cannot replace them
 const live = { visits:null, posts:null, postsMsg:'', postsLoading:false, posting:false, voting:false, replying:false, postsSeq:0, replyTo:0, replyText:'', visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // post mutations share one busy gate; postsSeq keeps an older list load from replacing a newer response
 // nickLater: the gate offers "practise without ranking" after the server itself failed · nickLost: a 403 arrived while the result card was up
 const TIERS = [1, 10, 20, 50, 70]; // upper bounds of "top N%" for grades SS S A B C (tier 0..4); anything above is D (tier 5). Titles: tier.N.title, comments: tier.N.<mode>
@@ -3829,6 +3829,9 @@ async function claimNick(n){
 }
 function lostNick(){ // server no longer recognises our token
   store.nick = ''; store.nickToken = ''; store.votes = {}; save(); renderNick(); renderPosts();
+  ++board.seq; // pending reads belong to the expired identity; release their UI immediately
+  if(board.msg && board.msg[0]==='board.loading') setBoardMsg('');
+  renderBoard();
   if($('shareDlg').open || trial.openTimer) live.nickLost = true; else openNick('nick.expired'); // the result card is up or about to open: ask after it closes instead of stacking modals
 }
 $('nickForm').addEventListener('submit', ev => {
@@ -3854,11 +3857,12 @@ async function boardFetch(path, init){
   if(!res.ok || !j) throw new Error(quota ? 'quota' : (j && j.error) || ('http '+res.status));
   return j;
 }
+const boardLoadKey = () => JSON.stringify([board.tab,hasNick()?store.nick:'',hasNick()?store.nickToken:'',board.rev[board.tab]||0]);
 function renderBoard(){
   if(!BOARD_URL) return;
   const t = board.tab, d = board.data[t], me = hasNick() && d && d.me && nickKey(d.me.nick)===nickKey(store.nick) ? d.me : null;
   document.querySelectorAll('#boardTabs button').forEach(b => { b.setAttribute('aria-pressed', b.dataset.board===t?'true':'false'); b.disabled=board.deleting; });
-  $('boardRefresh').disabled = board.deleting;
+  $('boardRefresh').disabled = board.deleting || board.loads.has(boardLoadKey());
   $('boardInfo').textContent = d && d.total ? T('board.total', d.total) : '';
   $('boardMe').textContent = !d ? '' : me ? T('board.me', me.rank, d.total, pctTop(me.rank, d.total)) : T('board.meNone');
   $('boardMsg').textContent = msg(board.msg);
@@ -3872,10 +3876,17 @@ function renderBoard(){
 async function boardLoad(){
   if(!BOARD_URL) return;
   if(board.deleting){ board.loadAfterDelete = true; renderBoard(); return; }
-  const t = board.tab, seq = ++board.seq, rev = board.rev[t]||0; setBoardMsg(['board.loading']); renderBoard();
-  let d = null;
-  try{ d = await boardFetch('/top?board='+t+(hasNick() ? '&nick='+encodeURIComponent(store.nick) : '')); } catch(e){} // an unclaimed name may belong to someone else
-  if(seq!==board.seq || rev!==(board.rev[t]||0)) return; // superseded by a newer load, identity change, or mutation of this board
+  const t = board.tab, seq = ++board.seq, key = boardLoadKey();
+  // Share only in-flight reads. Completed reads are never cached; identity/revision changes get a fresh request.
+  let pending = board.loads.get(key);
+  if(!pending){
+    pending = boardFetch('/top?board='+t+(hasNick() ? '&nick='+encodeURIComponent(store.nick) : ''))
+      .catch(()=>null).finally(()=>{ board.loads.delete(key); });
+    board.loads.set(key,pending);
+  }
+  setBoardMsg(['board.loading']); renderBoard();
+  const d = await pending;
+  if(seq!==board.seq || key!==boardLoadKey()) return; // key includes identity/revision; only the latest consumer renders the shared response
   if(d){ boardSet(t, d); setBoardMsg(''); if(t==='wave10') renderWave(); } else setBoardMsg(['board.loadFail']); // wave10 carries cut10: the chart's top band follows it
   renderBoard();
 }
@@ -3883,7 +3894,7 @@ async function boardDelete(){
   const t = board.tab, d = board.data[t];
   if(!BOARD_URL || board.deleting || board.submitting || !hasNick() || !d || !d.me || nickKey(d.me.nick)!==nickKey(store.nick)) return;
   if(typeof confirm==='function' && !confirm(T('board.deleteConfirm'))) return;
-  const nick = store.nick, token = store.nickToken; board.deleting = true; ++board.seq; setBoardMsg(['board.deleting']); renderBoard();
+  const nick = store.nick, token = store.nickToken; board.deleting = true; ++board.seq; board.rev[t]=(board.rev[t]||0)+1; setBoardMsg(['board.deleting']); renderBoard();
   try{
     const res = await boardFetch('/score', {method:'DELETE', body:JSON.stringify({board:t, nick, token})});
     if(nick===store.nick && token===store.nickToken){ boardSet(t, res); if(t==='wave10') renderWave(); if(board.tab===t) setBoardMsg(['board.deleted']); }
