@@ -21,6 +21,15 @@ const owned = (w, env) => { const tokens = {}; return {
   tokens}; };
 const ch = code => String.fromCharCode(code);
 
+test('leaderboard ban lookup uses indexed nickname searches instead of scanning every registered nickname',async()=>{
+  const w=await worker(), env={DB:fakeD1()};
+  await w.handle(req('/top?board=wave10'),env,NOW);
+  const sql=env.DB.queries.find(q=>q.startsWith('WITH ranked'));
+  const plan=env.DB.db.prepare('EXPLAIN QUERY PLAN '+sql).all('all','wave10','',10,'').map(r=>r.detail);
+  assert.ok(plan.some(d=>/SEARCH n USING INDEX .*\(key=\?\)/.test(d)),plan.join('\n'));
+  assert.ok(!plan.some(d=>/^SCAN n(?:\s|$)/.test(d)),plan.join('\n'));
+});
+
 test('season key is the constant "all" (the board never resets); the KST week and day helpers still flip at 15:00 UTC', async () => {
   const w = await worker();
   assert.equal(w.SEASON, 'all');

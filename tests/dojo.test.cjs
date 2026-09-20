@@ -489,6 +489,53 @@ function backend(){
   return {fetch,calls,find,answer,flush:()=>new Promise(r=>setImmediate(r))};
 }
 const topRes=(nick,rank=1,total=1)=>({season:'all',board:'wave10',total,rows:[{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}],me:{id:7,rank,nick,score:0.1,tie:1,detail:{dashes:1,chain:1},win:12,created_at:1}});
+test('board reads share in-flight requests across tab round trips and allow fresh retries after failure',async()=>{
+  const b=backend(), a=boot({v:4,nick:'me',nickToken:'ab'.repeat(24)},b.fetch);
+  const count=()=>b.calls.filter(c=>c.url.includes('/top?board=wave10')).length;
+  a.boardLoad(); a.boardLoad(); assert.equal(count(),1); assert.equal(a.get('boardRefresh').disabled,true);
+  a.board.tab='ewgf20'; a.boardLoad();
+  a.board.tab='wave10'; const back=a.boardLoad(); assert.equal(count(),1);
+  b.answer('/top?board=wave10','GET',topRes('me')); await back;
+  assert.equal(a.board.data.wave10.me.nick,'me'); assert.equal(a.get('boardRefresh').disabled,false);
+  b.answer('/top?board=ewgf20','GET',{...topRes('me'),board:'ewgf20'}); await b.flush();
+  assert.equal(a.board.tab,'wave10'); assert.equal(a.board.msg,'');
+  const failed=a.boardLoad(); assert.equal(count(),2);
+  b.answer('/top?board=wave10','GET',{error:'server'},500); await failed;
+  assert.equal(a.get('boardRefresh').disabled,false); assert.equal(a.board.msg[0],'board.loadFail');
+  const retry=a.boardLoad(); assert.equal(count(),3);
+  b.answer('/top?board=wave10','GET',topRes('me')); await retry; assert.equal(a.board.msg,'');
+});
+
+test('expired identity releases the leaderboard loading state and ignores its late response',async()=>{
+  const b=backend(), a=boot({v:4,nick:'me',nickToken:'ab'.repeat(24)},b.fetch);
+  const loading=a.boardLoad();
+  const vote=a.postVote(7,1);
+  b.answer('/vote','POST',{error:'auth'},403); await vote;
+  assert.equal(a.store.nickToken,'');
+  assert.equal(a.board.msg,'','an invalidated identity must not leave a permanent loading message');
+  assert.equal(a.get('boardRefresh').disabled,false,'retry is immediately available without waiting for the old request');
+  const retry=a.boardLoad();
+  b.answer('/top?board=wave10','GET',topRes('me')); await loading;
+  assert.equal(a.board.data.wave10,undefined,'the expired identity response is discarded');
+  assert.equal(a.get('boardRefresh').disabled,true,'the anonymous retry still owns the loading state');
+  b.answer('/top?board=wave10','GET',{...topRes('other'),me:null}); await retry;
+  assert.equal(a.board.msg,''); assert.equal(a.get('boardRefresh').disabled,false);
+});
+
+test('deleting a score prevents reuse of an older in-flight board read',async()=>{
+  const b=backend(), a=boot({v:4,nick:'me',nickToken:'ab'.repeat(24)},b.fetch,{confirm:()=>true});
+  a.board.data.wave10=topRes('me');
+  const deleting=a.boardDelete(); a.boardLoad();
+  const empty={season:'all',board:'wave10',total:0,rows:[],me:null,cut10:null};
+  b.answer('/score','DELETE',{...empty,ok:true,deleted:1}); await deleting; await b.flush();
+  assert.equal(b.calls.filter(c=>c.url.includes('/top?board=wave10')).length,2,'post-delete read is fresh');
+  b.answer('/top?board=wave10','GET',topRes('me')); await b.flush();
+  assert.equal(a.board.data.wave10.me,null,'old read cannot restore the deleted row');
+  assert.equal(a.get('boardRefresh').disabled,true,'fresh request remains in flight');
+  b.answer('/top?board=wave10','GET',empty); await b.flush();
+  assert.equal(a.board.data.wave10.me,null); assert.equal(a.get('boardRefresh').disabled,false);
+});
+
 test('backend races: a late submit after a rename or a tab switch does not overwrite the board; a 403 mid-card waits; visits count once',async()=>{
   const tok='ab'.repeat(24), run=a=>{a.setMode('wave10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();dash(a,4100);a.time(14100);a.endTrial();};
   // rename while the submit is in flight: the submit's board snapshot belongs to the old nickname and is discarded

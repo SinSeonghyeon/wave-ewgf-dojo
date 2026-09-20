@@ -322,7 +322,12 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
       key('KeyS',t+40,true);key('KeyD',t+50,true);key('KeyA',t+30+7*F);key('KeyI',t+30+8*F);key('KeyI',t+31+8*F,true);key('KeyA',t+32+8*F,true);
     })()`);
   }
-  await waitFor(`document.querySelector('#boardTabs [data-board="wsc"]').getAttribute('aria-pressed')==='true' && /1위/.test(document.querySelector('#dRank').textContent)`);
+  try{
+    await waitFor(`document.querySelector('#boardTabs [data-board="wsc"]').getAttribute('aria-pressed')==='true' && /1위/.test(document.querySelector('#dRank').textContent)`);
+  }catch(err){
+    const state=await evalJs(`({status:document.querySelector('#wscChallengeStatus').textContent,task:document.querySelector('#wscTask').textContent,rank:document.querySelector('#dRank').textContent,board:document.querySelector('#boardMsg').textContent,tab:document.querySelector('#boardTabs [aria-pressed="true"]')?.dataset.board,dialogs:[...document.querySelectorAll('dialog[open]')].map(d=>d.id)})`);
+    throw new Error(err.message+'; WSC state='+JSON.stringify(state)+'; rows='+JSON.stringify(db.rows.filter(r=>r.board==='wsc')));
+  }
   out.wscBoard=await evalJs(`({status:document.querySelector('#wscChallengeStatus').textContent,rank:document.querySelector('#dRank').textContent,row:document.querySelector('#boardList .me').textContent,shown:getComputedStyle(document.querySelector('.records')).display})`);
   if(!/10\/10/.test(out.wscBoard.status)||!/10 \/ 10/.test(out.wscBoard.row)||!/최고 10연속/.test(out.wscBoard.row)||out.wscBoard.shown==='none')errors.push('WSC challenge board failed: '+JSON.stringify(out.wscBoard));
   const wscRow=db.rows.find(r=>r.board==='wsc');if(!wscRow||wscRow.score!==10||wscRow.tie!==10)errors.push('WSC persisted score mismatch');
