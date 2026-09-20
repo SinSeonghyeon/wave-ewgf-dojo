@@ -1996,14 +1996,16 @@ const displayFont = () => store.lang==='ja' ? '"Dela Gothic One", "Noto Sans JP"
 
 /* ---------- sound (local audio assets). Nothing is created until the first user gesture, so the unit-test vm and og generation never touch media. ---------- */
 const SND = { wave:'sfx-wave.mp3', ewgf:'sfx-ewgf.mp3', wsc:'sfx-wsc.mp3', hellsweep:'sfx-hellsweep.mp3', tongbal:'sfx-tongbal.mp3', hit:'sfx-hit.mp3', backdash:'sfx-backdash.mp3' };
-const BGM_TRACKS=["bgm/TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3","bgm/Tekken 6 Soundtrack High Rollers Club.mp3","bgm/Tekken 7 OST  Mishima DOJO.mp3","bgm/bgm.mp3"]; // Generated local fallback: node tools/update-bgm.js
-const BGM_GAIN={"bgm/TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3":0.356862,"bgm/Tekken 6 Soundtrack High Rollers Club.mp3":0.271331,"bgm/Tekken 7 OST  Mishima DOJO.mp3":0.277332,"bgm/bgm.mp3":1}; // Generated loudness gains: node tools/measure-bgm.js
+const BGM_TRACKS=["bgm/TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3","bgm/TEKKEN 7 鉄拳7 Infinite Azure - Round 1 (Moonsiders 1st).mp3","bgm/Tekken 6 Soundtrack High Rollers Club.mp3","bgm/Tekken 7 OST  Mishima DOJO.mp3","bgm/bgm.mp3"]; // Generated local fallback: node tools/update-bgm.js
+const BGM_GAIN={"bgm/TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3":0.356862,"bgm/TEKKEN 7 鉄拳7 Infinite Azure - Round 1 (Moonsiders 1st).mp3":0.356451,"bgm/Tekken 6 Soundtrack High Rollers Club.mp3":0.271331,"bgm/Tekken 7 OST  Mishima DOJO.mp3":0.277332,"bgm/bgm.mp3":1}; // Generated loudness gains: node tools/measure-bgm.js
 const bgmVolume = () => store.bgmVol/100*(BGM_GAIN[BGM_TRACKS[snd.track]]??1);
 function bgmApplyTracks(tracks){
   if(!Array.isArray(tracks)||!tracks.every(p=>typeof p==='string'&&/^bgm\/[^/\\]+\.mp3$/i.test(p)))return false;
-  const current=BGM_TRACKS[snd.track];
-  BGM_TRACKS.splice(0,BGM_TRACKS.length,...new Set(tracks));
+  const current=BGM_TRACKS[snd.track], unique=[...new Set(tracks)];
+  const changed=unique.length!==BGM_TRACKS.length||unique.some(p=>!BGM_TRACKS.includes(p));
+  BGM_TRACKS.splice(0,BGM_TRACKS.length,...unique);
   snd.track=BGM_TRACKS.indexOf(current);
+  if(changed)snd.queue=bgmShuffle(BGM_TRACKS.filter(p=>p!==current));
   if(snd.track<0&&snd.bgm){snd.bgm.pause();snd.bgm.onended=null;snd.bgm=null;}
   renderBgmPlayer();bgmSync();return true;
 }
@@ -2017,7 +2019,7 @@ const SFX_GAIN = {tongbal:0.8,wsc:0.8};
 // Decoded MP3: the cleaned hit transient begins at 120ms; skip its quiet lead-in, not the visual contact.
 const SFX_START = {hit:0.12};
 const sfxVolume = name => (store.sound?store.sfxVol/100:0)*(SFX_GAIN[name]??1);
-const snd = { ok: typeof Audio!=='undefined', unlocked:false, catalogReady:true, bgm:null, track:-1, paused:false, pool:{}, idx:{}, lock:null, release:null };
+const snd = { ok: typeof Audio!=='undefined', unlocked:false, catalogReady:true, bgm:null, track:-1, queue:[], paused:false, pool:{}, idx:{}, lock:null, release:null };
 function mkAudio(src, loop){ const a = new Audio(); a.preload='auto'; a.loop=!!loop; a.src=src; return a; }
 function sfxPool(name){ return snd.pool[name] || (snd.pool[name] = [0,1,2].map(() => mkAudio(SND[name], false))); } // 3 voices so a fast wave can overlap
 function playSfx(name){
@@ -2032,11 +2034,19 @@ function sfxSync(){
     if(!store.sound || store.sfxVol<=0){ a.pause(); try{ a.currentTime=0; }catch(e){} }
   }
 }
-function bgmPick(previous,random=Math.random()){
-  const count=BGM_TRACKS.length, valid=Number.isInteger(previous)&&previous>=0&&previous<count;
-  if(count<2)return count-1;
-  const n=Math.min((valid?count-1:count)-1,Math.floor(random*(valid?count-1:count)));
-  return valid&&n>=previous?n+1:n;
+function bgmShuffle(tracks){
+  const queue=[...tracks];
+  for(let i=queue.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[queue[i],queue[j]]=[queue[j],queue[i]];}
+  return queue;
+}
+function bgmPick(previous){
+  if(!snd.queue.length)snd.queue=bgmShuffle(BGM_TRACKS);
+  // Only a fresh round can start with the previous track. Swap its first entry.
+  if(snd.queue.length===BGM_TRACKS.length&&snd.queue.length>1&&snd.queue[0]===BGM_TRACKS[previous]){
+    const j=1+Math.floor(Math.random()*(snd.queue.length-1));
+    [snd.queue[0],snd.queue[j]]=[snd.queue[j],snd.queue[0]];
+  }
+  return BGM_TRACKS.indexOf(snd.queue.shift());
 }
 function bgmSelect(){
   snd.track=bgmPick(snd.track<0?BGM_TRACKS.indexOf(store.bgmLast):snd.track);

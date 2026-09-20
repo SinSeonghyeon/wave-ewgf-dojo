@@ -74,4 +74,4 @@
 화면 배치: 측정 시작 버튼은 1P/2P 왼쪽, 도전 카운트다운·타이머는 플레이 중앙 상단, 한마디는 플레이 오른쪽(좁은 화면에서는 바로 아래)에 있다. 세션 초기화 버튼은 제거했으며 설정의 기록·업적 초기화는 유지한다. 캐릭터는 기존 자체 2D SD 그림을 유지한다.
 
 - 웨캔기어 10회 도전을 끝내면 전용 리더보드에 성공 횟수를 등록한다. 동점이면 최고 연속 성공이 높은 기록이 앞선다. 취소·중단은 등록하지 않는다.
-- 상단 BGM 플레이어: 음소거, 재생/일시정지, 다음 곡. `bgm/`의 MP3를 랜덤 순환하며 직전 곡은 제외한다. 현재 기본 BGM·High Rollers Club·DUOMO DI SIRIO·Mishima DOJO이며 Moonlit Wilderness는 제외했다. 추가·삭제 방법은 [BGM 폴더 안내](bgm/README.md)를 참고한다. 다음 곡을 눌러도 일시정지·음소거 상태는 유지된다.
+- 상단 BGM 플레이어: 음소거, 재생/일시정지, 다음 곡. `bgm/`의 MP3 목록을 접속 시 섞어 한 곡씩 순서대로 재생한다. 전곡 재생 후 다시 섞으며 경계에서도 같은 곡이 연속되지 않는다. 현재 기본 BGM·High Rollers Club·DUOMO DI SIRIO·Mishima DOJO·Infinite Azure - Round 1 (Moonsiders 1st)이며 Moonlit Wilderness는 제외했다. 추가·삭제 방법은 [BGM 폴더 안내](bgm/README.md)를 참고한다. 다음 곡을 눌러도 일시정지·음소거 상태는 유지된다.

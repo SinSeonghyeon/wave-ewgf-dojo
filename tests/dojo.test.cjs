@@ -1832,7 +1832,6 @@ test('electric fist coordinates undo only the caller transform, including DPR, s
 test('BGM playlist excludes the previous track, pauses independently and advances at track end',()=>{
   const a=boot(undefined,undefined,{Audio:AudioStub});
   assert.equal(a.snd.bgm,null,'no audio at boot');
-  for(let prev=0;prev<a.BGM_TRACKS.length;prev++)for(const random of [0,.2,.5,.999999])assert.notEqual(a.bgmPick(prev,random),prev);
   for(const f of a.BGM_TRACKS)assert.ok(fs.existsSync(require('node:path').join(__dirname,'..',f)));
   a.unlockAudio();assert.equal(a.snd.bgm.loop,false);
   const first=a.snd.track;a.snd.bgm.currentTime=35;
@@ -1845,6 +1844,56 @@ test('BGM playlist excludes the previous track, pauses independently and advance
   a.setBgm(0);a.bgmNext();assert.equal(a.snd.bgm.paused,true,'skip does not unmute');
   a.bgmTogglePlay();assert.equal(a.store.bgm,1);assert.equal(a.snd.bgm.paused,false);
   const reloaded=boot({bgmLast:a.store.bgmLast},undefined,{Audio:AudioStub});reloaded.unlockAudio();assert.notEqual(reloaded.snd.track,a.snd.track,'reload avoids the previous track');
+});
+
+test('BGM shuffled rounds play every track once and preserve order across pause and sync',()=>{
+  const a=boot(undefined,undefined,{Audio:AudioStub});a.unlockAudio();
+  let previous=-1;
+  for(let round=0;round<12;round++){
+    const heard=[];
+    for(let i=0;i<a.BGM_TRACKS.length;i++){
+      assert.notEqual(a.snd.track,previous,'no repeat across round boundaries');
+      heard.push(a.snd.track);previous=a.snd.track;
+      const remaining=Array.from(a.snd.queue);
+      a.bgmTogglePlay();a.bgmSync();a.bgmTogglePlay();
+      assert.deepEqual(Array.from(a.snd.queue),remaining,'pause and resume preserve the queue');
+      if(i%2)a.bgmNext();else a.snd.bgm.onended();
+      if(remaining.length)assert.equal(a.BGM_TRACKS[a.snd.track],remaining[0],'next and ended follow the shuffled order');
+    }
+    assert.equal(new Set(heard).size,a.BGM_TRACKS.length,'each round contains every track once');
+  }
+});
+
+test('BGM round boundary swaps a repeated first track and reload avoids the last track',()=>{
+  const math=Object.create(Math);math.random=()=>.999999; // Fisher-Yates leaves the source order unchanged.
+  const a=boot(undefined,undefined,{Audio:AudioStub,Math:math});
+  a.bgmApplyTracks(['bgm/A.mp3','bgm/B.mp3','bgm/C.mp3']);a.unlockAudio();
+  assert.equal(a.BGM_TRACKS[a.snd.track],'bgm/A.mp3');
+  a.bgmNext();a.bgmNext();a.bgmNext(); // Second round starts A, then B, then C.
+  // Force the next shuffle to start with C, the final song of this round.
+  a.bgmApplyTracks(['bgm/C.mp3','bgm/A.mp3','bgm/B.mp3']);
+  a.bgmNext();a.bgmNext();assert.equal(a.BGM_TRACKS[a.snd.track],'bgm/C.mp3');
+  a.snd.bgm.onended();assert.equal(a.BGM_TRACKS[a.snd.track],'bgm/B.mp3');
+  const reloaded=boot({bgmLast:'bgm/C.mp3'},undefined,{Audio:AudioStub,Math:math});
+  reloaded.bgmApplyTracks(['bgm/C.mp3','bgm/A.mp3','bgm/B.mp3']);reloaded.unlockAudio();
+  assert.equal(reloaded.BGM_TRACKS[reloaded.snd.track],'bgm/B.mp3');
+});
+
+test('BGM playlist normalization removes stale queue entries and preserves order-only updates',()=>{
+  const math=Object.create(Math);math.random=()=>.999999;
+  const a=boot(undefined,undefined,{Audio:AudioStub,Math:math});
+  a.bgmApplyTracks(['bgm/A.mp3','bgm/C.mp3','bgm/B.mp3']);a.unlockAudio();
+  const audio=a.snd.bgm;audio.currentTime=35;
+  a.bgmApplyTracks(['bgm/B.mp3','bgm/A.mp3','bgm/C.mp3']);
+  assert.deepEqual(Array.from(a.snd.queue),['bgm/C.mp3','bgm/B.mp3']);
+  assert.equal(a.BGM_TRACKS[a.snd.track],'bgm/A.mp3');
+  assert.equal(a.snd.bgm,audio);assert.equal(audio.currentTime,35);
+  a.bgmApplyTracks(['bgm/A.mp3','bgm/A.mp3','bgm/B.mp3']);
+  assert.deepEqual(Array.from(a.snd.queue),['bgm/B.mp3']);
+  a.bgmNext();assert.equal(a.BGM_TRACKS[a.snd.track],'bgm/B.mp3');
+  assert.equal(a.snd.bgm.src,'bgm/B.mp3');
+  a.bgmApplyTracks(['bgm/B.mp3','bgm/A.mp3','bgm/A.mp3']);
+  assert.deepEqual(Array.from(a.snd.queue),[],'duplicate-only changes must not start a new round');
 });
 
 test('measured BGM gains follow user volume through track changes without affecting effects',()=>{
