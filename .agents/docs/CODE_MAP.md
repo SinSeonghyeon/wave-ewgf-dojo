@@ -1,5 +1,7 @@
 # CODE_MAP — `index.html` 구조
 
+루트 `ads.txt`는 Google AdSense 판매자 등록 파일이며 게시자 `pub-8394509799881324`를 사용한다. `tools/build-site.js`가 `_site/ads.txt`로 그대로 복사한다.
+
 원본 앱은 `index.html` 하나이며 외부 라이브러리는 없다. `tools/build-site.js`가 I18N 사전의 정적 문자열로 최초 HTML을 번역해 `_site/ko/`·`en/`·`ja/`에 앱을 생성한다. 루트는 원본 그대로 복사한다. 세 언어의 인라인 앱 스크립트는 원본과 동일하며 `data-page-lang`으로 고정 언어를 지정한다. 제목·설명·OG·JSON-LD·본문·접근성 문구를 언어에 맞추고 자원 경로는 루트 공유 자원으로 보정한다. 상대 `#` 링크는 그대로 유지한다. 루트 및 생성 페이지에 기존 승인 AdSense 연결 스크립트를 유지한다.
 
 배포는 `.github/workflows/pages.yml`(main 푸시/수동 실행)의 단위 테스트 → Node 생성 → Pages artifact 게시다. 기존 main/root Jekyll 배포에서 사용자가 Pages Source를 GitHub Actions로 전환해야 한다. `_site/`는 빌드 때 교체하며 커밋하지 않는다. 공개 자원 화이트리스트로 CNAME·robots·sitemap·이미지·효과음·검색 소유권 파일을 복사하고 BGM MP3/playlist.json을 생성한다. Worker·DB·도메인은 변경하지 않는다. 절차는 [LOCALIZED_PAGES.md](LOCALIZED_PAGES.md).

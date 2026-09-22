@@ -67,7 +67,7 @@ function buildSite(outDir=path.join(ROOT,'_site')){
   write('index.html',source);
   for(const lang of LANGS)write(lang+'/index.html',localizedPage(source,lang));
   for(const name of fs.readdirSync(ROOT)){
-    if(/^(?:CNAME|LICENSE|robots\.txt|sitemap\.xml|favicon\.png|og\.png|donate-kakao\.png|sfx-[\w-]+\.mp3|google[\w]+\.html|naver[\w]+\.html)$/.test(name))
+    if(/^(?:CNAME|LICENSE|ads\.txt|robots\.txt|sitemap\.xml|favicon\.png|og\.png|donate-kakao\.png|sfx-[\w-]+\.mp3|google[\w]+\.html|naver[\w]+\.html)$/.test(name))
       fs.copyFileSync(path.join(ROOT,name),path.join(output,name));
   }
   const tracks=tracksAt(path.join(ROOT,'bgm'));

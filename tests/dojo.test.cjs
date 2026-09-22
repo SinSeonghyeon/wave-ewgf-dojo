@@ -1672,7 +1672,7 @@ test('Pages build publishes only app assets, locale pages and the generated musi
   const path=require('node:path'), {buildSite}=require('../tools/build-site');
   const {output}=buildSite();
   for(const lang of ['ko','en','ja'])assert.ok(fs.existsSync(path.join(output,lang,'index.html')));
-  for(const name of ['CNAME','robots.txt','sitemap.xml','googlec1d8aba57474fdc5.html','naverc136a4867080d3062b3628800923af51.html','sfx-wave.mp3','donate-kakao.png'])
+  for(const name of ['CNAME','ads.txt','robots.txt','sitemap.xml','googlec1d8aba57474fdc5.html','naverc136a4867080d3062b3628800923af51.html','sfx-wave.mp3','donate-kakao.png'])
     assert.deepEqual(fs.readFileSync(path.join(output,name)),fs.readFileSync(path.join(__dirname,'..',name)),name);
   for(const name of ['worker','tests','.agents','.sandbox','AGENTS.md','tools'])assert.equal(fs.existsSync(path.join(output,name)),false,name+' stays private to the repo');
   const tracks=JSON.parse(fs.readFileSync(path.join(output,'bgm/playlist.json'),'utf8'));
