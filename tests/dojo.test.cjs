@@ -86,11 +86,12 @@ test('mist staging cannot hide a forward/down reversal inside the final slot',()
     a.onDir(directions[0],1033);a.onDir(directions[1],1034);a.onDir('df',1035);
     if(!rpFirst)a.onButton(2,1035);
     a.tick(1100);
-    assert.equal(a.session.hits,0,JSON.stringify({directions,rpFirst}));
-    assert.equal(a.session.dashes,0);assert.equal(a.store.life.ewgf,0);
+    const accepted=directions[0]==='f'&&!rpFirst;
+    assert.equal(a.session.hits,accepted?1:0,JSON.stringify({directions,rpFirst}));
+    assert.equal(a.session.dashes,directions[0]==='f'?1:0);assert.equal(a.store.life.ewgf,accepted?1:0);
     assert.equal(a.session.tries,1,'the RP is replayed only once');
-    if(directions[0]==='f'&&!rpFirst)assert.equal(a.session.attempts[0].kind,'no_neutral');
-    a.onDir('n',1200);mistInput(a,{start:1300});assert.equal(a.session.hits,1);
+    assert.notEqual(a.session.attempts[0].inputRoute,'mist');
+    a.onDir('n',2200);mistInput(a,{start:2300});assert.equal(a.session.hits,accepted?2:1);
   }
 });
 
@@ -155,68 +156,97 @@ test('mist release before RP does not swallow the next standalone command',()=>{
 test('mist never replaces real down holds, omitted-neutral inputs, dash EWGF or wave links',()=>{
   const a=boot();dash(a);a.onButton(2,1060);assert.equal(a.session.attempts[0].inputRoute,'standard');
   const b=boot();b.onDir('f',1000);b.onDir('d',1017);b.onDir('df',1033);b.onButton(2,1033);
-  assert.equal(b.session.attempts[0].inputRoute,'noNeutral');assert.equal(b.session.dashes,0);
-  assert.equal(b.session.attempts[0].kind,'no_neutral');assert.equal(b.session.hits,0);
+  assert.equal(b.session.attempts[0].inputRoute,'noNeutral');assert.equal(b.session.dashes,1);
+  assert.equal(b.session.attempts[0].kind,'ewgf');assert.equal(b.session.hits,1);
   const c=boot();c.onDir('f',1000);c.onDir('n',1017);c.onDir('f',1033);c.onDir('n',1050);c.onDir('df',1067);c.onButton(2,1067);
   assert.equal(c.session.hits,0);assert.notEqual(c.session.attempts[0].inputRoute,'mist');
   const d=boot();dash(d);d.onDir('f',1080);d.onDir('n',1100);d.onDir('f',1120);d.onDir('n',1140);d.onDir('df',1160);d.onButton(2,1160);
   assert.equal(d.session.dashes,1);assert.equal(d.session.hits,0);
 });
 
-test('standard EWGF rejects omitted neutral in every mode and RP order without hit rewards',()=>{
+test('623 shares wave and EWGF judging across modes, including early RP and late WGF',()=>{
   for(const mode of ['free','wave10','ewgf20','combo10','rush30','bd10','wsc'])for(const offset of [-2,0,20]){
     const a=boot();a.setMode(mode);
     if(!['free','wsc'].includes(mode)){a.startTrial();const go=a.timers.get(a.trial.cdTimer);go();go();go();}
     a.onDir('f',1100);a.onDir('d',1120);
     if(offset<0)a.onButton(2,1140+offset);
     a.onDir('df',1140);
-    if(offset>=0)a.onButton(2,1140+offset);
-    assert.equal(a.get('rTitle').textContent,a.T('a.no_neutral.title'));
-    assert.equal(a.session.hits,0);assert.equal(a.store.life.ewgf,0);assert.equal(a.store.life.tightEwgf,0);assert.equal(a.combo.n,0);
-    assert.equal(a.session.tries,mode==='wsc'?0:1);assert.equal(a.session.offsetCount,0);
-    if(mode==='wsc'){assert.equal(a.wsc.session.tries,0);assert.equal(a.wsc.challenge.status,'idle');}
-    else assert.equal(a.session.attempts[0].kind,'no_neutral');
-    if(mode==='ewgf20'||mode==='combo10')assert.equal(a.trial.count,1);
-    if(mode==='rush30'){assert.equal(a.trial.kills,0);assert.equal(a.trial.score,a.trial.dashPts);}
-    for(const lang of ['ko','en','ja']){a.setLang(lang);assert.equal(a.get('rTitle').textContent,a.T('a.no_neutral.title'));assert.equal(a.get('coachMsg').innerHTML,a.T('a.no_neutral.coach'));}
+    if(offset>=0){ // an early RP resolves inside completeCD and clears the command, so read the cycle first
+      assert.equal(a.cd.chainCycles.length,1);assert.equal(a.cd.chainCycles[0].nGap,0,'the omitted neutral is a zero-length segment');
+      a.onButton(2,1140+offset);
+    }
+    assert.equal(a.session.dashes,mode==='wsc'?0:1);
+    assert.equal(a.session.hits,mode==='wsc'||offset===20?0:1);
+    assert.equal(a.session.tries,mode==='wsc'?0:1);
+    if(mode!=='wsc'){
+      assert.equal(a.session.attempts[0].inputRoute,'noNeutral');
+      assert.equal(a.session.attempts[0].kind,offset===20?'wgf':'ewgf');
+    }else assert.equal(a.wsc.session.tries,0);
+    if(mode==='wave10'||mode==='ewgf20'||mode==='combo10')assert.equal(a.trial.count,1);
+    if(mode==='rush30')assert.equal(a.trial.dashPts,1);
+    const expected=offset===20?'a.wgf.title':mode==='combo10'?'a.combo.title':'a.ewgf.title';
+    for(const lang of ['ko','en','ja']){a.setLang(lang);assert.equal(a.get('rTitle').textContent,a.T(expected));}
   }
 });
 
-test('neutral provenance survives release/cancel and does not reject an explicit zero-duration neutral',()=>{
+test('623 provenance survives release/cancel and resets for a standard or mist input',()=>{
   for(const release of ['n','f']){
-    const a=boot();a.onDir('f',1000);a.onDir('d',1020);a.onDir('df',1040);a.onDir(release,1041);a.onButton(2,1042);
-    assert.equal(a.session.attempts[0].kind,release==='f'?'early_stage':'no_neutral');
+    const a=boot();a.onDir('f',1000);a.onDir('d',1020);a.onDir('df',1035);a.onDir(release,1036);a.onButton(2,1037);
+    assert.equal(a.session.attempts[0].kind,'ewgf');assert.equal(a.session.attempts[0].inputRoute,'noNeutral');
     a.resetInput();a.onDir('f',1100);a.onDir('n',1120);a.onDir('d',1120);a.onDir('df',1140);a.onButton(2,1140);
     assert.equal(a.session.attempts[1].kind,'ewgf');assert.equal(a.session.attempts[1].inputRoute,'standard');
-    a.onDir('n',1200);mistInput(a,{start:1300});assert.equal(a.session.attempts[2].inputRoute,'mist');assert.equal(a.session.hits,2);
+    a.onDir('n',1200);mistInput(a,{start:1300});assert.equal(a.session.attempts[2].inputRoute,'mist');assert.equal(a.session.hits,3);
   }
-  const a=boot();a.onDir('f',1000);a.onDir('d',1020);a.onDir('df',1040);a.onButton(4,1040);
-  assert.equal(a.store.life.hellsweep,0,'omitted neutral cannot produce a Hellsweep');
+  for(const early of [false,true]){
+    const a=boot();a.onDir('f',1000);a.onDir('d',1020);
+    if(early)a.onButton(4,1039);
+    a.onDir('df',1040);if(!early)a.onButton(4,1040);
+    assert.equal(a.store.life.hellsweep,1);assert.equal(a.session.tries,0);
+  }
 });
 
-test('623 earns no wave or Hellsweep credit and cannot seed or replace a WSC challenge prefix',()=>{
-  for(const mode of ['free','wave10','rush30','wsc'])for(const earlyButton of [false,true]){
+test('623 wave chains retain distinct cancel/start forwards and zero neutral gaps',()=>{
+  for(const mode of ['free','wave10','rush30']){
     const a=boot();a.setMode(mode);
-    if(mode==='wsc'){a.wscStartChallenge();a.time(4100);a.tick(4100);}
-    else if(mode!=='free'){a.startTrial();const go=a.timers.get(a.trial.cdTimer);go();go();go();}
-    const task=a.wsc.challenge.taskN;
-    a.onDir('f',4200);a.onDir('d',4220);
-    assert.equal(a.get('rTitle').textContent,a.T('fault.no_neutral.title'));
-    if(earlyButton)a.onButton(4,4230);
-    a.onDir('df',4240);if(!earlyButton)a.onButton(4,4240);
-    assert.equal(a.session.dashes,0);assert.equal(a.store.life.dashes,0);assert.equal(a.store.life.hellsweep,0);
-    assert.equal(a.wsc.active,null);
-    if(mode==='wave10'||mode==='rush30'){assert.equal(a.trial.score,0);assert.equal(a.trial.count,0);}
-    a.onDir('b',4240+7*F);a.onButton(2,4240+8*F);
-    assert.equal(a.wsc.session.tries,0);assert.equal(a.wsc.challenge.taskN,task);assert.equal(a.session.hits,0);
-    if(mode==='wsc')assert.equal(a.wsc.challenge.stats.tries,0);
-    a.onDir('n',4500);dash(a,4600);a.onButton(4,4660);
-    assert.equal(a.store.life.hellsweep,mode==='wsc'?0:1,'next complete command recovers without reset');
+    if(mode!=='free'){a.startTrial();const go=a.timers.get(a.trial.cdTimer);go();go();go();}
+    a.onDir('f',1100);a.onDir('d',1120);a.onDir('df',1140);
+    a.onDir('f',1160);a.onDir('n',1180);a.onDir('f',1200);a.onDir('d',1220);a.onDir('df',1240);
+    assert.equal(a.session.dashes,2);assert.equal(a.cd.chain,2);
+    assert.deepEqual(Array.from(a.cd.chainCycles,c=>c.nGap),[0,0]);
+    if(mode==='wave10')assert.equal(a.trial.count,2);
+    if(mode==='rush30')assert.equal(a.trial.dashPts,3);
+    a.onDir('f',1260);a.onDir('d',1280);a.onDir('df',1300);
+    assert.equal(a.session.dashes,2,'cancel forward cannot double as start forward');
   }
-  const a=boot();a.setMode('wsc');wscPrefix(a);
-  a.onDir('f',1080);a.onDir('n',1090);a.onDir('f',1100);a.onDir('d',1120);a.onDir('df',1140);
-  a.onDir('b',1140+7*F);a.onButton(2,1140+8*F);
-  assert.equal(a.wsc.active,null);assert.equal(a.wsc.session.tries,0,'invalid replacement cannot finish an older WSC');
+  // the one release between d/f and the cancel 6 may be neutral or down (cd states 4 -> 7)
+  for(const release of ['n','d']){
+    const a=boot();a.onDir('f',1000);a.onDir('n',1020);a.onDir('d',1040);a.onDir('df',1060);
+    a.onDir(release,1080);a.onDir('f',1100);a.onDir('n',1120);a.onDir('f',1140);a.onDir('d',1160);a.onDir('df',1180);
+    assert.equal(a.cd.chain,2,release);
+  }
+});
+
+test('623 seeds and refreshes WSC challenge prefixes without consuming tasks early',()=>{
+  for(const initialNeutral of [false,true]){
+    const a=boot();a.setMode('wsc');a.wscStartChallenge();a.time(4100);a.tick(4100);
+    a.wsc.challenge.taskN=1;
+    a.onDir('f',4200);if(initialNeutral)a.onDir('n',4210);a.onDir('d',4220);a.onDir('df',4240);
+    assert.equal(a.wsc.active.waves,1);assert.equal(a.wsc.challenge.stats.tries,0);
+    a.onDir('f',4260);a.onDir('n',4280);a.onDir('f',4300);a.onDir('d',4320);a.onDir('df',4340);
+    assert.equal(a.wsc.active.waves,2);assert.equal(a.wsc.active.df,4340);
+    a.onDir('b',4340+7*F);a.onButton(2,4340+8*F);
+    assert.equal(a.wsc.session.hits,1);assert.equal(a.wsc.challenge.stats.hits,1);
+    assert.equal(a.session.tries,0);assert.equal(a.store.life.dashes,0);
+  }
+  // the WSC wave counter must agree with cd.chain for either release direction, 623 or 6N23
+  for(const release of ['n','d'])for(const neutral of [false,true]){
+    const a=boot();a.setMode('wsc');
+    a.onDir('f',1000);a.onDir('n',1020);a.onDir('d',1040);a.onDir('df',1060);
+    a.onDir(release,1080);a.onDir('f',1100);a.onDir('n',1120);a.onDir('f',1140);
+    if(neutral)a.onDir('n',1150);
+    a.onDir('d',1160);a.onDir('df',1180);
+    assert.equal(a.wsc.active.waves,2,JSON.stringify({release,neutral}));
+  }
 });
 
 test('mist uses existing trial scores without wave credits and does not consume WSC tasks',()=>{
@@ -516,7 +546,7 @@ test('the three dictionaries share exactly the same key set',()=>{
 test('announcements render in every language and persist the latest read marker',()=>{
   let saved;
   const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
-  assert.ok(a.NOTICES.length);assert.equal(a.NOTICES[0].id,'2026-09-21-roundup');assert.equal(a.NOTICES[0].items.length,5);assert.equal(a.NOTICES[1].id,'2026-09-21-mist');assert.equal(a.NOTICES[2].id,'2026-09-19-dojo');assert.equal(a.NOTICES[3].id,'2026-09-15-notices');assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
+  assert.ok(a.NOTICES.length);assert.equal(a.NOTICES[0].id,'2026-09-22-623');assert.equal(a.NOTICES[0].items.length,1);assert.equal(a.NOTICES[1].id,'2026-09-21-roundup');assert.equal(a.NOTICES[2].id,'2026-09-21-mist');assert.equal(a.NOTICES[3].id,'2026-09-19-dojo');assert.equal(a.NOTICES[4].id,'2026-09-15-notices');assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
   assert.ok(a.get('noticeList').innerHTML.includes(a.T(a.NOTICES[0].title)));
   a.setMode('wave10');a.startTrial();a.openNotices();
   assert.equal(a.get('noticeDlg').open,true);assert.equal(a.trial.cdTimer,null,'opening an announcement cancels a countdown');
@@ -1829,10 +1859,10 @@ test('WSC permits neutral and one forward, rejects other directions, replaces on
   assert.equal(a.wsc.last.ok,true);assert.equal(a.wsc.last.df,df);assert.equal(a.wsc.session.tries,1);
   const b=boot();b.setMode('wsc');b.onDir('f',1000);b.onDir('df',1020);b.onButton(2,1100);assert.equal(b.wsc.session.tries,0);assert.equal(b.wsc.session.errors,1);
 });
-test('neutral omission never completes a wave or a linked wave',()=>{
+test('neutral omission completes standalone and linked waves',()=>{
   const a=boot();a.onDir('f',1000);a.onDir('d',1020);a.onDir('df',1040);
   a.onDir('f',1100);a.onDir('n',1120);a.onDir('f',1140);a.onDir('d',1160);a.onDir('df',1180);
-  assert.equal(a.session.dashes,0);assert.equal(a.cd.chain,0);assert.equal(a.store.life.dashes,0);
+  assert.equal(a.session.dashes,2);assert.equal(a.cd.chain,2);assert.equal(a.store.life.dashes,2);
 });
 test('WSC translated results, touch/keyboard/pad input paths, side mirroring and no repeated held RP',()=>{
   for(const side of [1,-1]){

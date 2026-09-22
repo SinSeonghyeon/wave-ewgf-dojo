@@ -81,8 +81,8 @@ fs.cpSync(path.join(root,'bgm'),path.join(out,'bgm'),{recursive:true});
           await sample([13]);await sample([13,f,3]);await sample([]);
         }finally{if(previous)Object.defineProperty(navigator,'getGamepads',previous);else delete navigator.getGamepads;}
       })()`);
-      const r=await read();assert.equal(r.title,neutral?'초풍!':'중립 누락',JSON.stringify({side,neutral,r}));
-      assert.equal(r.dashes-before.dashes,neutral?1:0,'623 must not earn a wave before RP');
+      const r=await read();assert.equal(r.title,'초풍!',JSON.stringify({side,neutral,r}));
+      assert.equal(r.dashes-before.dashes,1,'both 623 and 6N23 earn one wave');
     }
     assert.equal(b.errors.length,0,JSON.stringify(b.errors));
     console.log(JSON.stringify({ok:true,commands:count,neutralChecks:4,errors:b.errors,screenshots:shots},null,2));

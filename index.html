@@ -1036,6 +1036,7 @@ function setFit(slot, id){ if(!ITEMS[slot] || !ITEMS[slot][id] || !owned(id)) re
 // Newest first. For each patch, add one entry and the matching notice.<id> strings to all three I18N dictionaries.
 // The latest id is the read marker saved in this browser; no backend or deployment-time request is involved.
 const NOTICES = [
+  {id:'2026-09-22-623',date:'2026-09-22',kind:'notice.kind.update',title:'notice.20260922.title',summary:'notice.20260922.summary',items:['notice.20260922.1']},
   {id:'2026-09-21-roundup', date:'2026-09-21', kind:'notice.kind.update', title:'notice.20260921roundup.title', summary:'notice.20260921roundup.summary', items:['notice.20260921roundup.1','notice.20260921roundup.2','notice.20260921roundup.3','notice.20260921roundup.4','notice.20260921roundup.5']},
   {id:'2026-09-21-mist', date:'2026-09-21', kind:'notice.kind.update', title:'notice.20260921.title', summary:'notice.20260921.summary', items:['notice.20260921.1','notice.20260921.2','notice.20260921.3']},
   {id:'2026-09-19-dojo', date:'2026-09-19', kind:'notice.kind.update', title:'notice.20260919.title', summary:'notice.20260919.summary', items:['notice.20260919.1','notice.20260919.2','notice.20260919.3','notice.20260919.4','notice.20260919.5','notice.20260919.6']},
@@ -1133,6 +1134,9 @@ const LOCALE = {ko:'ko-KR', en:'en-US', ja:'ja-JP'};
 const I18N = {
 ko:{
   "notice.20260921.title":"무족초 연습과 중립 입력 규칙",
+  "notice.20260922.title":"623 웨이브 입력 지원",
+  "notice.20260922.summary":"중립 생략 입력 판정을 수정했습니다.",
+  "notice.20260922.1":"실게임 확인을 반영해 6 다음 중립 없이 23을 입력해도 웨이브가 동작합니다. 일반 초풍·나락·웨캔기어도 같은 선행 입력을 사용합니다. 9월 21일 중립 필수 안내를 정정하며, 캔슬 6과 다음 시작 6은 계속 구분합니다.",
   "notice.20260921roundup.title":"무족초·입력 기록·BGM 업데이트",
   "notice.20260921roundup.summary":"최근 추가된 무족초 연습과 입력 규칙, 입력 기록·음악·순위 개선을 한곳에 정리했습니다.",
   "notice.20260921roundup.1":"독립적인 6N3+RP 무족초를 연습할 수 있습니다. 대각·RP가 같은 프레임이면 성공, 앞·중립도 각각 1f이면 최속으로 표시합니다. 결과에서 각 입력 프레임을 확인하고 캐릭터 위 무족초! 팝도 볼 수 있습니다. 대시·웨이브에서 이어지는 무족초는 아직 지원하지 않습니다.",
@@ -1144,8 +1148,6 @@ ko:{
   "notice.20260921.1":"독립적인 6N3+RP 무족초를 연습할 수 있습니다. 대각과 RP가 같은 프레임이면 성공하며, 앞·중립도 각각 1f이면 최속으로 표시합니다.",
   "notice.20260921.2":"결과·구간 막대에 앞·중립·RP 프레임을 표시합니다. 대시·웨이브에서 이어지는 무족초는 아직 지원하지 않습니다.",
   "notice.20260921.3":"웨이브·일반 초풍·나락·웨캔기어는 모두 6N23의 중립이 필수입니다. 623은 중립 누락으로 실패하며 웨이브 수·기술 성공으로 집계하지 않습니다.",
-  'fault.no_neutral.title':'중립 누락', 'fault.no_neutral.coach':'앞(6)을 놓아 중립(N)을 거친 뒤 아래(2) → 대각(3)을 입력하세요. 6N23의 N은 생략할 수 없습니다.',
-  'res.no_neutral':'중립 누락', 'a.no_neutral.title':'중립 누락', 'a.no_neutral.sub':'웨이브·일반 초풍·나락·웨캔기어는 6N23이 필요합니다.', 'a.no_neutral.coach':'앞(6)을 놓아 중립(N)을 거친 뒤 아래(2) → 대각(3)+RP를 입력하세요. 623은 웨이브나 기술의 선행 입력으로 인정하지 않습니다.',
   'mist.title':'무족초!', 'mist.fastest':'최속 무족초!', 'route.mist':'무족 입력 · 6N3+RP', 'route.standard':'일반 입력 · 6N23+RP', 'route.noNeutral':'중립 생략 · 623+RP',
   'mist.frames':(f,n,r)=>`앞 ${f}f · 중립 ${n}f · RP ${r===0?'같은 프레임':(r>0?'+':'')+r+'f'}`,
   'mist.improve':(f,n)=>`최속까지: 앞 ${f}f, 중립 ${n}f 줄이기`, 'mist.input13':'13f 발동에 필요한 입력 조건 충족 · 실제 명중·딜캐 타이밍은 측정하지 않습니다.',
@@ -1446,6 +1448,9 @@ ko:{
 },
 en:{
   "notice.20260921.title":"Mist Step EWGF practice and neutral input rules",
+  "notice.20260922.title":"623 wave input supported",
+  "notice.20260922.summary":"Updated judging for inputs without neutral.",
+  "notice.20260922.1":"Following in-game verification, waves now accept 623 without neutral after forward. Standard EWGF, Hellsweep and WSC share this prefix. This corrects the September 21 neutral requirement. Cancel forward and the next starting forward remain separate.",
   "notice.20260921roundup.title":"Mist Step EWGF, input history and BGM updates",
   "notice.20260921roundup.summary":"A roundup of new Mist Step EWGF practice, input rules, and improvements to input history, music and rankings.",
   "notice.20260921roundup.1":"Practice standalone 6N3+RP. Diagonal and RP must share a frame; one frame each of forward and neutral earns the fastest label. Check input frames in the result and a Mist EWGF! pop above your fighter. Links from a dash or wave are not supported yet.",
@@ -1457,8 +1462,6 @@ en:{
   "notice.20260921.1":"Practice standalone 6N3+RP. Diagonal and RP must share a frame; one frame each of forward and neutral earns the fastest label.",
   "notice.20260921.2":"Results and the segment bar show forward, neutral and RP frames. Mist Step EWGF from dash or wave links is not supported yet.",
   "notice.20260921.3":"Wave, standard EWGF, Hellsweep and WSC all require neutral in 6N23. Inputting 623 fails for missing neutral and earns no wave or move success.",
-  'fault.no_neutral.title':'Missing neutral', 'fault.no_neutral.coach':'Release forward (6) to neutral (N), then enter down (2) → d/f (3). The N in 6N23 is required.',
-  'res.no_neutral':'Missing neutral', 'a.no_neutral.title':'Missing neutral', 'a.no_neutral.sub':'Wave, standard EWGF, Hellsweep and WSC require 6N23.', 'a.no_neutral.coach':'Release forward (6) to neutral (N), then enter down (2) → d/f (3)+RP. 623 is not a valid wave or move prefix.',
   'mist.title':'Mist Step EWGF!', 'mist.fastest':'Fastest Mist Step EWGF!', 'route.mist':'Mist input · 6N3+RP', 'route.standard':'Standard · 6N23+RP', 'route.noNeutral':'No neutral · 623+RP',
   'mist.frames':(f,n,r)=>`Forward ${f}f · Neutral ${n}f · RP ${r===0?'same frame':(r>0?'+':'')+r+'f'}`,
   'mist.improve':(f,n)=>`For fastest input: shorten forward by ${f}f and neutral by ${n}f.`, 'mist.input13':'Input conditions for a 13f startup met. Actual impact and punishment timing are not measured.',
@@ -1757,6 +1760,9 @@ en:{
 },
 ja:{
   "notice.20260921.title":"無足最風の練習と中立入力ルール",
+  "notice.20260922.title":"623ウェーブ入力に対応",
+  "notice.20260922.summary":"中立省略入力の判定を修正しました。",
+  "notice.20260922.1":"ゲーム内での確認を反映し、6の後に中立を挟まない623でもウェーブが出るようになりました。通常の最風・奈落・WSCも同じ先行入力を使います。9月21日の中立必須の案内を訂正します。キャンセルの6と次の開始6は引き続き区別します。",
   "notice.20260921roundup.title":"無足最風・入力履歴・BGMアップデート",
   "notice.20260921roundup.summary":"無足最風の練習と入力ルール、入力履歴・音楽・ランキングの改善をまとめました。",
   "notice.20260921roundup.1":"単独の6N3+RPを練習できます。斜めとRPが同一フレームなら成功し、前・中立も各1fなら最速と表示します。結果で各入力のフレームを確認でき、キャラクターの上にも無足最風！と表示されます。ダッシュ・ウェーブからの接続はまだ未対応です。",
@@ -1768,8 +1774,6 @@ ja:{
   "notice.20260921.1":"単独の6N3+RPを練習できます。斜めとRPが同一フレームなら成功し、前・中立も各1fなら最速と表示します。",
   "notice.20260921.2":"結果と区間バーに前・中立・RPのフレームを表示します。ダッシュ・ウェーブからつなぐ無足最風はまだ未対応です。",
   "notice.20260921.3":"ウェーブ・通常の最風・奈落・WSCはすべて6N23の中立が必須です。623は中立抜けで失敗し、ウェーブ数・技の成功には数えません。",
-  'fault.no_neutral.title':'中立抜け', 'fault.no_neutral.coach':'前(6)を離して中立(N)を挟み、下(2)→斜め(3)を入力してください。6N23のNは省略できません。',
-  'res.no_neutral':'中立抜け', 'a.no_neutral.title':'中立抜け', 'a.no_neutral.sub':'ウェーブ・通常の最風・奈落・WSCには6N23が必要です。', 'a.no_neutral.coach':'前(6)を離して中立(N)を挟み、下(2)→斜め(3)+RPを入力してください。623はウェーブや技の先行入力として認めません。',
   'mist.title':'無足最風！', 'mist.fastest':'最速無足最風！', 'route.mist':'無足入力 · 6N3+RP', 'route.standard':'通常入力 · 6N23+RP', 'route.noNeutral':'中立省略 · 623+RP',
   'mist.frames':(f,n,r)=>`前 ${f}f · 中立 ${n}f · RP ${r===0?'同一フレーム':(r>0?'+':'')+r+'f'}`,
   'mist.improve':(f,n)=>`最速まで：前を${f}f、中立を${n}f短縮`, 'mist.input13':'13f発生に必要な入力条件を達成。実際の命中・確定反撃のタイミングは測定しません。',
@@ -2499,10 +2503,11 @@ function wscDir(dir,t){
   // First forward after d/f is a cancel. A separate start forward completes the next wave.
   if(dir==='f' && (!a || a.back!=null || a.forwards>=2)) wsc.prefix=1;
   else if(dir==='n' && wsc.prefix===1) wsc.prefix=2;
-  else if(dir==='d' && wsc.prefix===2) wsc.prefix=3;
+  else if(dir==='d' && (wsc.prefix===1 || wsc.prefix===2)) wsc.prefix=3;
   else if(dir==='df' && wsc.prefix===3){
-    // A new wave extends the chain only through cancel 6, N, separate start 6, N, 2, 3.
-    const linked=a&&/^df,(n,)?f,n,f,n,d,df$/.test(a.events.map(e=>e.dir).join(','));
+    // A new wave extends the chain only through cancel 6, N, separate start 6, optional N, 2, 3.
+    // The single release before the cancel 6 may be N or 2, matching cd states 4→7→cancelCD.
+    const linked=a&&/^df,([nd],)?f,n,f,(n,)?d,df$/.test(a.events.map(e=>e.dir).join(','));
     wsc.active={df:t,back:null,forwards:0,bad:null,lastAt:t,waves:linked?a.waves+1:1,events:[{dir,t}]};
     wsc.prefix=0; wsc.last=null; wsc.notice='backWait';
  // no SFX or lifetime counters
@@ -2703,7 +2708,7 @@ function mistDir(dir,t){
   if(dir==='d'||dir==='f'){
     // Only one intermediate direction can build N -> (d or f) -> df. A second
     // cardinal direction is a reversal, not simultaneous diagonal key presses.
-    // Replay it through the normal prefix rules (including mandatory neutral).
+    // Replay it through the normal prefix rules (including the optional neutral in 623).
     if(m.slot!=null){ mistReplay(); return false; }
     backdashMotion(dir,t);
     m.slot=frameSlot(t); m.queue.push({dir,t}); return true;
@@ -2739,8 +2744,10 @@ function backdashMotion(dir,t,bdOutNow=false){
   if(bdActive()) bdDir(dir,t);
   if(bdOutNow) bdRec.until=t+BD.RECOVER_F*FRAME;
 }
+// Every entry into state 1 is a fresh start 6, so it drops the previous prefix's 623 provenance.
+// The cancel 6 (states 4/5/7) must NOT clear it: its EWGF is still judged from that prefix.
+function startCD(t){ cd.state=1; cd.tF=t; cd.omittedNeutral=false; }
 function commandDir(dir,t,backdashDone=false){
-  if(dir==='f') cd.omittedNeutral=false; // a new start/cancel forward clears the rejected prefix
   wscDir(dir,t);
   // dash / backdash from a double tap. Runs before the switch so the second f still becomes the start 6 (cd.tF===t → f,f+2 eligible, 대초 label).
   // The wave's cancel 6 → N → start 6 is a dash too (2026-09-12 user decision; the cancel 6 alone is not): shorter visual, no 대초 label (dashWave).
@@ -2748,25 +2755,24 @@ function commandDir(dir,t,backdashDone=false){
   { const wave = dir==='f' && cd.state===6; const dbl = tapDetect(dir, t); if(dbl==='f'){ cd.dashT=t; cd.dashWave=wave; fx.dash(wave); } else if(dbl==='b' && t>=bdRec.until){ bdOutNow = true; fx.backdash(); } } // a b,N,b inside the recovery does nothing (stiff)
   if(!backdashDone) backdashMotion(dir,t,bdOutNow); // staged directions already reached the independent backdash machine
   switch(cd.state){
-    case 0: if(dir==='f'){ cd.state=1; cd.tF=t; } break;
+    case 0: if(dir==='f') startCD(t); break;
     case 1:
-      if(dir==='n'){ cd.state=2; cd.tN=t; cd.omittedNeutral=false; }
+      if(dir==='n'){ cd.state=2; cd.tN=t; }
       else if(dir==='df'){ fault('f_before_d', t); resetCD(); }
       else if(dir==='d'){
-        fault('no_neutral',t); wscCancel(false);
-        cd.omittedNeutral=true; cd.tD=t; // retain the reason for the following button, not a valid command
+        cd.state=3; cd.tN=t; cd.tD=t; cd.omittedNeutral=true; // 623: zero neutral gap, same crouch dash
       }
       else resetCD();
       break;
     case 2:
       if(dir==='d'){ cd.state=3; cd.tD=t; }
-      else if(dir==='f'){ cd.state=1; cd.tF=t; }
+      else if(dir==='f'){ startCD(t); }
       else if(dir==='df'){ fault('n_to_df', t); setCoach(['mist.unsupported']); resetCD(); }
       else resetCD();
       break;
     case 3:
       if(dir==='df'){ completeCD(t); }
-      else { if(cd.pending){ resolvePending(null, t); } resetCD(); if(dir==='f'){ cd.state=1; cd.tF=t; } }
+      else { if(cd.pending){ resolvePending(null, t); } resetCD(); if(dir==='f') startCD(t); }
       break;
     case 4: // d/f held (crouch dash active)
       if(dir==='f'){ cancelCD(t); }
@@ -2780,7 +2786,7 @@ function commandDir(dir,t,backdashDone=false){
       else resetCD();
       break;
     case 6: // neutral after cancel, waiting for the second 6
-      if(dir==='f'){ cd.state=1; cd.tF=t; }
+      if(dir==='f'){ startCD(t); }
       else if(dir==='d'){ fault('cancel_as_start', t); resetCD(); }
       else if(dir==='df'){ fault('n_to_df', t); resetCD(); }
       else resetCD();
@@ -2833,7 +2839,7 @@ function completeCD(t){
   updateStats(); updateHud();
 }
 function fault(kind, t){
-  if(!['f_before_d','n_to_df','cancel_as_start','no_neutral'].includes(kind)) return;
+  if(!['f_before_d','n_to_df','cancel_as_start'].includes(kind)) return;
   clearCommand(); resetCombo(); updateHud();
   showResult('miss', 'MISS', ['fault.'+kind+'.title'], '');
   setCoach(['fault.'+kind+'.coach']);
@@ -2950,7 +2956,6 @@ function onButton(n, t){
 function commandButton(n,t){
   if(wsc.active&&wsc.active.back!=null){ wscButton(n,t); endCommand(); return; }
   wscOtherMove();
-  if(cd.omittedNeutral){ if(n===2) attempt('no_neutral',null,t); return; }
   const off = t - cd.lastDF;
   if(n===4){ // 나락 f,N,d,df+4: no just frame — any 4 while the crouch dash is active (or up to 250ms into the cancel 6)
     if(cd.state===4 || cd.state===7 || (cd.state===5 && off<=250)){ strike('hellsweep', t); return; }
@@ -3005,7 +3010,7 @@ function attempt(kind, off, t, input){
   if(kind==='ewgf'){ if(t - combo.t > 3000) combo.n = 0; combo.n++; combo.t = t; } else resetCombo();
   const a = { t, kind, off, chain: chainBefore, mode, streak: combo.n, dash: kind==='ewgf' && cd.dashT>0 && cd.dashT===cd.tF && !cd.dashWave };
   if(input) Object.assign(a,input,{dash:false,fastest:kind==='ewgf'&&input.fFrames===1&&input.nFrames===1});
-  else if(off!=null || kind==='no_neutral') a.inputRoute=cd.omittedNeutral?'noNeutral':'standard';
+  else if(off!=null) a.inputRoute=cd.omittedNeutral?'noNeutral':'standard';
   if(off!=null) a.frameOff=frameSlot(t)-frameSlot(t-off);
   if(mode!=='wsc'){
     session.attempts.push(a); if(session.attempts.length>300) session.attempts.shift();
@@ -3037,10 +3042,6 @@ function attempt(kind, off, t, input){
       cls='miss'; title=['a.no_df.title']; res='no_df'; rowCls='no';
       sub = ['a.no_df.sub'];
       coach = ['a.no_df.coach'];
-      fx.jab(); break;
-    case 'no_neutral':
-      cls='miss'; title=['a.no_neutral.title']; res='no_neutral'; rowCls='no';
-      sub=['a.no_neutral.sub']; coach=['a.no_neutral.coach'];
       fx.jab(); break;
     case 'early_stage':
       cls='miss'; title=['a.early_stage.title']; res='early_stage'; rowCls='no';
@@ -3144,7 +3145,6 @@ function renderLog(){
 /* ---------- tick: timeouts ---------- */
 function tick(now){
   mistTick(now);
-  if(cd.omittedNeutral && now-cd.tD>250) cd.omittedNeutral=false;
   wscTick(now); renderWscLive(now);
   if(cd.state===1 && now-cd.tF>250) cd.state=0;
   else if(cd.state===2 && now-cd.tN>250) cd.state=0;
