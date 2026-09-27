@@ -276,6 +276,23 @@
   .key-bind b{font-family:var(--mono);font-size:12px}
   .key-bind.alt.empty b{color:var(--muted);font-family:var(--body);font-size:11px}
   .key-bind.listen{border-color:var(--accent);color:var(--accent);animation:blink 1s infinite}
+  .binding-editor{border:1px solid var(--line2);border-radius:8px;padding:14px;display:grid;gap:12px;min-width:0}
+  .binding-toolbar,.binding-feedback{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .binding-actions{display:flex;gap:8px}
+  .binding-editor .keys{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:10px}
+  .binding-editor .key{padding:10px;min-width:0}
+  .binding-editor .key small{font-size:13px;color:var(--ink2)}
+  .binding-editor .key-bind{min-height:44px;overflow-wrap:anywhere}
+  .binding-editor .key-bind span{display:block;font:10px var(--body);color:var(--muted)}
+  .binding-editor .key-bind:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .binding-feedback{min-height:44px;color:var(--accent);font-size:12px}
+  .binding-feedback p{margin:0;flex:1;min-width:130px}
+  #padStatus{overflow-wrap:anywhere;min-width:0}
+  #padLive{min-height:2em;overflow-wrap:anywhere}
+  .binding-editor [hidden]{display:none}
+  #bindingCheck[aria-pressed="true"],.binding-editor .key.checked{border-color:var(--accent);background:var(--accent-soft)}
+  .binding-editor .key-bind.checked{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .binding-editor .key-bind:disabled{opacity:1;cursor:default}
   @keyframes blink{50%{opacity:.5}}
   .note{font-size:12px;color:var(--muted);line-height:1.5}
   .note code{font-family:var(--mono);color:var(--ink2);font-size:11.5px}
@@ -740,6 +757,22 @@
       <dialog class="share settings" id="setDlg" aria-labelledby="setTitle">
         <div class="set-head"><h2 id="setTitle" data-i18n="set.title">입력 · 판정 설정</h2><button class="btn ghost" id="setClose" type="button" data-i18n="share.close">닫기</button></div>
         <div class="set">
+          <section class="binding-editor">
+            <div class="binding-toolbar"><div class="segc" id="bindingTabs" role="group" data-i18n-aria="set.controls"><button type="button" data-device="kb" aria-pressed="true" data-i18n="set.keyboard"></button><button type="button" data-device="pad" aria-pressed="false" data-i18n="set.pad"></button></div><div class="binding-actions"><button class="btn ghost" id="bindingCheck" type="button" aria-pressed="false" data-i18n="set.bindCheck"></button><button class="btn ghost" id="bindingReset" type="button" data-i18n="set.bindReset"></button></div></div>
+            <p class="note"><span data-i18n="set.bindHelp"></span><br><span data-i18n="set.autoHelp"></span></p>
+            <div id="keyboardBindings">
+            <label class="t" data-i18n="set.keys">키 설정 — 동작마다 기본·보조 키를 하나씩 지정 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
+            <div class="keys" id="keys"></div>
+            <p class="note" data-i18n="set.keyRemove">보조 키를 지우려면 Delete 또는 Backspace</p>
+            </div>
+            <div id="padBindings" hidden>
+          <div class="row"><label class="t" data-i18n="set.pad">게임패드</label><span class="note" id="padStatus"></span></div>
+          <p class="note" data-i18n-html="set.padNote"></p>
+            <div class="keys" id="padKeys"></div>
+            <p class="note" id="padLive"></p>
+            </div>
+            <div class="binding-feedback"><p id="bindingMessage" role="status" aria-live="polite"></p><button class="btn ghost" id="bindingClear" type="button" hidden data-i18n="set.bindClear"></button><button class="btn ghost" id="bindingCancel" type="button" hidden data-i18n="set.bindCancel"></button></div>
+          </section>
           <p class="note" data-i18n="ewgf.gridNote"></p>
           <div class="row"><label class="t" data-i18n="set.fx">연출 (흔들림·플래시)</label>
             <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
@@ -759,13 +792,6 @@
           <div class="row"><label class="t" for="sfxVol" data-i18n="set.sfxVol">효과음 볼륨</label>
             <div class="range"><input type="range" id="sfxVol" min="0" max="100" step="5" value="100"><output id="sfxVolOut">100%</output></div></div>
           <p class="note" data-i18n="set.soundNote">배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).</p>
-          <div>
-            <label class="t" data-i18n="set.keys">키 설정 — 동작마다 기본·보조 키를 하나씩 지정 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
-            <div class="keys" id="keys"></div>
-            <p class="note" data-i18n="set.keyRemove">보조 키를 지우려면 Delete 또는 Backspace</p>
-          </div>
-          <div class="row"><label class="t" data-i18n="set.pad">게임패드</label><span class="note" id="padStatus"></span></div>
-          <p class="note" data-i18n-html="set.padNote"></p>
           <div class="row"><label class="t" data-i18n="set.reset">기록·업적 초기화</label><button class="btn ghost" id="dataReset" type="button" data-i18n="set.resetBtn">초기화…</button></div>
           <p class="note" data-i18n="set.resetNote">모드별 최고 기록, 누적 통계, 업적, 복장을 지웁니다. 닉네임과 설정은 남습니다.</p>
         </div>
@@ -1054,7 +1080,15 @@ const detectLang = () => { const l = (typeof navigator!=='undefined' && navigato
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // Legacy saved values / unchanged Worker contract; not used by the current EWGF judge
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-let store = {v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', touchSize:100, touchX:0, touchY:0, sound:1, bgm:1, bgmLast:-1, bgmVol:100, sfxVol:100, keys:{up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'}, altKeys:{up:'',down:'',left:'',right:'',b1:'',b2:'',b3:'',b4:''}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault(), donateResultDay:'', donateNudgeDay:'', donatePlayDay:'', donatePlayMs:0};
+const DEFAULT_KEYS = {up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'};
+const PAD_AUTO_INPUTS={up:['b12','a1-','hu'],down:['b13','a1+','hd'],left:['b14','a0-','hl'],right:['b15','a0+','hr']};
+const DEFAULT_PAD = {up:'auto',down:'auto',left:'auto',right:'auto',b1:'b2',b2:'b3',b3:'b0',b4:'b1'};
+function padAutoConflict(keys,slot,code){
+  return Object.entries(keys).some(([k,v])=>k!==slot && v==='auto' && PAD_AUTO_INPUTS[k]?.includes(code));
+}
+function validPadBinding(k,v){ return typeof v==='string' && (v==='none' || (v==='auto' && !k.startsWith('b')) || /^b(?:[0-9]|[1-9][0-9]|1[01][0-9]|12[0-7])$/.test(v) || (!k.startsWith('b') && /^(?:a(?:[0-9]|[12][0-9]|3[01])[+-]|h[udlr])$/.test(v))); }
+const emptyPadAlt = () => Object.fromEntries(Object.keys(DEFAULT_PAD).map(k=>[k,'none']));
+let store = {padAltKeys:emptyPadAlt(),padKeys:{...DEFAULT_PAD},v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', touchSize:100, touchX:0, touchY:0, sound:1, bgm:1, bgmLast:-1, bgmVol:100, sfxVol:100, keys:{...DEFAULT_KEYS}, altKeys:{up:'',down:'',left:'',right:'',b1:'',b2:'',b3:'',b4:''}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault(), donateResultDay:'', donateNudgeDay:'', donatePlayDay:'', donatePlayMs:0};
 const owned = id => id==='base' || !!store.ach[id]; // store.ach = unlock record (achievement items and daily gifts alike): id → time
 const pendingReward = id => store.pendingRewards.some(j => j.id===id);
 const earned = id => owned(id) || pendingReward(id);
@@ -1088,6 +1122,15 @@ try{
     for(const k of ['donateResultDay','donateNudgeDay','donatePlayDay']) if(typeof s[k]==='string' && /^\d{4}-\d\d-\d\d$/.test(s[k])) store[k]=s[k];
     if(Number.isFinite(s.donatePlayMs) && s.donatePlayMs>=0) store.donatePlayMs=Math.min(s.donatePlayMs, 10*60*1000);
     if(store.nick && s.votes && typeof s.votes==='object') for(const id of Object.keys(s.votes)) if(/^\d{1,12}$/.test(id) && [1,-1].includes(s.votes[id])) store.votes[id]=s.votes[id]; // my like(1)/dislike(-1) per post id: render-only cache (the server enforces one vote per nick); votes belong to the nickname, so none without one
+    const padKeys = {...DEFAULT_PAD,...s.padKeys};
+    const customPads = Object.values(padKeys).filter(v=>v!=='auto' && v!=='none');
+    if(Object.keys(padKeys).length===8 && Object.keys(DEFAULT_PAD).every(k=>validPadBinding(k,padKeys[k]) && !padAutoConflict(padKeys,k,padKeys[k])) && new Set(customPads).size===customPads.length) store.padKeys=padKeys;
+    const usedPadInputs=new Set(Object.values(store.padKeys).filter(v=>v!=='none' && v!=='auto'));
+    for(const k of Object.keys(DEFAULT_PAD)){
+      const code=s.padAltKeys?.[k];
+      const autoConflict=padAutoConflict(store.padKeys,k,code);
+      if(code!=='auto' && validPadBinding(k,code) && !autoConflict && (code==='none' || !usedPadInputs.has(code))){ store.padAltKeys[k]=code; if(code!=='none') usedPadInputs.add(code); }
+    }
     const keys = {...store.keys};
     for(const k of Object.keys(keys)) if(validKey(k,s.keys?.[k])) keys[k]=s.keys[k];
     if(new Set(Object.values(keys)).size===Object.keys(keys).length) store.keys=keys;
@@ -1198,9 +1241,38 @@ ko:{
   'set.touch':'터치 컨트롤', 'set.touchAuto':'자동 (터치 기기)', 'set.touchSize':'방향 버튼 크기', 'set.touchX':'방향 버튼 가로 위치', 'set.touchY':'방향 버튼 세로 위치', 'touch.note':'터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)', 'touch.aria':'터치 컨트롤', 'touch.padAria':'방향 버튼 — 아래와 좌우를 함께 눌러 대각선 입력', 'touch.left':'왼쪽', 'touch.down':'아래', 'touch.right':'오른쪽',
   'set.keys':'키 설정 — 동작마다 기본·보조 키를 하나씩 지정 (방향키 ↑↓←→ 는 항상 사용 가능)', 'set.keyListen':'키 입력…', 'set.keyAdd':'+ 추가', 'set.keyPrimary':'기본 키', 'set.keyAlt':'보조 키',
   'set.keyRemove':'보조 키를 지우려면 Delete 또는 Backspace',
+  'set.bindClear':"지우기",
+  'set.padUnassigned':"미지정",
+  'set.padSwapped':"두 동작의 배치를 맞바꿔 저장했습니다.",
+  'set.autoPad':"게임패드 입력 감지 · 게임패드 설정으로 전환했습니다.",
+  'set.autoKeyboard':"키보드 입력 감지 · 키보드 설정으로 전환했습니다.",
+  'set.autoHelp':"설정 중 누르는 장치에 맞춰 탭이 자동 전환됩니다.",
+  'set.bindCheck':"키 확인",
+  'set.bindCheckHelp':"확인 중 · 입력하면 연결된 칸이 빛납니다. 설정을 바꾸려면 키 확인을 끄세요.",
+  'set.controls':"입력 설정",
+  'set.keyboard':"키보드",
+  'set.bindReset':"기본값 복원",
+  'set.bindHelp':"바꿀 동작을 선택한 뒤 입력하세요. 변경 즉시 이 브라우저에 저장됩니다.",
+  'set.bindCancel':"취소 · Esc",
+  'set.bindIdle':"변경할 키 또는 버튼을 선택하세요.",
+  'set.bindRelease':"모든 버튼과 스틱을 놓은 뒤 다시 입력하세요.",
+  'set.bindListen':"입력을 기다리는 중…",
+  'set.bindSaved':"저장했습니다.",
+  'set.padSingle':"버튼 하나 또는 방향 하나만 입력하세요. 모두 놓고 다시 시도하세요.",
+  'set.padConflict':"이미 다른 동작에 지정된 입력입니다. 다른 입력을 사용하세요.",
+  'set.bindConfirm':"현재 탭의 배치를 기본값으로 복원할까요?",
+  'set.padAuto':"자동",
+  'set.padButton': n => `버튼 ${n}`,
+  'set.padButtonShort': n => `B${n}`, 'set.padAxisShort': (n, sign) => `A${n}${sign}`,
+  'set.padAxis': (n, sign) => `축 ${n} ${sign}`,
+  'set.padHat': n => `방향 ${n}`,
+  'set.padLive': n => `입력 확인: ${n}`,
+  'set.padNeutral':"없음",
+  'set.padConnect':"버튼을 눌러 패드를 연결하세요.",
+  'set.bindCancelled':"취소했습니다.",
   'set.keyConflict':'이미 사용 중이거나 방향키와 충돌하는 키입니다. 다른 키를 누르세요. Esc로 취소합니다.',
   'set.pad':'게임패드', 'set.padNone':'연결 안 됨 · 패드 아무 버튼이나 누르면 감지', 'set.padOn':'연결됨 · ',
-  'set.padNote':'패드 기본 배치: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>, 십자키·왼쪽 스틱 모두 방향으로 인식.',
+  'set.padNote':"B는 버튼, A는 축입니다. 기본·보조 입력을 지정합니다. 칸을 선택한 뒤 지우기로 해제합니다. 배치는 모든 패드에 공통 적용되며, 사용 중인 버튼은 배치를 맞바꿉니다. 자동 방향과 겹치면 해당 방향을 먼저 지우세요.",
   'set.reset':'기록·업적 초기화', 'set.resetBtn':'초기화…', 'set.resetNote':'모드별 최고 기록, 누적 통계, 업적, 복장을 지웁니다. 닉네임과 설정은 남습니다.', 'set.resetConfirm':'최고 기록·누적 통계·업적·복장을 모두 지웁니다. 되돌릴 수 없습니다. 계속할까요?', 'set.resetDone':'기록과 업적을 초기화했습니다.',
   'hist.title':'초풍 버튼 타이밍 분포', 'hist.sub':"공통 60Hz 칸에서 RP − d/f 프레임 차이 · 0f가 성공 · 최근 60회",
   'hist.lOk':'초풍 (판정 안)', 'hist.lEarly':'빠름 (d+2)', 'hist.lLate':'늦음 (풍신권)', 'hist.aria':'초풍 버튼 타이밍 히스토그램',
@@ -1512,9 +1584,38 @@ en:{
   'set.touch':'Touch controls', 'set.touchAuto':'Auto (touch devices)', 'set.touchSize':'Direction button size', 'set.touchX':'Direction button horizontal position', 'set.touchY':'Direction button vertical position', 'touch.note':'Touch is less precise than a keyboard (good for spotting trends)', 'touch.aria':'Touch controls', 'touch.padAria':'Direction buttons — press down and a side together for diagonals', 'touch.left':'Left', 'touch.down':'Down', 'touch.right':'Right',
   'set.keys':'Key bindings — assign one primary and one alternate key per action (arrow keys ↑↓←→ always work)', 'set.keyListen':'press key…', 'set.keyAdd':'+ add', 'set.keyPrimary':'Primary key', 'set.keyAlt':'Alternate key',
   'set.keyRemove':'Press Delete or Backspace to clear an alternate key',
+  'set.bindClear':"Clear",
+  'set.padUnassigned':"Unassigned",
+  'set.padSwapped':"Swapped the two assignments and saved.",
+  'set.autoPad':"Gamepad detected · switched to gamepad settings.",
+  'set.autoKeyboard':"Keyboard detected · switched to keyboard settings.",
+  'set.autoHelp':"While settings are open, input switches to the matching device tab.",
+  'set.bindCheck':"Test inputs",
+  'set.bindCheckHelp':"Testing · Press an input to highlight its bindings. Turn testing off to edit.",
+  'set.controls':"Input settings",
+  'set.keyboard':"Keyboard",
+  'set.bindReset':"Restore defaults",
+  'set.bindHelp':"Select an action, then press an input. Changes save immediately in this browser.",
+  'set.bindCancel':"Cancel · Esc",
+  'set.bindIdle':"Select a key or button to change.",
+  'set.bindRelease':"Release all buttons and sticks, then press again.",
+  'set.bindListen':"Waiting for input…",
+  'set.bindSaved':"Saved.",
+  'set.padSingle':"Press just one button or direction. Release everything and try again.",
+  'set.padConflict':"This input is assigned to another action. Try another input.",
+  'set.bindConfirm':"Restore the current tab to its default layout?",
+  'set.padAuto':"Auto",
+  'set.padButton': n => `Button ${n}`,
+  'set.padButtonShort': n => `B${n}`, 'set.padAxisShort': (n, sign) => `A${n}${sign}`,
+  'set.padAxis': (n, sign) => `Axis ${n} ${sign}`,
+  'set.padHat': n => `Direction ${n}`,
+  'set.padLive': n => `Input check: ${n}`,
+  'set.padNeutral':"None",
+  'set.padConnect':"Press a button to connect your controller.",
+  'set.bindCancelled':"Cancelled.",
   'set.keyConflict':'That key is already in use or conflicts with the arrow keys. Press another key. Esc cancels.',
   'set.pad':'Gamepad', 'set.padNone':'Not connected · press any pad button to detect', 'set.padOn':'Connected · ',
-  'set.padNote':'Default pad layout: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>; d-pad and left stick both count as direction.',
+  'set.padNote':"B = button, A = axis. Assign primary and alternate inputs. Select a slot, then Clear to remove it. This layout applies to all controllers. Occupied buttons swap assignments; clear conflicting automatic directions first.",
   'set.reset':'Reset records & achievements', 'set.resetBtn':'Reset…', 'set.resetNote':'Clears best records, lifetime stats, achievements and the outfit. Nickname and settings stay.', 'set.resetConfirm':'This wipes best records, lifetime stats, achievements and the outfit. It cannot be undone. Continue?', 'set.resetDone':'Records and achievements were reset.',
   'hist.title':'EWGF button timing', 'hist.sub':"RP − d/f on the shared 60Hz grid · 0f is success · last 60 tries",
   'hist.lOk':'EWGF (in window)', 'hist.lEarly':'Early (d+2)', 'hist.lLate':'Late (WGF)', 'hist.aria':'EWGF button timing histogram',
@@ -1824,9 +1925,38 @@ ja:{
   'set.touch':'タッチ操作', 'set.touchAuto':'自動 (タッチ端末)', 'set.touchSize':'方向ボタンの大きさ', 'set.touchX':'方向ボタンの横位置', 'set.touchY':'方向ボタンの縦位置', 'touch.note':'タッチ入力はキーボードより判定精度が低めです (傾向の把握向け)', 'touch.aria':'タッチ操作', 'touch.padAria':'方向ボタン — 下と左右を同時に押して斜め入力', 'touch.left':'左', 'touch.down':'下', 'touch.right':'右',
   'set.keys':'キー設定 — 各操作にメイン・サブキーを1つずつ設定 (矢印キー↑↓←→は常に使用可)', 'set.keyListen':'キー入力…', 'set.keyAdd':'+ 追加', 'set.keyPrimary':'メインキー', 'set.keyAlt':'サブキー',
   'set.keyRemove':'サブキーを消すにはDeleteまたはBackspace',
+  'set.bindClear':"解除",
+  'set.padUnassigned':"未設定",
+  'set.padSwapped':"2つの割り当てを入れ替えて保存しました。",
+  'set.autoPad':"パッド入力を検出し、パッド設定に切り替えました。",
+  'set.autoKeyboard':"キーボード入力を検出し、キーボード設定に切り替えました。",
+  'set.autoHelp':"設定中は入力したデバイスのタブに自動で切り替わります。",
+  'set.bindCheck':"入力確認",
+  'set.bindCheckHelp':"確認中 · 入力すると割り当てた枠が光ります。変更するには入力確認をオフにしてください。",
+  'set.controls':"入力設定",
+  'set.keyboard':"キーボード",
+  'set.bindReset':"初期配置に戻す",
+  'set.bindHelp':"変更する動作を選んでから入力してください。変更はこのブラウザに即時保存されます。",
+  'set.bindCancel':"キャンセル · Esc",
+  'set.bindIdle':"変更するキーまたはボタンを選んでください。",
+  'set.bindRelease':"すべてのボタンとスティックを離してから入力してください。",
+  'set.bindListen':"入力待ち…",
+  'set.bindSaved':"保存しました。",
+  'set.padSingle':"ボタンまたは方向を1つだけ入力してください。すべて離してから再入力してください。",
+  'set.padConflict':"他の動作に割り当て済みです。別の入力を使ってください。",
+  'set.bindConfirm':"現在のタブの配置を初期状態に戻しますか？",
+  'set.padAuto':"自動",
+  'set.padButton': n => `ボタン ${n}`,
+  'set.padButtonShort': n => `B${n}`, 'set.padAxisShort': (n, sign) => `A${n}${sign}`,
+  'set.padAxis': (n, sign) => `軸 ${n} ${sign}`,
+  'set.padHat': n => `方向 ${n}`,
+  'set.padLive': n => `入力確認: ${n}`,
+  'set.padNeutral':"なし",
+  'set.padConnect':"ボタンを押してパッドを接続してください。",
+  'set.bindCancelled':"キャンセルしました。",
   'set.keyConflict':'すでに使用中か矢印キーと衝突するキーです。別のキーを押してください。Escでキャンセル。',
   'set.pad':'ゲームパッド', 'set.padNone':'未接続 · パッドのボタンを押すと検出', 'set.padOn':'接続済み · ',
-  'set.padNote':'パッド初期配置: <code>□/X = 1</code> <code>△/Y = 2</code> <code>✕/A = 3</code> <code>○/B = 4</code>、十字キー・左スティックとも方向として認識。',
+  'set.padNote':"Bはボタン、Aは軸です。基本・補助入力を設定できます。枠を選び「解除」で消去します。配置は全パッド共通です。使用中のボタンは割り当てを交換し、自動方向と重なる場合は先にその方向を解除してください。",
   'set.reset':'記録・実績の初期化', 'set.resetBtn':'初期化…', 'set.resetNote':'モード別最高記録・累計統計・実績・服装を消します。ニックネームと設定は残ります。', 'set.resetConfirm':'最高記録・累計統計・実績・服装をすべて消します。元に戻せません。続けますか?', 'set.resetDone':'記録と実績を初期化しました。',
   'hist.title':'最風ボタンタイミング分布', 'hist.sub':"共通60Hz枠の RP − ↘ フレーム差 · 0fが成功 · 直近60回",
   'hist.lOk':'最風 (判定内)', 'hist.lEarly':'早い (2+2)', 'hist.lLate':'遅い (風神拳)', 'hist.aria':'最風ボタンタイミングのヒストグラム',
@@ -2271,18 +2401,83 @@ const buttonForCode = code => {
 const buttonHeld = n => held.has(store.keys['b'+n]) || (!!store.altKeys['b'+n] && held.has(store.altKeys['b'+n]));
 const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open || $('donateDlg').open || $('fitDlg').open || $('noticeDlg').open; // any dialog pauses game input (called at pad-poll rate, so no DOM query)
 let listening = null; // key remap target: {slot, alt}
+let bindingDevice='kb', bindingMessage=['set.bindIdle'], padCapture=null, padNeedsRelease=false, bindingPadPrevious=null;
+let bindingCheck=false, bindingCheckPad=[], bindingCheckSignature='';
+const bindingCheckHeld=new Set();
+function bindingFeedback(key,...args){ bindingMessage=[key,...args]; $('bindingMessage').textContent=T(...bindingMessage); }
+function cancelBinding(){ listening=null; padCapture=null; bindingFeedback(bindingCheck?'set.bindCheckHelp':'set.bindCancelled'); renderKeys(); }
+function setBindingDevice(device,automatic=false){
+  listening=null; padCapture=null; bindingDevice=device;
+  bindingFeedback(bindingCheck?'set.bindCheckHelp':automatic?(device==='pad'?'set.autoPad':'set.autoKeyboard'):'set.bindIdle'); renderKeys();
+  if(automatic) $('bindingTabs').querySelector('[data-device="'+device+'"]')?.focus?.();
+}
+function clearBinding(){
+  if(bindingCheck) return;
+  if(padCapture) store[padCapture.field][padCapture.slot]='none';
+  else if(listening?.alt) store.altKeys[listening.slot]='';
+  else return;
+  listening=null; padCapture=null; padNeedsRelease=true; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys();
+}
+function setBindingCheck(on){
+  bindingCheck=!!on; listening=null; padCapture=null; bindingCheckHeld.clear(); bindingCheckPad=[];
+  bindingFeedback(bindingCheck?'set.bindCheckHelp':'set.bindIdle'); renderKeys();
+  if(bindingCheck) pollPad(true);
+}
+function clearBindingCheckInput(){
+  bindingCheckHeld.clear(); bindingCheckPad=[]; renderBindingCheck();
+}
+function suspendBindings(){
+  clearBindingCheckInput();
+  if(listening || padCapture) cancelBinding();
+  bindingPadPrevious=null; padNeedsRelease=true;
+}
+function bindingChecked(device,k,alt){
+  if(!bindingCheck) return false;
+  if(device==='kb') return bindingCheckHeld.has(store[alt?'altKeys':'keys'][k]);
+  const code=store[alt?'padAltKeys':'padKeys'][k];
+  return code==='auto'?PAD_AUTO_INPUTS[k].some(v=>bindingCheckPad.includes(v)):bindingCheckPad.includes(code);
+}
+function renderBindingCheck(force=false){
+  const signature=JSON.stringify([bindingCheck,bindingDevice,[...bindingCheckHeld].sort(),bindingCheckPad]);
+  if(!force && signature===bindingCheckSignature) return;
+  bindingCheckSignature=signature;
+  $('bindingCheck').setAttribute('aria-pressed',String(bindingCheck)); $('bindingReset').disabled=bindingCheck;
+  for(const [id,device] of [['keys','kb'],['padKeys','pad']]){
+    $(id).querySelectorAll('.key-bind').forEach(b=>{
+      b.disabled=bindingCheck;
+      b.classList.toggle('checked',bindingChecked(device,device==='kb'?b.dataset.k:b.dataset.pad,(device==='kb'?b.dataset.alt:b.dataset.padAlt)==='1'));
+    });
+    $(id).querySelectorAll('.key').forEach(row=>{
+      const k=row.dataset.action, arrow={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'}[k];
+      row.classList.toggle('checked',bindingChecked(device,k,false) || bindingChecked(device,k,true) || (bindingCheck && device==='kb' && !!arrow && bindingCheckHeld.has(arrow)));
+    });
+  }
+}
 addEventListener('keydown', e => {
+  if(padCapture && e.code==='Escape'){ e.preventDefault(); cancelBinding(); return; }
+  const formInput=e.target && (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.isContentEditable);
+  const navigation=['Tab','Escape','ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight','MetaLeft','MetaRight'].includes(e.code) || (e.target?.tagName==='BUTTON' && ['Enter','Space'].includes(e.code));
+  if($('setDlg').open && bindingCheck && !formInput && !['Escape','Tab'].includes(e.code) && (!navigation || mappedCodes().has(e.code))){
+    e.preventDefault();
+    if(e.repeat) return;
+    if(bindingDevice!=='kb') setBindingDevice('kb',true);
+    bindingCheckHeld.add(e.code); renderBindingCheck(); return;
+  }
+  if($('setDlg').open && bindingDevice!=='kb' && !e.repeat && !formInput && !navigation && !e.ctrlKey && !e.metaKey && !e.altKey){
+    e.preventDefault(); setBindingDevice('kb',true); return; // Switching devices cancels capture; it never assigns this key.
+  }
   if(listening){
     e.preventDefault();
-    if(e.code==='Escape'){ listening=null; renderKeys(); return; }
+    if(e.code==='Escape'){ cancelBinding(); return; }
+    if(e.repeat) return;
     if(listening.alt && (e.code==='Delete' || e.code==='Backspace')){
-      store.altKeys[listening.slot]=''; listening=null; resetInput(); save(); renderKeys(); return;
+      store.altKeys[listening.slot]=''; listening=null; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys(); return;
     }
     const allKeys = [...Object.entries(store.keys).map(([slot,code])=>({slot,alt:false,code})), ...Object.entries(store.altKeys).map(([slot,code])=>({slot,alt:true,code}))];
     if(!validKey(listening.slot,e.code) || allKeys.some(x=>x.code===e.code && (x.slot!==listening.slot || x.alt!==listening.alt))){
-      setCoach(['set.keyConflict']); return;
+      bindingFeedback('set.keyConflict'); return;
     }
-    store[listening.alt?'altKeys':'keys'][listening.slot]=e.code; listening=null; resetInput(); save(); renderKeys(); return;
+    store[listening.alt?'altKeys':'keys'][listening.slot]=e.code; listening=null; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys(); return;
   }
   if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if(modalOpen()) return;
@@ -2297,6 +2492,7 @@ addEventListener('keydown', e => {
   if(lastSrc!=='kb') setSrc('kb');
 });
 addEventListener('keyup', e => {
+  if(bindingCheckHeld.delete(e.code)) renderBindingCheck();
   if(!held.has(e.code)) return;
   held.delete(e.code);
   kbVector(); recomputeDir(e.timeStamp||performance.now(),'kb');
@@ -2308,14 +2504,16 @@ function resetInput(){
   held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); touchDir={x:0,y:0}; curDir='n'; touchRelease();
   clearCommand(); resetCombo(); resetTaps(); bdClear(); updateHud(); renderWsc();
 }
-addEventListener('blur', () => { resetInput(); endTrial(true); bgmSync(); });
+addEventListener('blur', () => { suspendBindings(); resetInput(); endTrial(true); bgmSync(); });
 
 /* gamepad */
 let padIndex = null, padLastT = 0; // padLastT: last judged pad time (keeps t monotonic across the timestamp fallback)
-function renderPadStatus(){ $('padStatus').textContent = ui.padId==null ? T('set.padNone') : T('set.padOn') + ui.padId; }
+function renderPadStatus(){ $('padStatus').textContent = ui.padId==null ? T('set.padNone') : T('set.padOn') + ui.padId; if(ui.padId==null) $('padLive').textContent=T('set.padConnect'); }
 addEventListener('gamepadconnected', e => { padIndex = e.gamepad.index; ui.padId = e.gamepad.id.slice(0,40); renderPadStatus(); });
 function releasePad(){
-  padIndex=null; padDir={x:0,y:0}; padBtn.fill(false); clearCommand();
+  bindingCheckPad=[]; renderBindingCheck();
+  if(padCapture) cancelBinding();
+  bindingPadPrevious=null; padIndex=null; padDir={x:0,y:0}; padBtn.fill(false); clearCommand();
   recomputeDir(performance.now()); updateHud();   // keyboard/touch directions still held stay in effect
   ui.padId=null; renderPadStatus();
 }
@@ -2325,28 +2523,102 @@ function hatVec(v){
   if(v==null || v<-1.01 || v>1.01) return [0,0];   // 중립(약 1.29)은 범위 밖
   return HAT[Math.round((v+1)*3.5)] || [0,0];
 }
-function pollPad(){
-  if(document.hidden || !document.hasFocus() || modalOpen()) return;
+function padInputs(gp){
+  const inputs=[];
+  gp.buttons.forEach((b,i)=>{ if(i<128 && (b.pressed || b.value>0.5)) inputs.push('b'+i); });
+  gp.axes.forEach((v,i)=>{ if(i<32 && !(i===9 && gp.mapping!=='standard') && Math.abs(v)>0.5 && Math.abs(v)<=1.01) inputs.push('a'+i+(v>0?'+':'-')); });
+  const [x,y]=gp.mapping==='standard'?[0,0]:hatVec(gp.axes[9]);
+  if(x) inputs.push(x>0?'hr':'hl'); if(y) inputs.push(y>0?'hu':'hd');
+  return inputs;
+}
+function padBindingName(code){
+  if(code==='auto') return T('set.padAuto');
+  if(code==='none') return T('set.padUnassigned');
+  if(code[0]==='b') return T('set.padButton',+code.slice(1));
+  if(code[0]==='h') return T('set.padHat',({u:'↑',d:'↓',l:'←',r:'→'})[code[1]]);
+  return T('set.padAxis',+code.slice(1,-1),code.slice(-1));
+}
+function padBindingShort(code){
+  if(code[0]==='b') return T('set.padButtonShort',+code.slice(1));
+  if(code[0]==='a' && code!=='auto') return T('set.padAxisShort',+code.slice(1,-1),code.slice(-1));
+  if(code[0]==='h') return ({u:'↑',d:'↓',l:'←',r:'→'})[code[1]];
+  return code==='none'?'—':padBindingName(code);
+}
+function padBindingEntries(){
+  return ['padKeys','padAltKeys'].flatMap(field=>Object.entries(store[field]).map(([slot,code])=>({field,slot,code})));
+}
+function beginPadBinding(slot,alt=false){
+  if(bindingCheck) return;
+  bindingDevice='pad'; listening=null; padCapture={slot,field:alt?'padAltKeys':'padKeys',previous:null}; padNeedsRelease=true;
+  bindingFeedback(ui.padId==null?'set.padConnect':'set.bindRelease'); renderKeys();
+  pollPad(true); // Snapshot held inputs at the click, before the next physical press.
+}
+function capturePad(inputs){
+  if(bindingCheck || !padCapture) return;
+  const {slot,field,previous}=padCapture;
+  padCapture.previous=new Set(inputs);
+  if(previous===null){ bindingFeedback('set.bindListen'); return; }
+  // Some controllers report idle trigger axes as -1. Do not wait for every
+  // axis to become zero; only newly pressed inputs can change an assignment.
+  let candidates=inputs.filter(v=>!previous.has(v) && (!slot.startsWith('b') || v[0]==='b'));
+  if(!candidates.length) return;
+  // A d-pad can report the same physical direction as both button and axis.
+  // Collapse only known aliases; unrelated simultaneous inputs stay ambiguous.
+  if(candidates.length>1 && Object.values(PAD_AUTO_INPUTS).some(group=>candidates.every(v=>group.includes(v)))){
+    candidates=[candidates.find(v=>v[0]==='b') || candidates.find(v=>v[0]==='h') || candidates[0]];
+  }
+  if(candidates.length!==1){ bindingFeedback('set.padSingle'); return; }
+  const code=candidates[0];
+  const others=padBindingEntries().filter(e=>e.slot!==slot || e.field!==field);
+  if(padAutoConflict(store.padKeys,slot,code)){ bindingFeedback('set.padConflict'); return; }
+  const other=others.find(e=>e.code===code), oldBinding=store[field][slot];
+  if(other && (other.slot===slot || oldBinding==='auto' || !validPadBinding(other.slot,oldBinding) || padAutoConflict(store.padKeys,other.slot,oldBinding))){ bindingFeedback('set.padConflict'); return; }
+  if(other) store[other.field][other.slot]=oldBinding;
+  store[field][slot]=code; padCapture=null; resetInput(); save(); bindingFeedback(other?'set.padSwapped':'set.bindSaved'); renderKeys();
+}
+function pollPad(snapshotOnly=false){
+  if(document.hidden || !document.hasFocus()){ suspendBindings(); return; }
   let pads;
   try{ pads = navigator.getGamepads ? navigator.getGamepads() : []; }catch(e){ if(padIndex!==null) releasePad(); return; }
   let gp = null;
   for(const p of pads){ if(p && (padIndex===null || p.index===padIndex)){ gp=p; break; } }
   if(!gp){ if(padIndex!==null) releasePad(); return; }
   if(padIndex===null){ padIndex=gp.index; ui.padId=gp.id.slice(0,40); renderPadStatus(); }
+  const inputs=padInputs(gp);
+  const samePad=bindingPadPrevious?.index===gp.index && bindingPadPrevious.id===gp.id;
+  const newPadInput=!snapshotOnly && inputs.some(code=>samePad?!bindingPadPrevious.inputs.has(code):code[0]==='b');
+  bindingPadPrevious={index:gp.index,id:gp.id,inputs:new Set(inputs)};
+  if(modalOpen()){
+    padNeedsRelease=true;
+    if($('setDlg').open){
+      if(newPadInput && bindingDevice!=='pad') setBindingDevice('pad',true);
+      const text=T('set.padLive',inputs.length?inputs.map(padBindingName).join(' · '):T('set.padNeutral'));
+      if($('padLive').textContent!==text) $('padLive').textContent=text;
+      if(bindingCheck){ bindingCheckPad=inputs; renderBindingCheck(); }
+      else capturePad(inputs);
+    }
+    return;
+  }
+  if(padNeedsRelease){
+    const active=padBindingEntries().some(({slot,code})=>code==='auto'?PAD_AUTO_INPUTS[slot].some(v=>inputs.includes(v)):inputs.includes(code));
+    if(active) return; padNeedsRelease=false;
+  }
   const now = performance.now(), ts = gp.timestamp; // judge at the device's own update time, not the poll time: a late 4ms timer (busy frame) must not turn a simultaneous d/f+2 into a 1f gap
   const t = (Number.isFinite(ts) && ts > 0 && ts <= now && ts >= padLastT) ? ts : now; // only changed input advances the judgment clock
   const b = gp.buttons, ax = gp.axes;
   const on = i => !!(b[i] && (b[i].pressed || b[i].value>0.5));
   const [hx,hy] = gp.mapping==='standard' ? [0,0] : hatVec(ax[9]); // DirectInput hat 축
-  const x = (on(15)?1:0)-(on(14)?1:0) + (ax[0]>0.5?1:ax[0]<-0.5?-1:0) + hx;
-  const y = (on(12)?1:0)-(on(13)?1:0) + (ax[1]<-0.5?1:ax[1]>0.5?-1:0) + hy;
+  const auto={right:Number(on(15))+Number(ax[0]>0.5)+Number(hx>0),left:Number(on(14))+Number(ax[0]<-0.5)+Number(hx<0),up:Number(on(12))+Number(ax[1]<-0.5)+Number(hy>0),down:Number(on(13))+Number(ax[1]>0.5)+Number(hy<0)};
+  const direction=k=>Math.max(store.padKeys[k]==='auto'?auto[k]:Number(inputs.includes(store.padKeys[k])),Number(inputs.includes(store.padAltKeys[k])));
+  const x = Number(direction('right'))-Number(direction('left'));
+  const y = Number(direction('up'))-Number(direction('down'));
   const nx = clamp(x,-1,1), ny = clamp(y,-1,1);
   let changed = false;
   if(nx!==padDir.x || ny!==padDir.y){ padDir={x:nx,y:ny}; changed=true; }
-  const map = [2,3,0,1]; // 1=X/□ 2=Y/△ 3=A/✕ 4=B/○
-  if(changed || map.some((bi,i) => on(bi)!==padBtn[i])) padLastT = t;
-  if(changed) recomputeDir(t,'pad'); // 같은 샘플의 방향을 먼저 반영해야 d/f+2를 판정할 수 있다.
-  map.forEach((bi,i) => { const p = on(bi); if(p && !padBtn[i]){ unlockAudio(); onButton(i+1,t); } padBtn[i]=p; }); // a pad press may not count as a browser gesture; play() rejection is handled in bgmSync
+  const pressed = ['b1','b2','b3','b4'].map(k=>inputs.includes(store.padKeys[k]) || inputs.includes(store.padAltKeys[k]));
+  if(changed || pressed.some((p,i)=>p!==padBtn[i])) padLastT = t;
+  if(changed) recomputeDir(t,'pad'); // Direction must precede buttons in the same sample for d/f+2.
+  pressed.forEach((p,i)=>{ if(p && !padBtn[i]){ unlockAudio(); onButton(i+1,t); } padBtn[i]=p; }); // Two physical buttons form one held logical attack.
   if(padBtn.some(Boolean) && lastSrc!=='pad') setSrc('pad');
 }
 setInterval(pollPad, 4);
@@ -3465,8 +3737,10 @@ for(const k of ['touchSize','touchX','touchY']) $(k).addEventListener('input', (
 segSel('sideSel','side', v => { endTrial(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); renderWsc(); });
 segSel('fxSel','fx', v => { store.fx=+v; save(); rewardNoticeClear(); renderRewards(); });
 segSel('langSel','lang', v => { setLang(v); });
-$('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDlg'); if(!d.open){ donateNudgeDefer(); endTrial(true); resetInput(); d.showModal(); jackpotPause(); } });
-$('setClose').addEventListener('click', () => { listening=null; renderKeys(); $('setDlg').close(); });
+$('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDlg'); if(!d.open){ donateNudgeDefer(); endTrial(true); resetInput(); bindingPadPrevious=null; d.showModal(); pollPad(true); jackpotPause(); } });
+$('setClose').addEventListener('click', () => { setBindingCheck(false); cancelBinding(); padNeedsRelease=true; $('setDlg').close(); });
+$('setDlg').addEventListener('cancel', e => { if(listening || padCapture){ e.preventDefault(); cancelBinding(); } });
+$('setDlg').addEventListener('close', () => { setBindingCheck(false); cancelBinding(); padNeedsRelease=true; });
 segSel('soundSel','sound', v => { store.sound=+v; save(); unlockAudio(); bgmSync(); sfxSync(); renderSound(); });
 function setBgm(on){
   store.bgm=on?1:0;
@@ -3500,11 +3774,39 @@ renderSound();
 const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK'};
 const pretty = c => c.replace(/^Key|^Digit|^Numpad/, m=>m==='Numpad'?'Num':'').replace('Arrow','');
 function renderKeys(){
+  renderBindings();
   const active = (k,alt) => listening && listening.slot===k && listening.alt===alt;
-  const bind = (k,alt) => { const code=store[alt?'altKeys':'keys'][k], on=active(k,alt), name=KEYLABEL[k]+' · '+T(alt?'set.keyAlt':'set.keyPrimary'); return `<button type="button" class="key-bind${alt?' alt':''}${!code?' empty':''}${on?' listen':''}" data-k="${k}" data-alt="${alt?1:0}" aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"><b>${on?escapeHTML(T('set.keyListen')):code?pretty(code):escapeHTML(T('set.keyAdd'))}</b></button>`; };
-  $('keys').innerHTML = Object.keys(KEYLABEL).map(k => `<div class="key"><small>${KEYLABEL[k]}</small><div class="key-pair">${bind(k,false)}${bind(k,true)}</div></div>`).join('');
-  $('keys').querySelectorAll('.key-bind').forEach(b => b.addEventListener('click', () => { listening = {slot:b.dataset.k,alt:b.dataset.alt==='1'}; renderKeys(); }));
+  const bind = (k,alt) => { const code=store[alt?'altKeys':'keys'][k], on=active(k,alt), name=KEYLABEL[k]+' · '+T(alt?'set.keyAlt':'set.keyPrimary'); return `<button type="button" class="key-bind${alt?' alt':''}${!code?' empty':''}${on?' listen':''}" data-k="${k}" data-alt="${alt?1:0}" aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"><span>${escapeHTML(T(alt?'set.keyAlt':'set.keyPrimary'))}</span><b>${on?escapeHTML(T('set.keyListen')):code?pretty(code):escapeHTML(T('set.keyAdd'))}</b></button>`; };
+  $('keys').innerHTML = Object.keys(KEYLABEL).map(k => `<div class="key" data-action="${k}"><small>${KEYLABEL[k]}</small><div class="key-pair">${bind(k,false)}${bind(k,true)}</div></div>`).join('');
+  $('keys').querySelectorAll('.key-bind').forEach(b => b.addEventListener('click', () => { if(bindingCheck) return; padCapture=null; listening = {slot:b.dataset.k,alt:b.dataset.alt==='1'}; bindingFeedback('set.bindListen'); renderKeys(); $('keys').querySelector('[data-k="'+b.dataset.k+'"][data-alt="'+b.dataset.alt+'"]')?.focus(); }));
+  renderBindingCheck(true);
 }
+function renderBindings(){
+  $('keyboardBindings').hidden=bindingDevice!=='kb'; $('padBindings').hidden=bindingDevice!=='pad';
+  $('bindingTabs').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.device===bindingDevice)));
+  $('bindingMessage').textContent=T(...bindingMessage); $('bindingCancel').hidden=!(listening || padCapture); $('bindingClear').hidden=!(padCapture || listening?.alt);
+  const padSlot=(k,alt)=>{
+    const field=alt?'padAltKeys':'padKeys', code=store[field][k], active=padCapture?.slot===k && padCapture.field===field;
+    const label=T(alt?'set.keyAlt':'set.keyPrimary'), name=KEYLABEL[k]+' · '+label;
+    return `<button type="button" class="key-bind${alt?' alt':''}${code==='none'?' empty':''}${active?' listen':''}" data-pad="${k}" data-pad-alt="${alt?1:0}" aria-label="${escapeHTML(name+' · '+padBindingName(code))}" title="${escapeHTML(name+' · '+padBindingName(code))}"><span>${escapeHTML(label)}</span><b>${escapeHTML(active?T('set.bindListen'):alt && code==='none'?T('set.keyAdd'):padBindingShort(code))}</b></button>`;
+  };
+  $('padKeys').innerHTML=Object.keys(KEYLABEL).map(k=>`<div class="key" data-action="${k}"><small>${KEYLABEL[k]}</small><div class="key-pair">${padSlot(k,false)}${padSlot(k,true)}</div></div>`).join('');
+  const focusPad=(k,alt)=>$('padKeys').querySelector('[data-pad="'+k+'"][data-pad-alt="'+alt+'"]')?.focus();
+
+  $('padKeys').querySelectorAll('[data-pad]').forEach(b=>b.addEventListener('click',()=>{ beginPadBinding(b.dataset.pad,b.dataset.padAlt==='1'); focusPad(b.dataset.pad,b.dataset.padAlt); }));
+}
+$('bindingTabs').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>setBindingDevice(b.dataset.device)));
+$('bindingClear').addEventListener('click',clearBinding);
+$('bindingCheck').addEventListener('click',()=>setBindingCheck(!bindingCheck));
+$('bindingCancel').addEventListener('click',cancelBinding);
+$('bindingReset').addEventListener('click',()=>{
+  if(bindingCheck) return;
+  if(typeof confirm==='function' && !confirm(T('set.bindConfirm'))) return;
+  cancelBinding();
+  if(bindingDevice==='pad'){ store.padKeys={...DEFAULT_PAD}; store.padAltKeys=emptyPadAlt(); }
+  else { store.keys={...DEFAULT_KEYS}; store.altKeys=Object.fromEntries(Object.keys(DEFAULT_KEYS).map(k=>[k,''])); }
+  padNeedsRelease=true; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys();
+});
 $('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { setMode(b.dataset.mode); if(b.scrollIntoView) b.scrollIntoView({block:'nearest', inline:'nearest'}); })); // a half-hidden tab slides fully into the scrolling list
 $('modes').addEventListener('wheel', e => { const m = e.currentTarget; if(e.deltaX || !e.deltaY || m.scrollWidth <= m.clientWidth) return; m.scrollLeft += e.deltaY; e.preventDefault(); }, {passive:false}); // a plain mouse wheel over the list scrolls it sideways
 $('dStart').addEventListener('click', startTrial);
@@ -3607,7 +3909,7 @@ function noticeAutoTry(){
   if(['countdown','running'].includes(wsc.challenge.status) || modalOpen() || trial.running || !!trial.cdTimer || !!trial.openTimer || jackpotBusy || jackpotHold){ noticeAutoSchedule(750); return false; }
   return openNotices();
 }
-addEventListener('visibilitychange', () => { if(!document.hidden) noticeAutoSchedule(); });
+addEventListener('visibilitychange', () => { if(document.hidden) suspendBindings(); else noticeAutoSchedule(); });
 
 /* ---------- backend: ranking (cumulative, no reset — 2026-09-14 user decision), visit counter, shoutbox (Cloudflare Worker in worker/; see worker/README.md) ---------- */
 const BOARD_URL = 'https://mishima-dojo-board.mishima-dojo.workers.dev'; // Cloudflare Worker in worker/ (no trailing slash). Empty → all backend UI hidden.

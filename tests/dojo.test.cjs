@@ -23,7 +23,7 @@ function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls
     addEventListener:(name,fn)=>{const previous=events[name];events[name]=(...args)=>{if(previous)previous(...args);fn(...args);};},
     setInterval:fn=>{const id=next++;timers.set(id,fn);return id;},clearInterval:id=>timers.delete(id),
     setTimeout:fn=>{const id=next++;timers.set(id,fn);return id;},clearTimeout:id=>timers.delete(id),...(fetch?{fetch}:{}),...env});
-  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={BGM_GAIN,bgmApplyTracks,bgmLoadTracks,BGM_TRACKS,bgmPick,bgmNext,bgmTogglePlay,rankingResult,TRIAL_MODES,resetSession,fighterPoint,roomMesh,roomShift,roomCamera,roomProject,ROOM,historyRows,history,renderHistory,SFX_START,HIT_CONTACT_MS,impacts,sparks,wsc,wscStartChallenge,WSC_TARGET,wscJudge,wscFrames,wscA,frameSlot,resetInput,renderWsc,onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,boardDelete,renderBoard,visitsLoad,claimNick,openNick,postVote,replySend,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,takeResultDonate,practiceInput,practiceTick,DONATE_ACTIVE_MS,touchKeys,touchPress,applyTouchUI,applyTouchLayout,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\}\)\(\);\s*$/, 'globalThis.app={setBindingCheck,bindingChecked,setBindingDevice,clearBinding,beginPadBinding,padInputs,padBindingName,DEFAULT_PAD,BGM_GAIN,bgmApplyTracks,bgmLoadTracks,BGM_TRACKS,bgmPick,bgmNext,bgmTogglePlay,rankingResult,TRIAL_MODES,resetSession,fighterPoint,roomMesh,roomShift,roomCamera,roomProject,ROOM,historyRows,history,renderHistory,SFX_START,HIT_CONTACT_MS,impacts,sparks,wsc,wscStartChallenge,WSC_TARGET,wscJudge,wscFrames,wscA,frameSlot,resetInput,renderWsc,onDir,onButton,cd,bd,BD,bdRec,poseAt,session,trial,store,setMode,startTrial,endTrial,pollPad,clearCommand,renderBests,setLang,T,I18N,histBins,buildCard,buildOgCard,shareSource,SITE_URL,BOARD_URL,BOARDS,WINDOWS,boardEntry,boardRowText,nickOk,pctTop,tierOf,board,live,boardSubmit,boardLoad,boardDelete,renderBoard,visitsLoad,claimNick,openNick,postVote,replySend,renderPosts,anim,world,combo,taps,pops,snd,fx,DONATE,donateOptions,takeResultDonate,practiceInput,practiceTick,DONATE_ACTIVE_MS,touchKeys,touchPress,applyTouchUI,applyTouchLayout,unlockAudio,bgmSync,sfxSync,playSfx,setBgm,held,tick,trialTick,strike,rushStrike,rushSpawn,tryHit,updateDummy,FF_MS,RUSH_PTS,HIT_TYPE,openShare,renderWave,waveTop,ACH,ITEMS,SLOTS,ITEM_SLOT,DAILY_IDS,checkAch,setFit,currentLook,lookOf,openFit,bumpVisitDay,dailyGift,claimRewards,renderRewards,pendingReward,owned,renderFit,NOTICES,NOTICE_LATEST,renderNotices,openNotices,hadStore,noticeAutoTry};})();');
   vm.runInContext(script,context);
   return {...context.app,events,get,timers,document:context.document,time:t=>now=t,pads:p=>pads=p};
 }
@@ -480,6 +480,153 @@ test('gamepad simultaneous diagonal and RP processes direction first',()=>{
   assert.equal(a.session.attempts[0].kind,'ewgf');assert.equal(a.session.attempts[0].off,0);
   a.events.gamepaddisconnected({gamepad:{index:0}});a.time(1080);a.pollPad();
   assert.equal(a.session.attempts.length,2);
+});
+function samplePad(a,indices=[],axes=[0,0],mapping='standard'){
+  a.pads([{index:0,id:'Test controller',mapping,axes,buttons:Array.from({length:18},(_,i)=>({pressed:indices.includes(i),value:indices.includes(i)?1:0}))}]);a.pollPad();
+}
+test('pad swaps reject automatic-direction collisions on the displaced assignment atomically',()=>{
+  const a=boot({padKeys:{left:'b6'},padAltKeys:{right:'b15'}});
+  a.get('setDlg').open=true;samplePad(a);a.beginPadBinding('right',true);
+  const before=JSON.stringify([a.store.padKeys,a.store.padAltKeys]);
+  samplePad(a,[6]);
+  assert.equal(JSON.stringify([a.store.padKeys,a.store.padAltKeys]),before);
+  assert.equal(a.get('bindingMessage').textContent,a.T('set.padConflict'));
+});
+test('stored primary pad bindings cannot overlap another automatic direction',()=>{
+  for(const padKeys of [{b2:'b15'},{left:'a0+'}]){
+    const a=boot({padKeys});
+    assert.deepEqual(JSON.parse(JSON.stringify(a.store.padKeys)),JSON.parse(JSON.stringify(a.DEFAULT_PAD)));
+  }
+});
+test('held keyboard autorepeat does not steal the pad tab during input check',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a);a.setBindingCheck(true);
+  const ev={code:'KeyI',target:{tagName:'DIV'},preventDefault(){}};
+  a.events.keydown(ev);samplePad(a,[7]);
+  a.events.keydown({...ev,repeat:true});
+  assert.equal(a.get('padBindings').hidden,false);
+  a.events.keyup(ev);a.events.keydown(ev);
+  assert.equal(a.get('keyboardBindings').hidden,false);
+});
+test('hiding the document cancels capture even when background polling never runs',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a);a.beginPadBinding('b2');
+  a.document.hidden=true;a.events.visibilitychange();
+  a.document.hidden=false;a.events.visibilitychange();samplePad(a,[7]);
+  assert.equal(a.store.padKeys.b2,'b3');
+});
+test('pad remapping waits for release, swaps buttons, saves and never judges settings input',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a,[3]);a.beginPadBinding('b1');samplePad(a,[3]);
+  assert.equal(a.store.padKeys.b1,'b2');samplePad(a);samplePad(a,[3]);
+  assert.equal(a.store.padKeys.b1,'b3');assert.equal(a.store.padKeys.b2,'b2');assert.equal(a.session.tries,0);
+  const restored=boot(JSON.parse(JSON.stringify(a.store)));assert.equal(restored.store.padKeys.b2,'b2');
+  a.get('setDlg').open=false;samplePad(a,[2]);assert.equal(a.session.tries,0,'held input is blocked on closing');
+  samplePad(a);samplePad(a,[2]);assert.equal(a.session.tries,1,'new RP uses saved button');
+});
+test('pad directions accept signed axes and DirectInput hats, preserve side conversion and reject automatic collisions',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a);a.beginPadBinding('right');samplePad(a);samplePad(a,[],[0,0,1]);
+  assert.equal(a.store.padKeys.right,'a2+');a.get('setDlg').open=false;samplePad(a);samplePad(a,[],[0,0,1]);assert.equal(a.cd.state,1);
+  a.resetInput();a.store.side=-1;samplePad(a);samplePad(a,[],[0,0,1]);assert.equal(a.cd.state,0,'physical right becomes back for 2P');
+  a.get('setDlg').open=true;a.beginPadBinding('b2');samplePad(a);samplePad(a,[12]);assert.equal(a.store.padKeys.b2,'b3');assert.equal(a.get('bindingMessage').textContent,a.T('set.padConflict'));
+  a.store.padKeys.up='none';a.beginPadBinding('up');samplePad(a,[],[0,0,0,0,0,0,0,0,0,1.29],'');samplePad(a,[],[0,0,0,0,0,0,0,0,0,-1],'');assert.equal(a.store.padKeys.up,'hu');
+});
+test('pad capture cancels on Escape, disconnect and focus loss; invalid storage falls back',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a);a.beginPadBinding('b2');samplePad(a);
+  a.events.keydown({code:'Escape',preventDefault(){}});samplePad(a,[7]);assert.equal(a.store.padKeys.b2,'b3');
+  a.beginPadBinding('b2');samplePad(a);a.events.gamepaddisconnected({gamepad:{index:0}});samplePad(a,[7]);assert.equal(a.store.padKeys.b2,'b3');
+  a.beginPadBinding('b2');samplePad(a);a.events.blur();samplePad(a,[7]);assert.equal(a.store.padKeys.b2,'b3');
+  for(const bad of [{b2:'a0+'},{b2:'b2'},{right:'<script>'},{b2:'b128'}]) assert.deepEqual(JSON.parse(JSON.stringify(boot({padKeys:bad}).store.padKeys)),JSON.parse(JSON.stringify(a.DEFAULT_PAD)));
+  assert.equal(boot({padKeys:{b1:'none',b2:'none'}}).store.padKeys.b2,'none');
+});
+test('remapped pad diagonal and RP still share the device timestamp',()=>{
+  const a=boot({padKeys:{right:'a2+',down:'a3+',b2:'b7'}});a.onDir('f',1000);a.onDir('n',1020);a.time(1060);
+  samplePad(a,[],[0,0,0,1]);a.time(1080);samplePad(a,[7],[0,0,1,1]);
+  assert.equal(a.session.attempts[0].kind,'ewgf');assert.equal(a.session.attempts[0].off,0);
+});
+test('ambiguous pad capture requires a fresh press and unmapped axes cannot lock practice after a modal',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a);a.beginPadBinding('b2');samplePad(a);samplePad(a,[6,7]);samplePad(a,[7]);
+  assert.equal(a.store.padKeys.b2,'b3');samplePad(a);samplePad(a,[7]);assert.equal(a.store.padKeys.b2,'b7');
+  a.get('setDlg').open=false;samplePad(a,[],[0,0,-1]);samplePad(a,[7],[0,0,-1]);assert.equal(a.session.tries,1);
+});
+test('pad capture accepts a fresh attack or direction while an unrelated axis stays at its idle endpoint',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a,[],[0,0,-1]);
+  a.beginPadBinding('b2');samplePad(a,[],[0,0,-1]);samplePad(a,[7],[0,0,-1]);
+  assert.equal(a.store.padKeys.b2,'b7','an idle trigger axis must not prevent button capture');
+  samplePad(a,[],[0,0,-1]);a.beginPadBinding('right');samplePad(a,[],[0,0,-1]);samplePad(a,[],[1,0,-1]);
+  assert.equal(a.store.padKeys.right,'a0+','only the newly changed direction should be captured');
+});
+test('settings follow fresh device input without bouncing on held buttons or idle axes',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a,[],[0,0,-1]);a.setBindingDevice('kb');
+  samplePad(a,[],[0,0,-1]);assert.equal(a.get('padBindings').hidden,true);
+  samplePad(a,[7],[0,0,-1]);assert.equal(a.get('padBindings').hidden,false);
+  a.events.keydown({code:'KeyP',target:{tagName:'DIV'},preventDefault(){}});assert.equal(a.get('keyboardBindings').hidden,false);
+  samplePad(a,[7],[0,0,-1]);samplePad(a,[],[0,0,-1]);assert.equal(a.get('keyboardBindings').hidden,false,'held and released inputs must not switch back');
+  samplePad(a,[7],[0,0,-1]);assert.equal(a.get('padBindings').hidden,false);
+  assert.equal(a.session.tries,0);assert.equal(a.store.padKeys.b2,'b3');
+});
+test('input check highlights exact keyboard slots without editing bindings or judging moves',()=>{
+  const a=boot({altKeys:{b2:'KeyP'}});a.get('setDlg').open=true;a.setBindingCheck(true);
+  const before=JSON.stringify(a.store), ev=code=>({code,target:{tagName:'DIV'},preventDefault(){}});
+  a.events.keydown(ev('KeyI'));a.events.keydown(ev('KeyP'));
+  assert.equal(a.bindingChecked('kb','b2',false),true);assert.equal(a.bindingChecked('kb','b2',true),true);
+  a.events.keyup(ev('KeyI'));assert.equal(a.bindingChecked('kb','b2',false),false);assert.equal(a.bindingChecked('kb','b2',true),true);
+  a.events.keydown(ev('KeyZ'));assert.equal(a.bindingChecked('kb','b1',false),false);
+  a.beginPadBinding('b2');a.clearBinding();assert.equal(JSON.stringify(a.store),before);assert.equal(a.session.tries,0);
+  a.setBindingCheck(false);assert.equal(a.bindingChecked('kb','b2',true),false);
+});
+test('input check highlights pad primary, alternate and automatic directions and clears stale input',()=>{
+  const a=boot({padAltKeys:{b2:'b7'}});a.get('setDlg').open=true;samplePad(a);a.setBindingCheck(true);
+  samplePad(a,[3,7,13,15]);
+  for(const [slot,alt] of [['b2',false],['b2',true],['down',false],['right',false]]) assert.equal(a.bindingChecked('pad',slot,alt),true);
+  samplePad(a,[7]);assert.equal(a.bindingChecked('pad','b2',false),false);assert.equal(a.bindingChecked('pad','b2',true),true);
+  a.events.gamepaddisconnected({gamepad:{index:0}});assert.equal(a.bindingChecked('pad','b2',true),false);
+  a.events.keydown({code:'KeyI',target:{tagName:'DIV'},preventDefault(){}});a.events.blur();assert.equal(a.bindingChecked('kb','b2',false),false);
+  samplePad(a,[7]);a.document.hidden=true;a.events.visibilitychange();assert.equal(a.bindingChecked('pad','b2',true),false);
+  assert.equal(a.session.tries,0);assert.equal(a.store.padAltKeys.b2,'b7');
+});
+test('first controller button switches tabs, while opening settings with an already-held button only establishes a baseline',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a,[7],[0,0,-1]);assert.equal(a.get('padBindings').hidden,false);
+  const b=boot();b.pads([{index:0,id:'held',mapping:'standard',axes:[0,0,-1],buttons:Array.from({length:16},(_,i)=>({pressed:i===7,value:0}))}]);
+  b.get('setDlg').open=true;b.pollPad(true);b.pollPad();assert.equal(b.get('keyboardBindings').hidden,false);
+});
+test('automatic switching cancels capture and respects UI navigation, text fields and key repeats',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a);a.beginPadBinding('b2',true);
+  a.events.keydown({code:'KeyP',target:{tagName:'DIV'},preventDefault(){}});
+  assert.equal(a.get('keyboardBindings').hidden,false);assert.equal(a.store.padAltKeys.b2,'none');
+  samplePad(a,[7]);assert.equal(a.store.padAltKeys.b2,'none');assert.equal(a.get('padBindings').hidden,false);
+  for(const extra of [{code:'Tab'},{code:'Enter',target:{tagName:'BUTTON'}},{code:'KeyP',repeat:true},{code:'KeyP',ctrlKey:true},{code:'KeyP',target:{tagName:'INPUT'}}]){
+    a.events.keydown({code:'KeyP',target:{tagName:'DIV'},preventDefault(){},...extra});assert.equal(a.get('padBindings').hidden,false);
+  }
+  a.setBindingDevice('kb');a.get('setDlg').open=false;samplePad(a);samplePad(a,[8]);assert.equal(a.get('keyboardBindings').hidden,false,'normal play must not change settings tabs');
+});
+test('alternate pad inputs capture, persist and reject duplicate inputs within the same action',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a,[],[0,0,-1]);a.beginPadBinding('b2',true);samplePad(a,[7],[0,0,-1]);
+  assert.equal(a.store.padAltKeys.b2,'b7');assert.equal(a.store.padKeys.b2,'b3');
+  samplePad(a,[],[0,0,-1]);a.beginPadBinding('b2',true);samplePad(a,[3],[0,0,-1]);assert.equal(a.store.padAltKeys.b2,'b7');
+  assert.equal(a.get('bindingMessage').textContent,a.T('set.padConflict'));
+  const restored=boot(JSON.parse(JSON.stringify(a.store)));assert.equal(restored.store.padAltKeys.b2,'b7');
+  const bad=boot({padAltKeys:{b1:'b3',b2:'a0+',b3:'b7',b4:'b7',up:'auto',left:'b15'}});
+  assert.equal(bad.store.padAltKeys.b1,'none');assert.equal(bad.store.padAltKeys.b2,'none');assert.equal(bad.store.padAltKeys.b3,'b7');assert.equal(bad.store.padAltKeys.b4,'none');assert.equal(bad.store.padAltKeys.up,'none');assert.equal(bad.store.padAltKeys.left,'none');
+});
+test('primary and alternate pad attacks form one logical press until both are released',()=>{
+  const a=boot({padAltKeys:{b2:'b7'}});samplePad(a,[7]);assert.equal(a.session.tries,1);
+  samplePad(a,[3,7]);samplePad(a,[3]);samplePad(a,[3,7]);samplePad(a,[7]);assert.equal(a.session.tries,1);
+  samplePad(a);samplePad(a,[3,7]);assert.equal(a.session.tries,2);
+  a.get('setDlg').open=true;samplePad(a,[7]);a.get('setDlg').open=false;samplePad(a,[7]);assert.equal(a.session.tries,2);
+  samplePad(a);samplePad(a,[7]);assert.equal(a.session.tries,3,'release gate covers alternate buttons');
+});
+test('alternate pad directions retain a held direction and share the EWGF timing path',()=>{
+  const a=boot({padAltKeys:{right:'a2+',down:'b6',b2:'b7'}});
+  a.time(1000);samplePad(a,[15]);a.time(1005);samplePad(a,[15],[0,0,1]);samplePad(a,[],[0,0,1]);assert.equal(a.cd.state,1);
+  a.time(1020);samplePad(a);assert.equal(a.cd.state,2);
+  a.time(1040);samplePad(a,[6]);a.time(1060);samplePad(a,[6,7],[0,0,1]);
+  assert.equal(a.session.attempts[0].kind,'ewgf');assert.equal(a.session.attempts[0].off,0);
+});
+test('pad capture collapses duplicate d-pad reports and never binds already-held inputs on release',()=>{
+  const a=boot();a.get('setDlg').open=true;samplePad(a,[7],[0,0,-1]);a.beginPadBinding('b2');
+  samplePad(a,[7],[0,0,-1]);samplePad(a,[],[0,0,-1]);assert.equal(a.store.padKeys.b2,'b3');
+  samplePad(a,[7],[0,0,-1]);assert.equal(a.store.padKeys.b2,'b7');
+  samplePad(a,[],[0,0,-1]);a.beginPadBinding('right');samplePad(a,[15],[1,0,-1]);assert.equal(a.store.padKeys.right,'b15');
+  samplePad(a,[],[0,0,-1]);a.beginPadBinding('left');samplePad(a,[6,7],[0,0,-1]);samplePad(a,[6],[0,0,-1]);
+  assert.equal(a.store.padKeys.left,'auto','releasing part of an ambiguous press must not bind the remainder');
 });
 test('invalid saved types fall back safely and stored text is escaped',()=>{
   const a=boot({v:4,side:0,window:100,keys:{up:4},records:{wave10:null,ewgf20:[null],combo10:[{date:0,score:10,label:'<img src=x>',sub:'<script>'}]}});

@@ -15,7 +15,7 @@
 ## 스크립트 구성 (위에서 아래 순서)
 
 ```
-설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,touch,touchSize,touchX,touchY,sound,bgm,bgmVol,sfxVol,keys,altKeys,records,nick,noticeSeen,…,life,ach,pendingRewards,fit,donateResultDay,donateNudgeDay,donatePlayDay,donatePlayMs} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save(). `keys`는 기존 기본 키, `altKeys`는 동작별 보조 키 1개(빈 문자열=미설정)라 옛 저장값과 호환
+설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,touch,touchSize,touchX,touchY,sound,bgm,bgmVol,sfxVol,keys,altKeys,padKeys,padAltKeys,records,nick,noticeSeen,…,life,ach,pendingRewards,fit,donateResultDay,donateNudgeDay,donatePlayDay,donatePlayMs} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save(). `keys`는 기존 기본 키, `altKeys`는 동작별 보조 키 1개(빈 문자열=미설정)라 옛 저장값과 호환
 소리      SND{wave,ewgf,wsc,hellsweep,tongbal,hit,backdash} 파일명 · snd{ok(typeof Audio),unlocked,bgm,pool,idx,lock,release} · 부트 때는 아무것도 만들지 않음(테스트 vm·og 생성이 미디어를 안 건드림)
           unlockAudio(): 첫 keydown/pointerdown/패드 버튼에서 1회 → 모든 효과음 풀(이름당 Audio 3개, 라운드로빈) 생성 + bgmSync()
           bgmSync(): sound && bgm && bgmVol>0 && unlocked && !hidden이면 Web Locks(mishima-dojo-bgm) 획득 후 bgm 지연 생성·volume·play(). 같은 브라우저·사이트에서 한 창만 재생. 숨김/끄기/pagehide 시 대기 취소·pause·권한 반환, pageshow/visibilitychange/focus/blur에서 동기화. Web Locks 미지원은 hasFocus 조건으로 대체. NotAllowedError만 unlocked=false로 다음 제스처에 재시도(AbortError는 무시)
@@ -232,3 +232,19 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 - 2026-09-19 로컬 리뷰: `resetSession()`은 제거된 세션 버튼 대신 설정의 전체 초기화 전용이다. 모드와 무관하게 session/WSC session/완주 순위 결과/입력 이력/미전송 submitQueue를 지운다. 이미 전송한 서버 요청과 서버 최고 기록은 취소·삭제하지 않는다.
 
 - 2026-09-21 성공 팝: `fx.ewgf(n,popKey)`가 일반/대초/무족초 첫 성공 키를 받는다. n>1은 기존 `pop.streak` 우선. 무족 결과 카드의 최속 구분은 그대로 유지한다.
+
+
+### 패드 리맵·입력 설정 (2026-09-27)
+- 리뷰 보완: `padAutoConflict(keys,slot,code)`를 저장 복원·신규 지정·교환 반대편에 공유한다. 교환은 양쪽을 검증한 뒤에만 저장해 일부 변경을 방지한다. `suspendBindings()`가 blur/hidden/폴링의 포커스 상실 정리를 공유하며 visibilitychange에서 즉시 호출해 백그라운드 타이머 실행에 의존하지 않는다. 키 확인에서도 반복 keydown은 탭 전환을 일으키지 않는다.
+- `DEFAULT_KEYS` / `DEFAULT_PAD`와 `store.padKeys`/`store.padAltKeys`(보조 기본값 none): 방향 `auto`(기존 조합)/`none`/`bN`/`aN+/-`/`hu,hd,hl,hr`, 공격 `bN`/`none`. 저장값은 타입·범위·명시적 중복 검증 후 복구하며 잘못된 배치는 기본값으로 돌아간다. 장치별 프로필 없이 브라우저 공통 저장.
+- `padInputs`는 버튼·부호별 축·축 9 hat을 입력 토큰으로 변환한다. `pollPad`는 설정 모달에서도 장치를 감지하고 `capturePad`/현재 입력 표시만 실행한다. 연습 때 저장된 방향 → 버튼 순서와 기존 기기 timestamp 판정을 유지한다. 다른 모달에서는 연습·캡처 모두 차단.
+- `padCapture{slot,field,previous}`: 변경 클릭 시 현재 입력을 스냅샷하고 이후 새로 눌린 입력만 캡처한다. 중립에서도 -1을 보내는 트리거 축 등 기존 유지 값이 변경을 막지 않는다. 시작 전에 눌린 입력은 해제 후 다시 눌러야 하며 복수 입력 중 하나를 떼는 것으로 남은 입력을 지정하지 않는다. 동일 십자 방향의 알려진 버튼/축/hat 별칭은 한 입력으로 합친다. 중복 버튼은 호환 가능한 이전 배치와 교환, 자동 방향과 충돌하면 거부. `padNeedsRelease`는 모달·포커스 이탈 후 할당된 입력이 해제될 때까지 판정을 막는다(미지정 축은 복귀를 막지 않음).
+- `renderBindings` / `renderKeys`: 설정 최상단 키보드·패드 탭, 기본/보조 키 라벨, 패드 개별 해제, 탭별 확인 후 복원. 대기/저장/충돌 메시지를 `bindingMessage` 번역 키 배열로 보존하고 모달 내 live region에 표시한다. Esc는 먼저 캡처 취소, 그다음 모달 닫기. 닫기/blur/hidden/패드 연결 해제 시 캡처 취소.
+- `node tests/smoke-bindings.js`: 모의 Gamepad API + 실제 DOM/키 이벤트로 상시 -1 축·십자키 중복 보고에서의 캡처·교환·해제·충돌·취소·새로고침 저장·복원·입력 복귀 검증. 320/390/1100px × ko/en/ja × 키보드/패드 18개 레이아웃 검증 및 `.sandbox/pad-settings/browser/` 스크린샷. 물리 패드별 입력 지연·비표준 축 배치는 별도 수동 확인.
+
+- 패드 보조 입력(2026-09-27 후속): `padBindingEntries()`가 기본/보조 칸을 함께 다룬다. 두 칸 사이 중복·자동 방향 충돌을 검증하고 호환되는 서로 다른 동작의 칸만 교환한다. 저장값이 없는 기존 사용자는 기본 배치를 보존하며 보조를 none으로 시작한다. 방향은 기본 입력과 보조 입력을 합치되 같은 방향을 두 번 더하지 않고, 공격은 OR 후 `padBtn`과 비교해 모두 해제되기 전까지 1회만 호출한다. 해제 대기·모달 복귀도 보조 입력을 포함한다. 설정에는 키보드와 같은 2열 카드의 두 칸을 표시하고 선택한 칸을 공통 지우기로 해제하며 패드 기본값 복원 시 두 배치를 함께 초기화한다.
+
+- 입력 설정 UI·자동 장치 전환(2026-09-27 후속): 키보드와 패드가 `.keys`/`.key`/`.key-pair`/`.key-bind` 스타일을 공유한다. 패드의 상시 × 버튼과 전용 1열 스타일은 제거. `bindingClear`는 패드 지정/키보드 보조 지정 중에만 표시하며 `clearBinding()`으로 해당 칸만 비운다. 패드 표시는 B번호/A축부호로 줄이고 전체 이름은 aria-label/title/현재 입력 표시에 유지한다.
+- `setBindingDevice(device,automatic)`는 기존 캡처를 취소하고 탭/메시지/포커스를 갱신한다. 설정 중 일반 키 keydown은 키보드로, `bindingPadPrevious{index,id,inputs}` 대비 새 패드 입력은 패드로 전환한다. 최초 장치 감지에서는 버튼만 전환 신호로 인정하고 축은 기준값으로 기록한다. 설정 열기와 지정 시작의 `pollPad(true)`는 현재 누른 입력을 기준으로만 기록하므로 화면을 열자마자 탭이 뒤집히지 않는다. 유지/해제된 입력과 고정 축은 전환하지 않고, 키 반복·수정키·Tab/Esc·버튼의 Enter/Space·폼 입력은 키보드 자동 전환에서 제외한다. 기존 연습 판정은 동일하며 자동 전환을 일으킨 입력을 설정값으로 저장하지 않는다.
+
+- 키 확인(2026-09-27): `bindingCheck`는 비영속 토글, `bindingCheckHeld`/`bindingCheckPad`는 설정 확인 전용 입력 상태다. 키보드 keydown/keyup과 패드 폴링으로 정확히 일치하는 기본/보조 칸을 `bindingChecked`로 조회하고, `.checked`를 칸과 동작 카드에 적용한다. 키보드 고정 방향키는 지정 칸과 별개로 방향 카드도 강조한다. `renderBindingCheck`는 입력 서명이 같으면 DOM 작업을 생략하고 `renderKeys`로 DOM을 교체했을 때만 강제 적용한다. 확인 중 버튼 지정·지우기·기본값 복원은 UI와 함수 가드로 차단하고 연습 입력/통계/저장값은 변경하지 않는다. 기존 자동 탭 전환 유지, 설정 close는 확인 모드 종료, blur/hidden/disconnect는 눌림 표시 정리.
