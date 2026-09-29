@@ -14,6 +14,8 @@
 
 ## 스크립트 구성 (위에서 아래 순서)
 
+공지 강조(2026-09-30): `NOTICES` 항목의 선택 속성 `highlight{kind,title,summary,items[]}`는 같은 공지 안의 `.notice-highlight`로 렌더링한다. 기존 색 토큰의 금빛 테두리·배경·큰 제목으로 결혼 안내를 강조하며, 문자열·이모지는 I18N을 따른다. 미배포 공지 5건은 `2026-09-30-roundup` 하나로 합쳤고 main의 기존 공지 4건은 유지했다. 공지 정렬·읽음 저장·자동 열기 규칙은 그대로다. 단위 테스트는 각 언어 사전의 원본 키 중복을 검사하고, 언어별 브라우저 검사는 최신 공지만이 아니라 과거 공지와 강조 상자까지 언어 전환 후 확인한다.
+
 ```
 설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,touch,touchSize,touchX,touchY,sound,bgm,bgmVol,sfxVol,keys,altKeys,padKeys,padAltKeys,records,nick,noticeSeen,…,life,ach,pendingRewards,fit,donateResultDay,donateNudgeDay,donatePlayDay,donatePlayMs} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save(). `keys`는 기존 기본 키, `altKeys`는 동작별 보조 키 1개(빈 문자열=미설정)라 옛 저장값과 호환
 소리      SND{wave,ewgf,wsc,hellsweep,tongbal,hit,backdash,giwon,giwonCh} 파일명 · snd{ok(typeof Audio),unlocked,bgm,pool,idx,lock,release} · 부트 때는 아무것도 만들지 않음(테스트 vm·og 생성이 미디어를 안 건드림)

@@ -693,6 +693,17 @@ test('every dictionary key exists in all three languages',()=>{
   for(const l of langs){a.setLang(l);assert.equal(a.T('app.title')!=='app.title',true);}
   for(const key of ['a.ewgf.title','trend.stable','set.padNote','footer','mode.combo10.desc']){for(const l of langs){a.setLang(l);assert.notEqual(a.T(key),key);}}
 });
+test('each locale declares each translation key only once',()=>{
+  const dictionary=html.slice(html.indexOf('const I18N = {'),html.indexOf('\nconst T ='));
+  for(const [i,lang] of ['ko','en','ja'].entries()){
+    const start=dictionary.indexOf('\n'+lang+':{');
+    const end=i<2?dictionary.indexOf('\n'+['en','ja'][i]+':{',start):dictionary.length;
+    const keys=[...dictionary.slice(start,end).matchAll(/(?:^|[,\n])\s*(['"])([a-z][\w.]+)\1\s*:/g)].map(m=>m[2]);
+    assert.ok(keys.length>500,lang+' source key scan covers the dictionary');
+    assert.deepEqual(keys.filter((key,index)=>keys.indexOf(key)!==index),[],lang+' has duplicate keys that silently overwrite translations');
+  }
+});
+
 test('the three dictionaries share exactly the same key set',()=>{
   const {I18N}=boot();const ko=Object.keys(I18N.ko).sort();
   for(const l of ['en','ja']) assert.deepEqual(Object.keys(I18N[l]).sort(),ko,'keys differ in '+l);
@@ -700,15 +711,23 @@ test('the three dictionaries share exactly the same key set',()=>{
 test('announcements render in every language and persist the latest read marker',()=>{
   let saved;
   const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
-  assert.deepEqual(Array.from(a.NOTICES,n=>n.id),['2026-09-30-giwon','2026-09-28-roundup','2026-09-23-giwon','2026-09-22-623','2026-09-21-roundup','2026-09-21-mist','2026-09-19-dojo','2026-09-15-notices']);assert.equal(a.NOTICES[0].items.length,4);assert.equal(a.NOTICES[1].items.length,5);assert.equal(a.NOTICES[3].items.length,1);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
+  assert.deepEqual(Array.from(a.NOTICES,n=>n.id),['2026-09-30-roundup','2026-09-21-roundup','2026-09-21-mist','2026-09-19-dojo','2026-09-15-notices']);assert.equal(a.NOTICES[0].items.length,8);assert.equal(a.NOTICES[0].highlight.items.length,2);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
   assert.ok(a.get('noticeList').innerHTML.includes(a.T(a.NOTICES[0].title)));
   a.setMode('wave10');a.startTrial();a.openNotices();
   assert.equal(a.get('noticeDlg').open,true);assert.equal(a.trial.cdTimer,null,'opening an announcement cancels a countdown');
   assert.equal(a.store.noticeSeen,a.NOTICE_LATEST);assert.equal(saved.noticeSeen,a.NOTICE_LATEST);assert.equal(a.get('noticeBadge').hidden,true);
   a.setLang('en');assert.match(a.get('noticeList').innerHTML,/September 15 feature update/);
   a.setLang('ja');assert.match(a.get('noticeList').innerHTML,/9月15日 機能アップデート/);
-  for(const lang of ['ko','en','ja']){a.setLang(lang);for(const key of [a.NOTICES[0].title,a.NOTICES[0].summary,...a.NOTICES[0].items])assert.ok(a.get('noticeList').innerHTML.includes(a.T(key)),lang+' '+key);}
-  const previous=boot({v:4,noticeSeen:'2026-09-28-roundup'});assert.equal(previous.get('noticeBadge').hidden,false);assert.equal(previous.noticeAutoTry(),true);assert.equal(previous.store.noticeSeen,a.NOTICE_LATEST);
+  for(const lang of ['ko','en','ja']){
+    a.setLang(lang);
+    for(const notice of a.NOTICES){
+      const keys=[notice.title,notice.summary,...notice.items];
+      if(notice.highlight)keys.push(notice.highlight.title,notice.highlight.summary,...notice.highlight.items);
+      for(const key of keys)assert.ok(a.get('noticeList').innerHTML.includes(a.T(key)),lang+' '+key);
+    }
+    if(lang!=='ja')assert.doesNotMatch(a.get('noticeList').innerHTML,/[\u3040-\u30ff]/,lang+' notices must not be overwritten by Japanese');
+  }
+  const previous=boot({v:4,noticeSeen:'2026-09-30-wedding'});assert.equal(previous.get('noticeBadge').hidden,false);assert.equal(previous.noticeAutoTry(),true);assert.equal(previous.store.noticeSeen,a.NOTICE_LATEST);
   const read=boot({v:4,noticeSeen:a.NOTICE_LATEST});assert.equal(read.get('noticeBadge').hidden,true);
   const invalid=boot({v:4,noticeSeen:'removed-notice'});assert.equal(invalid.store.noticeSeen,'');assert.equal(invalid.get('noticeBadge').hidden,false);
 });
