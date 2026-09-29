@@ -1,4 +1,4 @@
-# 인수인계 — 기원권 / 기원초 링크 / 기원초 연습 모드
+# 인수인계 — 기원권 / 기원초 링크 / 기원초 연습 모드 / 기원초 10회 순위
 
 ## 1. 기준
 
@@ -8,7 +8,8 @@
 
 ## 2. 합류 순서와 의존
 
-- 선행 의존 없음. 서버·DB·워커 변경 없음.
+- 선행 의존 브랜치 없음. DB 스키마 변경 없음.
+- **워커 변경 있음**(2026-09-30 기원초 10회 순위, 결정 30): `worker/index.js`의 `BOARDS.giwon`(`wsc`와 같은 `CHALLENGE_10` 명세). **사이트 푸시 전에 워커를 먼저 재배포**해야 한다(5절).
 - **`623` 판정을 바꾸는 다른 세션 작업과 같은 배포에 들어가면 순서는 상관없지만 병합은 주의**(6절 참조). 기원초 링크는 루트를 보지 않고 `attempt()`가 초풍으로 인정한 발동만 읽으므로 `623` 판정에는 손대지 않았다.
 
 ## 3. 사용자에게 보이는 변경 · 공지 필요 여부
@@ -20,8 +21,9 @@
 - 사라지는 `no_cd` 피드백을 보존하려고 코치에 "초풍을 노렸다면 6N23이 빠졌습니다"를 병기한다(사용자가 고른 (c)안).
 - 기원권 뒤 첫 초풍이 **몇 프레임에 발동했는지**를 구간 막대 4칸(`발동 | 중립 | 6 선입력 | RP`)과 코치로 표시하고, 49f까지면 성공이다(2026-09-27 사용자 인게임 확인: 중립이 48f, 발동이 49f). 루트는 보지 않지만 판정은 기존 그대로라 `6N23`·`6N3`는 되고 `623`은 결정 1의 중립 누락 실패다(공지·안내 문구도 이에 맞춤). 더미 발밑 경직 게이지(경직이 끝나는 시점 하나만 표시, 앵커는 `stiffAnchor`가 고정)와 연결 결과에 따른 더미 반응(크게 폭발 / 픽 쓰러짐 / 기원권 두 번은 살살 + 타임라인 유지)이 함께 들어갔다.
 - 카운터로 맞은 더미는 날아가지 않고 제자리에서 배를 잡는다. 전용 효과음 2종과 카메라 줌이 붙는다.
-- 모드 탭에 **기원초 연습**이 하나 늘어 7개 → **8개**가 된다(자유 연습·웨캔기어 연습·기원초 연습·웨이브 10초·초풍 20회·웨이브 초풍 10회·더미 격파 30초·백대시 10초). 이 모드에서는 `body.giwon-mode`로 코치 영역 배치가 바뀐다(타임라인·평가가 첫 줄, 세션 통계는 그 아래). 측정·카운트다운·순위 없는 무제한 연습이라 `TRIAL_MODES`·`BOARDS`·워커는 그대로다.
+- 모드 탭에 **기원초 연습**이 하나 늘어 7개 → **8개**가 된다(자유 연습·웨캔기어 연습·기원초 연습·웨이브 10초·초풍 20회·웨이브 초풍 10회·더미 격파 30초·백대시 10초). 이 모드에서는 `body.giwon-mode`로 코치 영역 배치가 바뀐다(타임라인·평가가 첫 줄, 세션 통계는 그 아래). 시간을 재는 측정 모드가 아닌 무제한 연습이라 `TRIAL_MODES`는 그대로이고, 순위는 10회 도전 완주 결과만 `BOARDS.giwon`에 올린다(결정 30).
 - **모든 모드에 적용되는 판정 변경**: 기원권 뒤 경직 32f 동안 버튼은 기술을 내지 않는다. 경직 마지막 8f에 눌린 버튼 하나만 버퍼되어 해제 프레임에 나간다(2026-09-27 사용자 결정). 방향 입력은 그대로 선입력된다.
+- (2026-09-30) 순위표에 **기원초 10회** 탭이 생겨 7개가 된다. 기원초 연습의 10회 도전을 끝까지 마치면 성공 횟수(동점은 최고 연속)가 자동 등록된다. 취소·중단은 등록하지 않는다.
 - 기원초 연습 모드의 더미는 한 개만, 항상 캐릭터 앞 70px에 서고 250ms 만에 다시 선다. 다른 모드의 더미는 그대로다.
 - 기원권 모션이 어퍼컷 느낌(깊은 앉기 + 복부 스트레이트)에서 **라이트 훅**으로 바뀐다(연출 전용).
 - 새 파일 2개: `sfx-giwon.mp3`, `sfx-giwon-ch.mp3` (사용자 제공, 2026-09-22 출처 확인 완료. 원본 바이트 그대로 복사했고 md5 일치 확인).
@@ -34,7 +36,7 @@
 요약: ↘+RP 기원권을 기술로 판정하고, 이어지는 초풍이 몇 프레임에 발동했는지 알려줍니다. 전용 연습 모드도 추가했습니다.
 1. ↘를 잡은 채 RP를 누르면 기원권입니다. 저스트가 없어 프레임 판정은 하지 않으며, 초풍 성공률·연속 기록에는 들어가지 않습니다.
 2. 기원권을 낸 뒤 경직 32f 동안에는 걷기·대시·기술이 하나도 나가지 않습니다. 선입력으로 남는 방향은 시작 6 하나이고 중립부터는 경직이 끝난 뒤에 들어가야 합니다. 버튼도 경직 마지막 8f 안에 마지막으로 누른 하나만 남아 해제 프레임에 나갑니다(버퍼 한 칸 · 마지막 입력이 덮어씀).
-3. 기원초 연습 모드에서는 경직 해제와 발동 목표 칸까지를 프레임 표로 보여주고, 발동 프레임과 이번 세션 성공률을 기록합니다. 순위 등록은 없습니다.
+3. 기원초 연습 모드에서는 경직 해제와 발동 목표 칸까지를 프레임 표로 보여주고, 발동 프레임과 이번 세션 성공률을 기록합니다. 10회 도전을 끝까지 마치면 성공 횟수가 「기원초 10회」 순위에 올라갑니다.
 4. 기원권 뒤 첫 초풍이 몇 프레임에 발동했는지 표시하고, 49f까지 나왔으면 성공입니다. 커맨드 루트는 보지 않으므로 6N23·6N3(무족) 어느 쪽이든 됩니다. 623은 중립 누락으로 초풍이 아닙니다. 시작 6만 경직 중에 잡아 두고, 중립은 경직이 풀리는 48f에 손을 떼 만드세요.
 5. 연습 전제는 카운터 히트이고 리커버리·지상 판정 값은 실게임 미확인 가정값입니다. 실제 명중이나 딜캐 타이밍은 측정하지 않습니다.
 
@@ -42,7 +44,7 @@
 요약: d/f+2 is now judged as a move, the EWGF that follows it is timed to the frame it comes out on, and there is a practice mode for it.
 1. Press RP while holding d/f for d/f+2. It has no just frame, so it is not timed and never counts toward EWGF accuracy or streaks.
 2. For the 32 frames of recovery after a d/f+2, nothing comes out at all — no walking, no dash, no move. The only direction that survives it is the start f; the neutral and everything after it has to go in once the recovery ends. Buttons are the same: only the last one pressed inside the final 8 frames comes out, on the frame the recovery ends.
-3. The link practice mode draws the d/f+2 recovery frame by frame up to the target, and keeps the frame the EWGF came out on plus the success rate for this session. There is no leaderboard.
+3. The link practice mode draws the d/f+2 recovery frame by frame up to the target, and keeps the frame the EWGF came out on plus the success rate for this session. Finishing the 10-try challenge posts its success count to the “d/f+2 link · 10 tries” leaderboard.
 4. The first EWGF after a d/f+2 shows which frame it came out on, and landing by frame 49 is the success. The command route is not looked at, so 6N23 or the mist-step 6N3 both qualify; 623 skips the neutral and is not an EWGF. Hold the start f through the recovery and release it on frame 48, where the recovery ends, to make the neutral.
 5. Practice assumes a counter hit, and the recovery and grounded windows are unverified assumptions. Actual hit and punish timing is not measured.
 
@@ -50,13 +52,16 @@
 요약: 3+2を技として判定し、続く最風が何フレームで発生したかを表示し、専用の練習モードも追加しました。
 1. 斜め下前を入れたままRPで3+2です。ジャストが無いためフレーム判定はせず、最風の成功率や連続記録にも入りません。
 2. 3+2の後の硬直32fの間は歩き・ダッシュ・技が一切出ません。硬直を越えて残る方向は始動6だけで、中立から先は硬直が明けてから入れる必要があります。ボタンも硬直の最後の8f以内に最後に押した1つだけが残り硬直明けのフレームに出ます（バッファ1枠・最後の入力が上書き）。
-3. 連係練習モードでは硬直明けと発生の目標マスまでをフレーム表で表示し、発生フレームと今セッションの成功率を記録します。ランキング登録はありません。
+3. 連係練習モードでは硬直明けと発生の目標マスまでをフレーム表で表示し、発生フレームと今セッションの成功率を記録します。10回チャレンジを最後まで終えると成功回数が「3+2連係10回」ランキングに登録されます。
 4. 3+2の後の最初の最風が何フレームで発生したかを表示し、49fまでに出ていれば成功です。コマンドの経路は見ないので6N23・6N3(無足)のどちらでも構いません。623は中立省略のため最風になりません。硬直中は始動6だけを押したままにして、明ける48fで離して中立を作ってください。
 5. 練習の前提はカウンターヒットで、リカバリーや地上判定の値は実機未確認の仮定値です。実際の命中やディレイキャッチのタイミングは測定しません。
 
 ## 5. 사람이 해야 할 작업
 
-**없다.** 워커 재배포·D1 마이그레이션·비밀값·도메인 변경 모두 해당 없음. 새 엔드포인트도 없다.
+1. **워커 재배포(사이트 푸시보다 먼저)**: `cd worker; npx wrangler deploy`. `giwon` 보드를 받게 된다. D1 마이그레이션·비밀값·도메인 변경은 없다.
+   - 순서가 바뀌면 재배포 전까지 기원초 10회 완주 결과가 400(`board`)으로 거부되고 결과 줄에 등록 실패·재시도 버튼이 뜬다. 재배포 후 재시도하면 등록된다. 다른 보드는 영향 없다.
+   - 확인: 재배포 후 `curl -s "https://mishima-dojo-board.mishima-dojo.workers.dev/top?board=giwon"`가 `{"error":"board"}`가 아닌 빈 순위를 돌려주면 된다.
+2. 사이트 푸시(합류).
 
 `sfx-giwon.mp3`·`sfx-giwon-ch.mp3`는 루트에 커밋되어 있고, main의 Pages 빌드(`tools/build-site.js`)가 `sfx-*.mp3` 패턴으로 `_site`에 복사한다(2026-09-29 빌드로 확인). 스모크 스크립트는 `tools/cdp.js`의 `sfxFiles(html)`로 `SND` 표에서 목록을 읽으므로 새 효과음을 따로 적을 필요가 없다.
 
@@ -77,6 +82,7 @@
 | `MODES` / `#modes` / `renderMode` | `giwon` 모드 하나와 탭 버튼 하나를 `wsc` 뒤에 추가, `renderMode`·`renderAll`에 `renderGp()`, `renderMode`에 `body.giwon-mode` 토글 | 모드 수를 세는 테스트가 있다(`smoke-chrome.js`의 `modes!==8`). 다른 브랜치가 모드를 더 늘리면 그 숫자를 함께 고친다 |
 | `challengeBusy()` / `rewardBlocked`·`donateNudgeBlocked`·`noticeAutoTry`·`openNick` | 웨캔기어·기원초 두 로컬 도전을 한 함수로 막는다 | 새 로컬 도전을 추가하면 `challengeBusy()`에 넣는다 |
 | `NOTICES` | `2026-09-23-giwon`을 맨 위에 추가 | 공지를 더 넣는 브랜치와 겹친다. 날짜순(최신 위)으로 모두 보존하고 `tests/dojo.test.cjs`의 공지 순서 단언을 함께 고친다 |
+| `CHALLENGES` / `BOARDS` / `#boardTabs` / `completeChallenge` / 워커 `BOARDS`·`CHALLENGE_10` | 로컬 도전 보드를 표 `CHALLENGES` 하나로 모으고(`BOARDS`·`challengeTarget`·`rankingResult`가 파생), `giwon`을 `wsc` 뒤에 추가. 완주 처리는 `completeChallenge()` 공용 | 앱 `BOARDS`·`#boardTabs`·워커 `BOARDS` 순서가 같아야 한다(단위 테스트가 비교). 다른 브랜치가 `wscFinish`의 완주 블록이나 `rankingResult`를 고쳤으면 모드 분기를 되살리지 말고 `CHALLENGES`/`completeChallenge`로 옮긴다. 보드를 늘리면 `smoke-chrome.js`의 `bd.tabs.length!==7`도 고친다 |
 | `gpInput` 호출 지점 | `onDir`/`onButton`의 `pushHistory` 바로 뒤 | 결정 28의 입력 기록과 같은 지점이라 그쪽을 고치는 브랜치와 겹친다. 두 호출은 독립이므로 둘 다 남기면 된다 |
 | `poseAt`의 `case 'giwon'` | 어퍼컷 느낌 → 라이트 훅으로 교체(2026-09-24) | 예전 모션을 되살리지 않는다. 사용자가 직접 지적한 변경이다 |
 | `AGENTS.md` | 결정 **29** 추가 (결정 1은 건드리지 않음) | 번호 충돌 시 양쪽 모두 보존하고 번호만 재배치 |
@@ -85,19 +91,21 @@
 
 ## 7. 실행한 테스트
 
-2026-09-29 `origin/main`(a3c7f53) 리베이스·충돌 해결 뒤 재실행:
+2026-09-30 기원초 10회 순위 추가 후(기준 `origin/main` a3c7f53):
 
-- `node --test tests/dojo.test.cjs tests/board.test.cjs` → **214/214 통과** (리뷰 수정 회귀 4개 포함)
-- `node tests/smoke-chrome.js` → 통과 (JS 오류 0. 모드 탭 기대값 7 → 8)
-- `node tests/smoke-giwon.js`(신규) · `smoke-wsc.js` · `smoke-mist.js` · `smoke-design.js` · `smoke-sound.js` · main의 `smoke-locales.js` → 모두 통과
-- `tools/build-site.js`로 `_site` 빌드 → 두 효과음 복사·영어 페이지에 기원초 모드 포함 확인
+- `node --test tests/dojo.test.cjs tests/board.test.cjs` → **217/217 통과** (기원초 보드: 워커 검증·순위·삭제를 `wsc`와 같은 테스트로, 앱 자동 등록·재시도·취소 미등록, 앱↔워커 계약. 리뷰 보완: 기록 초기화 뒤 기원초 패널 갱신 회귀 테스트 — 수정 전 코드에서 실패 확인)
+- `node tests/smoke-chrome.js` → 통과 (JS 오류 0. 모드 탭 8개, 순위 탭 6 → 7)
+- `node tests/smoke-giwon.js` · `smoke-wsc.js` · `smoke-mist.js` · `smoke-design.js` · `smoke-sound.js` · `smoke-locales.js` → 모두 통과
 - `git diff --check` → 통과
+- 2026-09-30 리뷰 보완(버그 1 + 구조 정리, 그 밖의 동작 변경 없음): 앱 `CHALLENGES` 표·`completeChallenge()`, 워커 `CHALLENGE_10` 공유 명세로 모드 목록 중복 제거. 설정의 기록 초기화(`resetSession`)가 기원초 모드에서 패널을 다시 그리지 않아 옛 통계·행이 남던 문제 수정.
+- 실제 워커에는 배포하지 않았다(5절 사용자 작업).
 
 **알려진 동작 변경(의도적, 사용자 승인):** `↘`를 쥔 채 누른 RP는 이제 어떤 상황에서도 기원권이다. 초풍을 낸 직후나 대시 상태가 450ms 만료된 뒤의 RP도 포함된다(실게임과 같다). 이 경로를 `no_cd`로 기대하던 기존 단위 테스트 13개를 함께 갱신했으며, 대부분 "중립을 한 번 거친다" 한 줄을 추가한 것이다. 미완료 항목 없음.
 
 ## 8. 바뀐 설계 결정 · 갱신한 문서
 
-- `AGENTS.md` 결정 **29** 신설(기원권·기원초). 기존 결정 1·12·17·27은 그대로 지킨다.
+- `AGENTS.md` 결정 **29** 신설(기원권·기원초), 결정 **30** 신설(기원초 10회 순위). 기존 결정 1·12·17·26·27은 그대로 지킨다.
+- `worker/README.md`에 기원초 보드 절 추가, `tools/board-admin.js` 보드 목록에 추가.
 - `.agents/docs/GIWONCHO.md` 0절에 구현 결과와 문서와 달라진 4가지를 기록.
 - `.agents/docs/CODE_MAP.md`에 기원권·기원초 절과 상수·용어 추가.
 - `.agents/docs/PLAN.md`에 체크박스·검증 로그 추가.
@@ -121,7 +129,8 @@
 14. (2026-09-28) 프레임 표 위에 구간 이름 세 개가 자기 칸 폭에 정확히 얹혀 보이는지 — 회색 `선입력` 40~46f, 금색 `중립` 48f, 주홍 `공격` 49f. 언어를 바꾸면 이름도 같이 바뀌는지(Pre-input / Neutral / Attack, 先行入力 / 中立 / 攻撃). 1366px와 390px 모두 가로 스크롤 없이 들어오는지.
 15. (2026-09-28) 타임라인의 회색 `선입력` 띠가 **40~46f**만 덮고 47f는 평범한 칸인지.
 16. (2026-09-28) 연결에 성공했을 때 캐릭터 위에 **기원초!** 가 뜨고(연속 2회째부터는 「2초」) 짧은 팡파르와 폭죽이 나오는지. 설정에서 연출을 끄면 파티클 없이 소리만 남는지.
-17. (2026-09-28) 스테이지의 **10회 도전** 버튼 → 3초 카운트다운(씬 가운데) → 진행도 `n / 10`(왼쪽 위) → 10회 뒤 성공률·최고 연속이 뜨는지. 중간에 다시 누르면 취소되고, 다른 모드로 가면 자동 취소되는지. 순위표에는 아무것도 올라가지 않는지.
+17. (2026-09-28) 스테이지의 **10회 도전** 버튼 → 3초 카운트다운(씬 가운데) → 진행도 `n / 10`(왼쪽 위) → 10회 뒤 성공률·최고 연속이 뜨는지. 중간에 다시 누르면 취소되고, 다른 모드로 가면 자동 취소되는지. 닉네임이 있으면 완주 직후 결과 줄에 등수가 뜨고 순위표가 **기원초 10회** 탭으로 바뀌는지(워커 재배포 후). 취소한 도전은 등록되지 않는지.
 18. (2026-09-29) 기원권 뒤 ↘를 **중립을 거치지 않고 6으로 미끄러뜨려** 잡고 있다가 48f에 떼고 ↘+RP → 두 번째 기원권이 아니라 기원초가 나오는지.
 19. (2026-09-29) 경직 게이지가 더미 **발밑**에 그려져 「기원권」 팝 글자에 가리지 않는지. 폰·터치 화면에서는 발밑의 모드 힌트 글줄과 겹치지 않는지.
 20. (2026-09-29) 10회 도전 중에는 보상 상자가 비활성이고 끝나면 다시 눌리는지. 연습 안내에 `**` 문자가 보이지 않는지.
+21. (2026-09-30) 순위표 탭 끝에 **기원초 10회**가 있고, 행이 `n / 10 성공 · 최고 n연속`으로 보이는지. 본인 행에서 삭제가 되는지. 세 언어 탭 이름(기원초 10회 / d/f+2 link · 10 tries / 3+2連係10回).

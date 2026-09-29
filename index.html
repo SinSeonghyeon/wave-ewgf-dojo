@@ -913,7 +913,7 @@
     <div class="card board-card" id="boardCard" hidden>
       <h2 data-i18n="board.title">순위</h2>
       <p class="sub" data-i18n="board.note">상위 10명 · 닉네임당 최고 기록 1건 · 초기화 없이 계속 쌓입니다 · 닉네임과 기록만 저장됩니다</p>
-      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button><button data-board="rush30" aria-pressed="false" data-i18n="mode.rush30.name">더미 격파 30초</button><button data-board="bd10" aria-pressed="false" data-i18n="mode.bd10.name">백대시 10초</button><button data-board="wsc" aria-pressed="false" data-i18n="wsc.rankTitle">웨캔기어 10회</button></div>
+      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button><button data-board="rush30" aria-pressed="false" data-i18n="mode.rush30.name">더미 격파 30초</button><button data-board="bd10" aria-pressed="false" data-i18n="mode.bd10.name">백대시 10초</button><button data-board="wsc" aria-pressed="false" data-i18n="wsc.rankTitle">웨캔기어 10회</button><button data-board="giwon" aria-pressed="false" data-i18n="gp.rankTitle">기원초 10회</button></div>
       <div class="board-info" id="boardInfo"></div>
       <div class="board-me" id="boardMe"></div>
       <div class="tbl board-list" id="boardList"></div>
@@ -1200,7 +1200,7 @@ ko:{
   "notice.20260923.summary":"↘+RP 기원권을 기술로 판정하고, 이어지는 초풍이 몇 프레임에 발동했는지 알려줍니다. 전용 연습 모드도 추가했습니다.",
   "notice.20260923.1":"↘를 잡은 채 RP를 누르면 기원권입니다. 저스트가 없어 프레임 판정은 하지 않으며, 초풍 성공률·연속 기록에는 들어가지 않습니다.",
   "notice.20260923.5":"기원권을 낸 뒤 경직 32f 동안에는 걷기·대시·기술이 하나도 나가지 않습니다. 선입력으로 남는 방향은 시작 6 하나이고 중립부터는 경직이 끝난 뒤에 들어가야 합니다. 버튼도 경직 마지막 8f 안에 마지막으로 누른 하나만 남아 해제 프레임에 나갑니다(버퍼 한 칸 · 마지막 입력이 덮어씀).",
-  "notice.20260923.2":"기원초 연습 모드에서는 경직 해제와 발동 목표 칸까지를 프레임 표로 보여주고, 발동 프레임과 이번 세션 성공률을 기록합니다. 순위 등록은 없습니다.",
+  "notice.20260923.2":"기원초 연습 모드에서는 경직 해제와 발동 목표 칸까지를 프레임 표로 보여주고, 발동 프레임과 이번 세션 성공률을 기록합니다. 10회 도전을 끝까지 마치면 성공 횟수가 「기원초 10회」 순위에 올라갑니다.",
   "notice.20260923.3":"기원권 뒤 첫 초풍이 몇 프레임에 발동했는지 표시하고, 49f까지 나왔으면 성공입니다. 커맨드 루트는 보지 않으므로 6N23·6N3(무족) 어느 쪽이든 됩니다. 623은 중립 누락으로 초풍이 아닙니다. 시작 6만 경직 중에 잡아 두고, 중립은 경직이 풀리는 48f에 손을 떼 만드세요.",
   "notice.20260923.4":"연습 전제는 카운터 히트이고 리커버리·지상 판정 값은 실게임 미확인 가정값입니다. 실제 명중이나 딜캐 타이밍은 측정하지 않습니다.",
   "notice.20260921.title":"무족초 연습과 중립 입력 규칙",
@@ -1377,7 +1377,7 @@ ko:{
   'bd.f.dir.title':'다른 방향', 'bd.f.dir.coach':'4 N 4 사이에 다른 방향이 들어갔습니다. 4를 톡, 떼고, 다시 4.',
   'bd.f.tapLong.title':'4를 너무 길게', 'bd.f.tapLong.coach':'첫 4는 톡 치고 바로 떼세요. 길게 잡으면 뒤로 걷기가 됩니다.',
   'bd.f.nLong.title':'N이 너무 김', 'bd.f.nLong.coach':'4를 뗀 뒤 두 번째 4가 늦어 백대시로 묶이지 않았습니다. 4 N 4를 더 빠르게.',
-  'wsc.startShort':n=>n+'회 도전', 'wsc.cancelShort':'취소', 'wsc.rankTitle':'웨캔기어 10회', 'wsc.rankScore':(n,total)=>n+' / '+total+' 성공', 'wsc.rankBest':n=>'최고 '+n+'연속', 'bgm.player':'배경음 플레이어', 'bgm.play':'배경음 재생', 'bgm.pause':'배경음 일시정지', 'bgm.next':'다음 곡', 'bgm.wait':'BGM · 랜덤 재생', 'bgm.empty':'BGM 폴더가 비어 있습니다',
+  'wsc.startShort':n=>n+'회 도전', 'wsc.cancelShort':'취소', 'wsc.rankTitle':'웨캔기어 10회', 'gp.rankTitle':'기원초 10회', 'wsc.rankScore':(n,total)=>n+' / '+total+' 성공', 'wsc.rankBest':n=>'최고 '+n+'연속', 'bgm.player':'배경음 플레이어', 'bgm.play':'배경음 재생', 'bgm.pause':'배경음 일시정지', 'bgm.next':'다음 곡', 'bgm.wait':'BGM · 랜덤 재생', 'bgm.empty':'BGM 폴더가 비어 있습니다',
   'set.sound':'소리', 'set.bgm':'배경음', 'bgm.aria':'배경음 켜기/끄기', 'set.bgmVol':'배경음 볼륨', 'set.sfxVol':'효과음 볼륨', 'set.soundNote':'배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).',
   'share.card':'공유 카드', 'share.session':'세션 카드', 'share.title':'결과 공유 카드', 'share.canvasAria':'결과 공유 카드 미리보기',
   'share.copy':'이미지 복사', 'share.download':'PNG 저장', 'share.tweet':'X(트위터)에 공유', 'share.close':'닫기',
@@ -1515,9 +1515,9 @@ ko:{
   'gp.spanStartup':n=>'발동 '+n+'f',
   'gp.spanRec':n=>'경직 '+n+'f',
   "gp.bandBuf":"선입력", "gp.bandFree":"중립", "gp.bandFire":"공격",
-  'gp.challengeHint':n=>'연속 '+n+'회 도전: 기원권 → 초풍 연결을 '+n+'번 평가해 성공률과 최고 연속을 냅니다. 중단된 시도는 세지 않고, 순위에는 올리지 않습니다.',
+  'gp.challengeHint':n=>'연속 '+n+'회 도전: 기원권 → 초풍 연결을 '+n+'번 평가해 성공률과 최고 연속을 냅니다. 중단된 시도는 세지 않고, 10회를 끝까지 마친 결과만 순위에 올라갑니다(성공 횟수 → 최고 연속 순).',
   'gp.legend':(hit,free,target,near)=>'붉은 칸 '+hit+'f: 카운터 명중 · 흐린 칸: 발동·경직(각각 한 칸으로 묶음) · 회색 '+near+'칸: 시작 6 선입력 창(아무 프레임이나) · 금색 '+free+'f: 중립, 이 한 프레임 · 주홍 '+target+'f: 공격 = 초풍 발동',
-  'gp.note':(target,rec,buf,free)=>`판정 기준은 하나입니다 — 기원권 뒤에 이어 넣은 초풍이 ${target}f까지 발동했는가(인게임 확인값). 커맨드 루트는 보지 않으므로 6N23·6N3(무족) 어느 쪽이든 초풍으로 인정된 발동이면 됩니다(623은 중립 누락으로 초풍이 아닙니다). 기원권을 낸 뒤 경직 ${rec}f 동안에는 걷기·대시·기술이 하나도 나가지 않습니다. 선입력으로 남는 방향은 시작 6 하나이고, 중립부터는 경직이 끝난 뒤에 들어가야 합니다 — 경직 중에 6에서 손을 떼면 그 중립은 버려집니다. 버튼도 경직 마지막 ${buf}f 안에 마지막으로 누른 하나만 남아 해제 프레임에 나갑니다(버퍼 한 칸 · 마지막 입력이 덮어씀 · 그보다 이른 버튼은 버려짐). 그래서 손 순서는 경직 중에 6을 잡아 두고 → 해제되는 ${free}f에 손을 떼 중립 → ${target}f에 ↘+RP입니다. 중립·시작 6 위치는 무엇이 늦었는지 보여주는 참고값으로 함께 표시합니다. 더미는 항상 사거리 안 제자리에 한 개만 서 있습니다. 기원권 자체는 저스트가 없어 프레임 판정을 하지 않습니다. 판정과 연출은 다른 모드와 같으며, 이 모드에서 성공한 초풍은 기존 초풍 통계에도 그대로 집계됩니다. 세션 기록은 새로고침하면 사라집니다. 순위 등록은 없습니다.`,
+  'gp.note':(target,rec,buf,free)=>`판정 기준은 하나입니다 — 기원권 뒤에 이어 넣은 초풍이 ${target}f까지 발동했는가(인게임 확인값). 커맨드 루트는 보지 않으므로 6N23·6N3(무족) 어느 쪽이든 초풍으로 인정된 발동이면 됩니다(623은 중립 누락으로 초풍이 아닙니다). 기원권을 낸 뒤 경직 ${rec}f 동안에는 걷기·대시·기술이 하나도 나가지 않습니다. 선입력으로 남는 방향은 시작 6 하나이고, 중립부터는 경직이 끝난 뒤에 들어가야 합니다 — 경직 중에 6에서 손을 떼면 그 중립은 버려집니다. 버튼도 경직 마지막 ${buf}f 안에 마지막으로 누른 하나만 남아 해제 프레임에 나갑니다(버퍼 한 칸 · 마지막 입력이 덮어씀 · 그보다 이른 버튼은 버려짐). 그래서 손 순서는 경직 중에 6을 잡아 두고 → 해제되는 ${free}f에 손을 떼 중립 → ${target}f에 ↘+RP입니다. 중립·시작 6 위치는 무엇이 늦었는지 보여주는 참고값으로 함께 표시합니다. 더미는 항상 사거리 안 제자리에 한 개만 서 있습니다. 기원권 자체는 저스트가 없어 프레임 판정을 하지 않습니다. 판정과 연출은 다른 모드와 같으며, 이 모드에서 성공한 초풍은 기존 초풍 통계에도 그대로 집계됩니다. 세션 기록은 새로고침하면 사라집니다. 순위에는 10회 도전을 끝까지 마친 결과만 올라갑니다.`,
   "mode.wsc.name":"웨캔기어 연습",
   "mode.wsc.desc":"뒤 입력과 RP 연결을 따로 익히는 무제한 연습",
   "hint.wsc":"↘ → 뒤 8·9·10f / RP 1·1~2·1~3f",
@@ -1572,7 +1572,7 @@ en:{
   "notice.20260923.summary":"d/f+2 is now judged as a move, the EWGF that follows it is timed to the frame it comes out on, and there is a practice mode for it.",
   "notice.20260923.1":"Press RP while holding d/f for d/f+2. It has no just frame, so it is not timed and never counts toward EWGF accuracy or streaks.",
   "notice.20260923.5":"For the 32 frames of recovery after a d/f+2, nothing comes out at all — no walking, no dash, no move. The only direction that survives it is the start f; the neutral and everything after it has to go in once the recovery ends. Buttons are the same: only the last one pressed inside the final 8 frames comes out, on the frame the recovery ends.",
-  "notice.20260923.2":"The link practice mode draws the d/f+2 recovery frame by frame up to the target, and keeps the frame the EWGF came out on plus the success rate for this session. There is no leaderboard.",
+  "notice.20260923.2":"The link practice mode draws the d/f+2 recovery frame by frame up to the target, and keeps the frame the EWGF came out on plus the success rate for this session. Finishing the 10-try challenge posts its success count to the “d/f+2 link · 10 tries” leaderboard.",
   "notice.20260923.3":"The first EWGF after a d/f+2 shows which frame it came out on, and landing by frame 49 is the success. The command route is not looked at, so 6N23 or the mist-step 6N3 both qualify; 623 skips the neutral and is not an EWGF. Hold the start f through the recovery and release it on frame 48, where the recovery ends, to make the neutral.",
   "notice.20260923.4":"Practice assumes a counter hit, and the recovery and grounded windows are unverified assumptions. Actual hit and punish timing is not measured.",
   "notice.20260921.title":"Mist Step EWGF practice and neutral input rules",
@@ -1748,7 +1748,7 @@ en:{
   'bd.f.dir.title':'Other direction', 'bd.f.dir.coach':'Another direction slipped into 4 N 4. Tap 4, release, 4 again.',
   'bd.f.tapLong.title':'4 held too long', 'bd.f.tapLong.coach':'Tap the first 4 and release it at once. Holding it is a back walk.',
   'bd.f.nLong.title':'Neutral too long', 'bd.f.nLong.coach':'The second 4 came too late after the release to pair into a backdash. 4 N 4 faster.',
-  'wsc.startShort':n=>n+'-try', 'wsc.cancelShort':'Cancel', 'wsc.rankTitle':'Wave-cancel upper · 10 tries', 'wsc.rankScore':(n,total)=>n+' / '+total+' successes', 'wsc.rankBest':n=>'Best streak: '+n, 'bgm.player':'Music player', 'bgm.play':'Play music', 'bgm.pause':'Pause music', 'bgm.next':'Next track', 'bgm.wait':'BGM · Shuffle', 'bgm.empty':'No tracks in the BGM folder',
+  'wsc.startShort':n=>n+'-try', 'wsc.cancelShort':'Cancel', 'wsc.rankTitle':'Wave-cancel upper · 10 tries', 'gp.rankTitle':'d/f+2 link · 10 tries', 'wsc.rankScore':(n,total)=>n+' / '+total+' successes', 'wsc.rankBest':n=>'Best streak: '+n, 'bgm.player':'Music player', 'bgm.play':'Play music', 'bgm.pause':'Pause music', 'bgm.next':'Next track', 'bgm.wait':'BGM · Shuffle', 'bgm.empty':'No tracks in the BGM folder',
   'set.sound':'Sound', 'set.bgm':'BGM', 'bgm.aria':'BGM on/off', 'set.bgmVol':'BGM volume', 'set.sfxVol':'SFX volume', 'set.soundNote':'BGM starts after your first key press or click (browser autoplay policy).',
   'share.card':'Share card', 'share.session':'Session card', 'share.title':'Result share card', 'share.canvasAria':'Result share card preview',
   'share.copy':'Copy image', 'share.download':'Save PNG', 'share.tweet':'Share on X (Twitter)', 'share.close':'Close',
@@ -1886,9 +1886,9 @@ en:{
   'gp.spanStartup':n=>'startup '+n+'f',
   'gp.spanRec':n=>'recovery '+n+'f',
   "gp.bandBuf":"Pre-input", "gp.bandFree":"Neutral", "gp.bandFire":"Attack",
-  'gp.challengeHint':n=>n+'-try challenge: the next '+n+' judged links give a success rate and a best streak. Interrupted tries do not count, and nothing is submitted to the leaderboards.',
+  'gp.challengeHint':n=>n+'-try challenge: the next '+n+' judged links give a success rate and a best streak. Interrupted tries do not count, and only a finished run is posted to the leaderboard (successes, then best streak).',
   'gp.legend':(hit,free,target,near)=>'Red '+hit+'f: counter hit · dimmed: the startup and recovery spans, one cell each · '+near+' grey cells: the start f pre-input window, any frame in it · gold '+free+'f: neutral, this one frame · coral '+target+'f: the attack, the EWGF fires here',
-  'gp.note':(target,rec,buf,free)=>`There is one criterion: did the EWGF after the d/f+2 come out by frame ${target} (verified in game). The command route is not looked at, so 6N23 or the mist-step 6N3 both qualify as long as the input is accepted as an EWGF (623 skips the neutral and is not one). For the ${rec} frames of recovery after a d/f+2 nothing comes out at all — no walking, no dash, no move. The only direction that survives the recovery is the start f; everything from the neutral on has to go in after it ends, so letting go of the f inside the recovery throws that neutral away. Buttons are the same: only the last one pressed inside the final ${buf} frames survives and comes out on the frame the recovery ends (a one-slot buffer, last input wins, anything earlier is dropped). So the hands do this: hold f through the recovery, release it on frame ${free} where the recovery ends, then d/f+RP on frame ${target}. The neutral and start f positions are shown alongside as reference values for what ran late. The bag always stands alone, in range. d/f+2 itself has no just frame and is never timed. Judging and presentation are the same as in every other mode, and an EWGF landed here still counts toward the ordinary EWGF stats. Session records are lost on refresh. There is no leaderboard.`,
+  'gp.note':(target,rec,buf,free)=>`There is one criterion: did the EWGF after the d/f+2 come out by frame ${target} (verified in game). The command route is not looked at, so 6N23 or the mist-step 6N3 both qualify as long as the input is accepted as an EWGF (623 skips the neutral and is not one). For the ${rec} frames of recovery after a d/f+2 nothing comes out at all — no walking, no dash, no move. The only direction that survives the recovery is the start f; everything from the neutral on has to go in after it ends, so letting go of the f inside the recovery throws that neutral away. Buttons are the same: only the last one pressed inside the final ${buf} frames survives and comes out on the frame the recovery ends (a one-slot buffer, last input wins, anything earlier is dropped). So the hands do this: hold f through the recovery, release it on frame ${free} where the recovery ends, then d/f+RP on frame ${target}. The neutral and start f positions are shown alongside as reference values for what ran late. The bag always stands alone, in range. d/f+2 itself has no just frame and is never timed. Judging and presentation are the same as in every other mode, and an EWGF landed here still counts toward the ordinary EWGF stats. Session records are lost on refresh. Only a finished 10-try challenge reaches the leaderboard.`,
   "mode.wsc.name":"Wave-cancel WS upper",
   "mode.wsc.desc":"Untimed practice for back timing and the RP follow-up",
   "hint.wsc":"d/f → back 8/9/10f · RP 1 / 1–2 / 1–3f",
@@ -1943,7 +1943,7 @@ ja:{
   "notice.20260923.summary":"3+2を技として判定し、続く最風が何フレームで発生したかを表示し、専用の練習モードも追加しました。",
   "notice.20260923.1":"斜め下前を入れたままRPで3+2です。ジャストが無いためフレーム判定はせず、最風の成功率や連続記録にも入りません。",
   "notice.20260923.5":"3+2の後の硬直32fの間は歩き・ダッシュ・技が一切出ません。硬直を越えて残る方向は始動6だけで、中立から先は硬直が明けてから入れる必要があります。ボタンも硬直の最後の8f以内に最後に押した1つだけが残り硬直明けのフレームに出ます（バッファ1枠・最後の入力が上書き）。",
-  "notice.20260923.2":"連係練習モードでは硬直明けと発生の目標マスまでをフレーム表で表示し、発生フレームと今セッションの成功率を記録します。ランキング登録はありません。",
+  "notice.20260923.2":"連係練習モードでは硬直明けと発生の目標マスまでをフレーム表で表示し、発生フレームと今セッションの成功率を記録します。10回チャレンジを最後まで終えると成功回数が「3+2連係10回」ランキングに登録されます。",
   "notice.20260923.3":"3+2の後の最初の最風が何フレームで発生したかを表示し、49fまでに出ていれば成功です。コマンドの経路は見ないので6N23・6N3(無足)のどちらでも構いません。623は中立省略のため最風になりません。硬直中は始動6だけを押したままにして、明ける48fで離して中立を作ってください。",
   "notice.20260923.4":"練習の前提はカウンターヒットで、リカバリーや地上判定の値は実機未確認の仮定値です。実際の命中やディレイキャッチのタイミングは測定しません。",
   "notice.20260921.title":"無足最風の練習と中立入力ルール",
@@ -2119,7 +2119,7 @@ ja:{
   'bd.f.dir.title':'別の方向', 'bd.f.dir.coach':'4 N 4の間に別の方向が入りました。4をトン、離して、また4。',
   'bd.f.tapLong.title':'4が長すぎ', 'bd.f.tapLong.coach':'最初の4はトンと押してすぐ離してください。長く押すと後ろ歩きになります。',
   'bd.f.nLong.title':'Nが長すぎ', 'bd.f.nLong.coach':'4を離してから2回目の4が遅く、バックダッシュとしてつながりませんでした。4 N 4をもっと速く。',
-  'wsc.startShort':n=>n+'回挑戦', 'wsc.cancelShort':'取消', 'wsc.rankTitle':'キャンセルアッパー10回', 'wsc.rankScore':(n,total)=>n+' / '+total+'成功', 'wsc.rankBest':n=>'最高'+n+'連続', 'bgm.player':'BGMプレイヤー', 'bgm.play':'BGMを再生', 'bgm.pause':'BGMを一時停止', 'bgm.next':'次の曲', 'bgm.wait':'BGM · シャッフル', 'bgm.empty':'BGMフォルダーに曲がありません',
+  'wsc.startShort':n=>n+'回挑戦', 'wsc.cancelShort':'取消', 'wsc.rankTitle':'キャンセルアッパー10回', 'gp.rankTitle':'3+2連係10回', 'wsc.rankScore':(n,total)=>n+' / '+total+'成功', 'wsc.rankBest':n=>'最高'+n+'連続', 'bgm.player':'BGMプレイヤー', 'bgm.play':'BGMを再生', 'bgm.pause':'BGMを一時停止', 'bgm.next':'次の曲', 'bgm.wait':'BGM · シャッフル', 'bgm.empty':'BGMフォルダーに曲がありません',
   'set.sound':'サウンド', 'set.bgm':'BGM', 'bgm.aria':'BGMのオン/オフ', 'set.bgmVol':'BGM音量', 'set.sfxVol':'効果音音量', 'set.soundNote':'BGMは最初のキー入力かクリックの後に始まります (ブラウザの自動再生制限)。',
   'share.card':'共有カード', 'share.session':'セッションカード', 'share.title':'結果共有カード', 'share.canvasAria':'結果共有カードのプレビュー',
   'share.copy':'画像をコピー', 'share.download':'PNG保存', 'share.tweet':'X(Twitter)で共有', 'share.close':'閉じる',
@@ -2257,9 +2257,9 @@ ja:{
   'gp.spanStartup':n=>'発生 '+n+'f',
   'gp.spanRec':n=>'硬直 '+n+'f',
   "gp.bandBuf":"先行入力", "gp.bandFree":"中立", "gp.bandFire":"攻撃",
-  'gp.challengeHint':n=>n+'回チャレンジ: 最風連係を'+n+'回判定して成功率と最高連続を出します。中断した試行は数えず、ランキングには登録しません。',
+  'gp.challengeHint':n=>n+'回チャレンジ: 最風連係を'+n+'回判定して成功率と最高連続を出します。中断した試行は数えず、10回を最後まで終えた結果だけがランキングに登録されます（成功回数→最高連続の順）。',
   'gp.legend':(hit,free,target,near)=>'赤いマス'+hit+'f: カウンター命中 · 薄いマス: 発生と硬直(それぞれ1マスに集約) · 灰色'+near+'マス: 始動6の先行入力枠(どのフレームでも) · 金色'+free+'f: 中立、この1フレーム · 朱色'+target+'f: 攻撃=最風の発生',
-  'gp.note':(target,rec,buf,free)=>`判定基準は一つだけです — 3+2の後に続けて入れた最風が${target}fまでに発生したか（実機で確認した値）。コマンドの経路は見ないので6N23・6N3(無足)のどちらでも、最風として認められた発生であれば構いません(623は中立省略のため最風になりません)。3+2の後の硬直${rec}fの間は歩き・ダッシュ・技が一切出ません。硬直を越えて残る方向は始動6だけで、中立から先は硬直が明けてから入れる必要があります — 硬直中に6を離すとその中立は捨てられます。ボタンも硬直の最後の${buf}f以内に最後に押した1つだけが残り硬直明けのフレームに出ます（バッファは1枠・最後の入力が上書き・それより早いボタンは捨てられます）。つまり手順は、硬直中は6を押したままにして、明ける${free}fで離して中立、${target}fで3+RPです。中立と始動6の位置は何が遅れたかを示す参考値として併記します。ダミーは常に1体だけ間合い内に立ちます。3+2自体はジャストが無いためフレーム判定をしません。判定と演出は他のモードと同じで、ここで成功した最風は従来の最風統計にもそのまま計上されます。セッション記録は更新すると消えます。ランキング登録はありません。`,
+  'gp.note':(target,rec,buf,free)=>`判定基準は一つだけです — 3+2の後に続けて入れた最風が${target}fまでに発生したか（実機で確認した値）。コマンドの経路は見ないので6N23・6N3(無足)のどちらでも、最風として認められた発生であれば構いません(623は中立省略のため最風になりません)。3+2の後の硬直${rec}fの間は歩き・ダッシュ・技が一切出ません。硬直を越えて残る方向は始動6だけで、中立から先は硬直が明けてから入れる必要があります — 硬直中に6を離すとその中立は捨てられます。ボタンも硬直の最後の${buf}f以内に最後に押した1つだけが残り硬直明けのフレームに出ます（バッファは1枠・最後の入力が上書き・それより早いボタンは捨てられます）。つまり手順は、硬直中は6を押したままにして、明ける${free}fで離して中立、${target}fで3+RPです。中立と始動6の位置は何が遅れたかを示す参考値として併記します。ダミーは常に1体だけ間合い内に立ちます。3+2自体はジャストが無いためフレーム判定をしません。判定と演出は他のモードと同じで、ここで成功した最風は従来の最風統計にもそのまま計上されます。セッション記録は更新すると消えます。ランキングには10回チャレンジを最後まで終えた結果だけが登録されます。`,
   "mode.wsc.name":"ウェーブキャンセル立ち途中RP",
   "mode.wsc.desc":"後ろ入力とRPのタイミングを学ぶ時間無制限の練習",
   "hint.wsc":"↘ → 後ろ8・9・10f / RP 1・1～2・1～3f",
@@ -2795,10 +2795,7 @@ function wscFinish(t,reason){
   wscRecord(wsc.session,r);
   if(c.status==='running'){
     wscRecord(c.stats,r);
-    if(c.stats.tries>=WSC_TARGET){
-      c.status='done';c.result={completed:true,window:store.window,rec:{hits:c.stats.hits,target:WSC_TARGET,best:c.stats.best}};
-      boardSubmit();
-    }
+    if(c.stats.tries>=WSC_TARGET) completeChallenge(c,WSC_TARGET);
     else if(reason!=='aborted') c.taskN=Math.floor(Math.random()*4);
   }
   wsc.last=r; wsc.active=null; wsc.prefix=0;
@@ -3380,7 +3377,7 @@ const GP_BUF_A = GP_FREE - GP_NEAR, GP_BUF_B = GP_FREE - 2;
 const GP_DUMMY_PX = 70;                                  // 기원권 사거리(10~130px) 한가운데. 연습 모드의 더미는 항상 여기 선다
 const GP_DUMMY_MS = 250;                                 // and comes back this soon, so the next rep has a target
 const GP_HIT = GIWON.ACTIVE_F + 1;                       // cell the counter lands on
-const GP_CHALLENGE = 10;                                 // 로컬 10회 도전(순위 등록 없음, 사용자 요청 2026-09-28)
+const GP_CHALLENGE = 10;                                 // 로컬 10회 도전(2026-09-28). 완주 결과만 기원초 보드에 등록(결정 30)
 const gp = {run:null, last:null, notice:'ready', session:gpStats(), challenge:{status:'idle',stats:null}};
 // The axis has to fit the panel without sideways scrolling, so the two spans where nothing is
 // judged — the 기원권 startup and the middle of the recovery — collapse into one cell each.
@@ -3430,7 +3427,10 @@ function gpFinish(link, a){
                t0:r.t0, tHit:r.tHit, tRec:r.tRec, events:r.events.slice()};
   gpRecord(gp.session, row);
   const c = gp.challenge;
-  if(c.status==='running'){ gpRecord(c.stats, row); if(c.stats.tries>=GP_CHALLENGE) c.status='done'; }
+  if(c.status==='running'){
+    gpRecord(c.stats, row);
+    if(c.stats.tries>=GP_CHALLENGE) completeChallenge(c, GP_CHALLENGE); // the only result that reaches the 기원초 board (결정 30)
+  }
   gp.last = row; gp.notice = 'done'; renderGp();
   if(c.status==='done') renderRewards(); // rewardBlocked() held the chest during the challenge
 }
@@ -3440,7 +3440,7 @@ function gpRecord(st, row){
   if(row.onTime) st.onTime++;
   st.rows.unshift(row); if(st.rows.length>12) st.rows.pop();
 }
-// 10회 도전: 평가된 시도만 센다(중단은 분모에서 빠지는 기존 규칙 그대로). 순위·서버는 건드리지 않는다.
+// 10회 도전: 평가된 시도만 센다(중단은 분모에서 빠지는 기존 규칙 그대로). 끝까지 마친 결과만 순위에 올린다(completeChallenge).
 function gpStartChallenge(){
   if(mode!=='giwon'||modalOpen()||jackpotBusy) return;
   donateNudgeDefer();
@@ -3448,7 +3448,7 @@ function gpStartChallenge(){
   resetInput();
   if(cancel) gp.challenge={status:'cancelled',stats:null};
   else gp.challenge={status:'countdown', startAt:performance.now()+3000, remaining:3, stats:gpStats()};
-  renderGp(); renderRewards();
+  renderGp(); renderRewards(); renderTrialRank();
 }
 function gpChallengeCancel(){
   if(!['countdown','running'].includes(gp.challenge.status)) return;
@@ -3878,7 +3878,7 @@ function trialTick(now){
   }
 }
 function recText(m, r){ // prefer numeric fields so old records re-render in the current language
-  if(m==='wsc')return {label:T('wsc.rankScore',r.hits??r.score,r.target??WSC_TARGET),sub:T('wsc.rankBest',r.best||0)};
+  if(challengeTarget(m))return {label:T('wsc.rankScore',r.hits??r.score,r.target??challengeTarget(m)),sub:T('wsc.rankBest',r.best||0)};
   if(m==='wave10' && Number.isFinite(r.dashes)) return {label:T('rec.dps',(+r.score).toFixed(1)), sub:T('rec.waveSub',r.dashes,r.chain||0)};
   if(m==='rush30' && Number.isFinite(r.kills)) return {label:T('rec.pts',r.score), sub:T('rec.rushSub',r.kills,r.whiffs||0,r.dashPts||0)};
   if(m==='bd10' && Number.isFinite(r.dashes)) return {label:T('rec.dist',(+r.score).toFixed(1)), sub:T('rec.bdSub',r.dashes,r.top||0,r.chain||0)};
@@ -4115,7 +4115,7 @@ function resetSession(){
   endTrial(true); resetInput();
   wsc.session=wscStats(); wsc.challenge={status:'idle',stats:null}; wsc.last=null; wsc.notice='ready';
   gp.session=gpStats(); gp.challenge={status:'idle',stats:null}; gp.last=null; gp.run=null; gp.notice='ready';
-  clearShare(); renderWsc();
+  clearShare(); renderWsc(); renderGp();
   Object.assign(session, sessionDefault()); history.length=0; lastInputT=performance.now();
   updateStats(); updateHud(); renderHistory(); renderLog(); renderHist(); renderWave(); coachTrend();
   showResult('', 'READY', ['ready.reset'], ['ready.title']);
@@ -4418,7 +4418,15 @@ $('fitSlots').addEventListener('click', e => { const b = e.target && e.target.cl
 $('fitReset').addEventListener('click', () => { for(const s of SLOTS) store.fit[s] = 'base'; lookCache = null; save(); renderFit(); });
 ['setDlg','donateDlg','fitDlg'].forEach(id => $(id).addEventListener('close', () => setTimeout(renderRewards, 0))); // refresh claiming availability (#shareDlg/#nickDlg: their own close handlers)
 
-const BOARDS = [...TRIAL_MODES,'wsc']; // classic trials plus the separate completed WSC challenge; matches worker and tabs
+// Local N-try challenges with their own boards (결정 26·30): mode → target and where its challenge state lives.
+// BOARDS, boardEntry and rankingResult all read this one table; a new challenge board is one row here plus the worker's BOARDS.
+const CHALLENGES = {wsc:{target:WSC_TARGET, state:()=>wsc.challenge}, giwon:{target:GP_CHALLENGE, state:()=>gp.challenge}};
+const BOARDS = [...TRIAL_MODES, ...Object.keys(CHALLENGES)]; // matches worker and tabs
+const challengeTarget = m => CHALLENGES[m] ? CHALLENGES[m].target : 0; // 0 = not a challenge board
+function completeChallenge(c, target){ // a finished run is kept (until the next start) as the result the board submits
+  c.status='done'; c.result={completed:true, window:store.window, rec:{hits:c.stats.hits, target, best:c.stats.best}};
+  boardSubmit();
+}
 const board = { tab:'wave10', data:{}, msg:'', seq:0, rev:{}, loads:new Map(), deleting:false, submitting:false, loadAfterDelete:false, submitQueue:[] }; // queued writes own their result/payload/identity; changing the visible mode cannot replace them
 const live = { visits:null, posts:null, postsMsg:'', postsLoading:false, posting:false, voting:false, replying:false, postsSeq:0, replyTo:0, replyText:'', visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // post mutations share one busy gate; postsSeq keeps an older list load from replacing a newer response
 // nickLater: the gate offers "practise without ranking" after the server itself failed · nickLost: a 403 arrived while the result card was up
@@ -4436,10 +4444,11 @@ const waveYMax = top => Math.max(8, Math.ceil(top)+1); // keep the band on the c
 const waveGrid = yMax => { const g = []; for(let v=2; v<=yMax; v+=2) g.push(v); return g; };
 const KST_DAY = () => new Date(Date.now() + 9*3600e3).toISOString().slice(0,10); // same key as the worker's dayKey
 function boardEntry(r, m){ // pure: finished trial result → submission payload (null in free practice / no result). Unit-tested.
-  if(!r || !r.rec || !MODES[m] || (!MODES[m].start && m!=='wsc')) return null;
-  if(m==='wsc' && (!r.completed || r.rec.target!==WSC_TARGET))return null;
+  const n = challengeTarget(m);
+  if(!r || !r.rec || !MODES[m] || (!MODES[m].start && !n)) return null;
+  if(n && (!r.completed || r.rec.target!==n))return null;
   const rec = r.rec, e = {board:m, win:r.window, lang:store.lang};
-  if(m==='wsc'){e.score=rec.hits;e.tie=rec.best;e.detail={hits:rec.hits,target:rec.target,best:rec.best};}
+  if(n){e.score=rec.hits;e.tie=rec.best;e.detail={hits:rec.hits,target:rec.target,best:rec.best};}
   else if(m==='wave10'){ e.score = +rec.score; e.tie = rec.chain||0; e.detail = {dashes:rec.dashes, chain:rec.chain||0}; }
   else if(m==='combo10'){ e.score = rec.score; e.tie = rec.dps||0; e.detail = {hits:rec.hits, target:rec.target, mean:rec.mean, dps:rec.dps||0}; }
   else if(m==='rush30'){ e.score = rec.score; e.tie = rec.kills||0; e.detail = {kills:rec.kills||0, whiffs:rec.whiffs||0, dashPts:rec.dashPts||0}; }
@@ -4565,7 +4574,7 @@ async function boardDelete(){
 }
 // Post-trial status in the trial bar (and the banner in the result card): auto-submitted, retry on failure.
 const submitText = s => s.state==='busy' ? T('board.submitting') : s.state==='fail' ? T(s.error==='auth' ? 'nick.expired' : 'board.submitFail') : T(s.improved ? 'board.done' : 'board.kept', s.rank, s.total, pctTop(s.rank, s.total));
-const rankingResult=()=>mode==='wsc'?wsc.challenge.result:trial.result;
+const rankingResult = () => CHALLENGES[mode] ? CHALLENGES[mode].state().result : trial.result;
 function renderTrialRank(){
   const r = rankingResult(), e = BOARD_URL ? boardEntry(r, mode) : null, s = e && r.submit;
   $('dRankRetry').hidden = !(s && s.state==='fail');

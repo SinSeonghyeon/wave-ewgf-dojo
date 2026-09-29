@@ -2609,8 +2609,8 @@ test('기원초 연습 모드는 경직을 프레임 칸으로 그리고 상수�
   assert.equal(a.GP_NEAR,a.GIWON.BUFFER_F,'the whole pre-input window stays individual cells');
   assert.ok(a.GP_LAST>a.GP_TARGET,'a late EWGF still lands on the axis');
   assert.equal(a.get('gpPanel').hidden,false);assert.equal(a.get('gpTimeline').hidden,false);
-  assert.equal(a.TRIAL_MODES.includes('giwon'),false,'unlimited practice, no trial and no board');
-  assert.equal(a.BOARDS.includes('giwon'),false);
+  assert.equal(a.TRIAL_MODES.includes('giwon'),false,'unlimited practice, not a timed trial');
+  assert.equal(a.BOARDS.includes('giwon'),true,'only its completed 10-try challenge has a board (결정 30)');
   a.setMode('free');
   assert.equal(a.get('gpPanel').hidden,true);assert.equal(a.get('gpTimeline').hidden,true);
   a.setMode('giwon');
@@ -2932,7 +2932,7 @@ test('기원초 성공은 팡파르와 폭죽을 내고, 연출 끄기에서는 
   assert.ok(off.gp.last.ok,'그래도 판정은 성공 그대로');
 });
 
-test('기원초 10회 도전은 평가된 시도만 세고 순위에는 올리지 않는다',()=>{
+test('기원초 10회 도전은 평가된 시도만 세고, 완주하면 등록할 결과를 만든다',()=>{
   const a=gpBoot();
   assert.equal(a.gp.challenge.status,'idle');
   a.gpStartChallenge();
@@ -2949,8 +2949,11 @@ test('기원초 10회 도전은 평가된 시도만 세고 순위에는 올리�
   assert.equal(c.stats.hits,a.GP_CHALLENGE-Math.ceil(a.GP_CHALLENGE/3),'늦은 초풍은 실패로 센다');
   assert.ok(c.stats.best>=1&&c.stats.best<a.GP_CHALLENGE);
   assert.equal(a.gp.session.tries,a.GP_CHALLENGE,'세션 통계도 같이 쌓인다');
-  assert.ok(!c.result,'로컬 도전이라 등록할 결과 객체를 만들지 않는다');
-  assert.ok(!a.BOARDS.includes('giwon'),'순위 보드에 기원초 칸을 늘리지 않았다 (워커 변경 없음)');
+  assert.deepEqual(JSON.parse(JSON.stringify(c.result.rec)),{hits:c.stats.hits,target:a.GP_CHALLENGE,best:c.stats.best},'완주 결과가 기원초 보드로 간다 (결정 30)');
+  assert.equal(a.rankingResult(),c.result);
+  assert.deepEqual(JSON.parse(JSON.stringify(a.boardEntry(c.result,'giwon'))),{board:'giwon',win:c.result.window,lang:a.store.lang,score:c.stats.hits,tie:c.stats.best,detail:{hits:c.stats.hits,target:a.GP_CHALLENGE,best:c.stats.best}});
+  assert.equal(a.boardEntry({completed:false,rec:c.result.rec},'giwon'),null,'미완주는 등록하지 않는다');
+  assert.equal(a.boardEntry({completed:true,rec:{...c.result.rec,target:9}},'giwon'),null);
 });
 
 test('기원초 도전은 중단을 분모에서 빼고, 모드를 벗어나면 취소된다',()=>{
@@ -3161,4 +3164,32 @@ test('기원초 10회 도전 중에는 보상 상자·후원 말풍선·자동 �
   a.gpStartChallenge();
   assert.equal(a.gp.challenge.status,'countdown');
   assert.equal(a.get('rewardOpen').disabled,true,'held during the challenge');
+});
+
+test('기원초 10회는 완주만 자동 등록하고, 실패는 재시도하며, 취소한 도전은 보내지 않는다',async()=>{
+  const sent=[];let fail=true;
+  const a=boot({nick:'tester',nickToken:'a'.repeat(48),fx:0},async(url,init)=>{
+    if(url.endsWith('/submit')){sent.push(JSON.parse(init.body));if(fail)return {ok:false,json:async()=>({error:'server'})};return {ok:true,json:async()=>({rank:1,total:1,improved:true,rows:[],me:null})};}
+    return {ok:true,json:async()=>({rows:[],total:0})};
+  });
+  a.setMode('giwon');a.gpStartChallenge();a.gpTick(a.gp.challenge.startAt);
+  let t=20000;
+  for(let i=0;i<a.GP_CHALLENGE-1;i++){ gpAttempt(a,i===4?{fire:4}:{},t); t+=3000; }
+  assert.equal(sent.length,0,'nothing before the last try');assert.equal(a.rankingResult(),undefined);
+  gpAttempt(a,{},t);await new Promise(setImmediate);
+  assert.equal(sent.length,1);assert.equal(sent[0].board,'giwon');assert.equal(sent[0].score,9);assert.equal(sent[0].tie,5);
+  assert.deepEqual(sent[0].detail,{hits:9,target:10,best:5});
+  assert.equal(a.rankingResult().submit.state,'fail');assert.equal(a.trial.result,null,'separate from ordinary trials');
+  fail=false;await a.boardSubmit();assert.equal(sent.length,2);assert.equal(a.rankingResult().submit.state,'done');
+  await a.boardSubmit();assert.equal(sent.length,2,'a done result is not sent twice');
+  a.gpStartChallenge();a.gpStartChallenge();await a.boardSubmit();assert.equal(sent.length,2,'cancelled challenges never submit');
+  const w=await import(require('node:url').pathToFileURL(require('node:path').join(__dirname,'../worker/index.js')).href);
+  assert.equal(w.validate({...sent[0],nick:'smoke'}).error,undefined,'the worker accepts what the app sends');
+});
+
+test('설정의 기록 초기화는 기원초 패널도 바로 비운다',()=>{
+  const a=gpBoot();gpAttempt(a);
+  assert.notEqual(a.get('gpRows').innerHTML,'','시도 한 줄이 그려졌다');
+  a.resetSession();
+  assert.equal(a.gp.session.tries,0);assert.equal(a.get('gpRows').innerHTML,'','초기화 뒤 옛 행이 남지 않는다');
 });
