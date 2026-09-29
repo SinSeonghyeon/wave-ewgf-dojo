@@ -33,7 +33,11 @@ async function launch({port, profile, windowSize='1280,900'}){
     let id=0; const pending=new Map(); const errors=[];
     ws.onmessage = ev => { const m=JSON.parse(ev.data); if(m.id&&pending.has(m.id)){ pending.get(m.id)(m); pending.delete(m.id); }
       if(m.method==='Runtime.exceptionThrown') errors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);
-      if(m.method==='Log.entryAdded' && m.params.entry.level==='error') errors.push(m.params.entry.text);
+      // A report-only CSP entry is the browser saying it logged something and took no action; the AdSense
+      // script (결정 4) trips one from Google's own frame, on and off with the network. Never the page's error.
+      if(m.method==='Log.entryAdded' && m.params.entry.level==='error'
+         && !/report-only Content Security Policy/i.test(m.params.entry.text||'')
+         && !/googlesyndication\.com|doubleclick\.net/.test(m.params.entry.url||'')) errors.push(m.params.entry.text);
       if(m.method==='Runtime.consoleAPICalled' && m.params.type==='error') errors.push(m.params.args.map(a=>a.value).join(' ')); };
     const send = (method, params={}) => new Promise((resolve,reject)=>{
       const i=++id, timer=setTimeout(()=>{pending.delete(i);reject(new Error('CDP timeout: '+method+(params.expression ? ' '+params.expression.slice(0,160) : '')));},15000);
@@ -48,4 +52,6 @@ async function launch({port, profile, windowSize='1280,900'}){
   }catch(e){ kill(); throw e; }
 }
 
-module.exports = {launch, fileUrl, sleep};
+// Every sound file index.html's SND table points at. The smoke pages copy/serve these, so a new SFX only needs the SND entry.
+const sfxFiles = html => [...new Set([...(html.match(/const SND = \{([^}]*)\}/)||['',''])[1].matchAll(/'(sfx-[^']+\.mp3)'/g)].map(m=>m[1]))];
+module.exports = {launch, fileUrl, sleep, sfxFiles};

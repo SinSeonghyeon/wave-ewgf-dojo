@@ -1,12 +1,12 @@
 // Mist EWGF: actual keyboard/pointer listeners with deterministic 60Hz timestamps.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const {launch,fileUrl,sleep}=require('../tools/cdp');
+const {launch,fileUrl,sleep,sfxFiles}=require('../tools/cdp');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'.sandbox/mist/browser');
 fs.mkdirSync(out,{recursive:true});
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/const BOARD_URL = '[^']*';/,"const BOARD_URL = '';");
 const notice=html.match(/const NOTICES = \[\s*\{id:'([^']+)'/)[1];
 const page=path.join(out,'index.html');fs.writeFileSync(page,html);
-for(const name of ['donate-kakao.png','favicon.png','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3'])fs.copyFileSync(path.join(root,name),path.join(out,name));
+for(const name of ['donate-kakao.png','favicon.png',...sfxFiles(html)])fs.copyFileSync(path.join(root,name),path.join(out,name));
 fs.cpSync(path.join(root,'bgm'),path.join(out,'bgm'),{recursive:true});
 (async()=>{
   const b=await launch({port:9337,profile:'dojo-mist-smoke',windowSize:'1366,1000'});
@@ -81,8 +81,8 @@ fs.cpSync(path.join(root,'bgm'),path.join(out,'bgm'),{recursive:true});
           await sample([13]);await sample([13,f,3]);await sample([]);
         }finally{if(previous)Object.defineProperty(navigator,'getGamepads',previous);else delete navigator.getGamepads;}
       })()`);
-      const r=await read();assert.equal(r.title,neutral?'초풍!':'중립 누락',JSON.stringify({side,neutral,r}));
-      assert.equal(r.dashes-before.dashes,neutral?1:0,'623 must not earn a wave before RP');
+      const r=await read();assert.equal(r.title,'초풍!',JSON.stringify({side,neutral,r}));
+      assert.equal(r.dashes-before.dashes,1,'both 623 and 6N23 earn one wave');
     }
     assert.equal(b.errors.length,0,JSON.stringify(b.errors));
     console.log(JSON.stringify({ok:true,commands:count,neutralChecks:4,errors:b.errors,screenshots:shots},null,2));

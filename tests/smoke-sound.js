@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
 const {tracksAt} = require('../tools/update-bgm');
-const {launch, sleep} = require('../tools/cdp');
+const {launch, sleep,sfxFiles} = require('../tools/cdp');
 (async()=>{
   const root=path.join(__dirname,'..');
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8')
@@ -14,7 +14,7 @@ const {launch, sleep} = require('../tools/cdp');
     const file=decodeURIComponent(req.url.slice(1));
     if(file===''){res.setHeader('Content-Type','text/html; charset=utf-8');return res.end(html);}
     if(file==='bgm/playlist.json'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify(tracksAt(path.join(root,'bgm'))));}
-    if([...tracksAt(path.join(root,'bgm')),'sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-hellsweep.mp3','sfx-tongbal.mp3','sfx-hit.mp3','sfx-backdash.mp3'].includes(file)){
+    if([...tracksAt(path.join(root,'bgm')),...sfxFiles(html)].includes(file)){
       const data=fs.readFileSync(path.join(root,file)),range=/^bytes=(\d+)-(\d*)$/.exec(req.headers.range||'');
       res.setHeader('Content-Type','audio/mpeg');res.setHeader('Accept-Ranges','bytes');
       if(range){const start=Number(range[1]),end=range[2]?Math.min(Number(range[2]),data.length-1):data.length-1;res.writeHead(206,{'Content-Range':`bytes ${start}-${end}/${data.length}`,'Content-Length':end-start+1});return res.end(data.subarray(start,end+1));}
@@ -51,7 +51,9 @@ const {launch, sleep} = require('../tools/cdp');
     assert.equal((await evaluate(send2,state)).playing,true);
     await evaluate(b.send,`document.querySelector('#soundSel button[data-sound="1"]').click()`);await sleep(100);
     assert.equal((await evaluate(b.send,state)).playing,false);
-    await b.send('Target.closeTarget',{targetId});await sleep(300);
+    await b.send('Target.closeTarget',{targetId});
+    // Web Lock handoff and media playback are asynchronous after the owning tab closes.
+    for(let i=0;i<30;i++){ if((await evaluate(b.send,state)).playing) break; await sleep(100); }
     assert.equal((await evaluate(b.send,state)).playing,true);
     // Decode and actually play every supplied music file, then check pause/skip/end behavior.
     for(let track=0;track<tracksAt(path.join(root,'bgm')).length;track++){

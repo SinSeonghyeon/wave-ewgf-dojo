@@ -64,6 +64,25 @@ let browser, server;
     await evalJs(`document.querySelector('.section-links a').click()`);
     assert.equal(await evalJs('location.pathname'),'/ko/','fragment navigation stays in language app');
   }
+  // Inspect the entire notice list, including retained entries: checking only the newest
+  // card against an already-overwritten dictionary missed a mixed-language regression.
+  await evalJs(`document.querySelector('#noticeOpen').click()`);
+  for(const lang of ['ja','ko','en','ja','ko']){
+    await evalJs(`document.querySelector('#langSel button[data-lang="${lang}"]').click()`);
+    const notice=await evalJs(`(()=>{const list=document.querySelector('#noticeList'),first=list.querySelector('.notice-item');return {lang:document.documentElement.lang,count:list.querySelectorAll('.notice-item').length,title:first.querySelector('h3').textContent,highlight:first.querySelector('.notice-highlight h4').textContent,items:first.querySelectorAll(':scope > ul > li').length,text:list.textContent}})()`);
+    assert.equal(notice.lang,lang);assert.equal(notice.count,5);assert.equal(notice.items,8);
+    assert.equal(notice.title,{ko:'9월 30일 업데이트 · 주인장 소식',en:'September 30 update · A note from the creator',ja:'9月30日の更新・運営者からのお知らせ'}[lang]);
+    assert.equal(notice.highlight,dict[lang]['notice.wedding.title']);
+    if(lang!=='ja')assert.doesNotMatch(notice.text,/[\u3040-\u30ff]/,lang+' must not show Japanese notice text');
+    for(const width of [320,390,1280]){
+      await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
+      assert.equal(await evalJs(`(()=>{const d=document.querySelector('#noticeDlg');return d.scrollWidth>d.clientWidth+1})()`),false);
+      const capture=await send('Page.captureScreenshot',{format:'png'});
+      const folder=path.resolve(__dirname,'../.sandbox/notices');fs.mkdirSync(folder,{recursive:true});
+      fs.writeFileSync(path.join(folder,`${lang}-${width}.png`),Buffer.from(capture.result.data,'base64'));
+    }
+  }
+  await evalJs(`document.querySelector('#noticeClose').click()`);
   // QR is generated on demand, and must resolve from every locale to the shared root asset.
   await evalJs(`document.querySelector('#donateTop').click()`);await sleep(300);
   assert.ok(seen.includes('/donate-kakao.png'));
