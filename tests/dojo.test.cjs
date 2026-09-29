@@ -693,7 +693,7 @@ test('the three dictionaries share exactly the same key set',()=>{
 test('announcements render in every language and persist the latest read marker',()=>{
   let saved;
   const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
-  assert.ok(a.NOTICES.length);assert.equal(a.NOTICES[0].id,'2026-09-22-623');assert.equal(a.NOTICES[0].items.length,1);assert.equal(a.NOTICES[1].id,'2026-09-21-roundup');assert.equal(a.NOTICES[2].id,'2026-09-21-mist');assert.equal(a.NOTICES[3].id,'2026-09-19-dojo');assert.equal(a.NOTICES[4].id,'2026-09-15-notices');assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
+  assert.deepEqual(Array.from(a.NOTICES,n=>n.id),['2026-09-28-roundup','2026-09-22-623','2026-09-21-roundup','2026-09-21-mist','2026-09-19-dojo','2026-09-15-notices']);assert.equal(a.NOTICES[0].items.length,5);assert.equal(a.NOTICES[1].items.length,1);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
   assert.ok(a.get('noticeList').innerHTML.includes(a.T(a.NOTICES[0].title)));
   a.setMode('wave10');a.startTrial();a.openNotices();
   assert.equal(a.get('noticeDlg').open,true);assert.equal(a.trial.cdTimer,null,'opening an announcement cancels a countdown');
@@ -701,6 +701,7 @@ test('announcements render in every language and persist the latest read marker'
   a.setLang('en');assert.match(a.get('noticeList').innerHTML,/September 15 feature update/);
   a.setLang('ja');assert.match(a.get('noticeList').innerHTML,/9月15日 機能アップデート/);
   for(const lang of ['ko','en','ja']){a.setLang(lang);for(const key of [a.NOTICES[0].title,a.NOTICES[0].summary,...a.NOTICES[0].items])assert.ok(a.get('noticeList').innerHTML.includes(a.T(key)),lang+' '+key);}
+  const previous=boot({v:4,noticeSeen:'2026-09-22-623'});assert.equal(previous.get('noticeBadge').hidden,false);assert.equal(previous.noticeAutoTry(),true);assert.equal(previous.store.noticeSeen,a.NOTICE_LATEST);
   const read=boot({v:4,noticeSeen:a.NOTICE_LATEST});assert.equal(read.get('noticeBadge').hidden,true);
   const invalid=boot({v:4,noticeSeen:'removed-notice'});assert.equal(invalid.store.noticeSeen,'');assert.equal(invalid.get('noticeBadge').hidden,false);
 });
