@@ -1,6 +1,6 @@
 ﻿// Visual regression for the wide dojo: local assets, camera motion, fixed ledger and responsive bounds.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const {launch,fileUrl,sleep}=require('../tools/cdp');
+const {launch,fileUrl,sleep,sfxFiles}=require('../tools/cdp');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'.sandbox/dojo-design');
 fs.mkdirSync(out,{recursive:true});
 const source=fs.readFileSync(path.join(root,'index.html'),'utf8')
@@ -9,7 +9,7 @@ const source=fs.readFileSync(path.join(root,'index.html'),'utf8')
   .replace(/\}\)\(\);\s*<\/script>/,'window.designTest={session,wsc,world,store,onDir,onButton,historyRows,dojo3d,roomCamera,roomProject,ROOM,roomAtlas,live,renderPosts,drawFighter,poseAt,anim,get scale(){return stageScale;}};})();</script>');
 const noticeId=source.match(/const NOTICES = \[\s*\{id:'([^']+)'/)[1];
 fs.writeFileSync(path.join(out,'index.html'),source);
-for(const file of ['favicon.png','donate-kakao.png','sfx-wave.mp3','sfx-ewgf.mp3','sfx-wsc.mp3','sfx-tongbal.mp3','sfx-hellsweep.mp3','sfx-hit.mp3','sfx-backdash.mp3'])fs.copyFileSync(path.join(root,file),path.join(out,file));
+for(const file of ['favicon.png','donate-kakao.png',...sfxFiles(source)])fs.copyFileSync(path.join(root,file),path.join(out,file));
   fs.cpSync(path.join(root,'bgm'),path.join(out,'bgm'),{recursive:true});
 (async()=>{
  const b=await launch({port:9357,profile:'dojo-design-smoke',windowSize:'1440,1000'});

@@ -26,13 +26,16 @@
 // Pure helpers (seasonKey, weekKey, dayKey, validate, cleanText, nickKey, handle) and the contract (BOARDS, WINDOWS, SEASON) are exported for node tests.
 
 const KST = 9 * 3600e3, DAY = 86400e3, TOP = 10, POSTS = 50, TEXT_MAX = 200;
+// Local N-try challenges (결정 26·30): whole counts, score = hits, tie = best streak. validate() adds the cross-field checks for every board using this spec.
+const CHALLENGE_10 = {score:[0,10], tie:[0,10], detail:{hits:[0,10], target:[10,10], best:[0,10]}};
 export const BOARDS = {
   wave10:  {score: [0, 20],  tie: [0, 500],   detail: {dashes: [0, 200], chain: [0, 200]}},
   ewgf20:  {score: [0, 100], tie: [-500, 0],  detail: {hits: [0, 20], target: [20, 20], mean: [-500, 500]}},
   combo10: {score: [0, 100], tie: [0, 20],    detail: {hits: [0, 10], target: [10, 10], mean: [-500, 500], dps: [0, 20]}},
   rush30:  {score: [0, 2000], tie: [0, 500],  detail: {kills: [0, 500], whiffs: [0, 2000], dashPts: [0, 1000]}}, // 더미 격파 30초 (2026-09-13): score = points, tie = dummies destroyed
   bd10:    {score: [0, 60],   tie: [0, 200],  detail: {dashes: [0, 200], top: [0, 200], chain: [0, 200]}},      // 백대시 10초 (2026-09-13): score = metres retreated, tie = 'very fast' sets (theoretical max ≈ 46 m)
-  wsc: {score:[0,10],tie:[0,10],detail:{hits:[0,10],target:[10,10],best:[0,10]}}, // completed 10-try challenge; hits then best streak
+  wsc:     CHALLENGE_10, // 웨캔기어 10회 (2026-09-19)
+  giwon:   CHALLENGE_10, // 기원초 10회 (2026-09-30)
 };
 export const WINDOWS = [8, 12, 15];
 const LANGS = ['ko', 'en', 'ja'];
@@ -111,7 +114,7 @@ export function validate(body) {
     const v = num(body.detail?.[k], range); if (v === undefined) return {error: 'detail.' + k};
     detail[k] = v;
   }
-  if(body.board==='wsc'){
+  if(BOARDS[body.board]===CHALLENGE_10){
     if(!Number.isInteger(score)||!Number.isInteger(tie)||!Number.isInteger(detail.hits)||!Number.isInteger(detail.best)||score!==detail.hits||tie!==detail.best||tie>score||(score>0&&tie<1))return {error:'detail'};
   }
   return {value: {board: body.board, nick, score, tie, win: body.win, lang: LANGS.includes(body.lang) ? body.lang : 'ko', detail}};
