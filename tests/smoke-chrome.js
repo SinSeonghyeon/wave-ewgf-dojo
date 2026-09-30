@@ -48,7 +48,9 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   // Isolate each run: a concurrent worktree's Chrome may already own the old fixed port/profile.
   const probe=http.createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));
   const port=probe.address().port;await new Promise(r=>probe.close(r));
-  const b = await launch({port, profile:'dojo-smoke-profile-'+process.pid+'-'+Date.now()});
+  // On CI the 3D dojo renders in software (SwiftShader) and each frame holds the main thread long enough to stretch the timed
+  // touch/keyboard inputs past the crouch-dash windows. This smoke checks input and UI flows, not 3D (smoke-design does), so CI uses the 2D fallback.
+  const b = await launch({port, profile:'dojo-smoke-profile-'+process.pid+'-'+Date.now(), webgl:!process.env.CI});
   browser = b;
   console.log('Smoke: browser connected');
   const {send, evalJs, errors} = b;

@@ -48,6 +48,8 @@ stageAssets(source,out);
   await click('#bindingCancel');await click('#setClose');
   await sample([2]);assert.equal(await b.evalJs('bindTest.session.tries'),0,'release gate prevents accidental RP after closing');
   await sample();await sample([2]);assert.equal(await b.evalJs('bindTest.session.tries'),1);
+  assert.deepEqual(await b.evalJs(`(s=>[s.padKeys.b2,s.padKeys.up,s.altKeys.b2])(JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')))`),['b2','a2-','KeyP'],'saved before the reload');
+  await sleep(1000); // a loaded CI runner can navigate before Chrome commits the storage writes (the reload then read the fixture defaults)
   await b.navigate(fileUrl(path.join(out,'index.html')));
   assert.deepEqual(await b.evalJs('[bindTest.store.padKeys.b2,bindTest.store.padKeys.up,bindTest.store.altKeys.b2]'),['b2','a2-','KeyP']);
   assert.equal(await b.evalJs('bindTest.store.padAltKeys.b2'),'b8');

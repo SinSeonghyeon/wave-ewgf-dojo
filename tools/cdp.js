@@ -18,11 +18,11 @@ const CHROME = [process.env.CHROME_PATH,'C:/Program Files/Google/Chrome/Applicat
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 const fileUrl = p => require('url').pathToFileURL(path.resolve(p)).href;
 
-async function launch({port, profile, windowSize='1280,900'}){
+async function launch({port, profile, windowSize='1280,900', webgl=true}){ // webgl:false → the app's 2D canvas fallback (lighter frames)
   if(!CHROME){ console.error('Chrome/Edge not found'); process.exit(2); }
   // CI runners (Ubuntu 24.04) block the Chrome sandbox's user namespaces and have no GPU, so WebGL needs SwiftShader there.
   // Locally the sandbox stays on and nothing changes.
-  const chrome = spawn(CHROME, ['--headless=new','--disable-gpu',...(process.env.CI?['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']:[]),'--no-first-run','--no-default-browser-check',`--remote-debugging-port=${port}`,'--user-data-dir='+path.join(os.tmpdir(),profile),'--window-size='+windowSize,'about:blank'], {stdio:'ignore'});
+  const chrome = spawn(CHROME, ['--headless=new','--disable-gpu',...(process.env.CI?['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']:[]),...(webgl?[]:['--disable-webgl']),'--no-first-run','--no-default-browser-check',`--remote-debugging-port=${port}`,'--user-data-dir='+path.join(os.tmpdir(),profile),'--window-size='+windowSize,'about:blank'], {stdio:'ignore'});
   const kill = () => { try{ chrome.kill(); }catch(e){} };
   try{
     let list;
