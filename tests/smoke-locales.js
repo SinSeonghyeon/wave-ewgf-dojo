@@ -76,7 +76,8 @@ let browser, server;
     if(lang!=='ja')assert.doesNotMatch(notice.text,/[\u3040-\u30ff]/,lang+' must not show Japanese notice text');
     for(const width of [320,390,1280]){
       await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
-      assert.equal(await evalJs(`(()=>{const d=document.querySelector('#noticeDlg');return d.scrollWidth>d.clientWidth+1})()`),false);
+      const overflow=await evalJs(`(()=>{const d=document.querySelector('#noticeDlg');if(d.scrollWidth<=d.clientWidth+1)return null;const wide=[...d.querySelectorAll('*')].filter(e=>e.getBoundingClientRect().right>d.getBoundingClientRect().right+1).slice(0,3).map(e=>e.tagName+'.'+e.className+' '+Math.round(e.getBoundingClientRect().width)+'px '+JSON.stringify(e.textContent.slice(0,30)));return {scroll:d.scrollWidth,client:d.clientWidth,wide};})()`);
+      assert.equal(overflow,null,`notice dialog overflows horizontally (${lang}, ${width}px): ${JSON.stringify(overflow)}`);
       const capture=await send('Page.captureScreenshot',{format:'png'});
       const folder=path.resolve(__dirname,'../.sandbox/notices');fs.mkdirSync(folder,{recursive:true});
       fs.writeFileSync(path.join(folder,`${lang}-${width}.png`),Buffer.from(capture.result.data,'base64'));

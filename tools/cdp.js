@@ -26,7 +26,8 @@ async function launch({port, profile, windowSize='1280,900'}){
   const kill = () => { try{ chrome.kill(); }catch(e){} };
   try{
     let list;
-    for(let i=0;i<40;i++){ try{ list = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); if(list.length) break; }catch(e){} await sleep(250); }
+    // Wait for the page target itself, not just any target: a cold CI Chrome lists other targets first and can take >10 s.
+    for(let i=0;i<120;i++){ try{ list = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); if(list.some(t=>t.type==='page')) break; }catch(e){} await sleep(250); }
     const page = list && list.find(t=>t.type==='page');
     if(!page) throw new Error('no page target on port '+port);
     const ws = new WebSocket(page.webSocketDebuggerUrl);

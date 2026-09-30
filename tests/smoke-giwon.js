@@ -272,9 +272,11 @@ stageAssets(html,out);
       hit(); await wait(900);                       // 경직이 풀릴 때까지 기다렸다가
       const run=giwonTest.gp.run, t0=run&&run.t0, anchor=giwonTest.stiffAnchor().ax;
       hit();                                        // 배잡기 중인 같은 더미를 또 친다
+      // Read the run right away: on a slow CI runner the 30ms waits below can outlast the link window, which ends the run on its own.
+      const same=giwonTest.gp.run===run, again=giwonTest.gp.run&&giwonTest.gp.run.t0;
       const xs=[];
       for(let i=0;i<14;i++){ await wait(30); const B=giwonTest.stiffAnchor(); if(B) xs.push(B.ax); }
-      return {same: giwonTest.gp.run===run, t0, again: giwonTest.gp.run&&giwonTest.gp.run.t0,
+      return {same, t0, again,
               drift: xs.length?Math.max(...xs)-Math.min(...xs):0, charX:giwonTest.world.charX, anchor};
     })()`);giwons++;
     assert.equal(twice.same,true,'the second 기원권 on the same bag does not restart the timeline: '+JSON.stringify(twice));

@@ -78,8 +78,9 @@ const {assemble} = require('../tools/assemble');
     const onset=await evaluate(b.send,`(async()=>{const ctx=new AudioContext(),buf=await ctx.decodeAudioData(await (await fetch('sfx/hit.mp3')).arrayBuffer()),x=buf.getChannelData(0),step=Math.round(buf.sampleRate*.01),bins=[];for(let i=0;i<x.length;i+=step){let sum=0;for(let j=i;j<Math.min(i+step,x.length);j++)sum+=x[j]*x[j];bins.push(Math.sqrt(sum/step));}const peak=Math.max(...bins),start=bins.findIndex(v=>v>=peak*.3)*.01;await ctx.close();soundTest.playSfx('hit');const a=soundTest.snd.pool.hit[soundTest.snd.idx.hit];await new Promise((resolve,reject)=>{const id=setTimeout(()=>reject(new Error('hit seek timeout')),3000);if(!a.seeking&&a.readyState>=2){clearTimeout(id);resolve();}else a.addEventListener('seeked',()=>{clearTimeout(id);resolve();},{once:true});});return {onset:start,offset:soundTest.SFX_START.hit,current:a.currentTime};})()`);
     assert.ok(Math.abs(onset.onset-onset.offset)<.011,JSON.stringify(onset));assert.ok(onset.current>=onset.offset-.01,JSON.stringify(onset));
     await evaluate(b.send,`soundTest.store.fx=1;soundTest.world.charX=120;soundTest.world.dummyX=180;Object.assign(soundTest.world.dummy,{alive:true,hit:0,type:null,y:0});soundTest.fx.tongbal()`);
-    await sleep(210);
-    assert.ok(await evaluate(b.send,`soundTest.impacts.length>0`));
+    // The impact spawns from the frame loop, which runs far below 60 fps under CI's software WebGL: poll instead of a fixed 210ms.
+    let impact=false;for(let i=0;i<30&&!impact;i++){await sleep(100);impact=await evaluate(b.send,`soundTest.impacts.length>0`);}
+    assert.ok(impact,'통발 impact ring appears');
     const shot=await b.send('Page.captureScreenshot',{format:'png'}),out=path.join(root,'.sandbox/wsc');fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'impact.png'),Buffer.from(shot.result.data,'base64'));
     await evaluate(b.send,`document.querySelector('#soundSel button[data-sound="0"]').click()`);
     assert.equal(await evaluate(b.send,`Object.values(soundTest.snd.pool).flat().every(a=>a.paused && a.volume===0)`),true);
