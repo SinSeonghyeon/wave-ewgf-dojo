@@ -136,7 +136,7 @@ RP가 1f 늦었습니다
 - 모바일 터치 마지막 세 버튼 입력, 작은 화면 구간 표시, ko→en→ja 전환 후 결과·코치·로그 확인.
 - 기존 Chrome/WSC 스모크 전체 통과. 효과 끄기·동작 줄이기·음소거에서도 판정 동일.
 
-실행 순서: `node --test tests/dojo.test.cjs tests/board.test.cjs` → `node tests/smoke-chrome.js` → `node tests/smoke-wsc.js`. 새 서버 보드/스키마는 없으므로 Worker 배포나 데이터 마이그레이션은 필요 없다.
+실행 순서: `node --test "tests/*.test.cjs"` → `node tests/smoke-chrome.js` → `node tests/smoke-wsc.js`. 새 서버 보드/스키마는 없으므로 Worker 배포나 데이터 마이그레이션은 필요 없다.
 
 ## 8. 2026-09-20 구현 결과와 경계
 

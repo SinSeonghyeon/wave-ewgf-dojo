@@ -8,7 +8,8 @@ const fs = require('fs');
 const os = require('os');
 const http = require('http');
 const {pathToFileURL} = require('url');
-const {launch, fileUrl, sleep,sfxFiles} = require('../tools/cdp');
+const {launch, fileUrl, sleep,stageAssets} = require('../tools/cdp');
+const {assemble} = require('../tools/assemble');
 const fakeD1 = require('./fake-d1');
 
 // Wrap the Cloudflare Worker handler in a plain http server so the browser talks to the real code path (CORS included).
@@ -35,16 +36,15 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   { const w = await import(pathToFileURL(path.join(__dirname,'../worker/index.js')).href); // '점유됨' already belongs to someone else
     const r = await w.handle(new Request('http://x/nick', {method:'POST', body:JSON.stringify({nick:'점유됨'})}), {DB:db, ALLOWED_ORIGINS:'*'}); if(r.status!==200) throw new Error('seed nick failed'); }
   // Point a scratch copy of the app at the local worker (BOARD_URL is a const in the shipped file; the copy is never committed).
-  const src = fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
-  if(!/const BOARD_URL = '[^']*';/.test(src)) throw new Error('BOARD_URL constant not found in index.html');
+  const src = assemble();
+  if(!/const BOARD_URL = '[^']*';/.test(src)) throw new Error('BOARD_URL constant not found in src/js/26-backend-config.js');
   const noticeMatch = src.match(/const NOTICES = \[\s*\{id:'([^']+)'/);
-  if(!noticeMatch) throw new Error('latest notice id not found in index.html');
+  if(!noticeMatch) throw new Error('latest notice id not found in src/js/02-notices.js');
   const latestNoticeId = noticeMatch[1], returningNoticeId = latestNoticeId+'-smoke-new';
   dir = fs.mkdtempSync(path.join(os.tmpdir(),'dojo-smoke-')); const page = path.join(dir,'index.html'), returningPage = path.join(dir,'returning.html');
   const scratchSrc = src.replace(/const BOARD_URL = '[^']*';/, `const BOARD_URL = '${boardUrl}';`);
   fs.writeFileSync(page, scratchSrc); fs.writeFileSync(returningPage, scratchSrc.replace(`{id:'${latestNoticeId}'`, `{id:'${returningNoticeId}'`));
-  for(const f of [...sfxFiles(src),'donate-kakao.png','favicon.png']) fs.copyFileSync(path.join(__dirname,'..',f), path.join(dir,f)); // the scratch page plays real media; a missing file logs a resource error and fails the run
-  fs.cpSync(path.join(path.join(__dirname,'..'),'bgm'),path.join(dir,'bgm'),{recursive:true});
+  stageAssets(src,dir); // the scratch page plays real media; a missing file logs a resource error and fails the run
   // Isolate each run: a concurrent worktree's Chrome may already own the old fixed port/profile.
   const probe=http.createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));
   const port=probe.address().port;await new Promise(r=>probe.close(r));
@@ -222,7 +222,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   for(const l of ['en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${l}"]').click()`); await sleep(200);
     out[l] = await snap();
-    const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+    const source=src;
     const landing=l==='ko'?source:require('../tools/build-site').localizedPage(source,l);
     const expectedDescription=landing.match(/<meta name="description" content="([^"]*)"/)[1];
     out[l].descriptions=await evalJs(`({meta:document.querySelector('meta[name="description"]').content,og:document.querySelector('meta[property="og:description"]').content})`);

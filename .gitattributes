@@ -1,0 +1,5 @@
+*.webp binary
+*.png binary
+*.mp3 binary
+*.cmd text eol=crlf
+*.bat text eol=crlf

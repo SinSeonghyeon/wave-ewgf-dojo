@@ -7,13 +7,13 @@
 - 접속할 때 전체 목록을 섞어 순서대로 재생하며, 한 바퀴 안에서는 곡이 중복되지 않습니다. 다음 곡 버튼도 같은 순서를 따릅니다. 전곡 재생 후 다시 섞고 직전 곡과 연속되지 않게 하며, 재접속 첫 곡도 직전 곡을 피합니다. 한 곡이면 반복하고, 빈 폴더면 BGM만 멈춥니다.
 - 현재 목록: `bgm.mp3`, `Tekken 6 Soundtrack High Rollers Club.mp3`, `TEKKEN 7 鉄拳7 DUOMO DI SIRIO.mp3`, `Tekken 7 OST  Mishima DOJO.mp3`, `TEKKEN 7 鉄拳7 Infinite Azure - Round 1 (Moonsiders 1st).mp3`.
 
-로컬에서 `index.html`을 직접 열거나 일반 정적 서버로 미리 볼 때는 파일을 추가·삭제한 뒤 루트에서 한 번 실행하세요:
+로컬에서 조립한 페이지(`_site/index.html`)를 직접 열거나 일반 정적 서버로 미리 볼 때는 파일을 추가·삭제한 뒤 루트에서 한 번 실행하세요:
 
 ```sh
 node tools/update-bgm.js
 ```
 
-이 명령은 `index.html`의 로컬 미리보기 목록만 갱신합니다. 배포된 사이트는 폴더에서 생성된 `bgm/playlist.json`을 우선 사용하므로 목록을 코드로 관리할 필요가 없습니다. 언어별 페이지와 함께 `node tools/build-site.js`로 생성하며, GitHub Pages는 GitHub Actions의 `_site` 결과물을 배포합니다. 기존 Jekyll 템플릿은 제거했습니다.
+이 명령은 앱 원본(`src/js/05-sound.js`의 `BGM_TRACKS`)의 로컬 미리보기 목록만 갱신합니다. 배포된 사이트는 폴더에서 생성된 `bgm/playlist.json`을 우선 사용하므로 목록을 코드로 관리할 필요가 없습니다. 언어별 페이지와 함께 `node tools/build-site.js`로 생성하며, GitHub Pages는 GitHub Actions의 `_site` 결과물을 배포합니다. 기존 Jekyll 템플릿은 제거했습니다.
 
 전체 배포 전환 방법은 [배포 안내](../.agents/docs/LOCALIZED_PAGES.md)를 참고하세요.
 

@@ -1,0 +1,404 @@
+<!doctype html>
+<!-- 미시마 도장 (Mishima Dojo) © 2026 신성현 (Seonghyeon Shin). All rights reserved. Not open source: see LICENSE in the repository. Copying, modifying or re-hosting is not permitted. -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8394509799881324" crossorigin="anonymous"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>미시마 도장 | 철권 초풍·웨이브 대시 연습 (Mishima Dojo EWGF Trainer)</title>
+<meta name="description" content="설치 없이 즐기는 무료 철권 초풍·웨이브 연습 사이트, 미시마 도장. 브라우저에서 입력 타이밍과 실패 원인을 확인하고 최고 기록에 도전하세요. 키보드·게임패드 지원.">
+<meta name="robots" content="index,follow">
+<link rel="icon" type="image/png" sizes="256x256" href="favicon.png">
+<meta name="theme-color" content="#141311">
+<link rel="canonical" href="https://mishimaryu.com/">
+<link rel="alternate" hreflang="ko" href="https://mishimaryu.com/ko/">
+<link rel="alternate" hreflang="en" href="https://mishimaryu.com/en/">
+<link rel="alternate" hreflang="ja" href="https://mishimaryu.com/ja/">
+<link rel="alternate" hreflang="x-default" href="https://mishimaryu.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="미시마 도장 · Mishima Dojo">
+<meta property="og:title" content="미시마 도장 | 철권 초풍·웨이브 대시 연습 (Mishima Dojo EWGF Trainer)">
+<meta property="og:description" content="설치 없이 즐기는 무료 철권 초풍·웨이브 연습 사이트, 미시마 도장. 브라우저에서 입력 타이밍과 실패 원인을 확인하고 최고 기록에 도전하세요. 키보드·게임패드 지원.">
+<meta property="og:url" content="https://mishimaryu.com/">
+<meta property="og:image" content="https://mishimaryu.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="미시마 도장 — 철권 초풍·웨이브 대시 연습 도구 카드 (Mishima Dojo EWGF trainer)">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"미시마 도장 (Mishima Dojo)","alternateName":["Mishima Dojo","三島道場","Mishima Dojo EWGF Trainer"],"url":"https://mishimaryu.com/","image":"https://mishimaryu.com/og.png","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","browserRequirements":"Requires JavaScript","inLanguage":["ko","en","ja"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"설치 없이 즐기는 무료 철권 초풍·웨이브 연습 사이트, 미시마 도장. 브라우저에서 입력 타이밍과 실패 원인을 확인하고 최고 기록에 도전하세요. 키보드·게임패드 지원.","keywords":"Tekken, EWGF, Electric Wind God Fist, wave dash, Mishima, 철권, 초풍, 웨이브, 鉄拳, 最速風神拳, 風神ステップ"}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Brush+Script&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Dela+Gothic+One&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+@@include style.css
+</style>
+</head>
+
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="kanji" aria-hidden="true">風</span>
+      <div>
+        <h1 data-i18n="app.title">미시마 도장</h1>
+        <p data-i18n="app.tagline">미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정</p>
+      </div>
+    </div>
+    <nav class="modes" role="tablist" data-i18n-aria="modes.aria" aria-label="연습 모드" id="modes">
+      <button role="tab" data-mode="free" aria-selected="true" data-i18n="mode.free.name">자유 연습</button>
+      <button role="tab" data-mode="wsc" aria-selected="false" data-i18n="mode.wsc.name">웨캔기어 연습</button>
+      <button role="tab" data-mode="giwon" aria-selected="false" data-i18n="mode.giwon.name">기원초 연습</button>
+      <button role="tab" data-mode="wave10" aria-selected="false" data-i18n="mode.wave10.name">웨이브 10초</button>
+      <button role="tab" data-mode="ewgf20" aria-selected="false" data-i18n="mode.ewgf20.name">초풍 20회</button>
+      <button role="tab" data-mode="combo10" aria-selected="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button>
+      <button role="tab" data-mode="rush30" aria-selected="false" data-i18n="mode.rush30.name">더미 격파 30초</button>
+      <button role="tab" data-mode="bd10" aria-selected="false" data-i18n="mode.bd10.name">백대시 10초</button>
+    </nav>
+    <div class="top-right">
+      <button class="notice-btn" id="noticeOpen" type="button" data-i18n-aria="notice.open" data-i18n-title="notice.open" aria-label="공지사항 열기"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span data-i18n="notice.button">공지</span><span class="notice-new" id="noticeBadge" data-i18n="notice.new">NEW</span></button>
+      <a class="notice-btn youtube-btn" id="youtubeLink" href="https://www.youtube.com/@master_shin" target="_blank" rel="noopener noreferrer" data-i18n-aria="youtube.open" data-i18n-title="youtube.open" aria-label="제작자 YouTube 채널 열기 (새 탭)"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 4h14a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4Zm5 4v8l7-4-7-4Z"/></svg><span class="youtube-label" data-i18n="youtube.button">YouTube</span></a>
+      <div class="bgm-player" role="group" data-i18n-aria="bgm.player">
+      <button class="bgm-btn" id="bgmBtn" type="button" aria-pressed="true" data-i18n-aria="bgm.aria" data-i18n-title="bgm.aria" aria-label="배경음 켜기/끄기"><svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4 6 8H3v8h3l5 4z"/><g class="on"><path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/></g><g class="off"><path d="m16 9 6 6m0-6-6 6"/></g></svg></button>
+        <button id="bgmPlay" type="button"><span aria-hidden="true">Ⅱ</span></button>
+        <button id="bgmNext" type="button" data-i18n-aria="bgm.next" data-i18n-title="bgm.next"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3v14l10-7zM15 3h2v14h-2z"/></svg></button>
+        <span id="bgmTrack" class="bgm-track"></span>
+      </div>
+      <div class="lang" id="langSel" role="group" aria-label="Language"><button data-lang="ko" aria-pressed="true">한국어</button><button data-lang="en" aria-pressed="false">EN</button><button data-lang="ja" aria-pressed="false">日本語</button></div>
+      <div class="src" id="srcBadge">⌨ 키보드 대기</div>
+      <button class="nick-btn" id="nickBtn" hidden></button>
+      <div class="donate-nudge" id="donateNudge" data-active="false" data-motion="false"><button class="donate-btn" id="donateTop" type="button" hidden data-i18n="donate.btn">🍚 후원하기 🍚</button><div class="donate-bubble" id="donateBubble" role="status" aria-live="polite" hidden data-i18n="donate.bubble">응애… 밥 줘… 🍚</div></div>
+      <div class="visits" id="visits"></div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="stage-wrap" data-i18n-aria="stage.aria" aria-label="연습 스테이지">
+      <div class="stage" id="stageBox">
+        <canvas id="stageBack" aria-hidden="true"></canvas>
+        <canvas id="stage" data-i18n-aria="stage.canvasAria" aria-label="SD 캐릭터 연출 화면"></canvas>
+        <div class="input-ledger"><header><span data-i18n="inputs.aria">입력 기록</span><small data-i18n="inputs.frames">프레임</small></header>
+          <div class="inputs" id="inputs" data-i18n-aria="inputs.aria" aria-label="입력 기록"></div>
+        </div>
+        <div class="stage-actions">
+        <button class="btn" id="dStart" hidden data-i18n="trial.start">시작</button>
+          <button class="btn" id="wscChallengeBtn" type="button" hidden></button>
+          <button class="btn" id="gpChallengeBtn" type="button" hidden></button>
+        </div>
+        <div class="hud">
+          <div class="hud-chain" id="hudChain"><span id="hudChainN">0</span><small id="hudChainL">WAVE</small></div>
+          <div class="hud-score" id="hudScore"></div>
+          <div class="hud-timer" id="hudTimer"></div>
+          <div class="hud-center" id="hudCenter"></div>
+          <div class="hud-hint" id="hudHint"></div>
+          <div class="segc hud-side" id="sideSel" role="group" data-i18n-aria="set.side" aria-label="캐릭터 방향"><button type="button" data-side="1" aria-pressed="true" data-i18n="set.side1Short" data-i18n-aria="set.side1" aria-label="1P (→ 가 앞)">1P</button><button type="button" data-side="-1" aria-pressed="false" data-i18n="set.side2Short" data-i18n-aria="set.side2" aria-label="2P (← 가 앞)">2P</button></div>
+          <button class="hud-gear" id="setOpen" type="button" data-i18n-aria="set.title" aria-label="입력 · 판정 설정" title="⚙"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.7 7.7 0 0 0-1.7-1L15 3h-4l-.4 2.7a7.7 7.7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.7 7.7 0 0 0 1.7 1L11 21h4l.4-2.7a7.7 7.7 0 0 0 1.7-1l2.5 1 2-3.5L19.4 13zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></button>
+          <button class="hud-gear hud-fit" id="fitOpen" type="button" data-i18n-aria="fit.hud" aria-label="옷장 · 업적" title="👕"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M15.5 3 20 5.6l1.6 5.2-3.2 1.1-1-2.3V21H6.6V9.6l-1 2.3-3.2-1.1L4 5.6 8.5 3c.6 1.6 1.9 2.5 3.5 2.5s2.9-.9 3.5-2.5z"/></svg></button>
+          <button class="hud-gear hud-reward" id="rewardOpen" type="button" disabled data-count="0" data-ready="false"><svg viewBox="0 0 28 28" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12V9a7 7 0 0 1 7-5h6a7 7 0 0 1 7 5v3M3 12h22v12H3zM8 5v7m12-7v7M3 17h9m4 0h9"/><path d="M12 14h4v6h-4z"/></svg><span class="reward-count" id="rewardCount" aria-hidden="true" hidden></span></button>
+          <div class="reward-toast" id="rewardToast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+          <div class="jackpot" id="jackpot" hidden><div class="jp-rays"></div><canvas class="jp-fall" id="jpFall" aria-hidden="true"></canvas><div class="jp-box" id="jpBox" aria-hidden="true">?</div><div class="jp-card"><div class="jp-title" id="jpTitle"></div><canvas class="jp-canvas" id="jpCanvas" width="200" height="200" aria-hidden="true"></canvas><div class="jp-ach" id="jpAch"></div><div class="jp-item" id="jpItem"></div><button class="btn jp-ok" id="jpOk" type="button" data-i18n="fit.ok">확인</button><div class="jp-hint" id="jpHint"></div></div><div class="jp-white"></div></div>
+        </div>
+      <div class="result" id="resultCard">
+        <div class="r-kind" id="rKind">READY</div>
+        <div class="r-title" id="rTitle"></div>
+        <div class="r-off" id="rOff"></div>
+      </div>
+        <div class="touch" id="touch" data-i18n-aria="touch.aria" aria-label="터치 컨트롤">
+          <p class="touch-note" data-i18n="touch.note">터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)</p>
+          <div class="tdirs" id="tdirs" role="group" data-i18n-aria="touch.padAria" aria-label="방향 버튼 — 아래와 좌우를 함께 눌러 대각선 입력"><button type="button" data-dir="left" data-i18n-aria="touch.left" aria-label="왼쪽">←</button><button type="button" data-dir="down" data-i18n-aria="touch.down" aria-label="아래">↓</button><button type="button" data-dir="right" data-i18n-aria="touch.right" aria-label="오른쪽">→</button></div>
+          <div class="tbtns" id="tbtns"><button type="button" class="b1" data-btn="1">1<small>LP</small></button><button type="button" class="b2" data-btn="2">2<small>RP</small></button><button type="button" class="b3" data-btn="3">3<small>LK</small></button><button type="button" class="b4" data-btn="4">4<small>RK</small></button></div>
+        </div>
+      </div>
+      <div class="trial">
+        <div class="d-name" id="dName">자유 연습</div>
+        <div class="d-desc" id="dDesc"></div>
+        <div class="d-prog" id="dProg"></div>
+        <button class="btn ghost" id="dShare" hidden>세션 카드</button>
+        <span class="d-rank" id="dRank"></span>
+        <button class="btn ghost" id="dRankRetry" hidden data-i18n="board.retry">다시 시도</button>
+      </div>
+    </section>
+
+    <aside class="coach" data-i18n-aria="coach.aria" aria-label="코치 패널">
+      <section class="wsc-panel wsc-timeline" id="wscTimeline" hidden aria-labelledby="wscCommand">
+        <div class="wsc-command" id="wscCommand"></div>
+        <p class="note" id="wscGuide"></p>
+        <div class="wsc-live" id="wscLive" role="timer" aria-live="off"></div>
+        <div class="wsc-scroll" tabindex="0" role="region" data-i18n-aria="wsc.timeline"><div class="wsc-axis" id="wscAxis"></div></div>
+        <p class="note" id="wscLegend"></p>
+      </section>
+      <section class="wsc-panel" id="wscPanel" hidden aria-labelledby="wscTitle">
+        <h2 id="wscTitle" data-i18n="wsc.evaluation"></h2>
+        <div class="wsc-result" id="wscResult" role="status" aria-live="polite"></div>
+        <div class="wsc-ab" id="wscAB"></div>
+        <p class="note" id="wscDetail"></p>
+        <div class="wsc-challenge">
+          <p id="wscTask" role="status" aria-live="polite" hidden></p>
+          <p class="note" id="wscChallengeStatus" role="status" aria-live="polite"></p>
+        </div>
+        <h3 class="note" data-i18n="stats.aria"></h3>
+        <div class="wsc-stats" id="wscStats"></div>
+        <p class="note" id="wscCounts"></p>
+        <details><summary data-i18n="wsc.recent"></summary><table><thead><tr><th data-i18n="wsc.result"></th><th>A</th><th>B</th><th data-i18n="wsc.reason"></th></tr></thead><tbody id="wscRows"></tbody></table></details>
+        <details><summary data-i18n="wsc.help"></summary><p class="note" data-i18n="wsc.note"></p></details>
+      </section>
+      <section class="wsc-panel wsc-timeline" id="gpTimeline" hidden aria-labelledby="gpCommand">
+        <div class="wsc-command" id="gpCommand"></div>
+        <div class="wsc-live" id="gpLive" role="timer" aria-live="off"></div>
+        <div class="wsc-scroll gp-fit" data-i18n-aria="gp.timeline" aria-label="프레임 타임라인"><div class="wsc-axis" id="gpAxis"></div></div>
+        <p class="note" id="gpLegend"></p>
+        <p class="note" id="gpGuide"></p>
+      </section>
+      <section class="wsc-panel" id="gpPanel" hidden aria-labelledby="gpTitle">
+        <h2 id="gpTitle" data-i18n="gp.evaluation"></h2>
+        <div class="wsc-result" id="gpResult" role="status" aria-live="polite"></div>
+        <div class="wsc-ab" id="gpAB"></div>
+        <p class="note" id="gpDetail"></p>
+        <div class="wsc-challenge">
+          <p class="note" id="gpChallengeStatus" role="status" aria-live="polite"></p>
+        </div>
+        <h3 class="note" data-i18n="stats.aria"></h3>
+        <div class="wsc-stats" id="gpStats"></div>
+        <details><summary data-i18n="gp.recent"></summary><table><thead><tr><th data-i18n="wsc.result"></th><th data-i18n="gp.fireCol"></th><th data-i18n="gp.nCol"></th><th data-i18n="wsc.reason"></th></tr></thead><tbody id="gpRows"></tbody></table></details>
+        <details><summary data-i18n="gp.help"></summary><p class="note" id="gpNote"></p></details>
+      </section>
+      <div class="coach-box">
+        <h3>COACH</h3>
+        <div class="coach-msg" id="coachMsg"></div>
+        <div class="coach-trend" id="coachTrend"></div>
+      </div>
+      <div class="coach-box">
+        <h3 data-i18n="seg.title" id="segTitle">마지막 대시 구간 (ms)</h3>
+        <div class="seg" id="segBar"><div class="s1" style="flex:1">6</div><div class="s2" style="flex:1">N</div><div class="s3" style="flex:1">2</div><div class="s4" style="flex:1">3</div><div class="s5" style="flex:1">캔슬6</div></div>
+        <div class="seg-legend"><span><i style="background:var(--seg1)"></i><em data-i18n="seg.l1">시작 6 유지</em></span><span><i style="background:var(--seg2)"></i><em data-i18n="seg.l2">중립</em></span><span><i style="background:var(--seg3)"></i><em data-i18n="seg.l3">2 유지</em></span><span><i style="background:var(--seg4)"></i><em data-i18n="seg.l4">3 유지 → 캔슬 6</em></span><span><i style="background:var(--seg5)"></i><em data-i18n="seg.l5">캔슬 6 → 다음 시작 6</em></span></div>
+      </div>
+      <details class="coach-box mist-guide"><summary data-i18n="mist.help"></summary><p class="note" data-i18n="mist.guide"></p></details>
+      <div class="stats" data-i18n-aria="stats.aria" aria-label="이번 세션 기록">
+        <div class="stat acc"><b id="stDps">0.0</b><span data-i18n="stat.dps">최고 웨이브 속도 (대시/초)</span></div>
+        <div class="stat"><b id="stChain">0</b><span data-i18n="stat.chain">최고 연속 대시</span></div>
+        <div class="stat"><b id="stDash">0</b><span data-i18n="stat.dash">총 대시</span></div>
+        <div class="stat gold"><b id="stRate">–</b><span data-i18n="stat.rate">초풍 성공률</span></div>
+        <div class="stat"><b id="stTry">0</b><span data-i18n="stat.try">초풍 시도</span></div>
+        <div class="stat"><b id="stMean">–</b><span data-i18n="stat.mean">평균 버튼 오프셋</span></div>
+      </div>
+      <dialog class="share settings" id="setDlg" aria-labelledby="setTitle">
+        <div class="set-head"><h2 id="setTitle" data-i18n="set.title">입력 · 판정 설정</h2><button class="btn ghost" id="setClose" type="button" data-i18n="share.close">닫기</button></div>
+        <div class="set">
+          <section class="binding-editor">
+            <div class="binding-toolbar"><div class="segc" id="bindingTabs" role="group" data-i18n-aria="set.controls"><button type="button" data-device="kb" aria-pressed="true" data-i18n="set.keyboard"></button><button type="button" data-device="pad" aria-pressed="false" data-i18n="set.pad"></button></div><div class="binding-actions"><button class="btn ghost" id="bindingCheck" type="button" aria-pressed="false" data-i18n="set.bindCheck"></button><button class="btn ghost" id="bindingReset" type="button" data-i18n="set.bindReset"></button></div></div>
+            <p class="note"><span data-i18n="set.bindHelp"></span><br><span data-i18n="set.autoHelp"></span></p>
+            <div id="keyboardBindings">
+            <label class="t" data-i18n="set.keys">키 설정 — 동작마다 기본·보조 키를 하나씩 지정 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
+            <div class="keys" id="keys"></div>
+            <p class="note" data-i18n="set.keyRemove">보조 키를 지우려면 Delete 또는 Backspace</p>
+            </div>
+            <div id="padBindings" hidden>
+          <div class="row"><label class="t" data-i18n="set.pad">게임패드</label><span class="note" id="padStatus"></span></div>
+          <p class="note" data-i18n-html="set.padNote"></p>
+            <div class="keys" id="padKeys"></div>
+            <p class="note" id="padLive"></p>
+            </div>
+            <div class="binding-feedback"><p id="bindingMessage" role="status" aria-live="polite"></p><button class="btn ghost" id="bindingClear" type="button" hidden data-i18n="set.bindClear"></button><button class="btn ghost" id="bindingCancel" type="button" hidden data-i18n="set.bindCancel"></button></div>
+          </section>
+          <p class="note" data-i18n="ewgf.gridNote"></p>
+          <div class="row"><label class="t" data-i18n="set.fx">연출 (흔들림·플래시)</label>
+            <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" data-i18n="set.touch">터치 컨트롤</label>
+            <div class="segc" id="touchSel"><button data-touch="auto" aria-pressed="true" data-i18n="set.touchAuto">자동 (터치 기기)</button><button data-touch="on" aria-pressed="false" data-i18n="set.on">켜기</button><button data-touch="off" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" for="touchSize" data-i18n="set.touchSize">방향 버튼 크기</label>
+            <div class="range"><input type="range" id="touchSize" min="70" max="300" step="5" value="100"><output id="touchSizeOut">100%</output></div></div>
+          <div class="row"><label class="t" for="touchX" data-i18n="set.touchX">방향 버튼 가로 위치</label>
+            <div class="range"><input type="range" id="touchX" min="0" max="100" step="5" value="0"><output id="touchXOut">0%</output></div></div>
+          <div class="row"><label class="t" for="touchY" data-i18n="set.touchY">방향 버튼 세로 위치</label>
+            <div class="range"><input type="range" id="touchY" min="0" max="100" step="5" value="0"><output id="touchYOut">0%</output></div></div>
+          <div class="row"><label class="t" data-i18n="set.sound">소리</label>
+            <div class="segc" id="soundSel"><button data-sound="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-sound="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" data-i18n="set.bgm">배경음</label><div class="segc" id="bgmSel"><button data-bgm="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-bgm="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" for="bgmVol" data-i18n="set.bgmVol">배경음 볼륨</label>
+            <div class="range"><input type="range" id="bgmVol" min="0" max="100" step="5" value="100"><output id="bgmVolOut">100%</output></div></div>
+          <div class="row"><label class="t" for="sfxVol" data-i18n="set.sfxVol">효과음 볼륨</label>
+            <div class="range"><input type="range" id="sfxVol" min="0" max="100" step="5" value="100"><output id="sfxVolOut">100%</output></div></div>
+          <p class="note" data-i18n="set.soundNote">배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).</p>
+          <div class="row"><label class="t" data-i18n="set.reset">기록·업적 초기화</label><button class="btn ghost" id="dataReset" type="button" data-i18n="set.resetBtn">초기화…</button></div>
+          <p class="note" data-i18n="set.resetNote">모드별 최고 기록, 누적 통계, 업적, 복장을 지웁니다. 닉네임과 설정은 남습니다.</p>
+        </div>
+      </dialog>
+    </aside>
+    <div class="card posts-card" id="postsCard" hidden>
+      <div class="posts-heading"><h2 data-i18n="posts.title">한마디</h2><button class="btn ghost" id="postsRefresh" type="button" data-i18n="posts.refresh">새로고침</button></div>
+      <p class="sub" data-i18n="posts.sub">건의·질문·잡담 무엇이든 · 최신 50개 · 버튼으로 새로고침</p>
+      <div class="posts" id="postList"></div>
+      <form class="posts-form" id="postForm"><b class="post-nick" id="postNickLabel"></b><input class="text" id="postText" maxlength="200" autocomplete="off" data-i18n-aria="posts.ph" aria-label="하고 싶은 말 (200자)"><button class="btn" id="postSend" type="submit" data-i18n="posts.send">남기기</button></form>
+      <div class="card-msg" id="postMsg"></div>
+    </div>
+  </main>
+
+  <dialog class="share notices" id="noticeDlg" aria-labelledby="noticeTitle">
+    <div class="set-head"><h2 id="noticeTitle" data-i18n="notice.title">공지사항</h2><button class="btn ghost" id="noticeClose" type="button" data-i18n="share.close">닫기</button></div>
+    <p class="note" data-i18n="notice.sub">미시마 도장의 업데이트와 패치 노트입니다.</p>
+    <div class="notice-list" id="noticeList"></div>
+  </dialog>
+
+  <dialog class="share" id="shareDlg" aria-labelledby="shareTitle">
+    <h2 id="shareTitle" data-i18n="share.title">결과 공유 카드</h2>
+    <div class="share-rank" id="shareRank" hidden><div class="tier-title" id="shareTier"></div><div class="tier-line" id="shareRankLine"></div><p class="tier-msg" id="shareTierMsg"></p></div>
+    <canvas id="shareCanvas" width="1200" height="630" data-i18n-aria="share.canvasAria" aria-label="결과 공유 카드 미리보기"></canvas>
+    <div class="share-actions">
+      <button class="btn" id="shareCopy" data-i18n="share.copy">이미지 복사</button>
+      <button class="btn ghost" id="shareDl" data-i18n="share.download">PNG 저장</button>
+      <button class="btn ghost" id="shareTweet" data-i18n="share.tweet">X(트위터)에 공유</button>
+      <button class="btn ghost" id="shareClose" data-i18n="share.close">닫기</button>
+    </div>
+    <div class="share-msg" id="shareMsg"></div>
+    <p class="donate donate-share" id="donateShare" hidden><span class="donate-copy"><span data-i18n="donate.result">개인 최고 기록 달성! 미시마 도장이 도움이 됐다면 1,000원부터 다음 업데이트를 응원해 주세요. 후원금은 도메인·서버 유지와 기능 개발에 사용됩니다.</span><small data-i18n="donate.joke">그리고 굶고 있는 철찌에게 밥 한 끼가 생깁니다.</small></span><button class="btn ghost donate-btn" id="donateShareBtn" type="button" data-i18n="donate.btn">🍚 후원하기 🍚</button></p>
+    <p class="note" data-i18n="share.discordNote">디스코드: "이미지 복사" 후 채팅창에 Ctrl+V로 붙여 넣으세요. 복사가 안 되면 PNG 저장 후 첨부하세요.</p>
+  </dialog>
+
+  <dialog class="share nick" id="nickDlg" aria-labelledby="nickTitle">
+    <h2 id="nickTitle" data-i18n="nick.title">닉네임 정하기</h2>
+    <p class="note" data-i18n="nick.note">순위와 한마디에 쓰이는 이름입니다. 다른 사람과 겹칠 수 없고 이 브라우저에 저장됩니다. 브라우저 데이터를 지우면 새 닉네임을 정해야 합니다.</p>
+    <form class="nick-form" id="nickForm"><input id="nickInput" maxlength="12" autocomplete="off" spellcheck="false" data-i18n-aria="board.nickPh" aria-label="닉네임 (2~12자)"><button class="btn" id="nickSubmit" type="submit" data-i18n="nick.submit">시작</button><button class="btn ghost" id="nickClose" type="button" hidden data-i18n="share.close">닫기</button><button class="btn ghost" id="nickLater" type="button" hidden data-i18n="nick.later">나중에 · 순위 없이 연습</button></form>
+    <div class="share-msg" id="nickMsg"></div>
+  </dialog>
+
+  <dialog class="share nick" id="donateDlg" aria-labelledby="donateTitle">
+    <div id="donateChoose">
+      <h2 id="donateTitle" data-i18n="donate.chooseTitle">후원 방법 선택</h2>
+      <p class="note donate-copy"><span data-i18n="donate.pitch">미시마 도장이 연습에 도움이 됐다면 1,000원부터 다음 업데이트를 응원해 주세요. 후원금은 도메인·서버 유지와 기능 개발에 사용됩니다.</span><small data-i18n="donate.joke">그리고 굶고 있는 철찌에게 밥 한 끼가 생깁니다.</small></p>
+      <div class="donate-options" id="donateOptions"></div>
+      <div class="nick-form"><button class="btn ghost" id="donateClose" type="button" data-i18n="share.close">닫기</button></div>
+    </div>
+    <div id="donateKakao" hidden>
+      <h2 data-i18n="donate.title">카카오페이로 후원</h2>
+      <p class="note" data-i18n="donate.qrNote">카카오페이 송금 링크는 휴대폰에서만 열립니다. PC에서는 카카오톡의 QR 스캔으로 아래 코드를 찍어 주세요. 휴대폰으로 보고 있다면 아래 버튼으로 바로 열립니다.</p>
+      <img class="donate-qr" id="donateQr" width="200" height="200" alt="" data-i18n-aria="donate.qrAlt" aria-label="카카오페이 송금 QR 코드">
+      <div class="nick-form"><a class="btn" id="donateOpen" target="_blank" rel="noopener" data-i18n="donate.open">휴대폰에서 카카오페이 열기</a><button class="btn ghost" id="donateBack" type="button" data-i18n="donate.back">뒤로</button></div>
+    </div>
+    <p class="donate-contact"><span data-i18n="footer.contact">문의</span>: <a href="mailto:tlstjdgus3@gmail.com">tlstjdgus3@gmail.com</a></p>
+  </dialog>
+
+  <dialog class="share fit" id="fitDlg" aria-labelledby="fitTitle">
+    <div class="set-head"><h2 id="fitTitle" data-i18n="fit.title">옷장</h2>
+      <div class="segc" id="fitTabs" role="group"><button type="button" data-view="fit" aria-pressed="true" data-i18n="fit.tabFit">옷장</button><button type="button" data-view="ach" aria-pressed="false" data-i18n="fit.tabAch">업적</button></div>
+      <button class="btn ghost" id="fitClose" type="button" data-i18n="share.close">닫기</button></div>
+    <p class="fit-daily" id="fitDaily"></p>
+    <div class="fit-wear" id="fitWear">
+      <div class="fit-preview"><canvas id="fitPreview" width="200" height="220" data-i18n-aria="fit.canvasAria" aria-label="코스튬 미리보기"></canvas><button class="btn ghost" id="fitReset" type="button" data-i18n="fit.reset">기본 복장</button></div>
+      <div class="fit-slots" id="fitSlots"></div>
+    </div>
+    <div class="fit-ach" id="fitAch" hidden></div>
+  </dialog>
+
+  <nav class="section-links" data-i18n-aria="view.sections"><a href="#histCard" data-i18n="view.analysis">연습 분석</a><a href="#boardCard" data-i18n="board.title">순위</a><a href="#postsCard" data-i18n="posts.title">한마디</a></nav>
+  <section class="records" data-i18n-aria="records.aria" aria-label="기록">
+    <div class="card chart" id="histCard">
+      <h2 data-i18n="hist.title">초풍 버튼 타이밍 분포</h2>
+      <p class="sub" data-i18n="hist.sub">공통 60Hz 칸에서 RP − d/f 프레임 차이 · 0f가 성공 · 최근 60회</p>
+      <div id="hist"></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i><em data-i18n="hist.lOk">초풍 (판정 안)</em></span><span><i style="background:var(--warn)"></i><em data-i18n="hist.lEarly">빠름 (d+2)</em></span><span><i style="background:var(--red)"></i><em data-i18n="hist.lLate">늦음 (풍신권)</em></span></div>
+      <div class="tip" id="histTip"></div>
+    </div>
+    <div class="card chart" id="waveCard">
+      <h2 data-i18n="wave.title">웨이브 속도 추이</h2>
+      <p class="sub" data-i18n="wave.sub">크라우치 대시 한 번당 속도 (대시/초) · 최근 40회 · 음영 = 웨이브 10초 순위 상위 10%</p>
+      <div id="waveChart"></div>
+      <div class="tip" id="waveTip"></div>
+    </div>
+    <div class="card">
+      <h2 data-i18n="best.title">모드별 최고 기록</h2>
+      <p class="sub" data-i18n="best.sub">이 브라우저에 저장됩니다</p>
+      <div class="bests" id="bests"></div>
+    </div>
+    <div class="card">
+      <h2 data-i18n="log.title">최근 시도 로그</h2>
+      <p class="sub" data-i18n="log.sub">차트와 같은 데이터 · 최근 12건</p>
+      <div class="tbl"><table><thead><tr><th data-i18n="log.hTime">시각</th><th data-i18n="log.hType">종류</th><th data-i18n="log.hRes">결과</th><th data-i18n="log.hNum">수치</th><th data-i18n="log.hMemo">메모</th></tr></thead><tbody id="logBody"></tbody></table></div>
+    </div>
+    <div class="card board-card" id="boardCard" hidden>
+      <h2 data-i18n="board.title">순위</h2>
+      <p class="sub" data-i18n="board.note">상위 10명 · 닉네임당 최고 기록 1건 · 초기화 없이 계속 쌓입니다 · 닉네임과 기록만 저장됩니다</p>
+      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button><button data-board="rush30" aria-pressed="false" data-i18n="mode.rush30.name">더미 격파 30초</button><button data-board="bd10" aria-pressed="false" data-i18n="mode.bd10.name">백대시 10초</button><button data-board="wsc" aria-pressed="false" data-i18n="wsc.rankTitle">웨캔기어 10회</button><button data-board="giwon" aria-pressed="false" data-i18n="gp.rankTitle">기원초 10회</button></div>
+      <div class="board-info" id="boardInfo"></div>
+      <div class="board-me" id="boardMe"></div>
+      <div class="tbl board-list" id="boardList"></div>
+      <div class="card-msg" id="boardMsg"></div>
+      <div class="card-actions"><button class="btn ghost" id="boardRefresh" data-i18n="board.refresh">새로고침</button></div>
+    </div>
+
+  </section>
+
+  <details class="about" id="about">
+    <summary data-i18n="about.summary">미시마 도장은 어떤 사이트인가요? (소개 · 판정 방식 · 자주 묻는 질문)</summary>
+    <div class="about-body">
+      <h3 data-i18n="about.what.h">철권8 초풍·웨이브 대시 연습 도구</h3>
+      <p data-i18n="about.what.p">미시마 도장은 철권(철권8) 미시마류의 핵심 입력인 초풍신권(EWGF, 6N23+2)과 웨이브 대시(풍신 스텝 연속, 6N23 6 N 6N23 6 N …)를 브라우저에서 연습하는 무료 도구입니다. 설치 없이 키보드·게임패드·레버리스(히트박스)로 바로 쓸 수 있고, 게임을 켜지 않아도 입력만으로 판정합니다. 비공식 팬 제작이며, 게임 자체를 건드리는 매크로나 치트가 아닙니다.</p>
+      <h3 data-i18n="about.judge.h">판정 방식</h3>
+      <p data-i18n="about.judge.p">초풍은 각 입력 시각을 공통 60Hz 프레임 칸에 반올림해 3(d/f)과 버튼 2(RP)가 같은 칸이면 성공, RP가 뒤 칸이면 풍신권, 앞 칸이면 실패로 표시합니다. 웨이브는 6 → N → 2 → 3 또는 중립을 생략한 6 → 2 → 3을 인정하며 캔슬 6과 다음 시작 6은 별도로 필요합니다. 웨캔기어는 전용 모드에서 대각을 1f로 센 뒤 8·9·10f에 따라 RP 1·1~2·1~3f를 연습합니다. 브라우저의 60Hz 기준은 실제 게임 프레임과 동기화되지 않으며 입력 장치마다 오차가 있습니다.</p>
+      <h3 data-i18n="about.modes.h">측정 모드와 순위</h3>
+      <p data-i18n="about.modes.p">자유 연습 외에 웨이브 10초, 초풍 20회, 웨이브 초풍 10회, 더미 격파 30초, 백대시 10초 측정 모드가 있습니다. 결과는 초풍 버튼 타이밍 분포와 웨이브 속도 추이로 그려지고, 닉네임을 정하면 순위에 올려 다른 플레이어와 비교하고 상위 %에 따른 등급(SS~D)을 받습니다. 결과 카드는 이미지로 저장해 공유할 수 있습니다.</p>
+      <h3 data-i18n="about.faq.h">자주 묻는 질문</h3>
+      <dl>
+        <dt data-i18n="about.q1">초풍이 자꾸 풍신권으로 나가요.</dt><dd data-i18n="about.a1">버튼 2가 3(d/f)보다 늦은 경우입니다. 결과에 표시되는 ms 값을 보면서, 3을 다 넣고 누르는 게 아니라 2(d)에서 3(d/f)으로 굴리는 순간에 버튼 2를 누른다고 생각하세요.</dd>
+        <dt data-i18n="about.q2">웨이브가 자꾸 끊겨요.</dt><dd data-i18n="about.a2">대부분 3 뒤의 캔슬 6이 빠지거나, 캔슬 6을 다음 대시의 시작 6으로 겸용해서 N이 빠진 경우입니다. 결과 창에 "캔슬 6 누락", "시작 6 누락"으로 원인이 표시됩니다.</dd>
+        <dt data-i18n="about.q3">스틱(레버)이나 휴대폰도 되나요?</dt><dd data-i18n="about.a3">브라우저가 게임패드로 인식하는 컨트롤러면 설정에서 방향과 버튼을 모두 다시 지정할 수 있습니다. 키보드와 레버리스는 확인했고, 레버는 기기에 따라 다를 수 있으니 안 되면 문의해 주세요. 휴대폰은 터치 컨트롤이 뜨지만 정밀도는 낮습니다.</dd>
+        <dt data-i18n="about.q4">기록은 어디에 저장되나요?</dt><dd data-i18n="about.a4">설정과 기록은 이 브라우저에만 저장됩니다. 순위에 올린 점수와 닉네임만 서버에 보관합니다.</dd>
+        <dt data-i18n="about.q5">무료인가요?</dt><dd data-i18n="about.a5">전부 무료이고 광고가 없습니다. 후원으로 운영합니다.</dd>
+      </dl>
+      <p class="note"><span data-i18n="about.links">언어별 연습 화면</span>: <a href="ko/" hreflang="ko">한국어</a> · <a href="en/" hreflang="en">English</a> · <a href="ja/" hreflang="ja">日本語</a></p>
+    </div>
+  </details>
+
+  <footer>
+    <p data-i18n="footer">표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.</p>
+    <p class="copy" data-i18n="footer.copy">© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.</p>
+    <p class="copy"><span data-i18n="footer.contact">문의</span>: <a href="mailto:tlstjdgus3@gmail.com">tlstjdgus3@gmail.com</a></p>
+    <p class="donate" id="donate" hidden><span class="donate-copy"><span data-i18n="donate.pitch">미시마 도장이 연습에 도움이 됐다면 1,000원부터 다음 업데이트를 응원해 주세요. 후원금은 도메인·서버 유지와 기능 개발에 사용됩니다.</span><small data-i18n="donate.joke">그리고 굶고 있는 철찌에게 밥 한 끼가 생깁니다.</small></span><button class="btn ghost donate-btn" id="donateBtn" type="button" data-i18n="donate.btn">🍚 후원하기 🍚</button></p>
+  </footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+@@include js/00-core.js
+@@include js/01-wardrobe-items.js
+@@include js/02-notices.js
+@@include js/03-store.js
+@@include i18n/ko.js
+@@include i18n/en.js
+@@include i18n/ja.js
+@@include js/04-i18n.js
+@@include js/05-sound.js
+@@include js/06-state.js
+@@include js/07-input.js
+@@include js/08-touch.js
+@@include js/09-history.js
+@@include js/10-wsc.js
+@@include js/11-crouch-dash.js
+@@include js/12-backdash.js
+@@include js/13-button.js
+@@include js/14-giwon.js
+@@include js/15-giwon-practice.js
+@@include js/16-strikes.js
+@@include js/17-coach.js
+@@include js/18-hud.js
+@@include js/19-tick.js
+@@include js/20-trials.js
+@@include js/21-charts.js
+@@include js/22-share-model.js
+@@include js/23-settings-ui.js
+@@include js/24-share-dialog.js
+@@include js/25-notices-ui.js
+@@include js/26-backend-config.js
+@@include js/27-donate.js
+@@include js/28-rewards.js
+@@include js/29-backend.js
+@@include js/30-language.js
+@@include js/31-stage.js
+@@include js/32-rush.js
+@@include js/33-fighter.js
+@@include js/34-share-draw.js
+@@include js/35-dojo3d.js
+@@include js/36-boot.js
+})();
+</script>

@@ -1,11 +1,11 @@
 # 미시마 도장 (Mishima Dojo / 三島道場)
 
 철권 미시마류 커맨드(웨이브 대시, 초풍) 입력을 브라우저에서 프레임 단위로 판정하고, 코치 피드백과 기록을 남기는 연습 도구.
-비공식 팬 제작. 앱 코드와 도장 재질은 `index.html` 하나에 들어 있으며 빌드나 외부 라이브러리가 없다. 소리는 함께 제공되는 로컬 파일을 사용한다. UI는 한국어·영어·일본어(헤더 토글, 브라우저 언어로 자동 선택).
+비공식 팬 제작. 배포되는 앱은 코드와 도장 재질이 모두 들어 있는 HTML 한 페이지이며 외부 라이브러리가 없다. 원본은 `src/`에 기능별 파일로 나뉘어 있고 Node 스크립트 하나(`tools/assemble.js`)가 한 페이지로 합친다. 소리는 함께 제공되는 로컬 파일을 사용한다. UI는 한국어·영어·일본어(헤더 토글, 브라우저 언어로 자동 선택).
 
 - 바로 쓰기: https://mishimaryu.com/ (예전 주소 https://sinseonghyeon.github.io/wave-ewgf-dojo/ 는 여기로 넘어온다)
 - 라이선스: **오픈소스가 아닙니다.** © 2026 신성현, All rights reserved. 사이트 이용과 소스 열람은 자유지만 복제·수정·재배포·재호스팅은 금지합니다. 자세한 내용은 [LICENSE](LICENSE).
-- 로컬 실행: `index.html`을 브라우저로 열면 끝. 키보드와 게임패드 모두 인식.
+- 로컬 실행: 루트의 `preview.cmd`를 더블클릭하면 빌드한 뒤 브라우저로 연다(Node.js 필요). 직접 하려면 `node tools/build-site.js` 후 `_site/index.html`을 연다. `src/`를 고쳤으면 다시 실행한다. 키보드와 게임패드 모두 인식.
 - 저장소: https://github.com/SinSeonghyeon/wave-ewgf-dojo
 - 문의: tlstjdgus3@gmail.com
 
@@ -88,9 +88,9 @@
 ## 개발
 
 - 언어별 바로 연습: `/ko/` 한국어 · `/en/` 영어 · `/ja/` 일본어. 루트 `/`는 기존처럼 저장된 언어 또는 브라우저 언어로 열린다. 언어별 주소에서도 같은 브라우저의 기록·닉네임을 공유한다.
-- 배포 페이지 생성: `node tools/build-site.js` → `_site/`. 원본은 `index.html` 하나이며 세 언어의 HTML과 BGM 목록을 함께 만든다. GitHub Pages는 GitHub Actions로 배포한다. **최초 전환 설정과 검색 등록 절차**는 [배포 안내](.agents/docs/LOCALIZED_PAGES.md)를 참고한다.
-- 테스트: `node --test tests/dojo.test.cjs tests/board.test.cjs` (Node 22.13 이상, 의존성 없음) · 브라우저 스모크: `node tests/smoke-chrome.js` (로컬 Chrome/Edge).
-- 공지 추가: `index.html`의 `NOTICES` 배열 맨 앞에 고유 ID·날짜·I18N 키를 넣고, 같은 `notice.<날짜>.*` 키를 ko/en/ja 사전에 모두 추가한다. 최신 ID가 바뀌면 기존 방문자에게 `NEW`가 다시 표시된다.
+- 배포 페이지 생성: `node tools/build-site.js` → `_site/`. `src/`를 한 페이지로 조립하고 세 언어의 HTML과 BGM 목록을 함께 만든다. GitHub Pages는 GitHub Actions로 배포한다. **최초 전환 설정과 검색 등록 절차**는 [배포 안내](.agents/docs/LOCALIZED_PAGES.md)를 참고한다.
+- 테스트: `node --test "tests/*.test.cjs"` (Node 22.13 이상, 의존성 없음) · 브라우저 스모크: `node tests/smoke-chrome.js` (로컬 Chrome/Edge).
+- 공지 추가: `src/js/02-notices.js`의 `NOTICES` 배열 맨 앞에 고유 ID·날짜·I18N 키를 넣고, 같은 `notice.<날짜>.*` 키를 `src/i18n/ko.js`·`en.js`·`ja.js`에 모두 추가한다. 최신 ID가 바뀌면 기존 방문자에게 `NEW`가 다시 표시된다.
 - AI 에이전트 규칙은 [AGENTS.md](AGENTS.md), 진행 계획은 [.agents/docs/PLAN.md](.agents/docs/PLAN.md), 코드 구조는 [.agents/docs/CODE_MAP.md](.agents/docs/CODE_MAP.md).
 - `Claude_full.bat` / `Codex_full.bat` (macOS는 `.command`): 해당 CLI를 설치·확인하고 전체 권한 모드로 실행하는 런처.
 

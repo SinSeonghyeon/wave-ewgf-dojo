@@ -25,7 +25,7 @@ for(const track of tracks){
   gains[track]=Number((10**(db/20)).toFixed(6));
   console.log(`${track}: ${db.toFixed(2)} dB / gain ${gains[track]}`);
 }
-const file=path.join(root,'index.html'),html=fs.readFileSync(file,'utf8');
+const file=require('./assemble').sourceFileContaining('const BGM_GAIN='),html=fs.readFileSync(file,'utf8');
 const marker=/^const BGM_GAIN=.*; \/\/ Generated loudness gains.*$/m;
 if(!marker.test(html))throw new Error('BGM gain marker missing');
 const literal=JSON.stringify(gains).replace(/</g,'\\u003c');

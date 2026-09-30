@@ -1,12 +1,12 @@
 // WSC UI smoke: real browser input listeners, deterministic event timestamps, no live backend.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const {launch,fileUrl,sleep,sfxFiles}=require('../tools/cdp');
+const {launch,fileUrl,sleep,stageAssets}=require('../tools/cdp');
+const {assemble}=require('../tools/assemble');
 const out=path.resolve(__dirname,'../.sandbox/wsc/browser');fs.mkdirSync(out,{recursive:true});
-const html=fs.readFileSync(path.resolve(__dirname,'../index.html'),'utf8').replace(/const BOARD_URL = '[^']*';/,"const BOARD_URL = '';");
+const html=assemble().replace(/const BOARD_URL = '[^']*';/,"const BOARD_URL = '';");
 const latestNoticeId=html.match(/const NOTICES = \[\s*\{id:'([^']+)'/)[1];
 const page=path.join(out,'index.html');fs.writeFileSync(page,html);
-for(const name of ['donate-kakao.png','favicon.png',...sfxFiles(html)])fs.copyFileSync(path.resolve(__dirname,'..',name),path.join(out,name));
-  fs.cpSync(path.join(path.resolve(__dirname,'..'),'bgm'),path.join(out,'bgm'),{recursive:true});
+stageAssets(html,out);
 (async()=>{
  const b=await launch({port:9335,profile:'dojo-wsc-smoke',windowSize:'1366,1000'});
  try{

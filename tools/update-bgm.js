@@ -9,7 +9,7 @@ function tracksAt(dir) {
 }
 if (require.main === module) {
   const tracks = tracksAt(path.join(root, 'bgm'));
-  const file = path.join(root, 'index.html'), html = fs.readFileSync(file, 'utf8');
+  const file = require('./assemble').sourceFileContaining('const BGM_TRACKS='), html = fs.readFileSync(file, 'utf8');
   const pattern = /^const BGM_TRACKS=.*; \/\/ Generated local fallback.*$/m;
   if (!pattern.test(html)) throw new Error('BGM fallback marker missing');
   const literal = JSON.stringify(tracks).replace(/</g, '\\u003c');

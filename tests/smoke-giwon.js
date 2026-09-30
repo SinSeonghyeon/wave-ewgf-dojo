@@ -1,15 +1,15 @@
 // 기원권 (↘+RP) and the 기원초 link: real keyboard/pointer listeners with deterministic 60Hz timestamps.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const {launch,fileUrl,sleep,sfxFiles}=require('../tools/cdp');
+const {launch,fileUrl,sleep,stageAssets}=require('../tools/cdp');
+const {assemble}=require('../tools/assemble');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'.sandbox/giwon/browser');
 fs.mkdirSync(out,{recursive:true});
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8')
+const html=assemble()
   .replace(/const BOARD_URL = '[^']*';/,"const BOARD_URL = '';")
   .replace(/\}\)\(\);\s*<\/script>/,'globalThis.giwonTest={GP_BUF_A,GP_BUF_B,GP_CHALLENGE,gpStartChallenge,pops,sparks,T,world,GIWON,GIWON_ZOOM,zoomAt,roomCamera,roomProject,anim,store,HIT_CONTACT_MS,gp,GP_FREE,GP_TARGET,GP_FIRE_MAX,GP_LAST,GP_HIT,GP_NEAR,GP_DUMMY_PX,gpSegments,linkWhy,stiffState:()=>stiffBar,stiffAnchor,STIFF_BAR,impacts};})();</script>');
 const notice=html.match(/const NOTICES = \[\s*\{id:'([^']+)'/)[1];
 const page=path.join(out,'index.html');fs.writeFileSync(page,html);
-for(const name of ['donate-kakao.png','favicon.png',...sfxFiles(html)])fs.copyFileSync(path.join(root,name),path.join(out,name));
-fs.cpSync(path.join(root,'bgm'),path.join(out,'bgm'),{recursive:true});
+stageAssets(html,out);
 
 (async()=>{
   const b=await launch({port:9339,profile:'dojo-giwon-smoke',windowSize:'1366,1000'});
@@ -102,7 +102,7 @@ fs.cpSync(path.join(root,'bgm'),path.join(out,'bgm'),{recursive:true});
     };
     const ok=await link(1);
     assert.equal(ok.title,'기원초 입력 조건 충족',JSON.stringify(ok));
-    assert.match(ok.coach,/실제 명중·딜캐 타이밍은 측정하지 않습니다/,'no punish claim (결정 27)');
+    assert.match(ok.coach,/실제 명중·딜캐 타이밍은 측정하지 않습니다/,'no punish claim (결정 27(mist))');
     assert.equal(ok.segTitle,'기원권 뒤 연결 입력 (프레임)');
     assert.match(ok.seg,new RegExp('발동 '+C.target+'f'));
     assert.match(ok.seg,/중립 0f/);assert.match(ok.seg,/6 선입력 -2f/);

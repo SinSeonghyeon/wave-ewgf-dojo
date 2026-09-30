@@ -1,14 +1,17 @@
-// Dependency-free Pages build. index.html is the only app source; never edit generated pages.
+// Dependency-free Pages build. src/ is the only app source (tools/assemble.js joins it into one page); never edit generated pages.
+// Local preview: node tools/build-site.js, then open _site/index.html (or serve _site/ over HTTP for bgm/playlist.json).
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const {tracksAt} = require('./update-bgm');
+const {assemble} = require('./assemble');
 const ROOT = path.resolve(__dirname, '..');
 const LANGS = ['ko', 'en', 'ja'];
 const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function dictionaries(source){
-  const start=source.indexOf('const I18N = {'), end=source.indexOf('\nconst T =',start);
+  // src/i18n/{ko,en,ja}.js define I18N_KO/EN/JA; src/js/04-i18n.js joins them into I18N right before T.
+  const start=source.indexOf('const I18N_KO = {'), end=source.indexOf('\nconst T =',start);
   if(start<0||end<0)throw new Error('I18N source markers missing');
   return vm.runInNewContext(source.slice(start,end)+'\nI18N;',{}, {timeout:1000});
 }
@@ -63,12 +66,19 @@ function buildSite(outDir=path.join(ROOT,'_site')){
   fs.rmSync(output,{recursive:true,force:true});
   fs.mkdirSync(output,{recursive:true});
   const write=(name,data)=>{const target=path.join(output,name);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,data);};
-  const source=fs.readFileSync(path.join(ROOT,'index.html'),'utf8');
+  const source=assemble();
   write('index.html',source);
   for(const lang of LANGS)write(lang+'/index.html',localizedPage(source,lang));
   for(const name of fs.readdirSync(ROOT)){
-    if(/^(?:CNAME|LICENSE|ads\.txt|robots\.txt|sitemap\.xml|favicon\.png|og\.png|donate-kakao\.png|sfx-[\w-]+\.mp3|google[\w]+\.html|naver[\w]+\.html)$/.test(name))
+    if(/^(?:CNAME|LICENSE|ads\.txt|robots\.txt|sitemap\.xml|favicon\.png|og\.png|donate-kakao\.png|google[\w]+\.html|naver[\w]+\.html)$/.test(name))
       fs.copyFileSync(path.join(ROOT,name),path.join(output,name));
+  }
+  // Sound effects: every MP3 directly in sfx/ (the SND table in src/js/05-sound.js points at them).
+  // Transition (2026-09-30 move from the repo root): a tab opened before this deploy still asks for /sfx-<name>.mp3, so the
+  // artifact also serves each file at its old root URL. Remove the second write once no pre-move page can be open (after 2026-10-31).
+  for(const f of fs.readdirSync(path.join(ROOT,'sfx')).filter(f=>/\.mp3$/i.test(f))){
+    const data=fs.readFileSync(path.join(ROOT,'sfx',f));
+    write('sfx/'+f,data); write('sfx-'+f,data);
   }
   const tracks=tracksAt(path.join(ROOT,'bgm'));
   write('bgm/playlist.json',JSON.stringify(tracks,null,2)+'\n');

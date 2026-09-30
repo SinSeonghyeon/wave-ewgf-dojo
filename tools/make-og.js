@@ -1,6 +1,6 @@
 // Generate og.png (1200x630 Open Graph image): node tools/make-og.js [--lang ko|en|ja] [--out og.png]
 // Headless Chrome/Edge over CDP via tools/cdp.js, no npm dependencies.
-// Loads a copy of index.html whose IIFE exposes buildOgCard/drawCard, draws the promotional card
+// Loads a copy of the assembled page (tools/assemble.js) whose IIFE exposes buildOgCard/drawCard, draws the promotional card
 // (app name, tagline, own SD fighter, illustrative histogram; no personal numbers) on #shareCanvas
 // and saves canvas.toDataURL() as PNG. Re-run whenever drawCard, the og.* strings or the colors change.
 // Exits 1 if the page logged any error (including a failed Google Fonts request, since that would bake fallback fonts into og.png).
@@ -8,6 +8,7 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 const {launch, fileUrl, sleep} = require('./cdp');
+const {assemble} = require('./assemble');
 
 const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf('--'+name); return i>=0 && args[i+1] ? args[i+1] : def; };
@@ -16,10 +17,10 @@ const OUT = path.resolve(opt('out', path.join(__dirname, '../og.png')));
 if(!['ko','en','ja'].includes(LANG)){ console.error('--lang must be ko, en or ja'); process.exit(2); }
 
 // Expose the card functions from the IIFE in a temporary copy (the shipped page stays untouched).
-const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+const html = assemble();
 const hook = 'globalThis.__og={buildOgCard,drawCard,setLang,displayFont,cssVar,el:$};})();';
 const patched = html.replace(/\}\)\(\);\s*<\/script>/, hook+'\n</script>').replace(/const BOARD_URL = '[^']*';/, "const BOARD_URL = '';");
-if(patched===html){ console.error('could not find the end of the script IIFE in index.html'); process.exit(2); }
+if(patched===html){ console.error('could not find the end of the script IIFE in the assembled page'); process.exit(2); }
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dojo-og-'));
 const tmpHtml = path.join(tmpDir, 'index.html');
 fs.writeFileSync(tmpHtml, patched, 'utf8');

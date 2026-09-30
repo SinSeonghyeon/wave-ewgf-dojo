@@ -1,4 +1,4 @@
--- 2026-09-14: weekly boards → one cumulative board that never resets (AGENTS.md design decision 19).
+-- 2026-09-14: weekly boards → one cumulative board that never resets (design decision 19(cumulative-ranking), .agents/docs/DECISIONS.md).
 -- Folds every nick's weekly rows into its single best per board (same order as the Worker's BY_RANK: score, then tie, then the
 -- older row) and moves them under the season key 'all' that the Worker now reads and writes. Idempotent: a second run changes nothing.
 -- Run once after `npx wrangler deploy` of the new Worker (rows the old Worker writes in between are folded too if you run it again):

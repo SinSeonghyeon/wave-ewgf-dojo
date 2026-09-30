@@ -1,6 +1,6 @@
 # worker/ — 백엔드 (Cloudflare Worker + D1): 누적 순위 · 방문자 수 · 한마디
 
-앱(`index.html`)은 `fetch`로 이 Worker만 호출한다. 앱 본체는 여전히 단일 파일이고, 이 폴더는 별도 배포 코드다.
+앱(`src/`를 조립한 한 페이지)은 `fetch`로 이 Worker만 호출한다. 이 폴더는 별도 배포 코드다.
 
 | 경로 | 용도 |
 |---|---|
@@ -19,11 +19,22 @@
 
 ## 현재 상태 (2026-09-12)
 
-- 배포 주소: `https://mishima-dojo-board.mishima-dojo.workers.dev` (`index.html`의 `BOARD_URL`)
+- 배포 주소: `https://mishima-dojo-board.mishima-dojo.workers.dev` (앱의 `BOARD_URL`, `src/js/26-backend-config.js`)
 - 계정: 사용자 소유 Cloudflare 계정. D1 `mishima-dojo-board`(APAC, id는 `wrangler.toml`에 기입됨), workers.dev 서브도메인 `mishima-dojo`.
 - 아래 "처음 한 번"은 이미 끝났다. 다른 PC에서 배포하려면 `npx wrangler login`만 다시 하면 된다.
 - 비밀 `ADMIN_TOKEN`(관리자 경로 전용: 게시글·기록 삭제, 섀도 밴, 보드 전체 기록 조회)은 `npx wrangler secret put ADMIN_TOKEN`으로 넣는다. 값은 저장소에 두지 않는다(로컬 `.sandbox/admin-token.txt`, gitignore).
 - 출처 잠금(2026-09-12): `wrangler.toml`의 `[vars] ALLOWED_ORIGINS`(쉼표 구분)에 있는 브라우저 출처만 API를 쓸 수 있다. 다른 출처는 응답에 CORS 헤더가 없고(브라우저가 읽지 못함) POST는 403 `origin`. 사이트를 복사해 다른 곳에 올려도 순위·한마디·방문 집계가 붙지 않는다. 도메인을 연결하면 여기에 추가하고 다시 배포. 관리자 경로(`DELETE /posts/:id`·`/scores/:id`, `/ban`, `GET /scores`)는 `ADMIN_TOKEN`만 검사하므로 curl로 그대로 쓸 수 있다. 테스트는 `ALLOWED_ORIGINS='*'` 또는 `'null'`(file:// 페이지)로 연다.
+
+## 배포 순서 (모든 워커 변경에 공통)
+
+워커 재배포와 D1 스키마 적용은 **사용자 작업**이다. 앱이 새 보드·새 경로·새 테이블을 쓰는 변경이면 순서는 항상
+
+1. 새 테이블·인덱스(`schema.sql`, `IF NOT EXISTS`라 안전)를 먼저 적용 — 새 워커가 없는 테이블을 읽지 않게
+2. 워커 배포(`npx wrangler@latest deploy`)
+3. 기존 행을 바꾸는 **데이터 마이그레이션**(`migrate-*.sql`)은 워커 배포 **뒤에** 실행 — 옛 워커가 그사이 쓴 행까지 옮기도록. 각 파일 머리의 안내를 따른다
+4. 사이트 푸시(main → Pages)
+
+반대로 하면 재배포 전까지 새 사이트의 요청이 400/404로 거부되고 순위 바·한마디에 실패 문구가 뜬다(데이터는 잃지 않는다). 설계 결정 본문(`.agents/docs/DECISIONS.md`)은 이 절을 가리키기만 하고 순서를 따로 적지 않는다. 아래 날짜별 절은 그때 실행한 명령 기록이다.
 
 ## 이후 코드 수정 시
 
@@ -108,7 +119,7 @@ cd D:\dojo\worker
 npx wrangler@latest login                                   # 브라우저가 열리면 허용
 npx wrangler d1 create mishima-dojo-board                   # 출력된 database_id로 wrangler.toml의 값을 바꾼다
 npx wrangler d1 execute mishima-dojo-board --remote --file=schema.sql
-npx wrangler deploy                                         # 마지막 줄의 주소로 index.html의 BOARD_URL을 바꾼다 (끝에 / 없이)
+npx wrangler deploy                                         # 마지막 줄의 주소로 src/js/26-backend-config.js의 BOARD_URL을 바꾼다 (끝에 / 없이)
 npx wrangler secret put ADMIN_TOKEN                         # 관리자 비밀(삭제·섀도 밴·전체 조회). 아무 긴 문자열
 ```
 

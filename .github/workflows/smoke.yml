@@ -1,0 +1,38 @@
+name: Browser smoke tests
+# Separate from the Pages deploy on purpose: a flaky headless run reports here and never blocks a release.
+# Each smoke script launches the runner's Chrome over CDP (tools/cdp.js) against the page assembled from src/.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CHROME_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/docs.test.cjs tests/source.test.cjs # doc/path lint (skipped in the deploy job)
+      - if: always()
+        run: node tests/smoke-chrome.js
+      - if: always()
+        run: node tests/smoke-bindings.js
+      - if: always()
+        run: node tests/smoke-design.js
+      - if: always()
+        run: node tests/smoke-giwon.js
+      - if: always()
+        run: node tests/smoke-mist.js
+      - if: always()
+        run: node tests/smoke-wsc.js
+      - if: always()
+        run: node tests/smoke-sound.js
+      - if: always()
+        run: node tests/smoke-locales.js

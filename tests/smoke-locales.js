@@ -89,7 +89,7 @@ let browser, server;
   await evalJs(`document.querySelector('#donateClose').click();document.querySelector('#bgmBtn').click()`);await sleep(500);
   await evalJs(`document.querySelector('#bgmNext').click()`);await sleep(500);
   assert.ok(new Set(seen.filter(p=>p.startsWith('/bgm/')&&p.endsWith('.mp3'))).size>=2,'current and next BGM use root assets');
-  assert.ok(seen.includes('/bgm/playlist.json'));assert.ok(seen.includes('/sfx-wave.mp3'));
+  assert.ok(seen.includes('/bgm/playlist.json'));assert.ok(seen.includes('/sfx/wave.mp3'));
   assert.deepEqual(missing,[]);
   const errors=browser.errors.filter(e=>!e.includes('ERR_BLOCKED_BY_CLIENT'));
   assert.deepEqual(errors,[]);

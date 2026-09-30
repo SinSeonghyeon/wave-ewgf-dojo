@@ -1,6 +1,6 @@
 # 언어별 연습 화면 배포
 
-2026-09-21. 원본 앱은 `index.html` 하나다. `node tools/build-site.js`가 `_site/`에 `/`·`/ko/`·`/en/`·`/ja/` 앱과 정적 자원을 생성한다. `_site/`는 생성물이라 커밋하지 않는다. 종전 `en/index.html`·`ja/index.html` 소개 페이지와 Jekyll BGM 템플릿은 제거했다.
+2026-09-21. 원본 앱은 `src/`이고 `tools/assemble.js`가 한 페이지로 조립한다(2026-09-30 분할, 그 전에는 루트 `index.html` 하나였다). `node tools/build-site.js`가 `_site/`에 `/`·`/ko/`·`/en/`·`/ja/` 앱과 정적 자원을 생성한다. `_site/`는 생성물이라 커밋하지 않는다. 종전 `en/index.html`·`ja/index.html` 소개 페이지와 Jekyll BGM 템플릿은 제거했다.
 
 - `/`: 기존 브라우저 언어 감지·저장 언어 우선 동작 유지. `?lang=`은 기존처럼 한 번 적용하며 다른 쿼리·해시는 보존한다.
 - `/ko/`, `/en/`, `/ja/`: 주소의 언어가 브라우저·저장 언어·옛 `?lang=`보다 우선. 검색용 최초 HTML도 해당 언어의 제목·설명·본문·JSON-LD를 제공한다.
@@ -23,7 +23,7 @@ Worker 재배포·DB 마이그레이션은 없다. 검색 결과 반영은 검�
 ## 로컬 확인
 
 ```sh
-node --test tests/dojo.test.cjs tests/board.test.cjs
+node --test "tests/*.test.cjs"
 node tests/smoke-chrome.js
 node tests/smoke-locales.js
 node tools/build-site.js

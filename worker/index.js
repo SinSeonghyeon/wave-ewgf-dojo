@@ -26,7 +26,7 @@
 // Pure helpers (seasonKey, weekKey, dayKey, validate, cleanText, nickKey, handle) and the contract (BOARDS, WINDOWS, SEASON) are exported for node tests.
 
 const KST = 9 * 3600e3, DAY = 86400e3, TOP = 10, POSTS = 50, TEXT_MAX = 200;
-// Local N-try challenges (결정 26·30): whole counts, score = hits, tie = best streak. validate() adds the cross-field checks for every board using this spec.
+// Local N-try challenges (결정 26(wsc-board)·31(giwon-board)): whole counts, score = hits, tie = best streak. validate() adds the cross-field checks for every board using this spec.
 const CHALLENGE_10 = {score:[0,10], tie:[0,10], detail:{hits:[0,10], target:[10,10], best:[0,10]}};
 export const BOARDS = {
   wave10:  {score: [0, 20],  tie: [0, 500],   detail: {dashes: [0, 200], chain: [0, 200]}},
@@ -41,7 +41,7 @@ export const WINDOWS = [8, 12, 15];
 const LANGS = ['ko', 'en', 'ja'];
 // Characters that render blank or hijack layout: control (Cc), format (Cf: zero-width, bidi, soft hyphen, word joiner, BOM), private-use
 // (Co), unassigned (Cn), line/paragraph separators, Hangul fillers (U+115F/1160/3164/FFA0), combining grapheme joiner and variation
-// selectors. Without these a nickname made of fillers passes as a distinct blank name. Mirrored by NICK_BAD in index.html.
+// selectors. Without these a nickname made of fillers passes as a distinct blank name. Mirrored by NICK_BAD in the app (src/js/29-backend.js).
 const BAD_CHARS = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u;
 const boardSpec = b => typeof b === 'string' && Object.hasOwn(BOARDS, b) ? BOARDS[b] : undefined; // plain lookup would accept 'constructor'
 // Origin lock (2026-09-12): only the site's own origin(s) may use this API from a browser. A copied page hosted elsewhere gets no

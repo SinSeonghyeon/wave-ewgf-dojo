@@ -1,13 +1,13 @@
 // Mist EWGF: actual keyboard/pointer listeners with deterministic 60Hz timestamps.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const {launch,fileUrl,sleep,sfxFiles}=require('../tools/cdp');
+const {launch,fileUrl,sleep,stageAssets}=require('../tools/cdp');
+const {assemble}=require('../tools/assemble');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'.sandbox/mist/browser');
 fs.mkdirSync(out,{recursive:true});
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/const BOARD_URL = '[^']*';/,"const BOARD_URL = '';");
+const html=assemble().replace(/const BOARD_URL = '[^']*';/,"const BOARD_URL = '';");
 const notice=html.match(/const NOTICES = \[\s*\{id:'([^']+)'/)[1];
 const page=path.join(out,'index.html');fs.writeFileSync(page,html);
-for(const name of ['donate-kakao.png','favicon.png',...sfxFiles(html)])fs.copyFileSync(path.join(root,name),path.join(out,name));
-fs.cpSync(path.join(root,'bgm'),path.join(out,'bgm'),{recursive:true});
+stageAssets(html,out);
 (async()=>{
   const b=await launch({port:9337,profile:'dojo-mist-smoke',windowSize:'1366,1000'});
   try{

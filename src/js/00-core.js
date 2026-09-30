@@ -1,0 +1,34 @@
+const FRAME = 1000/60;
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const fmtF = ms => (ms>=0?'+':'−') + Math.abs(ms/FRAME).toFixed(1) + 'f';
+const fmtMs = ms => (ms>=0?'+':'−') + Math.abs(Math.round(ms)) + 'ms';
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const WALK_F = 90, WALK_B = 70, TAP_MS = 250; // walk speed px/s (forward/back), f,N,f double-tap dash window. Visual only; judging never reads these.
+const FF_MS = 250;      // judging: f,f+2 (통발) accepts the 2 up to this long after the second f (state 1/2 with cd.dashT===cd.tF)
+const RUSH_PTS = {kill:10, wgf:5, dashMax:3}; // 더미 격파: correct hit 10, non-just WGF on the high dummy 5, each crouch dash min(chain,3)
+// 백대시 모델 (2026-09-13). 실측이 아니라 사용자 체감·참고 자료 기반 가정값 — 숫자만 고치면 판정·거리·등급·문구·테스트가 함께 따라온다 (결정 17(backdash)).
+const BD = {
+  MIN_F: 6,        // 두 번째 4를 이 프레임 미만으로 잡고 1(↙)을 누르면 백대시가 나가기 전에 앉은 것 → 백대시 없음, 거리 0
+  MOVE_F: 10,      // 이동 구간: 이 프레임에 최대 거리 1.0 m 도달 = 최적 캔슬 시점. 거리 = min(h, MOVE_F)/MOVE_F
+  RECOVER_F: 26,   // 백대시 경직(출력 기준, 사용자 체감 2026-09-13). 그동안 뒤로만 못 간다(백대시·뒤 걷기 없음, 나머지는 전부 가능). 앉기·횡(1/2/3/7/8/9)이 경직을 지운다 — 모든 모드의 연출과 bd 판정이 같은 bdRec을 본다
+  LINK_MAX_F: 60,  // 1이 이보다 늦으면 세트가 아니라 그냥 앉기 → 연속 종료 (4 탭·N 자체는 TAP_MS 안이어야 4N4로 묶인다)
+  TIERS: [{k:'top', mps:3.5}, {k:'fast', mps:3.0}, {k:'ok', mps:2.2}], // 세트 속도(m/s) 하한: 이 백대시의 거리 ÷ (이 출력 → 다음 출력). 미만이면 'slow'
+};
+// 기원권·기원초 모델 (2026-09-23). 결정 17(backdash)의 BD와 같은 취급 — 실게임 미확인 **가정값**이고 문구·테스트가 이 상수를 읽으므로 숫자만 고치면 된다.
+// 출처는 커뮤니티 프레임 데이터(철권 8 기준)이며 시즌마다 바뀔 수 있다. 사이트는 명중 프레임을 재현하지 않고 입력 시작 시점만 잰다(결정 27(mist)).
+const GIWON = {
+  ACTIVE_F: 14,      // 발동(명중) 프레임. 연출 접촉 시각 HIT_CONTACT_MS.giwon도 여기서 나온다
+  RECOVERY_F: 32,    // 기원권 리커버리. 명중 시각 + 이 프레임 = 다음 입력을 받는 기준점(경직 해제 0f)
+  GROUND_F: 13,      // 배잡기 경직의 지상 판정 유지. 안내 문구 전용이고 성공 판정에는 쓰지 않는다
+  BUFFER_F: 8,       // 경직 해제 직전 이 프레임 안에 눌린 버튼만 버퍼된다. 그 전 버튼은 버려진다
+  FAULT_MS: 450,     // 시작 6 → ↘ 직행의 "6 → 3" 실패 문구를 이만큼 미뤄 기원권 굴림(앞 1프레임 스침)을 실패로 찍지 않는다
+  CRUMPLE_MS: 900,   // 카운터 명중한 더미가 날아가지 않고 제자리에서 배를 잡는 시간 (연출)
+  LINK_MS: 1200,     // 기원권 입력 시각부터 기원초 링크 피드백을 유지하는 창
+};
+// 카운터 히트 카메라 푸시. 연출 전용이며 판정·좌표·명중 판정에 영향이 없다.
+// PEAK은 가정값이다 — 제공된 영상이 명중 프레임에서 시작해 진입 구간이 녹화에 없다. OUT_MS만 실측(28프레임 ease-out)이다.
+const GIWON_ZOOM = {PEAK: 1.12, IN_MS: 60, OUT_MS: 470};
+const bdF = ms => Math.max(1, Math.round(ms/FRAME));                       // frames as the history strip shows them
+const bdDist = h => h < BD.MIN_F ? 0 : Math.min(h, BD.MOVE_F)/BD.MOVE_F;   // metres earned by a backdash cancelled after h frames
+

@@ -4,9 +4,10 @@ const http = require('node:http');
 const path = require('node:path');
 const {tracksAt} = require('../tools/update-bgm');
 const {launch, sleep,sfxFiles} = require('../tools/cdp');
+const {assemble} = require('../tools/assemble');
 (async()=>{
   const root=path.join(__dirname,'..');
-  const html=fs.readFileSync(path.join(root,'index.html'),'utf8')
+  const html=assemble()
     .replace(/^const BGM_TRACKS=.*; \/\/ Generated local fallback.*$/m,'const BGM_TRACKS=[]; // HTTP test must discover songs from the manifest.')
     .replace(/const BOARD_URL = '[^']*';/, "const BOARD_URL = '';")
     .replace(/\}\)\(\);\s*<\/script>/, 'globalThis.soundTest={BGM_GAIN,BGM_TRACKS,bgmNext,bgmTogglePlay,SFX_START,snd,unlockAudio,playSfx,fx,world,impacts,store};})();</script>');
@@ -74,7 +75,7 @@ const {launch, sleep,sfxFiles} = require('../tools/cdp');
       const media=await evaluate(b.send,`(async()=>{soundTest.playSfx('${name}');const a=soundTest.snd.pool.${name}.find(a=>!a.paused);if(!a)throw new Error('no playing voice: ${name}');await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(new Error('audio decode timeout')),8000);const done=()=>{clearTimeout(timeout);resolve();};if(a.readyState>=2)done();else{a.addEventListener('canplay',done,{once:true});a.addEventListener('error',()=>{clearTimeout(timeout);reject(new Error('audio decode failed'));},{once:true});}});return {ready:a.readyState,duration:a.duration,error:a.error&&a.error.code,volume:a.volume};})()`);
       assert.ok(media.ready>=2&&media.duration>0,JSON.stringify({name,media}));assert.equal(media.error,null);assert.equal(media.volume,['wsc','tongbal'].includes(name)?.2:.25);
     }
-    const onset=await evaluate(b.send,`(async()=>{const ctx=new AudioContext(),buf=await ctx.decodeAudioData(await (await fetch('sfx-hit.mp3')).arrayBuffer()),x=buf.getChannelData(0),step=Math.round(buf.sampleRate*.01),bins=[];for(let i=0;i<x.length;i+=step){let sum=0;for(let j=i;j<Math.min(i+step,x.length);j++)sum+=x[j]*x[j];bins.push(Math.sqrt(sum/step));}const peak=Math.max(...bins),start=bins.findIndex(v=>v>=peak*.3)*.01;await ctx.close();soundTest.playSfx('hit');const a=soundTest.snd.pool.hit[soundTest.snd.idx.hit];await new Promise((resolve,reject)=>{const id=setTimeout(()=>reject(new Error('hit seek timeout')),3000);if(!a.seeking&&a.readyState>=2){clearTimeout(id);resolve();}else a.addEventListener('seeked',()=>{clearTimeout(id);resolve();},{once:true});});return {onset:start,offset:soundTest.SFX_START.hit,current:a.currentTime};})()`);
+    const onset=await evaluate(b.send,`(async()=>{const ctx=new AudioContext(),buf=await ctx.decodeAudioData(await (await fetch('sfx/hit.mp3')).arrayBuffer()),x=buf.getChannelData(0),step=Math.round(buf.sampleRate*.01),bins=[];for(let i=0;i<x.length;i+=step){let sum=0;for(let j=i;j<Math.min(i+step,x.length);j++)sum+=x[j]*x[j];bins.push(Math.sqrt(sum/step));}const peak=Math.max(...bins),start=bins.findIndex(v=>v>=peak*.3)*.01;await ctx.close();soundTest.playSfx('hit');const a=soundTest.snd.pool.hit[soundTest.snd.idx.hit];await new Promise((resolve,reject)=>{const id=setTimeout(()=>reject(new Error('hit seek timeout')),3000);if(!a.seeking&&a.readyState>=2){clearTimeout(id);resolve();}else a.addEventListener('seeked',()=>{clearTimeout(id);resolve();},{once:true});});return {onset:start,offset:soundTest.SFX_START.hit,current:a.currentTime};})()`);
     assert.ok(Math.abs(onset.onset-onset.offset)<.011,JSON.stringify(onset));assert.ok(onset.current>=onset.offset-.01,JSON.stringify(onset));
     await evaluate(b.send,`soundTest.store.fx=1;soundTest.world.charX=120;soundTest.world.dummyX=180;Object.assign(soundTest.world.dummy,{alive:true,hit:0,type:null,y:0});soundTest.fx.tongbal()`);
     await sleep(210);

@@ -1,5 +1,7 @@
 # 기원초 설계 조사
 
+> 이 문서의 `index.html:줄` 표기는 2026-09-30 소스 분할 전 파일 기준이다. 지금은 함수 이름으로 `rg "^function 이름" src/js`를 찾는다.
+
 > 2026-09-30 통합 기준: AGENTS 결정 30(기원권·기원초)·31(10회 순위)을 따른다. workspace02의 623 허용을 함께 반영하여 `6N23`·`623`·`6N3` 모두 기존 초풍 판정으로 연결할 수 있고, 링크는 초풍 성공과 발동 프레임만 본다. 아래 조사·진행 기록의 옛 `no_neutral`/`i13` 설명은 당시 이력이다.
 
 작성: 2026-09-22. 상태: **2026-09-23 구현 완료 · 2026-09-24 연습 모드 추가.** 미결 항목 3-2·3-3·11-4는 사용자가 확정했고, 구현 결과와 달라진 부분은 아래 "구현 결과" 절에 정리했다. 최종 규칙은 AGENTS 결정 30, 코드 위치는 `CODE_MAP.md`의 기원권·기원초 절이 기준이다.
@@ -315,7 +317,7 @@ const GIWON = {
 
 브라우저 스모크: 키보드 양쪽 방향, 터치, 모바일/데스크톱 구간 막대, ko→en→ja 전환.
 
-실행: `node --test tests/dojo.test.cjs tests/board.test.cjs` → `node tests/smoke-chrome.js` → `node tests/smoke-wsc.js` → `node tests/smoke-mist.js`
+실행: `node --test "tests/*.test.cjs"` → `node tests/smoke-chrome.js` → `node tests/smoke-wsc.js` → `node tests/smoke-mist.js`
 
 **DB 변경 없음.** 2026-09-30 전용 순위 보드 `giwon`을 결정 26 전례대로 추가했다(결정 31). 워커 `BOARDS` 변경이라 사이트 푸시 전에 사용자 재배포가 필요하다.
 
@@ -451,8 +453,8 @@ WebGL 미지원·컨텍스트 유실 시의 Canvas 대체 배경(결정 5)에서
 ### 12-1. 적용 값
 
 ```js
-SND.giwon   = 'sfx-giwon.mp3';      // 기술음
-SND.giwonCh = 'sfx-giwon-ch.mp3';   // 카운터 명중음
+SND.giwon   = 'sfx/giwon.mp3';      // 기술음
+SND.giwonCh = 'sfx/giwon-ch.mp3';   // 카운터 명중음
 SFX_START.giwon = 0;    SFX_START.giwonCh = 0;   // 기본: 원본 그대로 재생
 SFX_GAIN.giwonCh = 0.75;
 HIT_CONTACT_MS.giwon = 233;   // 14프레임 × (1000/60)
@@ -471,7 +473,7 @@ HIT_CONTACT_MS.giwon = 233;   // 14프레임 × (1000/60)
 
 | 원본 | 저장소 |
 |---|---|
-| `1프레임 때 재생_기원권 쓸때 발생하는 소리.mp3` | `sfx-giwon.mp3` |
-| `14프레임에 재생_기원권 카운터시 발생하는 소리.mp3` | `sfx-giwon-ch.mp3` |
+| `1프레임 때 재생_기원권 쓸때 발생하는 소리.mp3` | `sfx/giwon.mp3` |
+| `14프레임에 재생_기원권 카운터시 발생하는 소리.mp3` | `sfx/giwon-ch.mp3` |
 
 이번 세션에서는 구현하지 않기로 해서 아직 복사하지 않았다.

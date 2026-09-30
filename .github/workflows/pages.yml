@@ -16,7 +16,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/dojo.test.cjs tests/board.test.cjs
+      - run: node --test "tests/*.test.cjs"
+        env:
+          SKIP_DOC_CHECKS: '1' # doc/path lint runs in smoke.yml; it must not block a site fix
       - run: node tools/build-site.js
       - uses: actions/upload-pages-artifact@v4
         with:
