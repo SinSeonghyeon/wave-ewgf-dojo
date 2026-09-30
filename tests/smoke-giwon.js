@@ -276,7 +276,8 @@ stageAssets(html,out);
       // Read the run right away: on a slow CI runner the 30ms waits below can outlast the link window, which ends the run on its own.
       const same=giwonTest.gp.run===run, again=giwonTest.gp.run&&giwonTest.gp.run.t0;
       const xs=[];
-      for(let i=0;i<14;i++){ await wait(30); const B=giwonTest.stiffAnchor(); if(B) xs.push(B.ax); }
+      // A fixed 420ms window by the clock, not 14 timer ticks: stretched CI timers widened the window into the bag's own crumple motion.
+      for(const until=performance.now()+420; performance.now()<until; ){ await wait(30); const B=giwonTest.stiffAnchor(); if(B) xs.push(B.ax); }
       return {same, t0, again,
               drift: xs.length?Math.max(...xs)-Math.min(...xs):0, charX:giwonTest.world.charX, anchor};
     })()`);giwons++;
