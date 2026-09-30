@@ -217,7 +217,7 @@
   .stat.acc b{color:var(--accent)} .stat.gold b{color:var(--gold)}
   dialog.settings{width:min(560px,calc(100vw - 32px))}
   .set-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
-  .set-head h2{margin:0}
+  .set-head h2{margin:0;min-width:0;overflow-wrap:anywhere} .set-head>.btn{flex:none} /* a long title wraps instead of pushing Close out at 320px */
   .hud-gear{position:absolute;right:12px;top:10px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:auto;
     background:rgba(20,26,35,.75);border:1px solid var(--line2);color:var(--ink2);padding:0;backdrop-filter:blur(2px);transition:color .15s,border-color .15s,transform .2s}
   .hud-gear:hover,.hud-gear:focus-visible{color:var(--accent);border-color:var(--accent);transform:rotate(30deg);outline:none}

@@ -244,8 +244,9 @@ stageAssets(html,out);
       key('KeyS');key('KeyD');key('KeyI');key('KeyI',true);key('KeyD',true);key('KeyS',true);
       const B=giwonTest.stiffState(), span=B?B.tRec-B.t0:0;
       await wait(400); const mid=giwonTest.stiffState()?(performance.now()-B.t0)/span:null;
-      await wait(500); const near=giwonTest.stiffState()?(performance.now()-B.t0)/span:null;
-      await wait(500); return {span, mid, near, gone:giwonTest.stiffState()===null, width:giwonTest.STIFF_BAR.w};
+      // Last fill seen before the gauge clears. Sampled every 20ms: a single fixed wait overshoots the release flash on a slow CI runner.
+      let near=null; for(const until=performance.now()+1500; performance.now()<until && giwonTest.stiffState(); await wait(20)) near=(performance.now()-B.t0)/span;
+      await wait(300); return {span, mid, near, gone:giwonTest.stiffState()===null, width:giwonTest.STIFF_BAR.w};
     })()`);giwons++;
     assert.ok(Math.abs(gauge.span-(K.free-1)*1000/60)<2,'the gauge spans exactly the frames up to the free one: '+JSON.stringify(gauge));
     assert.ok(gauge.mid>0.4&&gauge.mid<0.7,'half filled halfway through the recovery: '+gauge.mid);
