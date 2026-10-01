@@ -1,6 +1,6 @@
 // Exercise the generated Pages artifact over HTTP, including URLs, shared storage and real asset paths.
 const fs=require('node:fs'), path=require('node:path'), http=require('node:http'), assert=require('node:assert/strict');
-const {buildSite,dictionaries}=require('../tools/build-site');
+const {buildSite,dictionaries,contentSources}=require('../tools/build-site');
 const {launch,sleep}=require('../tools/cdp');
 let browser, server;
 (async()=>{
@@ -23,7 +23,7 @@ let browser, server;
   const {send,evalJs,navigate}=browser;
   // External fonts/ads aren't part of URL routing; exercise local resources without third-party requests.
   await send('Network.enable');
-  await send('Network.setBlockedURLs',{urls:['https://pagead2.googlesyndication.com/*','https://fonts.googleapis.com/*','https://fonts.gstatic.com/*']});
+  await send('Network.setBlockedURLs',{urls:['https://pagead2.googlesyndication.com/*','https://fonts.googleapis.com/*','https://fonts.gstatic.com/*','https://www.youtube-nocookie.com/*']});
   await send('Page.addScriptToEvaluateOnNewDocument',{source:`
     Object.defineProperty(navigator,'language',{value:'en-US'});
     Object.defineProperty(navigator,'getGamepads',{value:()=>[]});
@@ -38,6 +38,16 @@ let browser, server;
     assert.equal(await evalJs(`document.querySelector('[data-i18n="about.what.p"]').textContent`),dict[lang]['about.what.p']);
     assert.equal(await evalJs('!!document.querySelector("#stage")'),true);
   }
+  const content=contentSources();
+  for(const lang of ['ko','en','ja'])for(const slug of content.slugs){
+    await navigate(base+'/'+lang+'/'+slug,100);
+    assert.equal(await evalJs('document.querySelector("article h1").textContent'),content.pages[lang].pages.find(p=>p.slug===slug).title);
+    for(const width of [320,1280]){
+      await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
+      assert.equal(await evalJs('document.documentElement.scrollWidth > innerWidth + 1'),false,lang+'/'+slug+' fits '+width+'px');
+    }
+  }
+  await send('Emulation.clearDeviceMetricsOverride');
   await send('Emulation.setScriptExecutionDisabled',{value:false});
   await navigate(base+'/',400);
   assert.equal(await evalJs('document.documentElement.lang'),'en','root detects English');
@@ -91,6 +101,16 @@ let browser, server;
   await evalJs(`document.querySelector('#bgmNext').click()`);await sleep(500);
   assert.ok(new Set(seen.filter(p=>p.startsWith('/bgm/')&&p.endsWith('.mp3'))).size>=2,'current and next BGM use root assets');
   assert.ok(seen.includes('/bgm/playlist.json'));assert.ok(seen.includes('/sfx/wave.mp3'));
+  const guides={free:'guide/',wsc:'guide/wsc/',giwon:'guide/giwon-link/',wave10:'guide/wave-dash/',ewgf20:'guide/ewgf/',combo10:'guide/wave-dash/',rush30:'guide/ewgf/',bd10:'guide/backdash/'};
+  for(const lang of ['ko','en','ja']){
+    await evalJs(`document.querySelector('#langSel button[data-lang="${lang}"]').click()`);
+    for(const [mode,slug] of Object.entries(guides)){
+      await evalJs(`document.querySelector('[data-mode="${mode}"]').click()`);
+      assert.equal(await evalJs('document.querySelector("#dGuide").href'),base+'/'+lang+'/'+slug);
+    }
+    const links=await evalJs('[...document.querySelectorAll("[data-page]")].map(a=>({href:a.href,slug:a.dataset.page}))');
+    for(const link of links)assert.equal(link.href,base+'/'+lang+'/'+link.slug);
+  }
   assert.deepEqual(missing,[]);
   const errors=browser.errors.filter(e=>!e.includes('ERR_BLOCKED_BY_CLIENT'));
   assert.deepEqual(errors,[]);

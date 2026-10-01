@@ -93,6 +93,8 @@
   /* trial bar */
   .trial{margin-top:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
   .trial .d-name{font-family:var(--display);font-size:18px;letter-spacing:.3px}
+  .trial .d-guide{display:inline-grid;place-items:center;width:22px;height:22px;margin-left:-6px;border:1px solid var(--line2);border-radius:50%;color:var(--ink2);font:700 13px/1 var(--body);text-decoration:none;flex:none}
+  .trial .d-guide:hover{color:var(--accent);border-color:var(--accent)}
   .trial .d-desc{color:var(--muted);flex:1 1 200px;font-size:13px}
   .trial .d-prog{font-family:var(--mono);font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
   .btn{background:var(--accent);color:var(--on-accent);border:0;border-radius:4px;padding:8px 16px;font-weight:700;letter-spacing:.3px}

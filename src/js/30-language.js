@@ -15,6 +15,8 @@ function applyStatic(){
   document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = T(el.dataset.i18nHtml); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = T(el.dataset.i18nTitle); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', T(el.dataset.i18nAria)); });
+  // Guide/privacy pages exist per language (tools/build-site.js); follow the language the visitor picked.
+  document.querySelectorAll('[data-page]').forEach(el => { el.setAttribute('href', ASSET_ROOT+store.lang+'/'+el.dataset.page); });
   document.querySelectorAll('#langSel button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang===store.lang?'true':'false'));
   if(!lastSrc) srcBadge.textContent = T(touchOn ? 'src.waitTouch' : 'src.wait'); else setSrc(lastSrc);
 }

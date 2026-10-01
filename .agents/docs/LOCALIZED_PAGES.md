@@ -6,7 +6,7 @@
 - `/ko/`, `/en/`, `/ja/`: 주소의 언어가 브라우저·저장 언어·옛 `?lang=`보다 우선. 검색용 최초 HTML도 해당 언어의 제목·설명·본문·JSON-LD를 제공한다.
 - 언어별 화면에서 언어 버튼을 누르면 `replaceState`로 주소와 화면을 함께 바꾸고 현재 연습은 유지한다. 새로고침은 새 언어 주소를 연다. 루트에서는 언어 버튼이 주소를 바꾸지 않는다.
 - 같은 출처의 기존 localStorage 키를 그대로 사용하므로 닉네임·토큰·기록·업적·설정은 공유된다. 사운드·QR·아이콘은 루트 자원을 함께 쓴다.
-- canonical은 페이지 자신의 주소, hreflang은 ko/en/ja 각각의 주소와 x-default 루트로 통일한다. 사이트맵은 4개 주소를 포함한다.
+- canonical은 페이지 자신의 주소, hreflang은 ko/en/ja 각각의 주소와 x-default 루트로 통일한다. 사이트맵은 빌드가 생성하며 앱 4개 주소와 가이드·개인정보처리방침 글(언어마다 8쪽, 2026-10-01)을 포함한다. 글의 hreflang은 같은 글의 ko/en/ja와 x-default=영어다.
 - 빌드는 공개 자원만 복사하며 Worker·테스트·문서·임시 파일은 배포하지 않는다. Google·네이버 확인 파일과 CNAME은 그대로 복사한다. BGM은 `tracksAt`으로 매번 새 목록을 만든다.
 
 ## 사용자가 한 번 할 일
@@ -15,7 +15,7 @@
 2. 준비된 파일을 커밋하고 main에 푸시한다. `.github/workflows/pages.yml`이 단위 테스트 → 언어별 HTML/BGM 생성 → Pages 배포를 수행한다.
 3. **Actions → Deploy localized dojo**의 build/deploy 성공을 확인한다. 이미 푸시한 뒤 Source를 바꿨다면 같은 화면에서 **Run workflow → main**으로 다시 실행한다.
 4. `/ko/`·`/en/`·`/ja/` 각각을 열어 소개 페이지 없이 연습 화면이 바로 표시되고 주소와 언어가 맞는지 확인한다. 언어 버튼 → 주소 변경 → 새로고침을 확인한다. 기존 닉네임·기록도 확인한다.
-5. Google Search Console에서 `https://mishimaryu.com/sitemap.xml`을 다시 제출하고 `/ko/`·`/en/`·`/ja/` 및 루트를 URL 검사 → 실제 URL 테스트 → 색인 생성 요청한다. 수집 HTML의 제목·본문 언어와 canonical이 각 주소에 맞는지 확인한다.
+5. Google Search Console에서 `https://mishimaryu.com/sitemap.xml`을 다시 제출하고 `/ko/`·`/en/`·`/ja/` 및 루트, 새 가이드(`/ko/guide/` 등)를 URL 검사 → 실제 URL 테스트 → 색인 생성 요청한다. 수집 HTML의 제목·본문 언어와 canonical이 각 주소에 맞는지 확인한다.
 6. 네이버 서치어드바이저에도 같은 사이트맵을 제출하고 언어별 URL 수집을 요청한다. 기존 소유권 확인 파일은 보존된다.
 
 Worker 재배포·DB 마이그레이션은 없다. 검색 결과 반영은 검색엔진의 재수집 이후이며 즉시 변경되거나 특정 순위가 보장되는 것은 아니다.

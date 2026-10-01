@@ -1,13 +1,14 @@
 /* ---------- trials ---------- */
+// guide: the article under /<lang>/ that the ? button next to the mode name opens (src/pages/, built by tools/build-site.js)
 const MODES = {
-  free:   {start:false},
-  wsc:    {start:false},
-  giwon:  {start:false}, // 기원초 연습: free practice plus the recovery timeline (결정 30(giwon))
-  wave10: {start:true, dur:10000},
-  ewgf20: {start:true, target:20},
-  combo10:{start:true, target:10},
-  rush30: {start:true, dur:30000, rush:true}, // 더미 격파: typed dummies, points (see RUSH_PTS)
-  bd10:   {start:true, dur:10000, bd:true},   // 백대시: metres retreated with cancelled backdashes (see BD)
+  free:   {start:false, guide:'guide/'},
+  wsc:    {start:false, guide:'guide/wsc/'},
+  giwon:  {start:false, guide:'guide/giwon-link/'}, // 기원초 연습: free practice plus the recovery timeline (결정 30(giwon))
+  wave10: {start:true, dur:10000, guide:'guide/wave-dash/'},
+  ewgf20: {start:true, target:20, guide:'guide/ewgf/'},
+  combo10:{start:true, target:10, guide:'guide/wave-dash/'},
+  rush30: {start:true, dur:30000, rush:true, guide:'guide/ewgf/'}, // 더미 격파: typed dummies, points (see RUSH_PTS)
+  bd10:   {start:true, dur:10000, bd:true, guide:'guide/backdash/'},   // 백대시: metres retreated with cancelled backdashes (see BD)
 };
 // Local N-try challenges with their own boards (결정 26(wsc-board)·31(giwon-board)): mode → target, where its challenge state lives, and the
 // id prefix of its challenge button / panel / timeline (#wscPanel, #gpPanel …). BOARDS, boardEntry, rankingResult,
@@ -29,7 +30,9 @@ function renderRushHud(){ // rush30 only: score on the stage HUD and in the tria
 }
 function renderMode(){
   const M = MODES[mode];
-  $('dName').textContent=T('mode.'+mode+'.name'); $('dDesc').textContent=T('mode.'+mode+'.desc'); $('dStart').hidden=!M.start;
+  $('dName').textContent=T('mode.'+mode+'.name');
+  const guide=$('dGuide'); guide.dataset.page=M.guide; guide.setAttribute('href', ASSET_ROOT+store.lang+'/'+M.guide);
+  $('dDesc').textContent=T('mode.'+mode+'.desc'); $('dStart').hidden=!M.start;
   $('hudHint').textContent = mode==='giwon' ? T('hint.giwon', GP_FREE, GP_TARGET) : T('hint.'+mode);
   const sb = $('dShare'); sb.textContent = T(M.start?'share.card':'share.session'); sb.hidden = !!M.start && !trial.result;
   if(mode==='wsc') sb.hidden=true;

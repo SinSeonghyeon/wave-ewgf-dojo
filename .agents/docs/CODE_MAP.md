@@ -7,7 +7,7 @@
 - 원본은 `src/`이고 저장소 루트에 `index.html`은 없다(2026-09-30, 결정 4). `tools/assemble.js`가 `src/app.html`의 `@@include <file>` 줄을 파일 내용으로 바꿔 **한 페이지**를 만든다. JS는 모두 IIFE 하나(`(() => { 'use strict'; … })();`) 안에 이어 붙으므로 파일끼리 최상위 이름을 그대로 공유한다. **include 순서가 실행 순서**다: 최상위에서 바로 실행되는 코드는 앞 파일의 `const`만 쓸 수 있다(함수 선언은 호이스팅되지만 함수 안에서 읽는 `const`는 그 함수가 **호출되는** 시점에 초기화돼 있어야 한다).
 - 새 JS 파일을 만들면 `src/app.html`에 include 줄을 넣고 이 파일 지도에 한 줄을 더한다(`tests/docs.test.cjs`가 빠진 파일을 잡는다). 파일 하나는 단독으로 파싱되는 문장들이어야 한다(문장 중간에서 자르지 않는다).
 - `src/assets/room-atlas.webp`는 `@@DATA_URI:assets/room-atlas.webp@@` 자리에 data URI로 들어간다. 배포 결과는 여전히 file://에서도 텍스처가 오염되지 않는 인라인 이미지다.
-- `node tools/build-site.js` → `_site/`(루트 + `ko/`·`en/`·`ja/` 언어별 앱 + 공개 자원 + `bgm/playlist.json`). 로컬 미리보기는 루트 `preview.cmd` 더블클릭(= 빌드 후 `_site/index.html` 열기, `--no-open`은 빌드만)(BGM 목록까지 보려면 `_site/`를 HTTP로 서빙). `_site/`는 커밋하지 않는다.
+- `node tools/build-site.js` → `_site/`(루트 + `ko/`·`en/`·`ja/` 언어별 앱 + 공개 자원 + `bgm/playlist.json`). 로컬 미리보기는 루트 `preview.cmd` 더블클릭(= 빌드 후 `tools/serve.js --open`, `--no-open`은 빌드만). `file://`로 `_site/index.html`을 직접 열면 가이드 같은 폴더 링크(/ko/guide/)가 브라우저 폴더 목록으로 열리므로 서버로 띄운다. 로컬 주소는 워커 `ALLOWED_ORIGINS` 밖이라 순위·한마디는 불러오지 못한다. `_site/`는 커밋하지 않는다.
 - Pages 배포: `.github/workflows/pages.yml`(main 푸시) = 단위 테스트(`SKIP_DOC_CHECKS=1`로 문서 검사만 건너뜀) → `build-site` → artifact. 문서 검사와 브라우저 스모크는 `.github/workflows/smoke.yml`(배포를 막지 않는 별도 워크플로, CI에서는 `tools/cdp.js`가 SwiftShader로 WebGL을 켠다).
 - 효과음은 `sfx/<이름>.mp3`. 2026-09-30 이동 전 주소로 열린 탭을 위해 빌드가 `_site/sfx-<이름>.mp3` 사본도 만든다(`tools/build-site.js`, 2026-10-31 이후 제거).
 - 언어별 페이지 규칙(canonical·hreflang·`PAGE_LANG`·`ASSET_ROOT`)은 [LOCALIZED_PAGES.md](LOCALIZED_PAGES.md)와 아래 "언어별 페이지" 절.
@@ -58,6 +58,8 @@
 | `src/js/35-dojo3d.js` | WebGL 3D 도장·Canvas 대체, `frame()` 렌더 루프 |
 | `src/js/36-boot.js` | 부트 순서 |
 | `src/assets/room-atlas.webp` | 목재/회벽 재질 아틀라스(자체 생성) |
+| `src/pages/ko.js` · `en.js` · `ja.js` | 가이드·개인정보처리방침 원고(CommonJS, 앱에 포함되지 않음). 세 파일은 같은 slug 순서와 `ui` 키. 본문 링크 `href="@<slug>"`는 같은 언어 페이지, `@`만 쓰면 연습 화면 |
+| `src/pages/page.css` | 가이드·개인정보 페이지 스타일. 색 토큰은 빌드가 `src/style.css`의 `:root`를 복사해 붙인다 |
 
 테스트·도구:
 
@@ -68,8 +70,9 @@
 | `tests/smoke-*.js` | 헤드리스 Chrome/Edge 브라우저 검사. 조립한 페이지를 `.sandbox/`나 임시 폴더에 쓰고 `stageAssets()`로 자원을 복사 |
 | `tests/fake-d1.js` | node:sqlite 인메모리 가짜 D1 |
 | `tools/assemble.js` | `src/` → 한 페이지. `sourceFileContaining()`은 생성 상수를 고치는 도구가 대상 파일을 찾는 데 쓴다 |
-| `tools/build-site.js` | Pages 산출물 생성, 언어별 정적 번역 |
+| `tools/build-site.js` | Pages 산출물 생성, 언어별 정적 번역, 글 주소·필수 원고·내부 링크 검증(`validateContent`), 가이드·개인정보 페이지(`contentPage`)와 `sitemap.xml` 생성 |
 | `tools/cdp.js` | 헤드리스 브라우저 공용 모듈(`launch`·`stageAssets`·`sfxFiles`) |
+| `tools/serve.js` | `_site/` 로컬 미리보기 서버(의존성 없음). 폴더 주소 → `index.html`, 쿼리를 보존하는 동일 출처 301, 파일 읽기 실패 처리. `createServer()`는 HTTP 회귀 테스트에서도 사용 |
 | `tools/update-bgm.js` · `measure-bgm.js` | `src/js/05-sound.js`의 `BGM_TRACKS`·`BGM_GAIN` 재생성 |
 | `tools/make-og.js` | `og.png` 재생성 |
 | `tools/board-admin.js` · `admin.cmd` | 순위·한마디 관리자 도구 |
@@ -90,7 +93,7 @@
 | 소리 | `05-sound` | `sound` `smoke-sound` | 결정 8 |
 | 옷장·업적·보상 | `01-wardrobe-items` `28-rewards` `33-fighter` | `wardrobe-rewards` | 결정 15 |
 | 공지·후원 | `02-notices` `25-notices-ui` `27-donate` | `i18n-pages` `modals` | 결정 20·21 |
-| 언어·정적 페이지 | `src/i18n/*` `04-i18n` `30-language` `tools/build-site.js` | `i18n-pages` `smoke-locales` | `LOCALIZED_PAGES.md`, 결정 4·7 |
+| 언어·정적 페이지 | `src/i18n/*` `04-i18n` `30-language` `tools/build-site.js` `src/pages/*` | `i18n-pages` `smoke-locales` | `LOCALIZED_PAGES.md`, 결정 4·7 |
 | 화면·3D 도장 | `src/style.css` `31-stage` `33-fighter` `35-dojo3d` | `stage` `smoke-design` | 결정 5 |
 | 공유 카드·og.png | `22-share-model` `24-share-dialog` `34-share-draw` `tools/make-og.js` | `i18n-pages` | — |
 
@@ -133,10 +136,12 @@
 원본 앱은 `src/`를 조립한 한 페이지이며 외부 라이브러리는 없다. `tools/build-site.js`가 I18N 사전의 정적 문자열로 최초 HTML을 번역해 `_site/ko/`·`en/`·`ja/`에 앱을 생성한다. 루트는 조립한 페이지 그대로다. 세 언어의 인라인 앱 스크립트는 원본과 동일하며 `data-page-lang`으로 고정 언어를 지정한다. 제목·설명·OG·JSON-LD·본문·접근성 문구를 언어에 맞추고 자원 경로는 루트 공유 자원으로 보정한다. 상대 `#` 링크는 그대로 유지한다.
 루트 및 생성 페이지에 기존 승인 AdSense 연결 스크립트를 유지한다.
 
-배포는 `.github/workflows/pages.yml`(main 푸시/수동 실행)의 단위 테스트 → Node 생성 → Pages artifact 게시다. 기존 main/root Jekyll 배포에서 사용자가 Pages Source를 GitHub Actions로 전환해야 한다. `_site/`는 빌드 때 교체하며 커밋하지 않는다. 공개 자원 화이트리스트로 CNAME·robots·sitemap·이미지·효과음·검색 소유권 파일을 복사하고 BGM MP3/playlist.json을 생성한다.
+가이드·개인정보처리방침(2026-10-01, AdSense 심사의 "가치 없는 콘텐츠" 대응): `src/pages/{ko,en,ja}.js`의 원고를 `contentPage`가 `_site/<언어>/<slug>index.html` 정적 글로 만든다. 앱 스크립트는 없고 AdSense 연결 스크립트·JSON-LD(가이드는 Article)·Google Fonts만 쓴다. canonical은 각 주소, hreflang은 같은 slug의 ko/en/ja + x-default=영어. `sitemap.xml`은 루트 파일이 아니라 빌드가 앱 4 URL + 글 전체로 생성한다(`sitemap()`). 앱 푸터·소개 블록의 링크는 `data-page="<slug>"`로 표시하고, 빌드는 언어별 앱에서 그 언어 주소로, `applyStatic`은 현재 언어 주소로 바꾼다. 글을 크게 고치면 `CONTENT_UPDATED`를 올린다. 모드 이름 옆 `?` 버튼(`#dGuide`, 새 탭)은 `MODES[mode].guide`의 글을 연다(`renderMode`). 영상은 글 항목의 `video: {id, title}`(선택 `videoNote`)로 넣으며, 빌드가 메타 줄 아래에 `youtube-nocookie.com/embed/<id>` iframe(lazy)과 YouTube 링크를 그린다. id는 11자 검사. 다른 iframe은 테스트가 막는다.
+
+배포는 `.github/workflows/pages.yml`(main 푸시/수동 실행)의 단위 테스트 → Node 생성 → Pages artifact 게시다. 기존 main/root Jekyll 배포에서 사용자가 Pages Source를 GitHub Actions로 전환해야 한다. `_site/`는 빌드 때 교체하며 커밋하지 않는다. 공개 자원 화이트리스트로 CNAME·robots·이미지·효과음·검색 소유권 파일을 복사하고 BGM MP3/playlist.json을 생성한다.
 Worker·DB·도메인은 변경하지 않는다. 절차는 [LOCALIZED_PAGES.md](LOCALIZED_PAGES.md).
 
-언어별 앱의 canonical은 각 주소. 루트·ko/en/ja의 hreflang 4종(ko/en/ja/x-default)은 사이트맵 4 URL과 동일하다. 루트는 자동 언어 및 저장값 유지, `PAGE_LANG`이 있으면 저장 언어보다 우선하고 `ASSET_ROOT='../'`를 쓴다. 옛 `?lang=`은 루트에서 한 번 적용 후 삭제하며 다른 쿼리와 해시는 유지한다. 언어별 주소에서는 query보다 주소 언어가 우선이다.
+언어별 앱의 canonical은 각 주소. 루트·ko/en/ja의 hreflang 4종(ko/en/ja/x-default)은 사이트맵의 앱 4 URL과 동일하다. 루트는 자동 언어 및 저장값 유지, `PAGE_LANG`이 있으면 저장 언어보다 우선하고 `ASSET_ROOT='../'`를 쓴다. 옛 `?lang=`은 루트에서 한 번 적용 후 삭제하며 다른 쿼리와 해시는 유지한다. 언어별 주소에서는 query보다 주소 언어가 우선이다.
 `setLang`은 언어별 페이지에서 replaceState로 ../<언어>/ 주소를 바꿔 세션·모달·입력을 유지하고 제목/description/canonical/OG를 갱신한다. 저장소 키는 기존 것 그대로다. 언어 링크는 `/ko/`·`/en/`·`/ja/`의 앱으로 직접 이동한다.
 
 `tests/smoke-locales.js`는 생성 artifact의 JavaScript 없는 초기 본문, 영어 브라우저/저장 언어 충돌, 언어 전환 후 세션 보존·새로고침·공유 저장소·앵커·QR/음악/효과음 경로를 로컬 HTTP에서 검증한다. 백엔드 비활성, 외부 폰트/광고 로딩은 차단한다. 기존 전체 스모크는 별도로 실제 로컬 Worker와 연동한다.

@@ -5,7 +5,7 @@
 
 - 바로 쓰기: https://mishimaryu.com/ (예전 주소 https://sinseonghyeon.github.io/wave-ewgf-dojo/ 는 여기로 넘어온다)
 - 라이선스: **오픈소스가 아닙니다.** © 2026 신성현, All rights reserved. 사이트 이용과 소스 열람은 자유지만 복제·수정·재배포·재호스팅은 금지합니다. 자세한 내용은 [LICENSE](LICENSE).
-- 로컬 실행: 루트의 `preview.cmd`를 더블클릭하면 빌드한 뒤 브라우저로 연다(Node.js 필요). 직접 하려면 `node tools/build-site.js` 후 `_site/index.html`을 연다. `src/`를 고쳤으면 다시 실행한다. 키보드와 게임패드 모두 인식.
+- 로컬 실행: 루트의 `preview.cmd`를 더블클릭하면 빌드한 뒤 브라우저로 연다(Node.js 필요). 직접 하려면 `node tools/build-site.js` 후 `node tools/serve.js`로 띄운 http://localhost:8080/ 을 연다(`_site/index.html`을 파일로 열면 가이드 링크가 폴더 목록으로 열린다). `src/`를 고쳤으면 다시 실행한다. 키보드와 게임패드 모두 인식.
 - 저장소: https://github.com/SinSeonghyeon/wave-ewgf-dojo
 - 문의: tlstjdgus3@gmail.com
 

@@ -112,6 +112,7 @@
       </div>
       <div class="trial">
         <div class="d-name" id="dName">자유 연습</div>
+        <a class="d-guide" id="dGuide" href="ko/guide/" data-page="guide/" target="_blank" rel="noopener" data-i18n-aria="mode.guideAria" data-i18n-title="mode.guideAria" aria-label="이 모드의 입력 가이드 보기 (새 탭)" title="이 모드의 입력 가이드 보기 (새 탭)">?</a>
         <div class="d-desc" id="dDesc"></div>
         <div class="d-prog" id="dProg"></div>
         <button class="btn ghost" id="dShare" hidden>세션 카드</button>
@@ -342,9 +343,10 @@
         <dt data-i18n="about.q1">초풍이 자꾸 풍신권으로 나가요.</dt><dd data-i18n="about.a1">버튼 2가 3(d/f)보다 늦은 경우입니다. 결과에 표시되는 ms 값을 보면서, 3을 다 넣고 누르는 게 아니라 2(d)에서 3(d/f)으로 굴리는 순간에 버튼 2를 누른다고 생각하세요.</dd>
         <dt data-i18n="about.q2">웨이브가 자꾸 끊겨요.</dt><dd data-i18n="about.a2">대부분 3 뒤의 캔슬 6이 빠지거나, 캔슬 6을 다음 대시의 시작 6으로 겸용해서 N이 빠진 경우입니다. 결과 창에 "캔슬 6 누락", "시작 6 누락"으로 원인이 표시됩니다.</dd>
         <dt data-i18n="about.q3">스틱(레버)이나 휴대폰도 되나요?</dt><dd data-i18n="about.a3">브라우저가 게임패드로 인식하는 컨트롤러면 설정에서 방향과 버튼을 모두 다시 지정할 수 있습니다. 키보드와 레버리스는 확인했고, 레버는 기기에 따라 다를 수 있으니 안 되면 문의해 주세요. 휴대폰은 터치 컨트롤이 뜨지만 정밀도는 낮습니다.</dd>
-        <dt data-i18n="about.q4">기록은 어디에 저장되나요?</dt><dd data-i18n="about.a4">설정과 기록은 이 브라우저에만 저장됩니다. 순위에 올린 점수와 닉네임만 서버에 보관합니다.</dd>
-        <dt data-i18n="about.q5">무료인가요?</dt><dd data-i18n="about.a5">전부 무료이고 광고가 없습니다. 후원으로 운영합니다.</dd>
+        <dt data-i18n="about.q4">기록은 어디에 저장되나요?</dt><dd data-i18n="about.a4">설정과 연습 기록은 이 브라우저에 저장됩니다. 서버 기능을 이용하면 닉네임·인증 정보와 순위·한마디·투표 정보가 전송됩니다. 자세한 내용은 아래 개인정보처리방침에 있습니다.</dd>
+        <dt data-i18n="about.q5">무료인가요?</dt><dd data-i18n="about.a5">전부 무료입니다. 후원으로 운영하며, 운영비를 위해 광고가 표시될 수 있습니다.</dd>
       </dl>
+      <p class="note"><span data-i18n="about.guides">자세한 입력 가이드</span>: <a href="ko/guide/ewgf/" data-page="guide/ewgf/" data-i18n="about.g.ewgf">초풍</a> · <a href="ko/guide/wave-dash/" data-page="guide/wave-dash/" data-i18n="about.g.wave">웨이브 대시</a> · <a href="ko/guide/wsc/" data-page="guide/wsc/" data-i18n="about.g.wsc">웨캔기어</a> · <a href="ko/guide/backdash/" data-page="guide/backdash/" data-i18n="about.g.backdash">백대시</a> · <a href="ko/guide/giwon-link/" data-page="guide/giwon-link/" data-i18n="about.g.giwon">기원초</a> · <a href="ko/guide/frames/" data-page="guide/frames/" data-i18n="about.g.frames">프레임과 판정</a></p>
       <p class="note"><span data-i18n="about.links">언어별 연습 화면</span>: <a href="ko/" hreflang="ko">한국어</a> · <a href="en/" hreflang="en">English</a> · <a href="ja/" hreflang="ja">日本語</a></p>
     </div>
   </details>
@@ -352,7 +354,7 @@
   <footer>
     <p data-i18n="footer">표기: 6 = 앞(f), N = 중립, 2 = 아래(d), 3 = 아래앞(d/f), 버튼 2 = 오른손 펀치(RP). 웨이브 = 6N23 6 N 6N23 6 N … (3 뒤의 6이 후딜레이 캔슬). 1프레임 = 16.67ms 기준. 비공식 팬 제작 연습 도구입니다.</p>
     <p class="copy" data-i18n="footer.copy">© 2026 신성현 (Seonghyeon Shin). All rights reserved. 소스·그림·소리의 복제, 수정, 재배포를 금지합니다.</p>
-    <p class="copy"><span data-i18n="footer.contact">문의</span>: <a href="mailto:tlstjdgus3@gmail.com">tlstjdgus3@gmail.com</a></p>
+    <p class="copy"><span data-i18n="footer.contact">문의</span>: <a href="mailto:tlstjdgus3@gmail.com">tlstjdgus3@gmail.com</a> · <a href="ko/guide/" data-page="guide/" data-i18n="footer.guides">가이드</a> · <a href="ko/privacy/" data-page="privacy/" data-i18n="footer.privacy">개인정보처리방침</a></p>
     <p class="donate" id="donate" hidden><span class="donate-copy"><span data-i18n="donate.pitch">미시마 도장이 연습에 도움이 됐다면 1,000원부터 다음 업데이트를 응원해 주세요. 후원금은 도메인·서버 유지와 기능 개발에 사용됩니다.</span><small data-i18n="donate.joke">그리고 굶고 있는 철찌에게 밥 한 끼가 생깁니다.</small></span><button class="btn ghost donate-btn" id="donateBtn" type="button" data-i18n="donate.btn">🍚 후원하기 🍚</button></p>
   </footer>
 </div>

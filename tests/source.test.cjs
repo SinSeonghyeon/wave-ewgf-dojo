@@ -53,5 +53,5 @@ test('batch files stay CRLF and preview.cmd keeps cmd redirections', () => {
   const bat = fs.readFileSync(path.join(root, 'preview.cmd'), 'utf8');
   assert.doesNotMatch(bat, /\/dev\/null/, 'Windows redirects to nul, not /dev/null');
   assert.match(bat, /node tools\\build-site\.js/);
-  assert.match(bat, /_site\\index\.html/);
+  assert.match(bat, /node tools\\serve\.js --open/, 'preview serves _site/ over HTTP so folder links open index.html like GitHub Pages');
 });
