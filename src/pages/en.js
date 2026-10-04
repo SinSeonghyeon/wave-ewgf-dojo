@@ -237,12 +237,12 @@ module.exports = {
 <h2>Cancel timing</h2>
 <p>A 1 cancel that is too early or too late both cost you.</p>
 <ul>
-<li><strong>Too early</strong>: you cut the backdash before it travels, so it covers less ground. Very early and the backdash does not come out at all.</li>
-<li><strong>About right</strong>: cancelling just after the backdash reaches its full distance gives the best return per set.</li>
+<li><strong>Too early</strong>: cutting before the backdash has travelled far covers less ground. Even an early cancel keeps the distance already travelled.</li>
+<li><strong>About right</strong>: cancel around 11–13f and connect the next backdash quickly. The best cancel depends on the time your hand takes from pressing 1 to the next backdash.</li>
 <li><strong>Too late</strong>: the next backdash waits for the recovery to end, wasting time.</li>
 </ul>
 <p>Mishima Dojo shows how many frames after the backdash your 1 arrived, how long you held 1 and how long the 4 N 4 took, in the “last backdash” bar.</p>
-<p class="note">The site\'s backdash distance, best cancel frame and recovery length are approximations based on feel, not measurements. Use them to see whether your sets are getting faster, not as exact game data.</p>
+<p class="note">Distance follows a community-measured Tekken 8 curve averaged over five Mishima-style characters; a full backdash travels 0.638 m. Characters and versions may differ, and the uncancelled 26f recovery still needs further in-game verification. Use the Backdash 10s timeline and set evaluation to compare cancel and hand-input times.</p>
 
 <h2>Common mistakes</h2>
 <h3>Neutral after 1</h3>
@@ -256,9 +256,9 @@ module.exports = {
 <p>Mishima Dojo grades each set by <strong>set speed (m/s)</strong>: the distance of that backdash divided by the time until the next one comes out.</p>
 <div class="table"><table>
 <tr><th>Grade</th><th>Set speed</th></tr>
-<tr><td>Very fast</td><td>3.5 m/s or more</td></tr>
-<tr><td>Fast</td><td>3.0 m/s or more</td></tr>
-<tr><td>OK</td><td>2.2 m/s or more</td></tr>
+<tr><td>Very fast</td><td>1.78 m/s or more</td></tr>
+<tr><td>Fast</td><td>1.55 m/s or more</td></tr>
+<tr><td>OK</td><td>1.23 m/s or more</td></tr>
 <tr><td>Slow</td><td>below that</td></tr>
 </table></div>
 

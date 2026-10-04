@@ -164,6 +164,23 @@
         <details><summary data-i18n="gp.recent"></summary><table><thead><tr><th data-i18n="wsc.result"></th><th data-i18n="gp.fireCol"></th><th data-i18n="gp.nCol"></th><th data-i18n="wsc.reason"></th></tr></thead><tbody id="gpRows"></tbody></table></details>
         <details><summary data-i18n="gp.help"></summary><p class="note" id="gpNote"></p></details>
       </section>
+      <section class="wsc-panel wsc-timeline" id="bdpTimeline" hidden aria-labelledby="bdpCommand">
+        <div class="wsc-command" id="bdpCommand"></div>
+        <div class="wsc-live" id="bdpLive" role="timer" aria-live="off"></div>
+        <div class="wsc-scroll" tabindex="0" role="region" data-i18n-aria="bdp.timeline" aria-label="백대시 프레임 타임라인"><div class="wsc-axis" id="bdpAxis"></div></div>
+        <p class="note" id="bdpLegend"></p>
+        <p class="note" id="bdpGuide"></p>
+      </section>
+      <section class="wsc-panel" id="bdpPanel" hidden aria-labelledby="bdpTitle">
+        <h2 id="bdpTitle" data-i18n="bdp.evaluation"></h2>
+        <div class="wsc-result" id="bdpResult" role="status" aria-live="polite"></div>
+        <div class="wsc-ab" id="bdpAB"></div>
+        <p class="note" id="bdpDetail"></p>
+        <h3 class="note" data-i18n="stats.aria"></h3>
+        <div class="wsc-stats" id="bdpStats"></div>
+        <details><summary data-i18n="bdp.recent"></summary><table><thead><tr><th data-i18n="bdp.gradeCol"></th><th data-i18n="bdp.cutCol"></th><th data-i18n="bdp.handCol"></th><th data-i18n="bdp.speedCol"></th></tr></thead><tbody id="bdpRows"></tbody></table></details>
+        <details><summary data-i18n="bdp.help"></summary><p class="note" id="bdpNote"></p></details>
+      </section>
       <div class="coach-box">
         <h3>COACH</h3>
         <div class="coach-msg" id="coachMsg"></div>
@@ -378,6 +395,7 @@
 @@include js/10-wsc.js
 @@include js/11-crouch-dash.js
 @@include js/12-backdash.js
+@@include js/12-bd-practice.js
 @@include js/13-button.js
 @@include js/14-giwon.js
 @@include js/15-giwon-practice.js

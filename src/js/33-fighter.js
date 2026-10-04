@@ -103,7 +103,7 @@ function poseAt(now){
     case 'jab': { if(t<200){ const k = Math.sin(Math.min(1,t/200)*Math.PI); return {crouch:0.5, lean:12, armR:90*k+10, armL:-20, spread:0.4, sweat:true}; } break; }
     case 'stumble': { if(t<420){ const k=Math.sin(t/420*Math.PI); return {crouch:0.15*k, lean:-18*k, armR:120*k, armL:100*k, spread:0.8, sweat:true}; } break; }
     case 'dash': { if(t<220){ const k=t/220; return {crouch:0.2*(1-k), lean:4+18*(1-k), spread:0.6, step:0.9-1.4*k, armR:10, armL:-45}; } break; }
-    case 'backdash': { if(t<240){ const k=t/240; return {crouch:0.15, lean:-14*(1-k), spread:0.7, step:-0.9+1.2*k, armR:20, armL:-55}; }
+    case 'backdash': { const T_BD = BD_LAST*FRAME; if(t<T_BD){ const k=t/T_BD; return {crouch:0.15, lean:-14*(1-k), spread:0.7, step:-0.9+1.2*k, armR:20, armL:-55}; }
       if(now<bdRec.until) return {crouch:0.12, lean:-5, spread:0.7, step:0.3, armR:22, armL:-56, sweat:true}; // recovery: not back to idle yet (a b,N,b now does nothing; a crouch ends it)
       break; }
     case 'bdCrouch': { if(t<110){ const k=t/110; return {crouch:0.6-0.2*k, lean:-6, spread:0.75, step:-0.2, armR:15, armL:-50}; } break; } // 1(↙) cancel: a short sit where the backdash stopped

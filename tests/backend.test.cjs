@@ -288,7 +288,7 @@ test('app and worker agree on the leaderboard contract (boards, windows, detail 
   const entries={wave10:run('wave10',()=>{dash(a,4100);a.time(14100);}),ewgf20:run('ewgf20',()=>{dash(a,4100);a.onButton(2,4160);}),
     combo10:run('combo10',()=>{dash(a,4100);for(const t of [4200,4400]){a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}a.onButton(2,4500);}),
     rush30:run('rush30',()=>{dash(a,4100);a.world.dummyX=a.world.charX+60;a.world.dummy.type='low';dash(a,4300);a.onButton(4,4400);a.time(34100);a.trialTick(34100);}),
-    bd10:run('bd10',()=>{const o=bdOut(a,4100);a.onDir('db',o+fr(a.BD.MOVE_F));a.time(14100);})};
+    bd10:run('bd10',()=>{const o=bdOut(a,4100);a.onDir('db',o+fr(a.bdBestH(6)));a.time(14100);})};
   for(const [m,e] of Object.entries(entries)){
     const v=w.validate({...e,nick:'smoke'});assert.equal(v.error,undefined,m+': '+JSON.stringify(e));
     assert.deepEqual(Object.keys(v.value.detail),Object.keys(e.detail),m+' detail fields');assert.equal(v.value.win,15);

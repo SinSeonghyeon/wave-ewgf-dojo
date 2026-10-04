@@ -20,7 +20,7 @@
 - 남은 작업: `.agents/docs/PLAN.md`(열린 항목만). 끝낸 작업은 거기서 지우고 `.agents/docs/log/YYYY-MM.md`에 한 줄. 2026-09까지의 전체 이력은 `archive/PLAN-2026-09.md`(검색할 때만).
 - 코드를 고칠 때: `.agents/docs/CODE_MAP.md`의 **앞부분(파일 지도·기능별 색인·입력 처리 순서)만 먼저** 읽고, 나머지 "서브시스템 상세"는 필요한 절만 `rg`로 찾아 읽는다.
 - 설계 결정 전문: `.agents/docs/DECISIONS.md`. 아래 요약과 다르면 전문이 정본이다.
-- 기능 브리핑(그 기능을 건드릴 때만): `GIWONCHO.md`(기원권·기원초) · `MIST_EWGF.md`(무족초) · `WSC_PRACTICE.md`(웨캔기어) · `LOCALIZED_PAGES.md`(언어별 페이지·배포) · `PROMO.md`(홍보 초안). 지난 릴리스·통합·디자인 기록은 `archive/`, 코드 리뷰는 `reviews/`.
+- 기능 브리핑(그 기능을 건드릴 때만): `GIWONCHO.md`(기원권·기원초) · `MIST_EWGF.md`(무족초) · `WSC_PRACTICE.md`(웨캔기어) · `BACKDASH.md`(백대시 실측·KBD 공식) · `LOCALIZED_PAGES.md`(언어별 페이지·배포) · `PROMO.md`(홍보 초안). 지난 릴리스·통합·디자인 기록은 `archive/`, 코드 리뷰는 `reviews/`.
 - 여러 기능 브랜치를 한 번에 합류할 때: `.agents/docs/MERGE_PROCESS.md`. 각 기능 브랜치는 `.agents/handoffs/<브랜치명>.md`를 하나씩 커밋하고, 통합 담당자는 내용을 반영한 뒤 `main` 합류 직전에 `.agents/handoffs/`의 임시 문서를 모두 삭제한다.
 - 사람용 소개·조작법: 루트 `README.md`. 에이전트 규칙은 넣지 않는다.
 - 긴 파일은 `rg`로 위치를 좁힌 뒤 필요한 구간만 읽는다.
@@ -45,7 +45,7 @@
 14. result-tiers — 측정 결과 SS~D 등급(순위 상위 %, 10명 미만은 10명으로 계산). 웨이브 상위 띠는 워커 `cut10`.
 15. wardrobe — 옷장 6슬롯·오마주 세트(캐릭터 이름 금지)·업적 25 = 아이템 25·출석 선물·보상 상자. 진행은 이 브라우저에만 저장, 판정·통계는 읽기만.
 16. shadow-ban — 순위 조작은 운영자가 섀도 밴(`tools/board-admin.js`). 앱 코드는 관여하지 않는다.
-17. backdash — 한국식 백대시 `414 N …`는 `cd`와 독립된 `bd` 머신(자유 연습·bd10). `BD` 상수는 실측이 아닌 가정값, 등급 이름에 Perfect/Great/Good 금지.
+17. backdash — 한국식 백대시 `414 N …`는 `cd`와 독립된 `bd` 머신(자유 연습·bd10). `BD`는 실측 S자 곡선(실게임 m)과 공식 속도 = 거리×60÷(캔슬+손)(2026-10-02), bd10에 프레임 타임라인·권장 캔슬 11~13f(2026-10-04). 등급 이름에 Perfect/Great/Good 금지.
 18. votes — 한마디 👍/👎: 닉네임+토큰당 글 하나에 1표, `POST /vote`는 멱등 설정, 누가 표했는지 돌려주는 API 없음.
 19. cumulative-ranking — 순위 초기화 없음(누적, 닉네임·보드당 최고 1건). 되살리려면 워커 `seasonKey()` 한 곳.
 20. notices — 정적 `NOTICES`(`src/js/02-notices.js`)를 최신순 누적, NEW 배지, 기존 방문자에게 새 공지 1회 자동 표시(측정·대화상자 중단 금지).

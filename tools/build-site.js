@@ -63,7 +63,7 @@ function localizedPage(source, lang){
 
 // ---------- guide and privacy pages (src/pages/{ko,en,ja}.js, 2026-10-01 decision 4(single-page)) ----------
 // Static articles next to the app, written for readers and search engines. The app stays one page; these carry no app script.
-const CONTENT_UPDATED='2026-10-01'; // bump when the copy in src/pages/ changes materially
+const CONTENT_UPDATED='2026-10-04'; // bump when the copy in src/pages/ changes materially
 const LANG_NAMES={ko:'한국어',en:'English',ja:'日本語'};
 function contentSources(){
   const out={};

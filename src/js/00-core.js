@@ -7,15 +7,30 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const WALK_F = 90, WALK_B = 70, TAP_MS = 250; // walk speed px/s (forward/back), f,N,f double-tap dash window. Visual only; judging never reads these.
 const FF_MS = 250;      // judging: f,f+2 (통발) accepts the 2 up to this long after the second f (state 1/2 with cd.dashT===cd.tF)
 const RUSH_PTS = {kill:10, wgf:5, dashMax:3}; // 더미 격파: correct hit 10, non-just WGF on the high dummy 5, each crouch dash min(chain,3)
-// 백대시 모델 (2026-09-13). 실측이 아니라 사용자 체감·참고 자료 기반 가정값 — 숫자만 고치면 판정·거리·등급·문구·테스트가 함께 따라온다 (결정 17(backdash)).
+// 백대시 모델 (2026-10-02 실측 반영, 결정 17(backdash)). 커뮤니티 실측(철권 8 시트 + 영상 원자료 교차 확인) 기반이고 근거·공식은 .agents/docs/BACKDASH.md.
+// 거리는 실게임 연습 모드의 "상대와의 거리"와 같은 단위(m). 숫자만 고치면 판정·거리·등급·문구·연출·테스트가 함께 따라온다.
 const BD = {
-  MIN_F: 6,        // 두 번째 4를 이 프레임 미만으로 잡고 1(↙)을 누르면 백대시가 나가기 전에 앉은 것 → 백대시 없음, 거리 0
-  MOVE_F: 10,      // 이동 구간: 이 프레임에 최대 거리 1.0 m 도달 = 최적 캔슬 시점. 거리 = min(h, MOVE_F)/MOVE_F
-  RECOVER_F: 26,   // 백대시 경직(출력 기준, 사용자 체감 2026-09-13). 그동안 뒤로만 못 간다(백대시·뒤 걷기 없음, 나머지는 전부 가능). 앉기·횡(1/2/3/7/8/9)이 경직을 지운다 — 모든 모드의 연출과 bd 판정이 같은 bdRec을 본다
+  // D(h): 백대시가 나온 뒤 h프레임째(1부터)에 1(↙)로 끊었을 때 물러난 거리(m). 미시마 5인 평균 S자 곡선 — 처음엔 느리고 6~11f가 가장 빠르며 15~16f에 멈춘다.
+  // 마지막 값이 풀 백대시(BD_FULL)이고 그 뒤 프레임은 더 움직이지 않는다.
+  CURVE: [0.008,0.030,0.064,0.108,0.162,0.222,0.284,0.350,0.412,0.464,0.518,0.562,0.594,0.616,0.630,0.636,0.638],
+  RECOVER_F: 26,   // 캔슬 없는 백대시의 경직(출력 기준). 실측 총 길이 약 25f(영상)와 맞는다. 그동안 뒤로만 못 간다(백대시·뒤 걷기 없음, 나머지는 전부 가능). 앉기·횡(1/2/3/7/8/9)이 경직을 지운다 — 모든 모드의 연출과 bd 판정이 같은 bdRec을 본다
   LINK_MAX_F: 60,  // 1이 이보다 늦으면 세트가 아니라 그냥 앉기 → 연속 종료 (4 탭·N 자체는 TAP_MS 안이어야 4N4로 묶인다)
-  TIERS: [{k:'top', mps:3.5}, {k:'fast', mps:3.0}, {k:'ok', mps:2.2}], // 세트 속도(m/s) 하한: 이 백대시의 거리 ÷ (이 출력 → 다음 출력). 미만이면 'slow'
+  CANCEL_A: 11, CANCEL_B: 13, // 1(↙)을 누른 순간 보여 주는 권장 캔슬 창. 손 입력 3~12f의 공식 최적(bdBestH)이 모두 이 안에 있다
+  DB_F: 2,         // 손 입력 중 1(↙) 홀드 목표(1을 누른 뒤 4로 굴릴 때까지). 이론 최소 1f
+  TAP_F: 4,        // 손 입력 중 4 N 4 목표(첫 4 → 두 번째 4 = 백대시 출력). 이론 최소 2f
+  HAND_F: 6,       // 손 입력 c 목표 = DB_F + TAP_F (1을 누른 뒤 다음 백대시가 나올 때까지). 이론 최소 3f
+  TIERS: [{k:'top', c:7}, {k:'fast', c:10}, {k:'ok', c:16}], // 세트 등급: 손 입력 c프레임으로 최적 캔슬했을 때의 속도 이상이면 그 등급(하한 m/s는 BD_TIER_MPS). 미만이면 'slow'
+  PX: 56,          // 연출: 풀 백대시가 스테이지에서 움직이는 픽셀. 모양은 CURVE 그대로다
 };
-// 기원권·기원초 모델 (2026-09-23). 결정 17(backdash)의 BD와 같은 취급 — 실게임 미확인 **가정값**이고 문구·테스트가 이 상수를 읽으므로 숫자만 고치면 된다.
+const BD_LAST = BD.CURVE.length;                                              // 이 프레임 뒤로는 백대시가 더 움직이지 않는다
+const BD_FULL = BD.CURVE[BD_LAST-1];                                          // 끝까지 나간(캔슬 없는) 백대시의 거리
+const bdDist = h => h<1 ? 0 : BD.CURVE[Math.min(h, BD_LAST)-1];               // metres earned by a backdash cancelled after h frames
+const bdMps = (dist, period) => Math.round(dist*6000/period)/100;             // set speed in m/s, 2 decimals (period in frames)
+// 공식: 세트 속도 = D(h) × 60 ÷ (h + c). 손 입력 c가 정해지면 이 값을 가장 크게 만드는 캔슬 프레임이 최적이다.
+const bdBestH = c => { let best = 1; for(let h=2; h<=BD_LAST; h++) if(bdDist(h)*(best+c) > bdDist(best)*(h+c)) best = h; return best; };
+const bdTopMps = c => { const h = bdBestH(c); return bdMps(bdDist(h), h+c); }; // the fastest set a c-frame hand can make
+const BD_TIER_MPS = BD.TIERS.map(x => ({k:x.k, c:x.c, mps:bdTopMps(x.c)}));
+// 기원권·기원초 모델 (2026-09-23). 실측 전 결정 17(backdash)의 옛 BD와 같은 취급 — 실게임 미확인 **가정값**이고 문구·테스트가 이 상수를 읽으므로 숫자만 고치면 된다.
 // 출처는 커뮤니티 프레임 데이터(철권 8 기준)이며 시즌마다 바뀔 수 있다. 사이트는 명중 프레임을 재현하지 않고 입력 시작 시점만 잰다(결정 27(mist)).
 const GIWON = {
   ACTIVE_F: 14,      // 발동(명중) 프레임. 연출 접촉 시각 HIT_CONTACT_MS.giwon도 여기서 나온다
@@ -30,5 +45,4 @@ const GIWON = {
 // PEAK은 가정값이다 — 제공된 영상이 명중 프레임에서 시작해 진입 구간이 녹화에 없다. OUT_MS만 실측(28프레임 ease-out)이다.
 const GIWON_ZOOM = {PEAK: 1.12, IN_MS: 60, OUT_MS: 470};
 const bdF = ms => Math.max(1, Math.round(ms/FRAME));                       // frames as the history strip shows them
-const bdDist = h => h < BD.MIN_F ? 0 : Math.min(h, BD.MOVE_F)/BD.MOVE_F;   // metres earned by a backdash cancelled after h frames
 

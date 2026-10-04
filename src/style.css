@@ -1,7 +1,7 @@
   :root{
     --bg:#141311; --bg2:#191714; --panel:#1C1A17; --panel2:#25221E; --line:#36312B; --line2:#51483E;
     --ink:#EEE5D8; --ink2:#CEC2B1; --muted:#AD9F8D; --faint:#887D6E;
-    --accent:#EC7060; --accent-soft:rgba(236,112,96,.12); --accent-deep:#AC4337;
+    --accent:#EC7060; --accent-soft:rgba(236,112,96,.12); --accent-deep:#AC4337; --bd-hand-fill:rgba(255,255,255,.07);
     --gold:#D9B781; --red:#F29591; --red-soft:rgba(242,149,145,.12);
     --good:#3DD68C; --warn:#F5A524; --warn-soft:rgba(245,165,36,.16);
     --seg1:#E5D6BF; --seg2:#CCAE8C; --seg3:#A8825F; --seg4:#80634C; --seg5:#594537;
@@ -574,6 +574,29 @@
     repeating-linear-gradient(to right,transparent 0 calc(100%/var(--n,1) - 1px),var(--line2) calc(100%/var(--n,1) - 1px) calc(100%/var(--n,1)))}
   #gpTimeline .wsc-cell.span.mark,#gpTimeline .wsc-cell.span.current{opacity:1}
   #gpTimeline .wsc-cell.span.current i{color:var(--accent)}
+  /* 백대시 10초: one set on a frame axis; each cell's fill is how far the backdash has gone by then (the measured S-curve) */
+  body.bd10-mode .coach{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);border-top:1px solid var(--line)}
+  body.bd10-mode .coach>.stats{grid-row:auto}
+  .coach>#bdpTimeline,.coach>#bdpPanel{grid-column:auto}
+  #bdpTimeline .wsc-command{margin:4px 0}#bdpTimeline .wsc-live{margin:6px 0;min-height:1.4em;font-size:15px}
+  #bdpTimeline .wsc-axis{display:grid;gap:2px;min-width:560px}
+  #bdpTimeline .gp-band{grid-row:1;align-self:end;font:700 9px var(--mono);text-decoration:none;letter-spacing:.4px;
+    text-align:center;padding:0 2px 2px;border-bottom:2px solid currentColor;white-space:nowrap;overflow:hidden}
+  #bdpTimeline .gp-band.move{color:var(--ink2)}#bdpTimeline .gp-band.fire{color:var(--accent)}
+  #bdpTimeline .gp-band.tail{color:var(--gold)}#bdpTimeline .gp-band.buf{color:var(--faint)}
+  #bdpTimeline .wsc-cell{min-width:0;padding:6px 0 4px;font-size:9px;grid-row:2;overflow:hidden;
+    background:linear-gradient(to top,var(--accent-soft) 0 calc(var(--d,0)*100%),transparent calc(var(--d,0)*100%))}
+  #bdpTimeline .wsc-cell b{font-size:12px;min-height:44px}
+  #bdpTimeline .wsc-cell i{font-style:normal;display:block}
+  #bdpTimeline .wsc-cell.win{border-color:var(--accent)}
+  #bdpTimeline .wsc-cell.still{border-style:dashed;color:var(--faint)}
+  #bdpTimeline .wsc-cell.hand{background:linear-gradient(to top,var(--bd-hand-fill) 0 calc(var(--d,0)*100%),transparent calc(var(--d,0)*100%))}
+  #bdpTimeline .wsc-cell.cut{border:2px solid var(--gold);color:var(--gold)}
+  #bdpTimeline .wsc-cell.next,#bdpTimeline .wsc-cell.out{border:2px solid var(--accent);color:var(--accent)}
+  #bdpTimeline .wsc-cell.mark b{color:var(--ink)}
+  #bdpTimeline .wsc-cell.best i{color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+  #bdpTimeline .gp-band.span{grid-row:3;align-self:start;border-bottom:0;border-top:2px solid currentColor;padding:2px 1px 0}
+  #bdpTimeline .gp-band.span.ok{color:var(--gold)}#bdpTimeline .gp-band.span.no{color:var(--red)}
   .wsc-panel{min-width:0;border:0;padding:20px 16px}
   .wsc-timeline{padding-left:4px}.wsc-timeline+.wsc-panel{border-left:1px solid var(--line)}
   .wsc-axis{min-width:640px}.wsc-result{font-size:20px}.wsc-panel h2{font-size:15px;color:var(--ink2)}
@@ -593,7 +616,7 @@
   .posts-card .posts-form .btn{font-size:11px;padding:8px 10px}.posts-card .card-msg{font-size:11px;margin-top:5px}
   @media(min-width:1100px){body.has-community .main{grid-template-columns:minmax(0,1fr) 330px}}
   @media(max-width:1099px){.posts-card{grid-column:1;grid-row:2;height:520px;border-left:0}.has-community .main>.coach{grid-row:3}}
-  @media(max-width:750px){body.wsc-mode .coach,body.giwon-mode .coach{grid-template-columns:minmax(0,1fr)}#gpTimeline .wsc-cell{font-size:9px;padding:6px 0}#gpTimeline .wsc-cell b{font-size:12px;min-height:26px}.wsc-timeline+.wsc-panel{border-left:0;border-top:1px solid var(--line)}.wsc-panel{padding:16px 4px}.posts-card{padding:12px}.stage-actions{top:46px;max-width:65%}.stage-actions .btn{min-height:30px;font-size:11px;padding:5px 12px}.stage .result,html.touch-ui .stage .result{top:94px}.hud-timer{top:50px;font-size:14px}.input-ledger,html.touch-ui .input-ledger{top:89px}.inputs,html.touch-ui .inputs{max-height:125px}}
+  @media(max-width:750px){body.wsc-mode .coach,body.giwon-mode .coach,body.bd10-mode .coach{grid-template-columns:minmax(0,1fr)}#gpTimeline .wsc-cell{font-size:9px;padding:6px 0}#gpTimeline .wsc-cell b{font-size:12px;min-height:26px}.wsc-timeline+.wsc-panel{border-left:0;border-top:1px solid var(--line)}.wsc-panel{padding:16px 4px}.posts-card{padding:12px}.stage-actions{top:46px;max-width:65%}.stage-actions .btn{min-height:30px;font-size:11px;padding:5px 12px}.stage .result,html.touch-ui .stage .result{top:94px}.hud-timer{top:50px;font-size:14px}.input-ledger,html.touch-ui .input-ledger{top:89px}.inputs,html.touch-ui .inputs{max-height:125px}}
 
 
   /* Use the full free vertical lane, with all 40 retained inputs available by scrolling. */

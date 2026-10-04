@@ -18,6 +18,9 @@ const BOARDS = [...TRIAL_MODES, ...Object.keys(CHALLENGES)]; // matches worker a
 const challengeTarget = m => CHALLENGES[m] ? CHALLENGES[m].target : 0; // 0 = not a challenge board
 const challengeStatus = m => CHALLENGES[m] ? CHALLENGES[m].state().status : ''; // '' for modes without a challenge
 function challengeBusy(){ return Object.keys(CHALLENGES).some(m => ['countdown','running'].includes(challengeStatus(m))); } // any local challenge counting down or running
+// bd10 records before the measured curve (2026-10-02) were in another scale (1.0 m per backdash): kept in storage, left out of bests and personal-best checks
+const BD_REC_V = 2;
+const trialRecs = m => m==='bd10' ? store.records[m].filter(r => r.bdv===BD_REC_V) : store.records[m];
 function renderBdHud(){ // bd10 only: distance on the stage HUD and in the trial bar
   if(!(trial.running && mode==='bd10')) return;
   $('hudScore').textContent = trial.dist.toFixed(1)+' m';
@@ -40,7 +43,9 @@ function renderMode(){
     if(document.body) document.body.classList.toggle(m+'-mode', mode===m);
     for(const part of ['ChallengeBtn','Panel','Timeline']) $(ui+part).hidden = mode!==m;
   }
-  renderWsc(); renderGp();
+  if(document.body) document.body.classList.toggle('bd10-mode', mode==='bd10'); // 백대시 10초: the frame timeline and its panel (12-bd-practice.js)
+  $('bdpTimeline').hidden = $('bdpPanel').hidden = mode!=='bd10';
+  renderWsc(); renderGp(); renderBdp();
   renderTrialRank();
 }
 function clearShare(){ trial.result=null; $('dShare').hidden = !!MODES[mode].start; renderTrialRank(); }
@@ -83,7 +88,7 @@ function endTrial(cancel){
     $('hudCenter').textContent = score+' PTS';
   } else if(mode==='bd10'){
     const dist = +trial.dist.toFixed(2), dashes = trial.bdCount, top = trial.bdTop, chain = trial.bestChain||0;
-    rec = {date:Date.now(), score:dist, dashes, top, chain, label:T('rec.dist',dist.toFixed(1)), sub:T('rec.bdSub',dashes,top,chain)};
+    rec = {date:Date.now(), score:dist, dashes, top, chain, bdv:BD_REC_V, label:T('rec.dist',dist.toFixed(1)), sub:T('rec.bdSub',dashes,top,chain)};
     text = T('trial.bdEnd', dist.toFixed(1), dashes);
     $('hudCenter').textContent = dist.toFixed(1)+' m';
   } else {
@@ -98,7 +103,7 @@ function endTrial(cancel){
   }
   trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; }, 2200);
   $('dProg').textContent = text;
-  const oldRecords = store.records[mode], personalBest = !oldRecords.length || rec.score > Math.max(...oldRecords.map(r=>r.score));
+  const oldRecords = trialRecs(mode), personalBest = !oldRecords.length || rec.score > Math.max(...oldRecords.map(r=>r.score));
   store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); save(); renderBests();
   store.life.trials[mode]++; jackpotHold = true; setTimeout(() => { jackpotHold = false; renderRewards(); }, 2300); checkAch(); // claiming waits for the result flash
   trial.result = {rec, attempts:at, cycles:session.cycles.filter(since), window:store.window, personalBest}; $('dShare').hidden=false;
@@ -131,7 +136,7 @@ function recText(m, r){ // prefer numeric fields so old records re-render in the
 function renderBests(){
   const el = $('bests');
   el.innerHTML = TRIAL_MODES.map(m => {
-    const rs = store.records[m]; const best = rs.length? rs.reduce((a,b)=>b.score>a.score?b:a):null;
+    const rs = trialRecs(m); const best = rs.length? rs.reduce((a,b)=>b.score>a.score?b:a):null;
     const last = rs.length? rs[rs.length-1]:null;
     const bt = best && recText(m,best), lt = last && recText(m,last);
     return `<div class="best"><div class="k">${escapeHTML(T('mode.'+m+'.name'))}</div><b>${best?escapeHTML(bt.label):'–'}</b><small>${best?escapeHTML(bt.sub)+' · '+new Date(best.date).toLocaleDateString(LOCALE[store.lang]):escapeHTML(T('best.none'))}</small>${last&&last!==best?`<small style="display:block">${escapeHTML(T('best.last'))}${escapeHTML(lt.label)}</small>`:''}</div>`;

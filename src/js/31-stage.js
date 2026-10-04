@@ -30,7 +30,9 @@ function zoomAt(now){
 // character colours live in ITEMS[slot].base (wardrobe); drawFighter reads them through the look
 
 function startAnim(kind){ anim.kind=kind; anim.t0=performance.now(); }
-function moveChar(dx, ms){ anim.moveT0=performance.now(); anim.moveFrom=world.charX; anim.moveTo=world.charX+dx*store.side; anim.moveDur=ms; }
+function moveChar(dx, ms, ease=null){ anim.moveT0=performance.now(); anim.moveFrom=world.charX; anim.moveTo=world.charX+dx*store.side; anim.moveDur=ms; anim.moveEase=ease; } // ease(k 0..1) → progress 0..1; default ease-out cubic
+// 백대시 연출은 판정과 같은 실측 곡선(BD.CURVE)을 그대로 따른다: 프레임 사이만 선형 보간. 1(↙)·횡이 들어오면 그 자리에서 멈춘다(backdashMotion).
+const bdEase = k => { const f = clamp(k,0,1)*BD_LAST, i = Math.floor(f); return i>=BD_LAST ? 1 : (bdDist(i) + (bdDist(i+1)-bdDist(i))*(f-i))/BD_FULL; };
 // EWGF streak pop styles by consecutive count; level 6 is the cap (numbers keep counting, look stays). color = [css token, fallback]
 const STREAK = [null,
   {size:58,  color:['--accent','#4CC9FF'], glow:0,  rings:0, sparks:0,  shake:8},
@@ -57,7 +59,7 @@ const fx = {
   jab(){ startAnim('jab'); pop('?', '#E5484D', 30); },
   stumble(){ startAnim('stumble'); pop('MISS', '#E5484D', 30); },
   dash(short){ if(anim.kind==='ewgf' && performance.now()-anim.t0<260) return; startAnim('dash'); if(short) moveChar(24, 120); else moveChar(64, 150); puff(3, 1); }, // short: the wave restart dash (a full 64px per cycle would double wave travel)
-  backdash(){ playSfx('backdash'); startAnim('backdash'); moveChar(-56, 150); puff(3, -1); },
+  backdash(){ playSfx('backdash'); startAnim('backdash'); moveChar(-BD.PX, BD_LAST*FRAME, bdEase); puff(3, -1); }, // S-curve: slow off the mark, fastest around 6~11f, stops at BD_LAST
   // 기원초 성공 축하(연출 전용, 판정·좌표에 영향 없음). 소리는 연출 설정과 독립이고 효과음 볼륨을 따른다.
   linkWin(){
     playFanfare();
