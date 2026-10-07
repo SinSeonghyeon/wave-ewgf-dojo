@@ -1,4 +1,5 @@
 // Guide and privacy page copy (English). tools/build-site.js renders each entry as a static page at /en/<slug>.
+// Each page's updated (YYYY-MM-DD) is its shown last-updated date, JSON-LD dateModified and sitemap lastmod. Change the copy → change the date.
 // Body links `href="@guide/ewgf/"` point at a page in the same language, `href="@"` at the practice app. Slugs must match ko.js and ja.js.
 module.exports = {
   ui: {
@@ -17,6 +18,7 @@ module.exports = {
   pages: [
     {
       slug: 'guide/',
+      updated: '2026-10-01',
       title: 'Tekken Mishima Input Guides — EWGF, Wave Dash, Backdash, d/f+2 Link',
       description: 'Free frame-by-frame guides to the Tekken 8 Mishima inputs: EWGF, wave dash, Korean backdash and the d/f+2 → EWGF link, with notation and a practice order.',
       lead: 'These guides explain the inputs behind Mishima Dojo\'s practice modes. Start with the notation, then open the guide for the move you are working on.',
@@ -62,6 +64,7 @@ module.exports = {
     },
     {
       slug: 'guide/ewgf/',
+      updated: '2026-10-01',
       title: 'EWGF Input Guide — the f,N,d,d/f+2 Just Frame',
       description: 'A frame-by-frame guide to the Tekken Electric Wind God Fist (EWGF, f,N,d,d/f+2): why you get a normal WGF, the 623 route, the f,N,d/f+2 shortcut, device tips and a practice plan.',
       lead: 'The hard part of the EWGF is not the motion but pressing d/f and button 2 in the same frame. This guide is about catching that one frame.',
@@ -120,6 +123,7 @@ module.exports = {
     },
     {
       slug: 'guide/wave-dash/',
+      updated: '2026-10-01',
       title: 'Wave Dash Guide — 6N23 6 N and the Cancel Forward',
       description: 'How the Tekken Mishima wave dash (chained crouch dashes, f,N,d,d/f f N) works: separating the cancel forward from the start forward, why chains break, and a plan to build speed.',
       lead: 'The wave dash chains crouch dashes without a break. The key is the “cancel forward” that comes right after d/f.',
@@ -169,6 +173,7 @@ module.exports = {
     },
     {
       slug: 'guide/wsc/',
+      updated: '2026-10-01',
       title: 'Wave-Cancel WS Upper Guide — Back on Frame 8–10, Then RP',
       description: 'A frame-by-frame guide to the Tekken Mishima wave-cancel while-standing upper: back input on frame 8, 9 or 10 after d/f, the matching RP gaps, common mistakes and how to practise.',
       lead: 'Cancel a wave dash with back, then press RP as you rise to get the while-standing upper. When the command is right but nothing comes out, the timing is almost always the reason.',
@@ -225,6 +230,7 @@ module.exports = {
     },
     {
       slug: 'guide/backdash/',
+      updated: '2026-10-01',
       title: 'Korean Backdash Guide — 414 N and Cancel Timing',
       description: 'How the Tekken Korean backdash (b,N,b,d/b repeated) works: the d/b cancel, the sidestep-cancel mistake, set speed grades and how to practise with Backdash 10s.',
       lead: 'The Korean backdash cancels the backdash recovery with down-back (1) and rolls straight into the next backdash to retreat fast.',
@@ -272,6 +278,7 @@ module.exports = {
     },
     {
       slug: 'guide/giwon-link/',
+      updated: '2026-10-01',
       title: 'd/f+2 → EWGF Link Guide — EWGF by Frame 49',
       description: 'A frame-by-frame guide to linking d/f+2 into EWGF in Tekken: pre-input forward on frames 40–46, neutral on 48, EWGF by 49, and how to practise it.',
       lead: 'This is a link, not a move: an EWGF entered the moment d/f+2 recovers.',
@@ -315,6 +322,7 @@ module.exports = {
     },
     {
       slug: 'guide/frames/',
+      updated: '2026-10-01',
       title: 'Frames and Input Judging — the 60Hz Grid and Input Lag',
       description: 'What a frame is in fighting games and how Mishima Dojo judges inputs on a 60Hz grid: why a browser differs from the game, device timing errors and how to reduce them.',
       lead: 'What “one-frame just input” means, and how a browser practice tool measures it.',
@@ -356,6 +364,7 @@ module.exports = {
     },
     {
       slug: 'privacy/',
+      updated: '2026-10-01',
       title: 'Privacy Policy',
       description: 'What Mishima Dojo stores, how it uses browser storage, advertising (Google AdSense) cookies, and how to delete your data.',
       lead: 'Mishima Dojo (mishimaryu.com, “the site”) has no accounts and handles only the minimum information the service needs.',

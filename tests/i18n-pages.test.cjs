@@ -173,7 +173,17 @@ test('static head carries the SEO and Open Graph tags that crawlers read without
   const {sitemap,contentSources}=require('../tools/build-site');
   const sm=sitemap(html), slugs=contentSources().slugs;
   assert.deepEqual(sm.match(/<loc>[^<]*<\/loc>/g),[url,url+'ko/',url+'en/',url+'ja/',...slugs.flatMap(s=>['ko','en','ja'].map(l=>url+l+'/'+s))].map(u=>`<loc>${u}</loc>`),'sitemap lists the root app, three language apps and every guide/privacy page');
-  assert.doesNotMatch(sm,/<lastmod>|<changefreq>/,'no hand-maintained lastmod/changefreq (nothing regenerates them; Google ignores changefreq and distrusts stale lastmod)');
+  // lastmod (2026-10-01): only articles carry one, equal to that page's own `updated`, which the page also shows. The app URLs have no
+  // honest edit date, so none. changefreq stays out (Google ignores it).
+  assert.doesNotMatch(sm,/<changefreq>/,'no changefreq');
+  for(const b of sm.match(/<url>[\s\S]*?<\/url>/g)){
+    const loc=b.match(/<loc>([^<]*)<\/loc>/)[1], lastmod=b.match(/<lastmod>([^<]*)<\/lastmod>/)?.[1], m=loc.slice(url.length).match(/^(ko|en|ja)\/(.+)$/);
+    if(!m){assert.equal(lastmod,undefined,loc+' (app) has no lastmod');continue;}
+    const page=contentSources().pages[m[1]].pages.find(p=>p.slug===m[2]);
+    assert.equal(lastmod,page.updated,loc+' lastmod is the page date');
+    const built=require('../tools/build-site').contentPage(html,m[1],m[2]);
+    assert.ok(built.includes(': '+page.updated+'</p>')&&built.includes('"dateModified":"'+page.updated+'"'),loc+' shows the same date');
+  }
   assert.match(html,/document\.title = T\('app\.docTitle'\)/);
 });
 test('localized static descriptions match the app dictionary and all pages reference the shared PNG icon',()=>{

@@ -63,7 +63,8 @@ function localizedPage(source, lang){
 
 // ---------- guide and privacy pages (src/pages/{ko,en,ja}.js, 2026-10-01 decision 4(single-page)) ----------
 // Static articles next to the app, written for readers and search engines. The app stays one page; these carry no app script.
-const CONTENT_UPDATED='2026-10-01'; // bump when the copy in src/pages/ changes materially
+// Each page carries its own `updated` date: shown on the page, JSON-LD dateModified and the sitemap <lastmod>. Google trusts lastmod only
+// while it matches real edits, so it is per page (one typo fix must not re-date every article) and the app URLs get none.
 const LANG_NAMES={ko:'한국어',en:'English',ja:'日本語'};
 function contentSources(){
   const out={};
@@ -84,6 +85,8 @@ function validateContent(out){
     if(new Set(own).size!==own.length)throw new Error(where+' has duplicate slugs');
     for(const page of out[lang].pages){
       if(!/^(?:[a-z0-9]+(?:-[a-z0-9]+)*\/)+$/.test(page.slug))throw new Error(where+' invalid slug: '+page.slug);
+      if(typeof page.updated!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(page.updated)||new Date(page.updated+'T00:00:00Z').toISOString().slice(0,10)!==page.updated)
+        throw new Error(where+' '+page.slug+' needs updated: \'YYYY-MM-DD\'');
       for(const key of ['title','description','lead','body'])
         if(typeof page[key]!=='string'||!page[key].trim())throw new Error(where+' '+page.slug+' missing '+key);
       for(const [,target] of page.body.matchAll(/href="@([^"]*)"/g))
@@ -114,7 +117,7 @@ function contentPage(source, lang, slug, all=contentSources()){
   const locales={ko:'ko_KR',en:'en_US',ja:'ja_JP'};
   const title=page.title+' | '+ui.siteName;
   const ld={'@context':'https://schema.org','@type':isGuide?'Article':'WebPage',headline:page.title,name:page.title,description:page.description,
-    inLanguage:lang,url:url(lang),dateModified:CONTENT_UPDATED,image:site+'og.png',
+    inLanguage:lang,url:url(lang),dateModified:page.updated,image:site+'og.png',
     author:{'@type':'Person',name:'Seonghyeon Shin'},publisher:{'@type':'Organization',name:ui.siteName,url:site+lang+'/'}};
   // Operator's own YouTube video, in privacy-enhanced mode, loaded only near the viewport (2026-10-01 decision 4(single-page)).
   if(page.video&&!/^[\w-]{11}$/.test(page.video.id))throw new Error('Bad YouTube id in '+lang+' '+slug);
@@ -163,7 +166,7 @@ ${css}</style>
 ${isGuide?`<p class="crumbs"><a href="${at('guide/')}">${escape(ui.home)}</a> ›</p>\n`:''}<article>
 <h1>${escape(page.title)}</h1>
 <p class="lead">${escape(page.lead)}</p>
-<p class="meta">${escape(ui.updated)}: ${CONTENT_UPDATED}</p>
+<p class="meta">${escape(ui.updated)}: ${page.updated}</p>
 ${video}${body}
 ${next}
 </article>
@@ -181,12 +184,12 @@ ${next}
 // Every public URL with its language alternates, generated from the same page list the build writes (2026-10-01; was a hand-kept file).
 function sitemap(source, all=contentSources()){
   const site=source.match(/<link rel="canonical" href="([^"]+)">/)[1];
-  const entry=(loc,alt)=>`  <url>\n    <loc>${loc}</loc>\n${Object.entries(alt).map(([l,h])=>`    <xhtml:link rel="alternate" hreflang="${l}" href="${h}"/>`).join('\n')}\n  </url>`;
+  const entry=(loc,alt,lastmod)=>`  <url>\n    <loc>${loc}</loc>\n${lastmod?`    <lastmod>${lastmod}</lastmod>\n`:''}${Object.entries(alt).map(([l,h])=>`    <xhtml:link rel="alternate" hreflang="${l}" href="${h}"/>`).join('\n')}\n  </url>`;
   const app={ko:site+'ko/',en:site+'en/',ja:site+'ja/','x-default':site};
   const rows=[site,...LANGS.map(l=>site+l+'/')].map(loc=>entry(loc,app));
   for(const slug of all.slugs){
     const alt=Object.fromEntries(LANGS.map(l=>[l,site+l+'/'+slug]));alt['x-default']=alt.en;
-    for(const l of LANGS)rows.push(entry(alt[l],alt));
+    for(const l of LANGS)rows.push(entry(alt[l],alt,all.pages[l].pages.find(p=>p.slug===slug).updated));
   }
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${rows.join('\n')}\n</urlset>\n`;
 }
