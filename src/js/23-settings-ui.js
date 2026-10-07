@@ -96,6 +96,7 @@ function resetSession(){
   gp.session=gpStats(); gp.challenge={status:'idle',stats:null}; gp.last=null; gp.run=null; gp.notice='ready';
   clearShare(); renderWsc(); renderGp();
   Object.assign(session, sessionDefault()); history.length=0; lastInputT=performance.now();
+  bdpReset(); // after the session: its stats tile reads session.bd.bestChain
   updateStats(); updateHud(); renderHistory(); renderLog(); renderHist(); renderWave(); coachTrend();
   showResult('', 'READY', ['ready.reset'], ['ready.title']);
 }

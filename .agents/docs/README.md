@@ -8,7 +8,7 @@
 - `log/`: 월별 진행 로그(한 줄씩, 최신이 위).
 - `DECISIONS.md`: 사용자 설계 결정 전문. 번호·slug는 바뀌지 않는다.
 - `CODE_MAP.md`: 앞부분이 파일 지도·기능별 색인·입력 처리 순서, 뒷부분이 서브시스템 상세.
-- 기능 브리핑(그 기능을 건드릴 때만 읽는다): `GIWONCHO.md`(기원권·기원초) · `MIST_EWGF.md`(무족초) · `WSC_PRACTICE.md`(웨캔기어) · `LOCALIZED_PAGES.md`(언어별 페이지·배포) · `PROMO.md`(홍보 글 초안).
+- 기능 브리핑(그 기능을 건드릴 때만 읽는다): `GIWONCHO.md`(기원권·기원초) · `MIST_EWGF.md`(무족초) · `WSC_PRACTICE.md`(웨캔기어) · `BACKDASH.md`(백대시 실측·KBD 공식) · `LOCALIZED_PAGES.md`(언어별 페이지·배포) · `PROMO.md`(홍보 글 초안).
 - `MERGE_PROCESS.md`: 기능 브랜치를 묶어 합류할 때의 절차. 브랜치별 임시 인수인계는 `.agents/handoffs/`에 두고 합류 직전에 지운다.
 - `reviews/`: 날짜별 코드 리뷰 결과와 수정 내역(당시 기준 기록이라 파일 경로가 지금과 다를 수 있다).
 - `archive/`: 끝난 일의 기록. `PLAN-2026-09.md`(9월까지의 전체 체크리스트·로그), 릴리스·통합 기록, 9월 19일 디자인 개편, 웨캔기어 영상 제작 자료(`VIDEO_WSC.md`·`wsc-handoff/`). 새로 쓰지 않고 검색할 때만 연다.

@@ -183,7 +183,7 @@ function frame(now){
     if(canWalk && !blocked){ world.charX += (curDir==='f'?WALK_F:-WALK_B)*store.side*dt/1000; anim.kind='walk'; anim.walkDir=curDir; }
     else if(anim.kind==='walk') anim.kind='idle'; }
   // movement
-  if(anim.moveDur){ const k = Math.min(1,(now-anim.moveT0)/anim.moveDur); world.charX = anim.moveFrom + (anim.moveTo-anim.moveFrom)*(1-Math.pow(1-k,3)); if(k>=1) anim.moveDur=0; if(k<1 && (anim.kind==='cd'||anim.kind==='dash'||anim.kind==='backdash') && Math.random()<0.6) ghosts.push({x:world.charX, t:1, pose:poseAt(now)}); }
+  if(anim.moveDur){ const k = Math.min(1,(now-anim.moveT0)/anim.moveDur); world.charX = anim.moveFrom + (anim.moveTo-anim.moveFrom)*(anim.moveEase ? anim.moveEase(k) : 1-Math.pow(1-k,3)); if(k>=1) anim.moveDur=0; if(k<1 && (anim.kind==='cd'||anim.kind==='dash'||anim.kind==='backdash') && Math.random()<0.6) ghosts.push({x:world.charX, t:1, pose:poseAt(now)}); }
   // dummy management
   const d = world.dummy;
   if(d.type && d.alive && !d.hit && (world.dummyX - world.charX)*store.side < DUMMY_STOP) world.charX = world.dummyX - DUMMY_STOP*store.side; // rush30: moves never pass the target

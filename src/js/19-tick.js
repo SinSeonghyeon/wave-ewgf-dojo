@@ -7,7 +7,7 @@ function tick(now){
   if(giwonRP && frameSlot(now)>giwonRP.slot) giwonResolve();
   if(cd.gFault!=null && now-cd.gFault>GIWON.FAULT_MS){ const staged=cd.gFault; cd.gFault=null; fault('f_before_d', staged); }
   if(giwonLink && now>giwonLink.until){ giwonLink=null; giwonBuf=null; gpAbort(); }
-  wscTick(now); gpTick(now); renderWscLive(now); renderGpLive(now);
+  wscTick(now); gpTick(now); renderWscLive(now); renderGpLive(now); renderBdpLive(now);
   if(cd.state===1 && now-cd.tF>250) cd.state=0;
   else if(cd.state===2 && now-cd.tN>250) cd.state=0;
   else if(cd.state===3 && now-cd.tD>250){ if(cd.pending) resolvePending(null, now); cd.state=0; }
