@@ -66,7 +66,8 @@ function mistInput(a,{start=1000,f=1,n=1,rp=0,intermediate=null,rpFirst=false}={
 }
 
 function bdOut(a,t,tap=2,n=2){a.onDir('b',t);a.onDir('n',t+fr(tap));const o=t+fr(tap)+fr(n);a.onDir('b',o);return o;} // b,N,b → the backdash comes out at the returned time
-function bdSet(a,o,h,db=2,tap=2,n=2){const c=o+fr(h);a.onDir('db',c);a.onDir('b',c+fr(db));a.onDir('n',c+fr(db)+fr(tap));const o2=c+fr(db)+fr(tap)+fr(n);a.onDir('b',o2);return o2;} // cancel h frames after the backdash, roll into the next one
+const bdAt=(o,f)=>o+fr(f-1); // the time of backdash frame f for a backdash out at o (the output frame is 1f, like bdFrameNo)
+function bdSet(a,o,h,db=2,tap=2,n=2){const c=bdAt(o,h);a.onDir('db',c);a.onDir('b',c+fr(db));a.onDir('n',c+fr(db)+fr(tap));const o2=c+fr(db)+fr(tap)+fr(n);a.onDir('b',o2);return o2;} // cancel on frame h (the output frame is 1f), roll into the next one
 
 function samplePad(a,indices=[],axes=[0,0],mapping='standard'){
   a.pads([{index:0,id:'Test controller',mapping,axes,buttons:Array.from({length:18},(_,i)=>({pressed:indices.includes(i),value:indices.includes(i)?1:0}))}]);a.pollPad();
@@ -122,4 +123,4 @@ function gpAttempt(a,opts={},t0=1000){ a.onDir('n',t0-100); giwon(a,t0); return 
 const gpCounters = s => ({tries:s.tries,hits:s.hits,onTime:s.onTime,streak:s.streak,best:s.best,aborted:s.aborted});
 const gpCells = a => new Map([...a.get('gpAxis').innerHTML.matchAll(/class="wsc-cell([^"]*)" data-frame="(\d+)"/g)].map(m=>[Number(m[2]),m[1].trim()]));
 
-module.exports = {html, BANNED, APP_NAMES, topLevelNames, boot, dash, F, fr, mistInput, bdOut, bdSet, samplePad, backend, topRes, AudioStub, J, kstToday, wscPrefix, wscRun, wscTaskRun, giwonRec, giwon, linkAfter, gpBoot, gpAttempt, gpCounters, gpCells};
+module.exports = {html, BANNED, APP_NAMES, topLevelNames, boot, dash, F, fr, mistInput, bdOut, bdSet, bdAt, samplePad, backend, topRes, AudioStub, J, kstToday, wscPrefix, wscRun, wscTaskRun, giwonRec, giwon, linkAfter, gpBoot, gpAttempt, gpCounters, gpCells};

@@ -3,24 +3,25 @@
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const {BANNED, boot, dash, F, fr, bdOut, bdSet} = require('./helpers/app.cjs');
+const {BANNED, boot, dash, F, fr, bdOut, bdSet, bdAt} = require('./helpers/app.cjs');
 const near = (x,y,m) => assert.ok(Math.abs(x-y)<1e-9, m+': '+x+' vs '+y);
 test('recommended cancel window is 11–13f in feedback and the timeline, with 10/14f outside',()=>{
   for(const h of [10,11,12,13,14]){
-    const a=boot({v:4,lang:'ko'});a.setMode('bd10');const o=bdOut(a,1000);a.onDir('db',o+fr(h));
+    const a=boot({v:4,lang:'ko'});a.setMode('bd10');const o=bdOut(a,1000); // the output frame is 1f: the 1 lands on frame h after h−1 frames
+   a.onDir('db',bdAt(o,h));
     const inside=h>=11&&h<=13;
     assert.equal(a.get('coachMsg').innerHTML,inside?a.T('bd.coach.cancelOk'):h===10?a.T('bd.coach.cancelEarly',1):a.T('bd.coach.cancelLate',1));
     const wins=[...a.get('bdpAxis').innerHTML.matchAll(/class="wsc-cell[^"]*\bwin\b[^"]*" data-frame="(\d+)"/g)].map(m=>+m[1]);
     assert.deepEqual(wins,[11,12,13]);
   }
 });
-test('fractional frame intervals use the displayed cancel + hand formula for grading',()=>{
+test('fractional frame intervals use the displayed cancel − 1 + hand formula for grading',()=>{
   for(const offset of [-0.4,0.4]){
-    const a=boot({v:4});a.setMode('bd10');const o=bdOut(a,1000),c=o+(13+offset)*F;
+    const a=boot({v:4});a.setMode('bd10');const o=bdOut(a,1000),c=bdAt(o,13)+offset*F;
     a.onDir('db',c);a.onDir('b',c+2*F);a.onDir('n',c+4*F);a.onDir('b',c+(7+offset)*F);
     const row=a.bdp.row;
     assert.equal(row.h,13);assert.equal(row.hand,7);
-    assert.equal(row.mps,a.bdMps(row.dist,row.h+row.hand));
+    assert.equal(row.mps,a.bdMps(row.dist,a.bdPeriod(row.h,row.hand)));
     assert.equal(row.g,'top','the same displayed intervals keep the same grade');
   }
 });
@@ -28,15 +29,15 @@ test('timeline cursor belongs only to the displayed live set; stopped dashes kee
   const a=boot({v:4});a.setMode('bd10');let o=bdOut(a,1000);
   const cell={dataset:{frame:'5'},classList:{toggle(name,on){this[name]=on;}}};
   a.get('bdpAxis').querySelectorAll=()=>[cell];
-  a.renderBdpLive(o+5*F);assert.equal(cell.classList.current,true);
-  o=bdSet(a,o,13);a.renderBdpLive(o+5*F);
+  a.renderBdpLive(bdAt(o,5));assert.equal(cell.classList.current,true);
+  o=bdSet(a,o,13);a.renderBdpLive(bdAt(o,5));
   assert.equal(cell.classList.current,false,'the completed previous set has no moving cursor');
-  a.onDir('db',o+3*F);a.renderBdpLive(o+5*F);
+  a.onDir('db',bdAt(o,4));a.renderBdpLive(bdAt(o,5));
   assert.equal(cell.classList.current,true,'the cursor returns when the live set is displayed');
   for(const release of [false,true]) for(const dir of ['d','u','df','db']){
     const b=boot({v:4});b.setMode('bd10');const start=bdOut(b,1000);
     if(release) b.onDir('n',start+F);
-    b.onDir(dir,start+3*F);
+    b.onDir(dir,bdAt(start,3));
     const fills=[...b.get('bdpAxis').innerHTML.matchAll(/data-frame="(\d+)" style="--d:([\d.]+)"/g)];
     for(const [,f,d] of fills) if(+f>=3) assert.equal(+d,+(b.bdDist(3)/b.BD_FULL).toFixed(3),dir+' release='+release+' frame='+f);
     near(b.session.bd.dist,b.bdDist(3),'judged distance matches the frozen bar');
@@ -44,7 +45,7 @@ test('timeline cursor belongs only to the displayed live set; stopped dashes kee
 });
 test('backdash easing clamps a render timestamp before animation start instead of poisoning world coordinates',()=>{
   const a=boot();
-  for(const k of [-1,-0.01,-0.0001]) assert.equal(a.bdEase(k),0);
+  for(const k of [-1,-0.01,-0.0001]) assert.equal(a.bdEase(k),a.bdEase(0)); // a finite start (the output frame's 1f distance), never NaN or a negative progress
   assert.equal(a.bdEase(1.01),1);
 });
 test('localized backdash guides use the same speed thresholds and full distance as the model',()=>{
@@ -57,16 +58,17 @@ test('localized backdash guides use the same speed thresholds and full distance 
   }
 });
 /* ---------- the measured model (2026-10-02, 결정 17(backdash), .agents/docs/BACKDASH.md) ---------- */
-test('backdash model: S-shaped measured curve, speed formula D(h)×60÷(h+hand), best cancel inside the window, tiers from hand speed',()=>{
-  const {BD,BD_FULL,BD_LAST,BD_TIER_MPS,bdDist,bdBestH,bdTopMps,bdMps}=boot();
+test('backdash model: S-shaped measured curve, speed formula D(h)×60÷(h−1+hand) with the output frame as 1f, best cancel inside the window, tiers from hand speed',()=>{
+  const {BD,BD_FULL,BD_LAST,BD_TIER_MPS,bdDist,bdBestH,bdTopMps,bdMps,bdPeriod,bdFrameNo}=boot();
+  assert.equal(bdFrameNo(0),1,'a 1 on the output frame is 1f');assert.equal(bdFrameNo(F),2);assert.equal(bdFrameNo(-5),1);assert.equal(bdPeriod(12,6),17,'11 frames before the 1, then a 6f hand');
   assert.equal(bdDist(0),0);assert.equal(bdDist(BD_LAST),BD_FULL);assert.equal(bdDist(BD_LAST+20),BD_FULL,'nothing is credited after the dash stops');
   near(BD_FULL,0.638,'a full backdash in game metres');
   const step=h=>bdDist(h)-bdDist(h-1), fastest=[...Array(BD_LAST).keys()].map(i=>i+1).sort((a,b)=>step(b)-step(a))[0];
   assert.ok(fastest>=6&&fastest<=11,'fastest frame in the middle: '+fastest);assert.ok(bdDist(5)<0.3*BD_FULL,'slow off the mark');assert.ok(bdDist(13)>0.9*BD_FULL,'mostly done by 13f');
   for(let h=1;h<=BD_LAST;h++) assert.ok(step(h)>=0,'monotone at '+h);
-  for(let c=3;c<=12;c++){const h=bdBestH(c);assert.ok(h>=BD.CANCEL_A&&h<=BD.CANCEL_B,'hand '+c+'f → best '+h+'f inside the window');
-    for(let x=1;x<=BD_LAST+3;x++) assert.ok(bdMps(bdDist(x),x+c)<=bdTopMps(c),'no cancel beats the formula at hand '+c);}
-  assert.equal(bdBestH(6),13);assert.equal(bdTopMps(6),1.88);
+  for(let c=3;c<=14;c++){const h=bdBestH(c);assert.ok(h>=BD.CANCEL_A&&h<=BD.CANCEL_B,'hand '+c+'f → best '+h+'f inside the window');
+    for(let x=1;x<=BD_LAST+3;x++) assert.ok(bdMps(bdDist(x),bdPeriod(x,c))<=bdTopMps(c),'no cancel beats the formula at hand '+c);}
+  assert.equal(bdBestH(6),12);assert.equal(bdBestH(7),13);assert.equal(bdTopMps(6),1.98);
   assert.deepEqual([...BD_TIER_MPS.map(x=>x.k)],['top','fast','ok']);assert.ok(BD_TIER_MPS[0].mps>BD_TIER_MPS[1].mps&&BD_TIER_MPS[1].mps>BD_TIER_MPS[2].mps);
   for(const x of BD_TIER_MPS) assert.equal(x.mps,bdTopMps(x.c),x.k+' = the best speed of a '+x.c+'f hand');
 });
@@ -88,28 +90,28 @@ test('backdash machine is inert during the wave and other trials, and free pract
   assert.equal(a.get('hudChainL').textContent,'WAVE');
 });
 test('backdash sets: distance from the curve, set speed graded by hand-speed tiers, chain, cancel-window feedback and the formula coach line',()=>{
-  const a=boot({v:4,lang:'ko'});const {BD,BD_TIER_MPS,bdDist,bdBestH,bdMps}=a;const H=bdBestH(6); // bdSet's hand: 1 held 2f + 4 N 4 in 4f = 6f
+  const a=boot({v:4,lang:'ko'});const {BD,BD_TIER_MPS,bdDist,bdBestH,bdMps,bdPeriod}=a;const H=bdBestH(6); // bdSet's hand: 1 held 2f + 4 N 4 in 4f = 6f
   const grade=v=>(BD_TIER_MPS.find(x=>v>=x.mps)||{k:'slow'}).k;
-  let o=bdOut(a,1000);a.onDir('db',o+fr(H));
-  assert.equal(a.session.bd.dist,bdDist(H),'cancel at 13f earns D(13)');assert.equal(a.bd.state,4);
+  let o=bdOut(a,1000);a.onDir('db',bdAt(o,H));
+  assert.equal(a.session.bd.dist,bdDist(H),'cancel on frame H earns D(H)');assert.equal(a.bd.state,4);
   assert.equal(a.get('rOff').textContent,a.T('bd.cancel',H,0,bdDist(H).toFixed(2)));assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.cancelOk'));
-  let c=o+fr(H);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));o=c+fr(6);a.onDir('b',o); // period 19f
-  const v1=bdMps(bdDist(H),H+6);assert.equal(grade(v1),'top','the best cancel with a 6f hand is very fast');
+  let c=bdAt(o,H);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));o=c+fr(6);a.onDir('b',o); // period H−1+6 = 17f
+  const v1=bdMps(bdDist(H),bdPeriod(H,6));assert.equal(grade(v1),'top','the best cancel with a 6f hand is very fast');
   assert.equal(a.bd.chain,2);assert.equal(a.get('rTitle').textContent,a.T('bd.title',2,a.T('bd.grade.top')));assert.equal(a.get('rOff').textContent,a.T('bd.sub',v1.toFixed(2),H,6,H));
   assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.good'));assert.equal(JSON.stringify(a.session.log[0].res),'["res.bd_top"]');assert.equal(a.session.log[0].type,'log.tBack');assert.equal(a.session.bd.top,1);
-  // early cancel (8f): shorter, the window line says how early, the set coach names the best frame for this hand
-  a.onDir('db',o+fr(8));near(a.session.bd.dist,bdDist(H)+bdDist(8),'an early cancel keeps what the dash travelled');assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.cancelEarly',BD.CANCEL_A-8));
-  c=o+fr(8);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));o=c+fr(6);a.onDir('b',o);
-  const g2=grade(bdMps(bdDist(8),14));assert.notEqual(g2,'top');
+  // early cancel (frame 8): shorter, the window line says how early, the set coach names the best frame for this hand
+  a.onDir('db',bdAt(o,8));near(a.session.bd.dist,bdDist(H)+bdDist(8),'an early cancel keeps what the dash travelled');assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.cancelEarly',BD.CANCEL_A-8));
+  c=bdAt(o,8);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));o=c+fr(6);a.onDir('b',o);
+  const g2=grade(bdMps(bdDist(8),bdPeriod(8,6)));assert.notEqual(g2,'top');
   assert.equal(a.get('rTitle').textContent,a.T('bd.title',g2==='slow'?1:3,a.T('bd.grade.'+g2)));assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.early',H-1-8,H,6),'the early cancel is the biggest loss');
-  // late cancel (18f)
-  a.onDir('db',o+fr(18));assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.cancelLate',18-BD.CANCEL_B));
-  c=o+fr(18);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));o=c+fr(6);a.onDir('b',o);assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.late',18-H-1,H,6));
+  // late cancel (frame 18)
+  a.onDir('db',bdAt(o,18));assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.cancelLate',18-BD.CANCEL_B));
+  c=bdAt(o,18);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));o=c+fr(6);a.onDir('b',o);assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.late',18-H-1,H,6));
   // 1 held too long, then 4N4 too long
-  a.onDir('db',o+fr(H));c=o+fr(H);a.onDir('b',c+fr(10));a.onDir('n',c+fr(12));o=c+fr(14);a.onDir('b',o);assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.db',8));
-  a.onDir('db',o+fr(H));c=o+fr(H);a.onDir('b',c+fr(2));a.onDir('n',c+fr(10));o=c+fr(12);a.onDir('b',o);assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.tap',6));
+  a.onDir('db',bdAt(o,H));c=bdAt(o,H);a.onDir('b',c+fr(10));a.onDir('n',c+fr(12));o=c+fr(14);a.onDir('b',o);assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.db',8));
+  a.onDir('db',bdAt(o,H));c=bdAt(o,H);a.onDir('b',c+fr(2));a.onDir('n',c+fr(10));o=c+fr(12);a.onDir('b',o);assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.tap',6));
   // slow set resets the chain to 1 but the backdash still counts
-  const before=a.session.bd.count;a.onDir('db',o+fr(H));c=o+fr(H);a.onDir('b',c+fr(30));a.onDir('n',c+fr(32));o=c+fr(34);a.onDir('b',o);
+  const before=a.session.bd.count;a.onDir('db',bdAt(o,H));c=bdAt(o,H);a.onDir('b',c+fr(30));a.onDir('n',c+fr(32));o=c+fr(34);a.onDir('b',o);
   assert.equal(a.bd.chain,1);assert.equal(a.get('rTitle').textContent,a.T('bd.title',1,a.T('bd.grade.slow')));assert.equal(a.session.log[0].res[0],'res.bd_slow');assert.equal(a.session.bd.count,before+1);
   // a chain of 3+ leaves a summary log line when it breaks; the dictionaries name no official character
   const b=boot({v:4,lang:'en'});let p=bdOut(b,1000);for(let i=0;i<3;i++) p=bdSet(b,p,H);assert.equal(b.bd.chain,4);b.onDir('n',p+fr(12));
@@ -120,7 +122,7 @@ test('backdash sets: distance from the curve, set speed graded by hand-speed tie
 test('backdash faults: an early 1 is a short backdash, no cancel locks RECOVER_F of stiffness, sidestep and neutral-after-1 break the set, LINK_MAX_F ends it, 2P mirrors',()=>{
   const {BD,BD_FULL,bdDist,bdBestH}=boot();const H=bdBestH(6);
   let a=boot({v:4,lang:'ko'});
-  let o=bdOut(a,1000);a.onDir('db',o+fr(2));assert.equal(a.bd.state,4,'there is no frame too early to cancel');assert.equal(a.session.bd.count,1);assert.equal(a.session.bd.dist,bdDist(2),'it just barely moved');
+  let o=bdOut(a,1000);a.onDir('db',bdAt(o,2));assert.equal(a.bd.state,4,'there is no frame too early to cancel');assert.equal(a.session.bd.count,1);assert.equal(a.session.bd.dist,bdDist(2),'it just barely moved');
   assert.equal(a.get('coachMsg').innerHTML,a.T('bd.coach.cancelEarly',BD.CANCEL_A-2));
   // no cancel → stiff for RECOVER_F frames from the backdash, counted from the output
   a=boot({v:4,lang:'ko'});o=bdOut(a,2000);a.onDir('n',o+fr(12));assert.equal(a.session.bd.dist,BD_FULL);assert.equal(a.bd.chain,0);
@@ -128,7 +130,7 @@ test('backdash faults: an early 1 is a short backdash, no cancel locks RECOVER_F
   bdOut(a,o+fr(BD.RECOVER_F+2));assert.equal(a.bd.state,3,'after the recovery the next one is fine');
   // engaged first, then the loud faults
   a=boot({v:4,lang:'ko'});o=bdOut(a,1000);o=bdSet(a,o,H);assert.equal(a.bd.chain,2);
-  a.onDir('d',o+fr(H));assert.equal(a.get('rTitle').textContent,a.T('bd.f.side.title'));assert.equal(a.bd.chain,0);near(a.session.bd.dist,2*bdDist(H),'a sidestep cancel still moved');
+  a.onDir('d',bdAt(o,H));assert.equal(a.get('rTitle').textContent,a.T('bd.f.side.title'));assert.equal(a.bd.chain,0);near(a.session.bd.dist,2*bdDist(H),'a sidestep cancel still moved');
   o=bdOut(a,o+fr(30));a.onDir('db',o+fr(H));a.onDir('n',o+fr(H+2));assert.equal(a.get('rTitle').textContent,a.T('bd.f.neutral1.title'));assert.equal(a.bd.state,0);
   o=bdOut(a,o+fr(60));a.onDir('db',o+fr(H));a.onDir('b',o+fr(H+2));a.onDir('d',o+fr(H+4));assert.equal(a.get('rTitle').textContent,a.T('bd.f.dir.title'));
   o=bdOut(a,o+fr(90));a.onDir('db',o+fr(H));a.tick(o+fr(H+BD.LINK_MAX_F+1));assert.equal(a.bd.state,0,'sitting longer than LINK_MAX_F is just a crouch');assert.equal(a.bd.chain,0);
@@ -173,13 +175,13 @@ test('backdash recovery is a stage mechanic in every mode: no second backdash or
   const a=boot({v:4});a.setMode('ewgf20');const o=bdOut(a,1000);assert.ok(a.anim.moveDur>0);a.onDir('db',o+fr(13));assert.equal(a.anim.moveDur,0);assert.equal(a.anim.kind,'bdCrouch');
   assert.equal(a.bd.state,0,'judging still off outside free/bd10');
 });
-test('the backdash visual follows the measured S-curve: BD_LAST frames long, BD.PX wide, same shape as the judged distance',()=>{
-  const a=boot({v:4});const {BD,BD_FULL,BD_LAST,bdDist,bdEase}=a;a.time(1000);bdOut(a,1000);
-  assert.equal(a.anim.moveEase,bdEase);near(a.anim.moveDur,BD_LAST*F,'duration');near(a.anim.moveFrom-a.anim.moveTo,BD.PX,'1P moves left by BD.PX');
-  assert.equal(bdEase(0),0);assert.equal(bdEase(1),1);
-  for(let h=1;h<=BD_LAST;h++) near(bdEase(h/BD_LAST),bdDist(h)/BD_FULL,'frame '+h);
+test('the backdash visual follows the measured S-curve: it stops where the judge credits (output = 1f), BD.PX wide',()=>{
+  const a=boot({v:4});const {BD,BD_FULL,BD_LAST,BD_MOVE_MS,bdDist,bdEase,bdFrameNo}=a;a.time(1000);bdOut(a,1000);
+  assert.equal(a.anim.moveEase,bdEase);near(BD_MOVE_MS,(BD_LAST-1)*F,'moving from 1f until it stops on BD_LAST');near(a.anim.moveDur,BD_MOVE_MS,'duration');near(a.anim.moveFrom-a.anim.moveTo,BD.PX,'1P moves left by BD.PX');
+  assert.equal(bdEase(1),1);
+  for(let e=0;e<BD_LAST;e++) near(bdEase(e*F/BD_MOVE_MS),bdDist(bdFrameNo(e*F))/BD_FULL,'a 1 or sidestep '+e+' frames after the output stops the stage at the judged distance');
   for(let k=0;k<1;k+=0.01) assert.ok(bdEase(k+0.01)>=bdEase(k)-1e-12,'monotone');
-  assert.ok(bdEase(3/BD_LAST)<0.15,'slow off the mark');
+  assert.ok(bdEase(2*F/BD_MOVE_MS)<0.15,'slow off the mark: frame 3 (2 frames after the output) is under 15%');
 });
 test('the segment bar shows the last backdash: 4 tap · N · hold until the cancel · 1 held until the next 4',()=>{
   const a=boot({v:4,lang:'ko'});const H=a.bdBestH(6);
@@ -196,37 +198,37 @@ test('bd10 timeline: one set frame by frame (cancel cell, next backdash, curve f
   const a=boot({v:4,lang:'ko'});const {BD,BD_FULL,BDP_AXIS,bdDist,bdBestH,bdMps}=a;const H=bdBestH(6);
   assert.equal(a.get('bdpTimeline').hidden,true,'only in bd10');a.setMode('bd10');
   assert.equal(a.get('bdpTimeline').hidden,false);assert.equal(a.get('bdpPanel').hidden,false);assert.equal(a.get('bdpResult').textContent,a.T('bdp.ready'));
-  const cells=()=>[...a.get('bdpAxis').innerHTML.matchAll(/<div class="wsc-cell([^"]*)" data-frame="(\d+)" style="--d:([\d.]+)"/g)].map(m=>({cls:m[1].trim().split(/\s+/).filter(Boolean),f:+m[2],d:+m[3]}));
-  assert.equal(cells().length,BDP_AXIS+1,'frames 0..RECOVER_F');
+  const cells=()=>Object.fromEntries([...a.get('bdpAxis').innerHTML.matchAll(/<div class="wsc-cell([^"]*)" data-frame="(\d+)" style="--d:([\d.]+)"/g)].map(m=>[+m[2],{cls:m[1].trim().split(/\s+/).filter(Boolean),f:+m[2],d:+m[3]}])); // keyed by frame number
+  assert.deepEqual(Object.keys(cells()).map(Number),[...Array(BDP_AXIS).keys()].map(i=>i+1),'frames 1..BD_NEXT_F');
   let o=bdOut(a,1000);assert.ok(a.bdp.run);assert.equal(a.bdp.run.t0,o);
-  a.onDir('db',o+fr(H));assert.equal(a.bdp.run.h,H);
-  let cs=cells();assert.deepEqual(cs[0].cls,['out','mark']);assert.ok(cs[H].cls.includes('cut')&&cs[H].cls.includes('win'));
+  a.onDir('db',bdAt(o,H));assert.equal(a.bdp.run.h,H);
+  let cs=cells();assert.deepEqual(cs[1].cls,['out','mark']);assert.ok(cs[H].cls.includes('cut')&&cs[H].cls.includes('win'));
   assert.equal(cs[5].d,+(bdDist(5)/BD_FULL).toFixed(3),'the fill is the curve');assert.equal(cs[H+3].d,+(bdDist(H)/BD_FULL).toFixed(3),'after the cancel the fill stays where the dash stopped');assert.ok(cs[H+3].cls.includes('hand'));
   for(let f=BD.CANCEL_A;f<=BD.CANCEL_B;f++) assert.ok(cs[f].cls.includes('win'),'window '+f);
-  const c=o+fr(H);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));const o2=c+fr(6);a.onDir('b',o2);
-  const row=a.bdp.last.row,v=bdMps(bdDist(H),H+6);assert.equal(row.h,H);assert.equal(row.hand,6);assert.equal(row.best,H);assert.equal(row.mps,v);assert.equal(row.g,'top');
+  const c=bdAt(o,H);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));const o2=c+fr(6);a.onDir('b',o2);
+  const row=a.bdp.last.row,v=bdMps(bdDist(H),a.bdPeriod(H,6));assert.equal(row.h,H);assert.equal(row.hand,6);assert.equal(row.best,H);assert.equal(row.mps,v);assert.equal(row.g,'top');
   cs=cells();assert.ok(cs[H+6].cls.includes('next'),'the next backdash closes the set');assert.ok(cs[H].cls.includes('cut'),'the finished set stays drawn until the next 1');
   assert.equal(a.get('bdpResult').textContent,a.T('bd.title',2,a.T('bd.grade.top')));
   assert.equal(a.get('bdpDetail').textContent,a.T('bdp.formula',bdDist(H).toFixed(3),H,6,v.toFixed(2)));
-  assert.equal((a.get('bdpAB').innerHTML.match(/class="ok"/g)||[]).length,6,'a 13f cancel with a 6f hand passes every tile');
+  assert.equal((a.get('bdpAB').innerHTML.match(/class="ok"/g)||[]).length,6,'the best cancel with a 6f hand passes every tile');
   assert.equal(row.db,2);assert.equal(row.tap,4);assert.match(a.get('bdpAB').innerHTML,new RegExp(a.T('bdp.tapLabel')+'<b>4f</b>'));
   // the hand under the axis: 1 hold from the cut to the roll back to 4, then 4 N 4 up to the next backdash, each against its target
-  const ax=a.get('bdpAxis').innerHTML,sp=[...ax.matchAll(/<u class="gp-band span (ok|no)" style="grid-column:(\d+)\/(\d+)">([^<]*)<\/u>/g)].map(m=>({ok:m[1],a:+m[2]-1,b:+m[3]-2,text:m[4]}));
+  const ax=a.get('bdpAxis').innerHTML,sp=[...ax.matchAll(/<u class="gp-band span (ok|no)" style="grid-column:(\d+)\/(\d+)">([^<]*)<\/u>/g)].map(m=>({ok:m[1],a:+m[2],b:+m[3]-1,text:m[4]}));
   assert.deepEqual(JSON.parse(JSON.stringify(sp)),[{ok:'ok',a:H,b:H+1,text:a.T('bdp.spanDb',a.glyphFor('db'),2)},{ok:'ok',a:H+2,b:H+6,text:a.T('bdp.spanTap',4)}]);
   assert.ok(cs[H].cls.includes('best'),'the best cancel frame for this hand is marked');assert.match(ax,new RegExp('>'+a.T('bdp.bandCancel')+'</u>'));
   assert.match(a.get('bdpStats').innerHTML,/<b>1<\/b>/);assert.match(a.get('bdpRows').innerHTML,new RegExp(H+'f</td><td>6f</td><td>'+v.toFixed(2)));
   // the next set in progress: shown once its 1 is in
-  a.onDir('db',o2+fr(8));cs=cells();assert.ok(cs[8].cls.includes('cut'));
-  a.renderBdpLive(o2+fr(10));assert.equal(a.get('bdpLive').textContent,a.T('bdp.liveHand',2));
+  a.onDir('db',bdAt(o2,8));cs=cells();assert.ok(cs[8].cls.includes('cut'));
+  a.renderBdpLive(bdAt(o2,10));assert.equal(a.get('bdpLive').textContent,a.T('bdp.liveHand',2));
   // a break keeps the set on the axis with the reason
   a.onDir('n',o2+fr(9));assert.equal(a.bdp.run,null);assert.equal(a.bdp.last.fail,'neutral1');assert.equal(a.get('bdpResult').textContent,a.T('bdp.broke',a.T('bd.f.neutral1.title')));
   assert.equal((a.get('bdpAB').innerHTML.match(/class="ok"/g)||[]).length,6,'a chain always ends with a break: the tiles keep the last graded set');assert.equal(a.get('bdpDetail').textContent,a.T('bdp.formula',bdDist(H).toFixed(3),H,6,v.toFixed(2)));
   assert.doesNotMatch(a.get('bdpCommand').textContent,/→/,'no arrow separators in the command line');
   a.renderBdpLive(o2+fr(40));assert.equal(a.get('bdpLive').textContent,a.T('bdp.liveDone'));
-  const o3=bdOut(a,o2+fr(60));a.renderBdpLive(o3+fr(5));assert.equal(a.get('bdpLive').textContent,a.T('bdp.liveDash',5,bdDist(5).toFixed(2)));
+  const o3=bdOut(a,o2+fr(60));a.renderBdpLive(bdAt(o3,5));assert.equal(a.get('bdpLive').textContent,a.T('bdp.liveDash',5,bdDist(5).toFixed(2)));
   a.onDir('n',o3+fr(12));assert.equal(a.get('bdpResult').textContent,a.T('bdp.broke',a.T('bd.f.noCancel.title')),'released without a cancel');
   // language switch redraws; leaving the mode hides it and drops the set in progress
-  a.setLang('en');assert.equal(a.get('bdpGuide').textContent,a.T('bdp.guide',BD.CANCEL_A,BD.CANCEL_B,BD.HAND_F,a.BD_LAST,BD.RECOVER_F,BD.DB_F,BD.TAP_F));
+  a.setLang('en');assert.equal(a.get('bdpGuide').textContent,a.T('bdp.guide',BD.CANCEL_A,BD.CANCEL_B,BD.HAND_F,a.BD_LAST,a.BD_NEXT_F,BD.DB_F,BD.TAP_F));
   a.setMode('free');assert.equal(a.get('bdpTimeline').hidden,true);assert.equal(a.get('bdpPanel').hidden,true);assert.equal(a.bdp.run,null);
   const before=a.bdp.session.sets;bdSet(a,bdOut(a,9000),H);assert.equal(a.bdp.session.sets,before,'free practice does not feed the bd10 panel');
 });
@@ -237,20 +239,20 @@ test('review fixes (2026-09-13): one 4N4 pairing rule, provisional no-cancel dis
   assert.equal(a.bd.state,1,'too slow to pair: the late 4 is a new first tap');assert.notEqual(a.anim.kind,'backdash');assert.equal(a.bd.chain,0);
   a.onDir('n',1320);a.onDir('b',1340);assert.equal(a.bd.state,3);assert.equal(a.anim.kind,'backdash','the judged backdash is the drawn one');
   // released without a cancel, then crouched/sidestepped inside the recovery: the distance shrinks to what was travelled (release-then-crouch spam earns no more than a cancel)
-  a=boot({v:4,lang:'ko'});let o=bdOut(a,1000);a.onDir('n',o+fr(2));assert.equal(a.session.bd.dist,BD_FULL);a.onDir('db',o+fr(3));near(a.session.bd.dist,bdDist(3),'crouched at 3f: only what it travelled');
-  o=bdOut(a,2000);a.onDir('n',o+fr(2));a.onDir('d',o+fr(8));near(a.session.bd.dist,bdDist(3)+bdDist(8),'sidestep at 8f');
+  a=boot({v:4,lang:'ko'});let o=bdOut(a,1000);a.onDir('n',o+fr(2));assert.equal(a.session.bd.dist,BD_FULL);a.onDir('db',bdAt(o,3));near(a.session.bd.dist,bdDist(3),'crouched at 3f: only what it travelled');
+  o=bdOut(a,2000);a.onDir('n',o+fr(2));a.onDir('d',bdAt(o,8));near(a.session.bd.dist,bdDist(3)+bdDist(8),'sidestep at 8f');
   o=bdOut(a,3000);a.onDir('n',o+fr(2));a.tick(o+fr(BD.RECOVER_F+1));a.onDir('db',o+fr(BD.RECOVER_F+2));near(a.session.bd.dist,bdDist(3)+bdDist(8)+BD_FULL,'after the recovery the full backdash stays');
   // free practice before the first 1 cancel: a release or sidestep leaves the segment bar alone
   a=boot({v:4,lang:'ko'});dash(a,1000);o=bdOut(a,3000);a.onDir('n',o+fr(12));assert.equal(a.bd.seg,null);assert.equal(a.get('segTitle').textContent,a.T('seg.title'),'release: the wave bar stays');
   o=bdOut(a,5000);a.onDir('d',o+fr(8));assert.equal(a.bd.seg,null);assert.equal(a.get('segTitle').textContent,a.T('seg.title'),'sidestep: the wave bar stays');
   // engaged: d/f is a crouch (it cancels the recovery), so its distance counts; any direction while holding the 1 ends the set with a card
   a=boot({v:4,lang:'ko'});o=bdOut(a,1000);o=bdSet(a,o,H);assert.equal(a.bd.chain,2);
-  a.onDir('df',o+fr(H));near(a.session.bd.dist,2*bdDist(H),'d/f credits the distance');assert.equal(a.get('rTitle').textContent,a.T('bd.f.dir.title'));assert.equal(a.bd.chain,0);
+  a.onDir('df',bdAt(o,H));near(a.session.bd.dist,2*bdDist(H),'d/f credits the distance');assert.equal(a.get('rTitle').textContent,a.T('bd.f.dir.title'));assert.equal(a.bd.chain,0);
   o=bdOut(a,o+fr(60));a.onDir('db',o+fr(H));a.onDir('d',o+fr(H+2));assert.equal(a.get('rTitle').textContent,a.T('bd.f.dir.title'),'1 → 2 says why the set ended');assert.equal(a.bd.state,0);
   // the cancel line redraws the backdash card even if another card was shown in between
   a=boot({v:4,lang:'ko'});o=bdOut(a,1000);o=bdSet(a,o,H);const title=a.get('rTitle').textContent;assert.equal(title,a.T('bd.title',2,a.T('bd.grade.top')));
   a.onButton(2,o+fr(3));assert.notEqual(a.get('rKind').textContent,'BACKDASH','a stray 2 shows its own card');
-  a.onDir('db',o+fr(H));assert.equal(a.get('rKind').textContent,'BACKDASH');assert.equal(a.get('rTitle').textContent,title);assert.equal(a.get('rOff').textContent,a.T('bd.cancel',H,0,bdDist(H).toFixed(2)));
+  a.onDir('db',bdAt(o,H));assert.equal(a.get('rKind').textContent,'BACKDASH');assert.equal(a.get('rTitle').textContent,title);assert.equal(a.get('rOff').textContent,a.T('bd.cancel',H,0,bdDist(H).toFixed(2)));
   // bd10: an isolated backdash is a chain of 1 on the record; the HUD chain widget is redrawn when the trial ends
   a=boot({v:4,lang:'en'});a.setMode('bd10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();
   o=bdOut(a,4100);a.onDir('n',o+fr(12));assert.equal(a.trial.bestChain,1,'an isolated backdash is a chain of 1');assert.equal(a.session.bd.bestChain,1);
@@ -268,7 +270,7 @@ test('bd10 timeline review fixes (2026-10-03): a cancel past the axis stays on i
   const cols=()=>[...a.get('bdpAxis').innerHTML.matchAll(/grid-column:(\d+)\/(\d+)/g)].flatMap(m=>[+m[1],+m[2]]);
   let o=bdOut(a,1000);const late=BDP_AXIS+10;bdSet(a,o,late);
   assert.equal(a.bdp.last.row.h,late,'the judged cancel frame is kept');
-  assert.ok(Math.max(...cols())<=BDP_AXIS+2,'no strip or band reaches past the last column: '+cols().join(','));
+  assert.ok(Math.max(...cols())<=BDP_AXIS+1,'no strip or band reaches past the last column: '+cols().join(','));
   assert.match(a.get('bdpAxis').innerHTML,new RegExp('class="wsc-cell[^"]*\\bcut\\b[^"]*" data-frame="'+BDP_AXIS+'"'),'the cut is drawn on the last cell');
   o=bdOut(a,5000);bdSet(a,o,bdBestH(6));assert.ok(a.bdp.session.sets>0&&a.bdp.row);
   a.resetSession();assert.equal(a.bdp.session.sets,0);assert.equal(a.bdp.row,null);assert.equal(a.bdp.last,null);

@@ -27,7 +27,7 @@ stageAssets(html,out);
         const F=1000/60,base=Math.floor((performance.now()-600)/F)*F+1;
         const key=(code,time,up=false)=>{const e=new KeyboardEvent(up?'keyup':'keydown',{code,bubbles:true,cancelable:true});Object.defineProperty(e,'timeStamp',{value:time});window.dispatchEvent(e);};
         let t=base; key('KeyA',t); key('KeyA',t+=2*F,true); key('KeyA',t+=2*F);  // 4 N 4 → backdash out
-        key('KeyS',t+=${h}*F);                     // ↙ = the 1 cancel
+        key('KeyS',t+=${h-1}*F);                   // ↙ = the 1 cancel on frame h (the output frame is 1f)
         key('KeyS',t+=2*F,true);                   // back to 4
         key('KeyA',t+=2*F,true);                   // N
         key('KeyA',t+=2*F);                        // 4 → the next backdash (hand = 6f)
@@ -44,7 +44,7 @@ stageAssets(html,out);
     // the set itself was recorded and is in the recent rows
     const rows=await b.evalJs(`bdTest.bdp.session.rows.map(x=>({h:x.h,hand:x.hand,g:x.g,mps:x.mps}))`);
     assert.equal(rows.length,1,JSON.stringify(rows));assert.equal(rows[0].h,K.best);assert.equal(rows[0].hand,6);assert.equal(rows[0].g,'top');
-    assert.equal(r.cells.length,K.axis+1);assert.equal(r.bands.length,4);
+    assert.equal(r.cells.length,K.axis);assert.equal(r.cells[0].f,1,'the output frame is 1f');assert.equal(r.bands.length,4);
     assert.equal(r.axisW<=r.boxW+1,true,'the axis fits the desktop panel without scrolling: '+r.axisW+' > '+r.boxW);
     const full=r.cells.filter(c=>c.f>=K.last).every(c=>Math.abs(c.d-1)<1e-3);assert.equal(full,true,'an uncancelled backdash fills to the end');
 
@@ -54,12 +54,12 @@ stageAssets(html,out);
       const F=1000/60,base=Math.floor((performance.now()-600)/F)*F+1;
       const key=(code,time,up=false)=>{const e=new KeyboardEvent(up?'keyup':'keydown',{code,bubbles:true,cancelable:true});Object.defineProperty(e,'timeStamp',{value:time});window.dispatchEvent(e);};
       let t=base; key('KeyA',t); key('KeyA',t+=2*F,true); key('KeyA',t+=2*F);
-      for(let i=0;i<2;i++){ key('KeyS',t+=${K.best}*F); key('KeyS',t+=2*F,true); key('KeyA',t+=2*F,true); key('KeyA',t+=2*F); }
+      for(let i=0;i<2;i++){ key('KeyS',t+=${K.best-1}*F); key('KeyS',t+=2*F,true); key('KeyA',t+=2*F,true); key('KeyA',t+=2*F); }
       return {view:bdTest.bdp.last&&bdTest.bdp.last.row&&bdTest.bdp.last.row.h, sets:bdTest.bdp.session.sets};
     })()`);
     assert.equal(shotData.view,K.best);assert.equal(shotData.sets,3);
     await sleep(150);
-    const desk=await b.evalJs(`(()=>{const cs=[...document.querySelectorAll('#bdpAxis .wsc-cell')];return {cut:cs.findIndex(c=>c.classList.contains('cut')),next:cs.findIndex(c=>c.classList.contains('next')),ok:document.querySelectorAll('#bdpAB .ok').length,detail:document.querySelector('#bdpDetail').textContent}})()`);
+    const desk=await b.evalJs(`(()=>{const cs=[...document.querySelectorAll('#bdpAxis .wsc-cell')];const at=k=>{const c=cs.find(c=>c.classList.contains(k));return c?+c.dataset.frame:-1;};return {cut:at('cut'),next:at('next'),ok:document.querySelectorAll('#bdpAB .ok').length,detail:document.querySelector('#bdpDetail').textContent}})()`);
     assert.equal(desk.cut,K.best);assert.equal(desk.next,K.best+6);assert.equal(desk.ok,6,JSON.stringify(desk));assert.match(desk.detail,/× 60 ÷/);
     await b.evalJs(`document.querySelector('#bdpTimeline').scrollIntoView({block:'center'})`);await sleep(200);
     const shot=path.join(out,'bd10-1366.png');fs.writeFileSync(shot,Buffer.from((await b.send('Page.captureScreenshot',{format:'png'})).result.data,'base64'));

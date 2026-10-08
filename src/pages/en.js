@@ -238,7 +238,7 @@ module.exports = {
 <p>A 1 cancel that is too early or too late both cost you.</p>
 <ul>
 <li><strong>Too early</strong>: cutting before the backdash has travelled far covers less ground. Even an early cancel keeps the distance already travelled.</li>
-<li><strong>About right</strong>: cancel around 11–13f and connect the next backdash quickly. The best cancel depends on the time your hand takes from pressing 1 to the next backdash.</li>
+<li><strong>About right</strong>: counting the frame the backdash comes out as 1f, cancel at 11–13f (best 12–13f) and connect the next backdash quickly. The best cancel depends on the time your hand takes from pressing 1 to the next backdash.</li>
 <li><strong>Too late</strong>: the next backdash waits for the recovery to end, wasting time.</li>
 </ul>
 <p>Mishima Dojo shows how many frames after the backdash your 1 arrived, how long you held 1 and how long the 4 N 4 took, in the “last backdash” bar.</p>
@@ -256,9 +256,9 @@ module.exports = {
 <p>Mishima Dojo grades each set by <strong>set speed (m/s)</strong>: the distance of that backdash divided by the time until the next one comes out.</p>
 <div class="table"><table>
 <tr><th>Grade</th><th>Set speed</th></tr>
-<tr><td>Very fast</td><td>1.78 m/s or more</td></tr>
-<tr><td>Fast</td><td>1.55 m/s or more</td></tr>
-<tr><td>OK</td><td>1.23 m/s or more</td></tr>
+<tr><td>Very fast</td><td>1.88 m/s or more</td></tr>
+<tr><td>Fast</td><td>1.62 m/s or more</td></tr>
+<tr><td>OK</td><td>1.27 m/s or more</td></tr>
 <tr><td>Slow</td><td>below that</td></tr>
 </table></div>
 

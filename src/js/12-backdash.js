@@ -26,9 +26,9 @@ function bdNoCancel(t){ // 4 released (or held past LINK_MAX_F) without a 1: ful
 }
 function bdOut(t){ // b,N,b completed: the backdash comes out. Grades the set that started at the previous backdash (p); the first one of a chain is just counted.
   const p = bd.prev, tapF = bdF(t-bd.t4a), loud = bdLoud(); bd.state=3; bd.t4b=t; bd.lastT=t; bd.prev=null; bd.card=null;
-  // period = h + c: the backdash until the 1, then the hand (1 held, 4 N 4) until this output. Speed = distance × 60 ÷ period (bdMps), the formula in 00-core.
+  // period = h − 1 + c (bdPeriod, h counts the output frame as 1f): the backdash until the 1, then the hand (1 held, 4 N 4) until this output. Speed = distance × 60 ÷ period (bdMps), the formula in 00-core.
   const dbF_ = p ? bdF(bd.t4a-p.t1) : 0, hand = p ? bdF(t-p.t1) : 0;
-  const period = p ? p.h+hand : 0, mps = p ? bdMps(p.dist, period) : 0; // sum the displayed intervals: rounding the whole interval separately can differ by 1f
+  const period = p ? bdPeriod(p.h, hand) : 0, mps = p ? bdMps(p.dist, period) : 0; // sum the displayed intervals: rounding the whole interval separately can differ by 1f
   const g = p ? (BD_TIER_MPS.find(x => mps>=x.mps)||{k:'slow'}).k : null;
   bd.chain = !p || g==='slow' ? 1 : bd.chain+1;
   session.bd.bestChain = Math.max(session.bd.bestChain, bd.chain); if(g==='top') session.bd.top++;
@@ -52,7 +52,7 @@ function bdCancel(h, dist){ // 1(↙) after the backdash: immediate feedback on 
 function bdCut(t){ // crouch/sidestep inside the recovery of an uncancelled backdash: the dash stopped here, so the provisional metre becomes the distance actually travelled
   if(!bd.open) return;
   bdpStop(bd.open.t4b, t);
-  const d = bdDist(bdF(t-bd.open.t4b)) - BD_FULL; bd.open=null; if(!d) return;
+  const d = bdDist(bdFrameNo(t-bd.open.t4b)) - BD_FULL; bd.open=null; if(!d) return;
   session.bd.dist += d; if(trial.running && mode==='bd10'){ trial.dist += d; renderBdHud(); }
 }
 function bdDir(dir, t){
@@ -72,7 +72,7 @@ function bdDir(dir, t){
       else if(bd.prev) bdFail('dir', t); else bd.state=0;
       break;
     case 3: {
-      const h = bdF(t-bd.t4b);
+      const h = bdFrameNo(t-bd.t4b); // the output frame is 1f
       if(dir==='db'){ // a cancel at any frame keeps what the dash travelled so far (bdDist); there is no frame too early to count, only a short one
         const dist = bdDist(h); bd.seg=null; bdSeg({tap:bd.tN-bd.t4a, n:bd.t4b-bd.tN, hold:t-bd.t4b}); // the bar shows this backdash; its 1 hold fills in at the next 4
         bd.engaged=true; bd.prev={t4b:bd.t4b, h, dist, t1:t}; bd.state=4; bdEarn(dist, t); bdCancel(h, dist); updateHud(); // engaged from here: the HUD chain widget may switch to BACKDASH
