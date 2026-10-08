@@ -243,7 +243,9 @@ stageAssets(html,out);
       const key=(code,up)=>{const e=new KeyboardEvent(up?'keyup':'keydown',{code,bubbles:true,cancelable:true});Object.defineProperty(e,'timeStamp',{value:performance.now()});window.dispatchEvent(e);};
       key('KeyS');key('KeyD');key('KeyI');key('KeyI',true);key('KeyD',true);key('KeyS',true);
       const B=giwonTest.stiffState(), span=B?B.tRec-B.t0:0;
-      await wait(400); const mid=giwonTest.stiffState()?(performance.now()-B.t0)/span:null;
+      // Poll by the clock up to the midpoint: a fixed 400ms wait overran by ~150ms on a CI runner (2026-10-08).
+      while(giwonTest.stiffState() && (performance.now()-B.t0)/span<0.5) await wait(10);
+      const mid=giwonTest.stiffState()?(performance.now()-B.t0)/span:null;
       // Last fill seen before the gauge clears. Sampled every 20ms: a single fixed wait overshoots the release flash on a slow CI runner.
       let near=null; for(const until=performance.now()+1500; performance.now()<until && giwonTest.stiffState(); await wait(20)) near=(performance.now()-B.t0)/span;
       await wait(300); return {span, mid, near, gone:giwonTest.stiffState()===null, width:giwonTest.STIFF_BAR.w};

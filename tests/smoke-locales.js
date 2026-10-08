@@ -80,8 +80,8 @@ let browser, server;
   for(const lang of ['ja','ko','en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${lang}"]').click()`);
     const notice=await evalJs(`(()=>{const list=document.querySelector('#noticeList'),first=list.querySelector('.notice-item');return {lang:document.documentElement.lang,count:list.querySelectorAll('.notice-item').length,title:first.querySelector('h3').textContent,highlight:list.querySelector('.notice-highlight h4').textContent,items:first.querySelectorAll(':scope > ul > li').length,text:list.textContent}})()`);
-    assert.equal(notice.lang,lang);assert.equal(notice.count,6);assert.equal(notice.items,4);
-    assert.equal(notice.title,dict[lang]['notice.20261004.title']);
+    assert.equal(notice.lang,lang);assert.equal(notice.count,7);assert.equal(notice.items,6);
+    assert.equal(notice.title,dict[lang]['notice.20261008.title']);
     assert.equal(notice.highlight,dict[lang]['notice.wedding.title']);
     if(lang!=='ja')assert.doesNotMatch(notice.text,/[\u3040-\u30ff]/,lang+' must not show Japanese notice text');
     for(const width of [320,390,1280]){
