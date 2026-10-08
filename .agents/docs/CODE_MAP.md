@@ -67,7 +67,7 @@
 | 파일 | 내용 |
 |---|---|
 | `tests/helpers/app.cjs` | 단위 테스트 하네스. `boot(saved, fetch, env)`가 조립한 앱을 vm에서 돌리고 **앱의 모든 최상위 이름**을 돌려준다(목록 관리 없음. `let`은 부트 직후 값의 스냅샷, 객체는 살아 있는 참조) |
-| `tests/<주제>.test.cjs` | judging · input · modals · i18n-pages · backend · sound · strikes-rush · wardrobe-rewards · backdash · wsc · stage · giwon · giwon-practice · board(워커) · docs(문서 경로·결정 인용·파일 지도 검사) · source(`src/` include·파싱·조립 결과 검사) |
+| `tests/<주제>.test.cjs` | judging · input · modals · i18n-pages · backend · sound · strikes-rush · moves · wardrobe-rewards · backdash · wsc · stage · giwon · giwon-practice · board(워커) · docs(문서 경로·결정 인용·파일 지도 검사) · source(`src/` include·파싱·조립 결과 검사) |
 | `tests/smoke-*.js` | 헤드리스 Chrome/Edge 브라우저 검사. 조립한 페이지를 `.sandbox/`나 임시 폴더에 쓰고 `stageAssets()`로 자원을 복사 |
 | `tests/fake-d1.js` | node:sqlite 인메모리 가짜 D1 |
 | `tools/assemble.js` | `src/` → 한 페이지. `sourceFileContaining()`은 생성 상수를 고치는 도구가 대상 파일을 찾는 데 쓴다 |
@@ -85,6 +85,7 @@
 | 웨이브·초풍 판정 | `06-state` `11-crouch-dash` `13-button` `16-strikes` `19-tick` | `judging` | 결정 1·2 |
 | 무족초 | `11-crouch-dash`(`mistDir`/`mistButton`) `16-strikes` | `judging` | `MIST_EWGF.md` |
 | 통발·나락 | `13-button` `16-strikes` | `strikes-rush` | 결정 12 |
+| 기술 온오프 | `03-store`(`MOVE_IDS`) `13-button`(`moveOn`·`MOVE_FORCED`) `23-settings-ui` `20-trials`(`renderMode` 표시) | `moves` | 결정 32 |
 | 기원권·기원초 | `00-core`(`GIWON`) `14-giwon` `15-giwon-practice` `16-strikes` `31-stage` | `giwon` `giwon-practice` `smoke-giwon` | `GIWONCHO.md` |
 | 웨캔기어 | `10-wsc` `20-trials`(`CHALLENGES`) | `wsc` `smoke-wsc` | `WSC_PRACTICE.md` |
 | 백대시·bd10 | `00-core`(`BD`) `06-state` `12-backdash` `12-bd-practice` `11-crouch-dash`(`backdashMotion`) `31-stage`(`bdEase`) | `backdash` `smoke-backdash` | 결정 17, `BACKDASH.md` |
@@ -114,6 +115,8 @@
 | 4 | 기원권 경직 중(`giwonStiff`)이면 시작 6(`f`) 말고는 버린다 | 끝 |
 | 5 | 무족초 같은 칸 보류(`mistDir`) | 끝 |
 | 6 | `commandDir`: 보류한 `f_before_d` 실패 → `wscDir` → 더블 탭(대시·백대시 연출, `bd` 머신은 `backdashMotion`) → `cd` 상태 머신 `switch` | — |
+
+기술 온오프(결정 32): 끈 기술은 아래 표에서 **그 줄만 건너뛴다**(`moveOn(k)`). 초풍은 `attempt()` 첫 줄에서 막으므로 초풍 계열 결과가 전부 사라지고, 기원권은 `giwonReady`·`giwonStage`·6→↘ 보류(`cd.gFault`), 무족초는 `mistDir`의 시작, 통발·나락은 `commandButton`의 해당 분기에서 막는다.
 
 버튼 `onButton(n, t)` (`13-button`):
 

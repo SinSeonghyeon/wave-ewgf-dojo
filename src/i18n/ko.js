@@ -79,6 +79,8 @@ const I18N_KO = {
   'stat.dps':'최고 웨이브 속도 (대시/초)', 'stat.chain':'최고 연속 대시', 'stat.dash':'총 대시', 'stat.rate':'초풍 성공률', 'stat.try':'초풍 시도', 'stat.mean':'평균 버튼 오프셋',
   'set.title':'입력 · 판정 설정',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'캐릭터 방향', 'set.side1':'1P (→ 가 앞)', 'set.side2':'2P (← 가 앞)',
+  'set.moves':'기술 켜기·끄기', 'set.movesNote':'끈 기술은 없는 것처럼 판정합니다. 예) 기원권을 끄면 ↘+RP는 초풍 실패, 초풍만 켜면 모든 RP가 초풍 시도로 채점됩니다. 무족초는 초풍이 켜져 있어야 합니다. 초풍 20회·웨이브 초풍 10회에서는 초풍, 기원초 연습에서는 기원권·초풍이 항상 켜집니다.',
+  'move.ewgf':'초풍', 'move.mist':'무족초', 'move.tongbal':'통발', 'move.hellsweep':'나락', 'move.giwon':'기원권', 'moves.off':names=>' · 꺼 둔 기술: '+names,
   'set.fx':'연출 (흔들림·플래시)', 'set.on':'켜기', 'set.off':'끄기',
   'set.touch':'터치 컨트롤', 'set.touchAuto':'자동 (터치 기기)', 'set.touchSize':'방향 버튼 크기', 'set.touchX':'방향 버튼 가로 위치', 'set.touchY':'방향 버튼 세로 위치', 'touch.note':'터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)', 'touch.aria':'터치 컨트롤', 'touch.padAria':'방향 버튼 — 아래와 좌우를 함께 눌러 대각선 입력', 'touch.left':'왼쪽', 'touch.down':'아래', 'touch.right':'오른쪽',
   'set.keys':'키 설정 — 동작마다 기본·보조 키를 하나씩 지정 (방향키 ↑↓←→ 는 항상 사용 가능)', 'set.keyListen':'키 입력…', 'set.keyAdd':'+ 추가', 'set.keyPrimary':'기본 키', 'set.keyAlt':'보조 키',

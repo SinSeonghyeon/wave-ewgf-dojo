@@ -12,13 +12,13 @@ function giwonClear(){ giwonLink = null; giwonRP = null; giwonBuf = null; stiffB
 // Only a fresh half-diagonal pressed in this very slot can still become a ↘ (a keyboard chord, or
 // a pad reporting one axis a poll early). Everything else is judged straight away, undelayed.
 function giwonStage(t, kind){
-  if(giwonRP || (heldDir!=='f' && heldDir!=='d') || prevDir!=='n' || frameSlot(heldDirT)!==frameSlot(t)) return false;
+  if(!moveOn('giwon') || giwonRP || (heldDir!=='f' && heldDir!=='d') || prevDir!=='n' || frameSlot(heldDirT)!==frameSlot(t)) return false;
   giwonRP = {t, slot: frameSlot(t), kind}; return true;
 }
 function giwonResolve(){ const g = giwonRP; if(!g) return; giwonRP = null; attempt(g.kind, null, g.t); }
 // The diagonal is held right now and no crouch-dash / WSC / mist path owns this RP. The state check is
 // what keeps 6N23+RP an EWGF: a completed crouch dash sits in state 4 with the very same ↘ held.
-function giwonReady(){ return heldDir==='df' && !mist && !cd.pending && !(wsc.active && wsc.active.back!=null); }
+function giwonReady(){ return moveOn('giwon') && heldDir==='df' && !mist && !cd.pending && !(wsc.active && wsc.active.back!=null); }
 // 기원권 경직(RECOVERY_F): 아무 행동도 나가지 않는다. 걷기·대시는 giwonStiff가 막고, 버튼은 여기서 막는다.
 // 인게임 입력 버퍼와 같이 **한 칸**이고 **마지막에 누른 것이 덮어쓴다** — 경직 중에 여러 커맨드를 넣어도
 // 한 번에 다 나오지 않는다(사용자 확인 2026-09-27). 버퍼에 남은 하나는 경직이 풀리는 프레임에 나가지만,

@@ -4,7 +4,7 @@ function strike(kind, t){
   wscOtherMove();
   const chainBefore = (t - cd.lastDF < 700) ? cd.chain : 0, ok = kind!=='hellsweepEarly';
   showResult(ok?'wave':'miss', STRIKE_KIND[kind], ['a.'+kind+'.title'], ['a.'+kind+'.sub']);
-  setCoach(kind==='giwon' ? () => T('a.giwon.coach') + T('a.giwon.hint') : ['a.'+kind+'.coach']); // 기원권: 초풍을 노렸을 때의 안내를 함께 (사용자 결정 2026-09-23)
+  setCoach(kind==='giwon' && moveOn('ewgf') ? () => T('a.giwon.coach') + T('a.giwon.hint') : ['a.'+kind+'.coach']); // 기원권: 초풍을 노렸을 때의 안내를 함께 (사용자 결정 2026-09-23). 초풍을 꺼 두면 안내도 뺀다 (결정 32(move-toggle))
   addLog(t, 'log.tStrike', ['res.'+kind], '', chainBefore? ['log.mAfterWave', chainBefore]:'', ok?'ok':'no');
   if(kind==='tongbal') fx.tongbal(); else if(kind==='hellsweep') fx.hellsweep(); else if(kind==='giwon') fx.giwon(); else fx.jab();
   if(ok&&mode!=='wsc'){ rushStrike(kind, t); store.life[kind]++; saveSoon(); checkAch(); }
@@ -22,6 +22,7 @@ function classify(off, t, input){
   else attempt('early', off, t, input);
 }
 function attempt(kind, off, t, input){
+  if(!moveOn('ewgf')) return; // 초풍을 꺼 두면 초풍 계열 결과(성공·실패 모두)가 나오지 않는다 (결정 32(move-toggle))
   wscOtherMove();
   const chainBefore = (t - cd.lastDF < 700) ? cd.chain : 0;
   if(kind==='ewgf'){ if(t - combo.t > 3000) combo.n = 0; combo.n++; combo.t = t; } else resetCombo();
