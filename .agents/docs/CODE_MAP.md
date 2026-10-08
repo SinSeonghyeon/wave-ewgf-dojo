@@ -20,7 +20,7 @@
 | `src/app.html` | `<head>`(SEO·OG·JSON-LD·AdSense·폰트), 정적 마크업(모든 대화상자 포함), include 순서 |
 | `src/style.css` | 스타일 전부. 색 토큰은 `:root`에만(결정 5) |
 | `src/i18n/ko.js` · `en.js` · `ja.js` | `I18N_KO/EN/JA` 사전. 세 파일은 같은 키(테스트가 검사). 공지 문구 `notice.*`도 여기 |
-| `src/js/00-core.js` | `FRAME`, `$`, `clamp`, 판정·연출 공용 상수, 백대시 실측 모델 `BD`·`bdDist`·`bdBestH`, 가정값 `GIWON`·`GIWON_ZOOM` |
+| `src/js/00-core.js` | `FRAME`, `$`, `clamp`, 판정·연출 공용 상수, 백대시 실측 모델 `BD`·`bdDist`·`bdPeriod`·`bdBestH`·`BD_NEXT_F`·`BD_MOVE_MS`, 프레임 원점 함수 `bdFrameNo`(몇 f째)·`bdF`(몇 f 동안), 가정값 `GIWON`·`GIWON_ZOOM` |
 | `src/js/01-wardrobe-items.js` | 옷장 슬롯·아이템(그리기 훅), 업적 정의, `TRIAL_MODES` |
 | `src/js/02-notices.js` | `NOTICES`(최신순 공지 데이터) |
 | `src/js/03-store.js` | `STORE`, `store` 로드·검증·저장, `PAGE_LANG`·`ASSET_ROOT` |
@@ -193,16 +193,16 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
           0 idle → 1 첫 4 홀드 → 2 중립 → 3 백대시 중(두 번째 4 홀드, bdOut: 첫 4로부터 TAP_MS 안의 b — tapDetect와 같은 규칙이라 판정된 백대시 = 그려진 백대시) → 4 캔슬 1(↙) 홀드 → 1 … · 3에서 n = 캔슬 없음(bdNoCancel: 거리 BD_FULL을 일단 주고 bd.open={t4b}; 경직 안에 앉기·횡이 오면 onDir의 bdCut(t)이 bdDist(h)로 깎는다, 경직이 끝나면 bdTick이 open을 지워 확정)
           · 2에서 b가 bdRec 안이면 bdFail('stiff') · 3에서 d/u/ub/uf = 횡 캔슬(거리 인정, bdFail('side')), df = 앉기(거리 인정, bdFail('dir')), f = bdFail('dir') · 4에서 n = bdFail('neutral1'), 그 외 방향 = bdFail('dir')
           bd.card{cls,title} = bdOut이 띄운 카드. bdCancel은 ui.result를 들여다보지 않고 이걸 캔슬 문구와 함께 다시 그린다(사이에 다른 카드가 떠도 유지). 체인·bestChain은 첫 백대시(chain 1)도 기록한다
-          거리 bdDist(h) = BD.CURVE[min(h,BD_LAST)−1] (실측 S자, 실게임 m. h = 두 번째 4를 잡은 프레임 bdF(ms)=max(1,round(ms/FRAME)), 너무 이른 프레임은 없다 — 짧을 뿐)
-          세트 채점은 다음 백대시가 출력될 때 bdOut에서: 손 hand = 1 → 이 출력 프레임, mps = bdMps(prev.dist, prev.h + hand)(각 구간을 반올림한 뒤 합산해 표시 공식과 일치) = D(h)×60÷(h+hand) → BD_TIER_MPS 첫 통과 등급(top/fast/ok = 손 c 7/10/16f로 최적 캔슬한 속도) 아니면 slow(체인 1)
+          거리 bdDist(h) = BD.CURVE[min(h,BD_LAST)−1] (실측 S자, 실게임 m. h = 1을 누른 프레임 번호 bdFrameNo(ms)=round(max(0,ms)/FRAME)+1, 두 번째 4가 나온 프레임이 1f(2026-10-08). 너무 이른 프레임은 없다 — 짧을 뿐)
+          세트 채점은 다음 백대시가 출력될 때 bdOut에서: 손 hand = 1 → 이 출력 프레임, mps = bdMps(prev.dist, bdPeriod(prev.h, hand))(각 구간을 반올림한 뒤 합산해 표시 공식과 일치) = D(h)×60÷(h−1+hand) → BD_TIER_MPS 첫 통과 등급(top/fast/ok = 손 c 7/10/16f로 최적 캔슬한 속도) 아니면 slow(체인 1)
           코치: best = bdBestH(hand)(공식 최적). [early best−1−h, late h−best−1, db 1홀드−2, tap 4N4−4] 중 최대 손실. 1을 누른 순간(bdCancel)은 고정 권장 창 CANCEL_A~B(11~13)로 cancelEarly/cancelLate/cancelOk
           자유 연습은 bd.engaged(첫 1 캔슬에 true, 백대시 없이 3초면 false)일 때만 카드·코치·로그·HUD(hudChainL BACKDASH, cd.chain===0일 때만)를 건드린다.
           bdClear()는 resetInput/setMode/측정 GO/endTrial(모두 updateHud와 짝). session.bd{count,dist,bestChain,top}(테스트가 읽는 관측값, 통계 격자에는 안 나옴).
           bd10 타임라인(12-bd-practice, mode==='bd10'일 때만): bdDir 첫 줄 bdpInput, bdOut의 bdpOut(t,row), bdBreak(t,why)의 bdpBreak, bdClear의 bdpClear, resetSession의 bdpReset(통계·마지막 세트까지). bdp{run{t0,events,h},last{…,end,row|fail},row(마지막 채점 세트 — 연속의 끝은 늘 끊김이라 칸은 이걸 그린다),session}
-          축 0..RECOVER_F 칸(0f = 출력, 축을 넘는 캔슬 h는 마지막 칸으로 접는다), 칸 채움 --d = D(min(f,h 또는 stop))/BD_FULL(횡·앉기 및 N 뒤 캔슬도 정지 거리 유지), 클래스 out/win/best(그 세트 손의 bdBestH)/still/cut/hand/next/mark, 위 줄 구간 이름(이동·최적 캔슬·감속·정지), 아래 줄 손 입력 띠 span(1 홀드 h→다시 4, 4N4 4→다음 출력; 목표 BD.DB_F·TAP_F 대비 ok/no). 패널 칸 6개: 캔슬 타이밍·손 합계·1 홀드·4N4·거리·속도. bdpView가 표시 세트를 선택하며 현재 위치는 그 세트가 run일 때만 표시. bdpStop(t0,t)은 정지한 세트를 출력 시각으로 찾아 갱신. renderBdpLive는 tick에서. body.bd10-mode, #bdpTimeline·#bdpPanel
+          축 1..BD_NEXT_F(=RECOVER_F+1) 칸(1f = 출력, 칸 f = 격자 열 f, bdpCell = bdFrameNo, 축을 넘는 캔슬 h는 마지막 칸으로 접는다), 칸 채움 --d = D(min(f,h 또는 stop))/BD_FULL(횡·앉기 및 N 뒤 캔슬도 정지 거리 유지), 클래스 out/win/best(그 세트 손의 bdBestH)/still/cut/hand/next/mark, 위 줄 구간 이름(이동·최적 캔슬·감속·정지), 아래 줄 손 입력 띠 span(1 홀드 h→다시 4, 4N4 4→다음 출력; 목표 BD.DB_F·TAP_F 대비 ok/no). 패널 칸 6개: 캔슬 타이밍·손 합계·1 홀드·4N4·거리·속도. bdpView가 표시 세트를 선택하며 현재 위치는 그 세트가 run일 때만 표시. bdpStop(t0,t)은 정지한 세트를 출력 시각으로 찾아 갱신. renderBdpLive는 tick에서. body.bd10-mode, #bdpTimeline·#bdpPanel
           bd10 기록은 bdv:BD_REC_V(2). 그 전 기록(1.0 m/백대시 척도)은 저장소에 남기되 trialRecs()가 최고 기록·개인 최고 판정에서 뺀다
           bd10 측정은 trial.dist/bdCount/bdTop/bestChain → renderBdHud(#hudScore "n.n m") · 구간 막대: bd.seg{tap,n,hold,db} → renderSeg(bd 변형, seg.namesBd 4·N·4홀드·1, 5번째 칸 접힘, 제목 #segTitle)
-경직      bdRec{until} — 모든 모드의 스테이지 기능(판정 아님): onDir에서 b,N,b가 나가면 until = t + RECOVER_F(판정이 그 백대시를 본 뒤 설정), 그 안의 b,N,b는 fx.backdash 없음, d/db/df/u/ub/uf가 until을 지우고 anim이 backdash면 이동 정지 + bdCrouch. frame()은 until 전엔 뒤 걷기만 막고, poseAt backdash는 BD_LAST 프레임 뒤에도 until까지 자세 유지(sweat). 연출 이동은 fx.backdash → moveChar(−BD.PX, BD_LAST×FRAME, bdEase): 판정과 같은 CURVE를 프레임 사이 선형 보간(anim.moveEase, 없으면 ease-out cubic)
+경직      bdRec{until} — 모든 모드의 스테이지 기능(판정 아님): onDir에서 b,N,b가 나가면 until = t + RECOVER_F(판정이 그 백대시를 본 뒤 설정), 그 안의 b,N,b는 fx.backdash 없음, d/db/df/u/ub/uf가 until을 지우고 anim이 backdash면 이동 정지 + bdCrouch. frame()은 until 전엔 뒤 걷기만 막고, poseAt backdash는 BD_MOVE_MS 뒤에도 until까지 자세 유지(sweat). 연출 이동은 fx.backdash → moveChar(−BD.PX, BD_MOVE_MS, bdEase): 출력 뒤 e프레임 = bdDist(e+1)(판정 bdFrameNo와 같은 원점, 1·횡으로 멈춘 자리 = 판정 거리)을 프레임 사이 선형 보간, BD_MOVE_MS = (BD_LAST−1)×FRAME(anim.moveEase, 없으면 ease-out cubic)
 초풍 판정 onButton(n,t): n===4 → 나락(strike), n===2 → 초풍 판정, 그 외 → wrongBtn 코치
           초풍: classify(off,t) → attempt(kind,off,t). frameSlot(t)=floor(t/FRAME+0.5), 대각과 RP의 슬롯 차이 0→ewgf / 양수→wgf / 음수→early. 원시 off는 보존, a.frameOff를 히스토그램에 사용(간격 반올림과 다름).
           상태 3(d 유지)에서 버튼이 먼저 오면 cd.pending={t,btn}, 3이 오면 음수 오프셋으로 판정, 120ms 안에 3이 없으면 no_df(btn 2만)
@@ -352,7 +352,7 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 
 - 상태 타임아웃 250ms, d/f 유지 상태 450ms, d/f 뗀 뒤 캔슬 대기 120ms, pending 버튼 120ms, 체인 종료 700ms.
 - 기원권 `GIWON`(가정값, 결정 30): ACTIVE_F 14 · RECOVERY_F 32 · GROUND_F 13 · BUFFER_F 8 · FAULT_MS 450 · CRUMPLE_MS 900 · LINK_MS 1200. `GIWON_ZOOM` PEAK 1.12 · IN_MS 60 · OUT_MS 470(PEAK만 미측정). `HIT_CONTACT_MS.giwon`은 ACTIVE_F에서 파생된다. 문구(클로저)와 테스트가 상수를 읽으므로 숫자만 바꾸면 된다.
-- 백대시 `BD`(실측 모델 2026-10-02, 결정 17, 근거 `BACKDASH.md`): CURVE 17칸(풀 0.638 m) · RECOVER_F 26 · LINK_MAX_F 60 · CANCEL_A~B 11~13 · HAND_F 6 · TIERS 손 c 7/10/16f(→ 1.78/1.55/1.23 m/s) · PX 56. 4 탭·N 짝짓기는 TAP_MS(250) 공유. 문구(클로저)와 테스트가 상수를 읽으므로 숫자만 바꾸면 된다.
+- 백대시 `BD`(실측 모델 2026-10-02, 결정 17, 근거 `BACKDASH.md`): CURVE 17칸(풀 0.638 m) · RECOVER_F 26 · LINK_MAX_F 60 · CANCEL_A~B 11~13(최적 bdBestH 12~13) · HAND_F 6 · TIERS 손 c 7/10/16f(→ 1.88/1.62/1.27 m/s) · 프레임은 출력 = 1f(bdFrameNo) · PX 56. 4 탭·N 짝짓기는 TAP_MS(250) 공유. 문구(클로저)와 테스트가 상수를 읽으므로 숫자만 바꾸면 된다.
 - 초풍은 공통 60Hz 슬롯 동일성(AGENTS 결정 2). 옛 window는 로드/서버 호환 및 기존 나락 선입력에만 유지. 선택 UI 없음. 완벽 코치 `|off|≤4ms`, 사범 피부 진행은 동일 슬롯 성공 중 `|off|≤8ms`.
 - 웨이브 상위 띠(차트 음영·카드 chart.top·코치 tempo.5)는 웨이브 10초 순위 상위 10% 경계(`waveTop()`, 워커 `cut10`). 보드 응답 전·백엔드 없음이면 5 대시/초 폴백. 순위가 초기화되지 않으므로(2026-09-14) 받은 값은 만료 없이 유지한다. D1 조회 절약(2026-09-15)으로 배경 재조회는 없으며 최초 로드·순위 탭/새로고침·등록·삭제 응답 때만 갱신한다.
   boardLoad/boardSubmit이 wave10 데이터를 받으면 renderWave()로 띠를 갱신. 구간 조언은 가장 긴 구간이 90ms를 넘을 때만.

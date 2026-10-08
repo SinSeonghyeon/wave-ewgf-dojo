@@ -1,10 +1,10 @@
 /* ---------- 백대시 10초 타임라인: one set (backdash out → 1 cancel → 4 N 4 → next backdash) drawn frame by frame ----------
    bdDir/bdOut/bdBreak hand it what they judged; it never changes judging (결정 17(backdash)). Shown in the bd10 mode, between trials and during them.
-   Frame 0 is the backdash coming out (the second 4); the bar in each cell is how far the backdash has travelled by then (BD.CURVE). */
-const BDP_AXIS = BD.RECOVER_F;                       // frames 0..RECOVER_F: an uncancelled backdash fits whole, and every set faster than that ends inside it
+   Frame 1 is the backdash coming out (the second 4, counted like startup frames — bdFrameNo); the bar in each cell is how far the backdash has travelled by then (BD.CURVE). */
+const BDP_AXIS = BD_NEXT_F;                          // frames 1..BD_NEXT_F: an uncancelled backdash fits whole (the next one can come out on the last cell), and every set faster than that ends inside it
 const bdpStats = () => ({sets:0, sum:0, best:0, sumH:0, sumHand:0, rows:[]});
 const bdp = {run:null, last:null, row:null, session:bdpStats()}; // run: the set in progress {t0, events, h}; last: the one that ended (row = its grade, or fail = why it broke); row: the last graded set — a chain always ends with a break, and the tiles keep showing the set before it
-const bdpCell = (r, t) => t<=r.t0 ? 0 : bdF(t-r.t0);   // the same frame count as the judged cancel frame h
+const bdpCell = (r, t) => bdFrameNo(t-r.t0);          // the same frame number as the judged cancel frame h (the output is 1f)
 const bdpView = () => bdp.run && bdp.run.events.length>1 ? bdp.run : (bdp.last || bdp.run);
 function bdpStop(t0, t){ // a sidestep/crouch can stop even a released, provisionally full backdash
   if(mode!=='bd10') return;
@@ -19,7 +19,7 @@ function bdpInput(dir, t){
   if(dir==='db' && r.h==null) r.h = bdpCell(r, t);
   renderBdp();
 }
-function bdpOut(t, row){ // a backdash came out: the set before it (if any) is complete, a new one starts at this frame 0
+function bdpOut(t, row){ // a backdash came out: the set before it (if any) is complete, a new one starts at this frame 1
   if(mode!=='bd10') return;
   const r = bdp.run;
   if(r){ r.end = t; r.row = row; if(row){ bdpRecord(bdp.session, row); bdp.row = row; } bdp.last = r; }
@@ -50,25 +50,25 @@ function renderBdp(){
   // 진행 중인 세트를 따라가되, 1을 누르기 전에는 직전 세트를 그대로 둔다 (기원초 타임라인과 같은 규칙)
   const view = bdpView();
   $('bdpCommand').textContent = [g('b')+' N '+g('b'), g('db'), g('b')+' N '+g('b'), g('db'), '…'].join('  ·  '); // no arrow separators: they would read as directions
-  $('bdpGuide').textContent = T('bdp.guide', BD.CANCEL_A, BD.CANCEL_B, BD.HAND_F, BD_LAST, BD.RECOVER_F, BD.DB_F, BD.TAP_F);
+  $('bdpGuide').textContent = T('bdp.guide', BD.CANCEL_A, BD.CANCEL_B, BD.HAND_F, BD_LAST, BD_NEXT_F, BD.DB_F, BD.TAP_F);
   // h can be past the axis (4 held up to LINK_MAX_F before the 1): the cells and strips clamp it like every other frame, or the grid would grow columns
   const h = view && view.h!=null ? Math.min(view.h, BDP_AXIS) : null, end = view && view.end!=null ? Math.min(bdpCell(view, view.end), BDP_AXIS) : null;
   const best = view && view.row ? view.row.best : bdBestH(BD.HAND_F); // the best cancel frame for this set's hand (the target hand until a set is graded)
   const cells = [];
-  for(let f=0; f<=BDP_AXIS; f++){
+  for(let f=1; f<=BDP_AXIS; f++){
     const ev = view ? view.events.filter(e => Math.min(bdpCell(view, e.t), BDP_AXIS)===f) : [];
     const marks = ev.map(e => g(e.dir));
-    if(!view && f===0) marks.push(g('b'));
+    if(!view && f===1) marks.push(g('b'));
     const stop = view ? (view.h ?? view.stop) : null;
-    const d = f===0 ? 0 : bdDist(stop!=null ? Math.min(f, stop) : f)/BD_FULL; // every crouch/sidestep freezes the distance, including one after release
-    const cls = (f===0?' out':'') + (f>=BD.CANCEL_A && f<=BD.CANCEL_B?' win':'') + (f===best?' best':'') + (f>BD_LAST?' still':'')
+    const d = bdDist(stop!=null ? Math.min(f, stop) : f)/BD_FULL; // every crouch/sidestep freezes the distance, including one after release
+    const cls = (f===1?' out':'') + (f>=BD.CANCEL_A && f<=BD.CANCEL_B?' win':'') + (f===best?' best':'') + (f>BD_LAST?' still':'')
       + (h!=null && f===h?' cut':'') + (h!=null && f>h?' hand':'') + (end!=null && f===end?' next':'') + (marks.length?' mark':'');
     cells.push('<div class="wsc-cell'+cls+'" data-frame="'+f+'" style="--d:'+d.toFixed(3)+'"><b>'+escapeHTML(marks.join('\n'))+'</b><i>'+f+'</i></div>');
   }
-  const band = (key, cls, a, b) => '<u class="gp-band '+cls+'" style="grid-column:'+(a+1)+'/'+(b+2)+'">'+escapeHTML(T(key))+'</u>';
-  $('bdpAxis').style.setProperty('grid-template-columns', 'repeat('+(BDP_AXIS+1)+',minmax(0,1fr))');
+  const band = (key, cls, a, b) => '<u class="gp-band '+cls+'" style="grid-column:'+a+'/'+(b+1)+'">'+escapeHTML(T(key))+'</u>';
+  $('bdpAxis').style.setProperty('grid-template-columns', 'repeat('+BDP_AXIS+',minmax(0,1fr))'); // frame f is grid column f
   // 손 입력 띠(축 아래): 이 세트의 1(↙) 홀드(1 → 다시 4)와 4 N 4(첫 4 → 다음 백대시)를 실제 칸 위치에 그리고 목표(BD.DB_F·TAP_F)와 비교해 색을 칠한다
-  const span = (a, b, text, ok) => '<u class="gp-band span '+(ok?'ok':'no')+'" style="grid-column:'+(a+1)+'/'+(Math.max(a,b)+2)+'">'+escapeHTML(text)+'</u>';
+  const span = (a, b, text, ok) => '<u class="gp-band span '+(ok?'ok':'no')+'" style="grid-column:'+a+'/'+(Math.max(a,b)+1)+'">'+escapeHTML(text)+'</u>';
   let spans = '';
   const cut = view && h!=null ? view.events.find(e => e.dir==='db') : null, roll = cut ? view.events.find(e => e.t>cut.t && e.dir==='b') : null;
   if(roll){
