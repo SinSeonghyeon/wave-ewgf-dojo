@@ -230,6 +230,7 @@
   .segc button{background:transparent;border:0;color:var(--ink2);padding:5px 10px;font-size:12.5px}
   .segc button+button{border-left:1px solid var(--line2)}
   .segc button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .segc.moves{flex-wrap:wrap;gap:4px;max-width:100%;border:0;overflow:visible}.segc.moves button{border:1px solid var(--line2);border-radius:4px}.segc.moves button:disabled{opacity:.4;cursor:not-allowed}
   .hud-side{position:absolute;right:56px;top:10px;height:36px;box-sizing:border-box;pointer-events:auto;background:var(--panel)}
   .hud-side button{min-width:40px;padding:0 8px;font-family:var(--mono)}
   .hud-side button:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}

@@ -15,8 +15,9 @@ function padAutoConflict(keys,slot,code){
   return Object.entries(keys).some(([k,v])=>k!==slot && v==='auto' && PAD_AUTO_INPUTS[k]?.includes(code));
 }
 function validPadBinding(k,v){ return typeof v==='string' && (v==='none' || (v==='auto' && !k.startsWith('b')) || /^b(?:[0-9]|[1-9][0-9]|1[01][0-9]|12[0-7])$/.test(v) || (!k.startsWith('b') && /^(?:a(?:[0-9]|[12][0-9]|3[01])[+-]|h[udlr])$/.test(v))); }
+const MOVE_IDS = ['ewgf','mist','tongbal','hellsweep','giwon']; // 설정의 기술 온오프 (결정 32(move-toggle)). 1 = 켜짐
 const emptyPadAlt = () => Object.fromEntries(Object.keys(DEFAULT_PAD).map(k=>[k,'none']));
-let store = {padAltKeys:emptyPadAlt(),padKeys:{...DEFAULT_PAD},v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', touchSize:100, touchX:0, touchY:0, sound:1, bgm:1, bgmLast:-1, bgmVol:100, sfxVol:100, keys:{...DEFAULT_KEYS}, altKeys:{up:'',down:'',left:'',right:'',b1:'',b2:'',b3:'',b4:''}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault(), donateResultDay:'', donateNudgeDay:'', donatePlayDay:'', donatePlayMs:0};
+let store = {padAltKeys:emptyPadAlt(),padKeys:{...DEFAULT_PAD},v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', touchSize:100, touchX:0, touchY:0, sound:1, bgm:1, bgmLast:-1, bgmVol:100, sfxVol:100, keys:{...DEFAULT_KEYS}, altKeys:{up:'',down:'',left:'',right:'',b1:'',b2:'',b3:'',b4:''}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault(), moves:Object.fromEntries(MOVE_IDS.map(k=>[k,1])), donateResultDay:'', donateNudgeDay:'', donatePlayDay:'', donatePlayMs:0};
 const owned = id => id==='base' || !!store.ach[id]; // store.ach = unlock record (achievement items and daily gifts alike): id → time
 const pendingReward = id => store.pendingRewards.some(j => j.id===id);
 const earned = id => owned(id) || pendingReward(id);
@@ -38,6 +39,7 @@ try{
     if(Number.isInteger(s.touchSize) && s.touchSize>=70 && s.touchSize<=300 && s.touchSize%5===0) store.touchSize=s.touchSize;
     if(Number.isInteger(s.touchX) && s.touchX>=0 && s.touchX<=100 && s.touchX%5===0) store.touchX=s.touchX;
     if(Number.isInteger(s.touchY) && s.touchY>=0 && s.touchY<=100 && s.touchY%5===0) store.touchY=s.touchY;
+    for(const k of MOVE_IDS) if([0,1].includes(s.moves?.[k])) store.moves[k]=s.moves[k];
     if([0,1].includes(s.sound)) store.sound=s.sound;
     if([0,1].includes(s.bgm)) store.bgm=s.bgm;
     if(typeof s.bgmLast==='string'&&/^bgm\/[^/\\]+\.mp3$/i.test(s.bgmLast))store.bgmLast=s.bgmLast;

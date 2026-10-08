@@ -35,7 +35,8 @@ function renderMode(){
   const M = MODES[mode];
   $('dName').textContent=T('mode.'+mode+'.name');
   const guide=$('dGuide'); guide.dataset.page=M.guide; guide.setAttribute('href', ASSET_ROOT+store.lang+'/'+M.guide);
-  $('dDesc').textContent=T('mode.'+mode+'.desc'); $('dStart').hidden=!M.start;
+  const off=movesOff(); // 결정 32(move-toggle): 꺼 둔 기술을 모드 설명 끝에 적어 둔다 (모드가 강제로 켜는 기술은 빠진다)
+  $('dDesc').textContent=T('mode.'+mode+'.desc')+(off.length?T('moves.off',off.map(k=>T('move.'+k)).join(', ')):''); $('dStart').hidden=!M.start;
   $('hudHint').textContent = mode==='giwon' ? T('hint.giwon', GP_FREE, GP_TARGET) : T('hint.'+mode);
   const sb = $('dShare'); sb.textContent = T(M.start?'share.card':'share.session'); sb.hidden = !!M.start && !trial.result;
   if(mode==='wsc') sb.hidden=true;

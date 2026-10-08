@@ -79,6 +79,8 @@ const I18N_EN = {
   'stat.dps':'Best wave speed (dashes/s)', 'stat.chain':'Best chain', 'stat.dash':'Total dashes', 'stat.rate':'EWGF rate', 'stat.try':'EWGF attempts', 'stat.mean':'Avg button offset',
   'set.title':'Input · judgement settings',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'Facing', 'set.side1':'1P (→ is forward)', 'set.side2':'2P (← is forward)',
+  'set.moves':'Moves on/off', 'set.movesNote':'A move that is off is judged as if it did not exist. E.g. with d/f+2 off, ↘+RP is a failed EWGF; with only EWGF on, every RP is graded as an EWGF try. Mist Step EWGF needs EWGF on. EWGF ×20 and Wave EWGF ×10 always keep EWGF on, and the d/f+2 → EWGF link mode always keeps d/f+2 and EWGF on.',
+  'move.ewgf':'EWGF', 'move.mist':'Mist Step EWGF', 'move.tongbal':'f,f+2', 'move.hellsweep':'Hell sweep', 'move.giwon':'d/f+2', 'moves.off':names=>' · Off: '+names,
   'set.fx':'Effects (shake · flash)', 'set.on':'On', 'set.off':'Off',
   'set.touch':'Touch controls', 'set.touchAuto':'Auto (touch devices)', 'set.touchSize':'Direction button size', 'set.touchX':'Direction button horizontal position', 'set.touchY':'Direction button vertical position', 'touch.note':'Touch is less precise than a keyboard (good for spotting trends)', 'touch.aria':'Touch controls', 'touch.padAria':'Direction buttons — press down and a side together for diagonals', 'touch.left':'Left', 'touch.down':'Down', 'touch.right':'Right',
   'set.keys':'Key bindings — assign one primary and one alternate key per action (arrow keys ↑↓←→ always work)', 'set.keyListen':'press key…', 'set.keyAdd':'+ add', 'set.keyPrimary':'Primary key', 'set.keyAlt':'Alternate key',

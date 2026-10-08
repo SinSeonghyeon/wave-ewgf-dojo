@@ -37,7 +37,7 @@ function mistDir(dir,t){
   }
   const m=mist;
   if(!m){
-    if(dir==='f' && cd.state===0 && cd.chain===0 && !wsc.active) mist=mistNew(t);
+    if(dir==='f' && cd.state===0 && cd.chain===0 && !wsc.active && moveOn('mist')) mist=mistNew(t);
     return false;
   }
   if(m.n==null){
@@ -135,7 +135,7 @@ function commandDir(dir,t,backdashDone=false){
       // Rolling from neutral to ↘ brushes 6 for a frame (confirmed on the reference clip), so a
       // start 6 → ↘ may be the front of a 기원권, not a skipped N/2 yet. Hold the fault: the RP
       // cancels it, any other direction or GIWON.FAULT_MS fires it with its original timestamp.
-      else if(dir==='df'){ const staged=t; resetCD(); cd.gFault=staged; }
+      else if(dir==='df'){ const staged=t; resetCD(); if(moveOn('giwon')) cd.gFault=staged; else fault('f_before_d', staged); } // 기원권을 꺼 두면 기다릴 이유가 없다
       else if(dir==='d'){
         cd.state=3; cd.tN=t; cd.tD=t; cd.omittedNeutral=true; // 623: zero neutral gap, same crouch dash
       }
@@ -144,7 +144,7 @@ function commandDir(dir,t,backdashDone=false){
     case 2:
       if(dir==='d'){ cd.state=3; cd.tD=t; }
       else if(dir==='f'){ startCD(t); }
-      else if(dir==='df'){ fault('n_to_df', t); setCoach(['mist.unsupported']); resetCD(); }
+      else if(dir==='df'){ fault('n_to_df', t); if(moveOn('mist')) setCoach(['mist.unsupported']); resetCD(); }
       else resetCD();
       break;
     case 3:

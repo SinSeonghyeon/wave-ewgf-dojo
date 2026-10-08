@@ -79,6 +79,8 @@ const I18N_JA = {
   'stat.dps':'最高ウェーブ速度 (ダッシュ/秒)', 'stat.chain':'最高連続ステップ', 'stat.dash':'総ステップ数', 'stat.rate':'最風成功率', 'stat.try':'最風試行', 'stat.mean':'平均ボタンオフセット',
   'set.title':'入力・判定設定',
   'set.side1Short':'1P', 'set.side2Short':'2P', 'set.side':'キャラの向き', 'set.side1':'1P (→が前)', 'set.side2':'2P (←が前)',
+  'set.moves':'技のオン・オフ', 'set.movesNote':'オフにした技は存在しないものとして判定します。例) 3+2をオフにすると↘+RPは最風失敗、最風だけオンにするとすべてのRPが最風の試行として採点されます。無足最風は最風がオンのときだけ使えます。最風20回・ウェーブ最風10回では最風、3+2 → 最風連係では3+2と最風が常にオンです。',
+  'move.ewgf':'最風', 'move.mist':'無足最風', 'move.tongbal':'66+2', 'move.hellsweep':'奈落', 'move.giwon':'3+2', 'moves.off':names=>' · オフの技: '+names,
   'set.fx':'演出 (揺れ・フラッシュ)', 'set.on':'オン', 'set.off':'オフ',
   'set.touch':'タッチ操作', 'set.touchAuto':'自動 (タッチ端末)', 'set.touchSize':'方向ボタンの大きさ', 'set.touchX':'方向ボタンの横位置', 'set.touchY':'方向ボタンの縦位置', 'touch.note':'タッチ入力はキーボードより判定精度が低めです (傾向の把握向け)', 'touch.aria':'タッチ操作', 'touch.padAria':'方向ボタン — 下と左右を同時に押して斜め入力', 'touch.left':'左', 'touch.down':'下', 'touch.right':'右',
   'set.keys':'キー設定 — 各操作にメイン・サブキーを1つずつ設定 (矢印キー↑↓←→は常に使用可)', 'set.keyListen':'キー入力…', 'set.keyAdd':'+ 追加', 'set.keyPrimary':'メインキー', 'set.keyAlt':'サブキー',

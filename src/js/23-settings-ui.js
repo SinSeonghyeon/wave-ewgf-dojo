@@ -19,6 +19,11 @@ $('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDl
 $('setClose').addEventListener('click', () => { setBindingCheck(false); cancelBinding(); padNeedsRelease=true; $('setDlg').close(); });
 $('setDlg').addEventListener('cancel', e => { if(listening || padCapture){ e.preventDefault(); cancelBinding(); } });
 $('setDlg').addEventListener('close', () => { setBindingCheck(false); cancelBinding(); padNeedsRelease=true; });
+// 기술 온오프 (결정 32(move-toggle)): 버튼마다 따로 켜고 끈다. 무족초는 초풍이 꺼지면 누를 수 없다.
+function renderMoveSel(){ $('moveSel').querySelectorAll('button').forEach(b => { const k=b.dataset.move; b.disabled = k==='mist' && store.moves.ewgf===0; b.setAttribute('aria-pressed', String(store.moves[k]!==0 && !b.disabled)); }); }
+function setMove(k, on){ store.moves[k]=on?1:0; save(); resetInput(); renderMoveSel(); renderMode(); }
+$('moveSel').querySelectorAll('button').forEach(b => b.addEventListener('click', () => setMove(b.dataset.move, !store.moves[b.dataset.move])));
+renderMoveSel();
 segSel('soundSel','sound', v => { store.sound=+v; save(); unlockAudio(); bgmSync(); sfxSync(); renderSound(); });
 function setBgm(on){
   store.bgm=on?1:0;
