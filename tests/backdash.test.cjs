@@ -25,15 +25,17 @@ test('fractional frame intervals use the displayed cancel − 1 + hand formula f
     assert.equal(row.g,'top','the same displayed intervals keep the same grade');
   }
 });
-test('timeline cursor belongs only to the displayed live set; stopped dashes keep their earned fill',()=>{
+test('timeline cursor follows the live set from its first frame, even over the previous set; stopped dashes keep their earned fill',()=>{
   const a=boot({v:4});a.setMode('bd10');let o=bdOut(a,1000);
   const cell={dataset:{frame:'5'},classList:{toggle(name,on){this[name]=on;}}};
   a.get('bdpAxis').querySelectorAll=()=>[cell];
   a.renderBdpLive(bdAt(o,5));assert.equal(cell.classList.current,true);
-  o=bdSet(a,o,13);a.renderBdpLive(bdAt(o,5));
-  assert.equal(cell.classList.current,false,'the completed previous set has no moving cursor');
+  o=bdSet(a,o,13);assert.notEqual(a.bdpView(),a.bdp.run,'before its 1 the axis still draws the finished set');
+  a.renderBdpLive(bdAt(o,5));assert.equal(cell.classList.current,true,'the frame of the new set runs over it from the output');
+  a.renderBdpLive(bdAt(o,6));assert.equal(cell.classList.current,false,'the cursor moves on');
   a.onDir('db',bdAt(o,4));a.renderBdpLive(bdAt(o,5));
-  assert.equal(cell.classList.current,true,'the cursor returns when the live set is displayed');
+  assert.equal(cell.classList.current,true,'and stays once the live set is displayed');
+  a.onDir('n',bdAt(o,7));assert.equal(a.bdp.run,null);a.renderBdpLive(bdAt(o,5));assert.equal(cell.classList.current,false,'no cursor after a break');
   for(const release of [false,true]) for(const dir of ['d','u','df','db']){
     const b=boot({v:4});b.setMode('bd10');const start=bdOut(b,1000);
     if(release) b.onDir('n',start+F);

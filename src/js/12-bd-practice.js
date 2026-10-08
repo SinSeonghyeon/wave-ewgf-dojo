@@ -41,8 +41,8 @@ function renderBdpLive(now){
     : r.h==null ? T(f>BD_LAST ? 'bdp.liveStill' : 'bdp.liveDash', f, bdDist(f).toFixed(2))
     : T('bdp.liveHand', f-r.h);
   const el = $('bdpLive'); if(el.textContent!==text) el.textContent = text;
-  const liveAxis = r && bdpView()===r;
-  for(const c of $('bdpAxis').querySelectorAll('.wsc-cell')) c.classList.toggle('current', !!liveAxis && Math.min(f, BDP_AXIS)===Number(c.dataset.frame));
+  // 현재 칸은 백대시가 나온 순간부터 흐른다. 1 전에는 축이 직전 세트를 그리고 있어도 그 위에 지금 프레임만 겹쳐 보인다(2026-10-08 사용자 결정)
+  for(const c of $('bdpAxis').querySelectorAll('.wsc-cell')) c.classList.toggle('current', !!r && Math.min(f, BDP_AXIS)===Number(c.dataset.frame));
 }
 function renderBdp(){
   if(mode!=='bd10') return;

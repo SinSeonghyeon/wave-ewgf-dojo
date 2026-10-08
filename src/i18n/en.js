@@ -1,5 +1,13 @@
 // English UI strings. ko.js, en.js and ja.js must hold the same keys (tests/i18n-pages.test.cjs). Dynamic text is a function value.
 const I18N_EN = {
+  'notice.20261008.title':'October 8 update · Moves on/off and judging fixes',
+  'notice.20261008.summary':'You can now turn off moves you are not practicing, and d/f+2 → EWGF link judging and backdash frame counts now match the game.',
+  'notice.20261008.1':'Turn EWGF, Mist Step EWGF, f,f+2, Hell sweep or d/f+2 off one by one in Settings and inputs are judged as if that move did not exist. E.g. with d/f+2 off, ↘+RP counts as a failed EWGF.',
+  'notice.20261008.2':'EWGF ×20 and Wave EWGF ×10 always keep EWGF on, and the d/f+2 → EWGF link mode keeps d/f+2 and EWGF on. Moves you turned off are listed at the end of the mode description.',
+  'notice.20261008.3':'Link practice: during recovery the start f only counts when pressed between 40f and 46f. Another d/f+2 instead of the EWGF counts as a failed link.',
+  'notice.20261008.4':'RP before d/f on the same frame is now d/f+2. f followed by d and d/f on one frame is a plain d/f, not a crouch dash.',
+  'notice.20261008.5':'Like startup frames, the backdash now counts the frame of the second 4 as 1f. The best cancel is 12–13f and the recommended window is 11–13f.',
+  'notice.20261008.6':'The same input now earns one more frame of distance, so Backdash 10s scores and the set-speed grades (1.88 / 1.62 / 1.27 m/s) are slightly higher.',
   'notice.20261004.title':'Backdash practice and timing analysis update',
   'notice.20261004.summary':'Backdash movement now follows a measured distance curve. Backdash 10s adds a frame timeline and set evaluation.',
   'notice.20261004.1':'Backdashes now follow a community-measured curve: a slow start followed by faster movement. Early cancels keep the distance already travelled, and the character animation follows the same curve.',
