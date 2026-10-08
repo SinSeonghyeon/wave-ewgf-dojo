@@ -76,7 +76,7 @@ test('mist candidate expiration, repetition and cancellation never leak a later 
   assert.equal(a.session.attempts[0].kind,'no_df');a.onDir('df',1155);assert.equal(a.session.tries,1);
   a=boot();a.onDir('f',1000);a.onDir('n',1017);a.onDir('df',1033);a.tick(1484);a.onButton(2,1485);
   assert.equal(a.session.tries,0);assert.equal(a.store.life.giwon,1,'the lapsed candidate leaves a held ↘: 기원권, not an EWGF');
-  a=boot();a.onDir('f',1000);a.onDir('n',1017);a.onDir('df',1033);a.onDir('n',1400);a.tick(1484);a.onButton(2,1485);
+  a=boot();a.onDir('f',1000);a.onDir('n',1017);a.onDir('df',1033);a.onDir('n',1400);a.tick(1484);a.onButton(2,1485);a.tick(1485+F);
   assert.equal(a.session.attempts[0].kind,'no_cd');assert.equal(a.session.hits,0);
   a=boot();mistInput(a);a.onButton(2,1034);
   assert.deepEqual(Array.from(a.session.attempts,r=>r.kind),['ewgf']);assert.equal(a.store.life.giwon,1);
@@ -272,7 +272,7 @@ test('EWGF compares absolute rounded 60Hz slots, independently of legacy window 
   }
 });
 test('normal EWGF consumes its command',()=>{
-  const a=boot();dash(a);a.onButton(2,1060);a.onDir('n',1062);a.onButton(2,1064);
+  const a=boot();dash(a);a.onButton(2,1060);a.onDir('n',1062);a.onButton(2,1064);a.tick(1064+F);
   assert.deepEqual(Array.from(a.session.attempts,x=>x.kind),['ewgf','no_cd']);
   const b=boot();dash(b);b.onButton(2,1060);b.onButton(2,1064);   // ↘ never released: d/f+RP is 기원권
   assert.deepEqual(Array.from(b.session.attempts,x=>x.kind),['ewgf']);assert.equal(b.store.life.giwon,1);
@@ -289,7 +289,7 @@ test('cancel cannot substitute for next starting forward',()=>{
 test('input deadlines work without animation frames',()=>{
   const a=boot();a.onDir('f',1000);a.onDir('n',1300);a.onDir('d',1320);a.onDir('df',1340);
   assert.equal(a.session.dashes,0);
-  dash(a,2000);a.onDir('n',2100);a.onButton(2,3000);assert.equal(a.session.attempts.at(-1).kind,'no_cd');
+  dash(a,2000);a.onDir('n',2100);a.onButton(2,3000);a.tick(3000+F);assert.equal(a.session.attempts.at(-1).kind,'no_cd');
 });
 test('negative offset is judged once against incoming diagonal',()=>{
   const a=boot();a.onDir('f',1000);a.onDir('n',1020);a.onDir('d',1040);a.onButton(2,1056);a.onDir('df',1060);
@@ -306,7 +306,7 @@ test('mode switch and session reset cancel countdowns',()=>{
 });
 test('trial start discards commands begun during countdown',()=>{
   const a=boot();a.setMode('ewgf20');a.startTrial();dash(a);a.onDir('n',1080);const countdown=a.timers.get(a.trial.cdTimer);
-  a.time(4000);countdown();countdown();countdown();a.onButton(2,4001);
+  a.time(4000);countdown();countdown();countdown();a.onButton(2,4001);a.tick(4001+F);
   assert.equal(a.session.attempts.at(-1).kind,'no_cd');assert.equal(a.trial.count,1);
 });
 test('wave deadline excludes dash arriving at the end boundary',()=>{
@@ -320,6 +320,7 @@ test('blur clears unfinished input and cancels trial',()=>{
 test('session totals survive the 300-attempt history limit',()=>{
   const a=boot();dash(a);a.onButton(2,1060);a.onDir('n',1070);
   for(let i=0;i<301;i++) a.onButton(2,2000+i*10);
+  a.tick(2000+301*10+F);
   assert.equal(a.session.attempts.length,300);assert.equal(a.session.tries,302);assert.equal(a.session.hits,1);
   assert.equal(a.get('stTry').textContent,302);
   a.resetSession();assert.equal(a.session.tries,0);assert.equal(a.session.hits,0);
@@ -365,4 +366,12 @@ test('dash EWGF (f,f,N,d,df+2) is judged as a normal EWGF and labeled Dash EWGF'
   a.onDir('f',2000);a.onDir('n',2020);a.onDir('f',2040);a.onDir('n',2060);a.onDir('d',2080);a.onDir('df',2100);a.onButton(2,2100);
   assert.equal(a.session.attempts[1].dash,true);assert.equal(a.pops.at(-1).text,'EWGF ×2','second in a row shows the streak');
   dash(a,3000);a.onButton(2,3060);assert.equal(a.session.attempts[2].dash,false);assert.equal(a.get('rTitle').textContent,'EWGF!');
+});
+test('623의 2가 대각과 같은 60Hz 칸이면 2가 없었던 것이다: 6→3은 크라우치 대시가 아니다',()=>{
+  const a=boot();a.onDir('f',1000);a.onDir('d',1000+3*F);a.onDir('df',1000+3*F+2);a.onButton(2,1000+3*F+3);a.tick(1500);
+  assert.equal(a.session.dashes,0);assert.equal(a.session.hits,0);assert.equal(a.store.life.giwon,1,'held ↘ + RP is 기원권');
+  const b=boot();b.onDir('f',1000);b.onDir('d',1000+2*F);b.onDir('df',1000+3*F);b.onButton(2,1000+3*F+1);
+  assert.equal(b.session.dashes,1,'a 2 that holds its own frame is still 623');assert.equal(b.session.hits,1);
+  const w=boot();w.setMode('wsc');w.onDir('f',1000);w.onDir('d',1000+3*F);w.onDir('df',1000+3*F+2);
+  assert.equal(w.wsc.active,null,'웨캔기어도 같은 6→3을 웨이브로 세지 않는다');
 });

@@ -72,7 +72,7 @@ test('pad remapping waits for release, swaps buttons, saves and never judges set
   assert.equal(a.store.padKeys.b1,'b3');assert.equal(a.store.padKeys.b2,'b2');assert.equal(a.session.tries,0);
   const restored=boot(JSON.parse(JSON.stringify(a.store)));assert.equal(restored.store.padKeys.b2,'b2');
   a.get('setDlg').open=false;samplePad(a,[2]);assert.equal(a.session.tries,0,'held input is blocked on closing');
-  samplePad(a);samplePad(a,[2]);assert.equal(a.session.tries,1,'new RP uses saved button');
+  samplePad(a);samplePad(a,[2]);a.tick(2000);assert.equal(a.session.tries,1,'new RP uses saved button');
 });
 test('pad directions accept signed axes and DirectInput hats, preserve side conversion and reject automatic collisions',()=>{
   const a=boot();a.get('setDlg').open=true;samplePad(a);a.beginPadBinding('right');samplePad(a);samplePad(a,[],[0,0,1]);
@@ -97,7 +97,7 @@ test('remapped pad diagonal and RP still share the device timestamp',()=>{
 test('ambiguous pad capture requires a fresh press and unmapped axes cannot lock practice after a modal',()=>{
   const a=boot();a.get('setDlg').open=true;samplePad(a);a.beginPadBinding('b2');samplePad(a);samplePad(a,[6,7]);samplePad(a,[7]);
   assert.equal(a.store.padKeys.b2,'b3');samplePad(a);samplePad(a,[7]);assert.equal(a.store.padKeys.b2,'b7');
-  a.get('setDlg').open=false;samplePad(a,[],[0,0,-1]);samplePad(a,[7],[0,0,-1]);assert.equal(a.session.tries,1);
+  a.get('setDlg').open=false;samplePad(a,[],[0,0,-1]);samplePad(a,[7],[0,0,-1]);a.tick(2000);assert.equal(a.session.tries,1);
 });
 test('pad capture accepts a fresh attack or direction while an unrelated axis stays at its idle endpoint',()=>{
   const a=boot();a.get('setDlg').open=true;samplePad(a,[],[0,0,-1]);
@@ -160,11 +160,11 @@ test('alternate pad inputs capture, persist and reject duplicate inputs within t
   assert.equal(bad.store.padAltKeys.b1,'none');assert.equal(bad.store.padAltKeys.b2,'none');assert.equal(bad.store.padAltKeys.b3,'b7');assert.equal(bad.store.padAltKeys.b4,'none');assert.equal(bad.store.padAltKeys.up,'none');assert.equal(bad.store.padAltKeys.left,'none');
 });
 test('primary and alternate pad attacks form one logical press until both are released',()=>{
-  const a=boot({padAltKeys:{b2:'b7'}});samplePad(a,[7]);assert.equal(a.session.tries,1);
+  const a=boot({padAltKeys:{b2:'b7'}});samplePad(a,[7]);a.tick(2000);assert.equal(a.session.tries,1);
   samplePad(a,[3,7]);samplePad(a,[3]);samplePad(a,[3,7]);samplePad(a,[7]);assert.equal(a.session.tries,1);
-  samplePad(a);samplePad(a,[3,7]);assert.equal(a.session.tries,2);
+  samplePad(a);samplePad(a,[3,7]);a.tick(2000);assert.equal(a.session.tries,2);
   a.get('setDlg').open=true;samplePad(a,[7]);a.get('setDlg').open=false;samplePad(a,[7]);assert.equal(a.session.tries,2);
-  samplePad(a);samplePad(a,[7]);assert.equal(a.session.tries,3,'release gate covers alternate buttons');
+  samplePad(a);samplePad(a,[7]);a.tick(2000);assert.equal(a.session.tries,3,'release gate covers alternate buttons');
 });
 test('alternate pad directions retain a held direction and share the EWGF timing path',()=>{
   const a=boot({padAltKeys:{right:'a2+',down:'b6',b2:'b7'}});

@@ -11,6 +11,8 @@ test('기원권 is a strike in either arrival order and on both sides, and never
     ['right, RP, down',    a=>{a.onDir('f',1000);a.onButton(2,1000.2);a.onDir('df',1000.4);}],
     ['down, right, RP',    a=>{a.onDir('d',1000);a.onDir('df',1000.2);a.onButton(2,1000.4);}],
     ['through one 6 frame',a=>{a.onDir('f',1000);a.onDir('df',1000+F);a.onButton(2,1000+2*F);}],
+    ['RP, down, right',    a=>{a.onButton(2,1000);a.onDir('d',1000.2);a.onDir('df',1000.4);}],
+    ['RP, right, down',    a=>{a.onButton(2,1000);a.onDir('f',1000.2);a.onDir('df',1000.4);}],
   ];
   for(const side of [1,-1]) for(const [label,play] of orders){
     const a=boot({v:4,side}); play(a); a.tick(2500);
@@ -28,7 +30,13 @@ test('기원권 is a strike in either arrival order and on both sides, and never
   // an RP with no held diagonal is still "no command"
   const b=boot();b.onDir('d',1000);b.onButton(2,1000.2);b.tick(1200);
   assert.equal(b.store.life.giwon,0);assert.equal(b.session.attempts[0].kind,'no_cd');
-  const c=boot();c.onButton(2,1000);assert.equal(c.session.attempts[0].kind,'no_cd');assert.equal(c.store.life.giwon,0);
+  // a lone RP from neutral waits out its own slot (it may be the first of RP, ↓, →), then fails as before
+  const c=boot();c.onButton(2,1000);assert.equal(c.session.attempts.length,0);c.tick(1000+F);assert.equal(c.session.attempts[0].kind,'no_cd');assert.equal(c.store.life.giwon,0);
+  // RP → 6 with no ↘: the RP fails but the 6 stays a start 6, whether the slot closes on time or on a same-slot neutral
+  for(const tN of [1000+F, 1000.4]){
+    const d=boot();d.onButton(2,1000);d.onDir('f',1000.2);d.onDir('n',tN);d.onDir('d',1000+2*F);d.onDir('df',1000+3*F);d.onButton(2,1000+3*F);d.tick(1500);
+    assert.deepEqual(Array.from(d.session.attempts,x=>x.kind),['no_cd','ewgf'],'neutral at '+tN);assert.equal(d.store.life.giwon,0);
+  }
 });
 test('the 6 → 3 fault is staged so a 기원권 roll never prints a MISS, and still fires without one',()=>{
   const a=boot();a.onDir('f',1000);a.onDir('df',1000+F);a.onButton(2,1000+2*F);a.tick(2000);
@@ -67,9 +75,17 @@ test('기원초 판정은 초풍이 경직 해제 뒤 목표 프레임까지 발
   // 중립은 경직 해제 프레임에 들어가야 하고, 시작 6은 그 앞 어디서든 선입력이면 된다
   const ref=boot(), rr=linkAfter(giwon(ref),{pre:3}).giwonLink;
   assert.equal(rr.n,0);assert.equal(rr.f,-3);assert.equal(rr.buffered,true);
-  const out=boot(), ro=linkAfter(giwon(out),{pre:buf+3}).giwonLink;
-  assert.equal(ro.buffered,false,'the start 6 sat in front of the buffer window');
-  assert.equal(out.linkOk(ro),true,'but the criterion is the fire frame, not where the 6 went in');
+  // 선입력 창(GP_BUF_A~GP_BUF_B, 40~46f) 밖에서 누른 6은 경직에 버려진다: 창 앞의 6도, 해제 바로 앞 47f의 6도 (사용자 보고 2026-10-08)
+  for(const cell of [ref.GP_BUF_A-1, ref.GP_BUF_A-8, ref.GP_FREE-1]){
+    const out=boot();giwon(out);const rec2=giwonRec(out,1000);
+    out.onDir('n',1100);out.onDir('f',rec2-(out.GP_FREE-cell)*F);out.onDir('n',rec2);out.onDir('df',rec2+F);out.onButton(2,rec2+F+1);out.tick(rec2+4*F);
+    assert.equal(out.session.attempts.length,0,'a 6 pressed on '+cell+'f is eaten: no EWGF');
+    assert.equal(out.store.life.giwon,2,'the held ↘ + RP is just another 기원권: '+cell+'f');
+  }
+  for(const cell of [ref.GP_BUF_A, ref.GP_BUF_B]){
+    const ok=boot(), l=linkAfter(giwon(ok),{pre:ok.GP_FREE-cell}).giwonLink;
+    assert.equal(ok.linkOk(l),true,'a 6 pressed on '+cell+'f is carried over the recovery');assert.equal(l.buffered,true);
+  }
 });
 test('기원초 판정은 루트를 보지 않고, 기원권 하나에 링크 하나이며 취소 지점마다 사라진다',()=>{
   // 루트는 판정에 들어가지 않는다: 같은 규칙을 그대로 적용하고 발동 칸만 본다
@@ -137,7 +153,7 @@ test('기원초 text and segment bar follow the language and never claim a real 
     a.setLang(l==='ko'?'ja':'ko');   // a language switch redraws the same verdict
     assert.equal(a.get('rTitle').textContent,a.T('link.title'));
     assert.equal(a.get('segTitle').textContent,a.T('link.segTitle'));
-    const b=boot();b.setLang(l);const bl=linkAfter(giwon(b),{fire:4}).giwonLink;
+    const b=boot();b.setLang(l);const bl=linkAfter(giwon(b),{fire:4,pre:1}).giwonLink; // the start 6 only came after the recovery
     assert.equal(b.get('coachMsg').innerHTML,b.T('link.fireLate',bl.cell,bl.fire-b.GP_FIRE_MAX,b.GP_TARGET)+b.T('link.nobufHint',b.GP_BUF_A,b.GP_BUF_B));
     assert.equal(b.session.log[0].memo(),b.T('link.memo',bl.cell)+' · '+b.T('route.mist'));
   }
