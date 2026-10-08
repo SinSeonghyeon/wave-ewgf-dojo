@@ -105,10 +105,10 @@ const giwonRec = (a,t0) => t0 + (a.GP_FREE-1)*F;   // 해제 = 중립이 들어�
 function giwon(a,t0=1000){ a.onDir('df',t0); a.onButton(2,t0); return a; }
 // fire: the frame relative to the recovery end that the 대각+RP lands on (negative = pre-input inside the
 // recovery, which the buffer carries out to the recovery-end frame) · pre: frames the start 6 sits in front
-// of the neutral · n: neutral hold frames · rp: extra ms on the RP
-function linkAfter(a,{fire=1,pre=1,n=1,rp=0,route='mist',t0=1000}={}){
+// of the neutral (default: the last frame of the pre-input window, 46f, or 2 frames before an earlier neutral) · n: neutral hold frames · rp: extra ms on the RP
+function linkAfter(a,{fire=1,pre=null,n=1,rp=0,route='mist',t0=1000}={}){
   const rec=giwonRec(a,t0); a.onDir('n',t0+100);
-  const tRP = rec+fire*F, tN = tRP-(route==='standard'?n+1:n)*F, tF = tN-pre*F;
+  const tRP = rec+fire*F, tN = tRP-(route==='standard'?n+1:n)*F, tF = pre==null ? Math.min(tN,rec)-2*F : tN-pre*F;
   a.onDir('f',tF); a.onDir('n',tN);
   if(route==='standard'){ a.onDir('d',tN+n*F); a.onDir('df',tRP); a.onButton(2,tRP+rp); }
   else { a.onDir('df',tRP); a.onButton(2,tRP+rp); }

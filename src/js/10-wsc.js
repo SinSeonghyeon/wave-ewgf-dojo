@@ -37,7 +37,7 @@ function wscTick(t){
   }
   else if(!wsc.active && wsc.prefix && t-wsc.prefixAt>1000){ wsc.prefix=0; wsc.notice='ready'; renderWsc(); }
 }
-function wscDir(dir,t){
+function wscDir(dir,t,rolled=false){ // rolled: commandDir이 623의 2·3 같은 칸을 6→3으로 본 ↘ — 웨이브를 완성하지 않는다
   if(wsc.challenge.status==='countdown') return;
   const a=wsc.active;
   if(a){
@@ -52,7 +52,7 @@ function wscDir(dir,t){
   if(dir==='f' && (!a || a.back!=null || a.forwards>=2)) wsc.prefix=1;
   else if(dir==='n' && wsc.prefix===1) wsc.prefix=2;
   else if(dir==='d' && (wsc.prefix===1 || wsc.prefix===2)) wsc.prefix=3;
-  else if(dir==='df' && wsc.prefix===3){
+  else if(dir==='df' && wsc.prefix===3 && !rolled){
     // A new wave extends the chain only through cancel 6, N, separate start 6, optional N, 2, 3.
     // The single release before the cancel 6 may be N or 2, matching cd states 4→7→cancelCD.
     const linked=a&&/^df,([nd],)?f,n,f,(n,)?d,df$/.test(a.events.map(e=>e.dir).join(','));

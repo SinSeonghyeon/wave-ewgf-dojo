@@ -47,7 +47,8 @@ stageAssets(source,out);
   assert.match(await b.evalJs(`document.querySelector('#bindingMessage').textContent`),/사용 중/);
   await click('#bindingCancel');await click('#setClose');
   await sample([2]);assert.equal(await b.evalJs('bindTest.session.tries'),0,'release gate prevents accidental RP after closing');
-  await sample();await sample([2]);assert.equal(await b.evalJs('bindTest.session.tries'),1);
+  await sample();await sample([2]);await sleep(100); // a lone RP waits out its own 60Hz slot (it may be the first of RP, ↓, →)
+  assert.equal(await b.evalJs('bindTest.session.tries'),1);
   assert.deepEqual(await b.evalJs(`(s=>[s.padKeys.b2,s.padKeys.up,s.altKeys.b2])(JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')))`),['b2','a2-','KeyP'],'saved before the reload');
   await sleep(1000); // a loaded CI runner can navigate before Chrome commits the storage writes (the reload then read the fixture defaults)
   await b.navigate(fileUrl(path.join(out,'index.html')));

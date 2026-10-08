@@ -10,12 +10,22 @@ function giwonClear(){ giwonLink = null; giwonRP = null; giwonBuf = null; stiffB
 // Keyboard ↘+RP is three keydowns, so the button can arrive before the diagonal completes. Hold an
 // otherwise-failing RP for its own slot; onDir fires the 기원권 if the ↘ lands there, tick replays it if not.
 // Only a fresh half-diagonal pressed in this very slot can still become a ↘ (a keyboard chord, or
-// a pad reporting one axis a poll early). Everything else is judged straight away, undelayed.
+// a pad reporting one axis a poll early) — or an RP from neutral with no command at all, which may be
+// the first of the three keydowns (RP, ↓, →). Everything else is judged straight away, undelayed.
 function giwonStage(t, kind){
-  if(giwonRP || (heldDir!=='f' && heldDir!=='d') || prevDir!=='n' || frameSlot(heldDirT)!==frameSlot(t)) return false;
-  giwonRP = {t, slot: frameSlot(t), kind}; return true;
+  if(giwonRP) return false;
+  const half = (heldDir==='f' || heldDir==='d') && prevDir==='n' && frameSlot(heldDirT)===frameSlot(t);
+  // 상태 1인데 중립을 쥐고 있다 = 경직이 그 N을 버렸다(평소의 N은 상태 2로 넘긴다). 이 RP도 같은 칸의 ↘를 기다린다
+  const fromN = heldDir==='n' && (kind==='no_cd' || (kind==='early_stage' && cd.state===1));
+  if(!half && !fromN) return false;
+  giwonRP = {t, slot: frameSlot(t), kind, fromN}; return true;
 }
-function giwonResolve(){ const g = giwonRP; if(!g) return; giwonRP = null; attempt(g.kind, null, g.t); }
+function giwonResolve(){
+  const g = giwonRP; if(!g) return; giwonRP = null; attempt(g.kind, null, g.t);
+  // RP → 6 in one slot and no ↘ followed: the RP's miss is judged as if on arrival, so its endCommand
+  // must not swallow the start 6 pressed after it. Rebuild the prefix that 6 began.
+  if(g.half==='f'){ startCD(g.halfT); if(cd.chain===0 && !wsc.active) mist = mistNew(g.halfT); }
+}
 // The diagonal is held right now and no crouch-dash / WSC / mist path owns this RP. The state check is
 // what keeps 6N23+RP an EWGF: a completed crouch dash sits in state 4 with the very same ↘ held.
 function giwonReady(){ return heldDir==='df' && !mist && !cd.pending && !(wsc.active && wsc.active.back!=null); }
@@ -29,6 +39,7 @@ function giwonReady(){ return heldDir==='df' && !mist && !cd.pending && !(wsc.ac
 // 넣어야 성공하는 것처럼 보였다(사용자 보고 2026-09-28).
 const giwonOff = t => frameSlot(t) - frameSlot(giwonLink.tRec);                            // 해제 프레임 기준 칸 차이
 const giwonStiff = t => !!giwonLink && giwonOff(t) < 0;
+const giwonPre = t => { const c = GP_FREE + giwonOff(t); return c >= GP_BUF_A && c <= GP_BUF_B; }; // 경직 중 시작 6이 남는 선입력 창인가
 let giwonBuf = null; // {n, t} 버퍼 한 칸: 경직 마지막 BUFFER_F 안에 마지막으로 누른 버튼
 function giwonRecovery(n, t){
   const L = giwonLink;
@@ -38,6 +49,8 @@ function giwonRecovery(n, t){
   return true;
 }
 function giwonArm(t){ // every 기원권 arms the link: the 32f recovery is the move's own, hit or whiff
+  // 앞 기원권의 경직 중에 버퍼된 기원권은 누른 칸이 아니라 해제 칸에 나간다. 누른 시각으로 걸면 새 경직이 최대 BUFFER_F만큼 일찍 끝난다.
+  if(giwonLink && giwonOff(t) < 0) t = giwonLink.tRec;
   const tHit = t + HIT_CONTACT_MS.giwon;
   // 해제 시각은 GP_FREE 칸 자체다: 입력 칸(1f)에서 GP_FREE-1 프레임 뒤. 그래야 그려진 칸과 판정이 어긋나지 않는다.
   giwonLink = {t0: t, tHit, tRec: t + (GP_FREE-1)*FRAME, until: t + GIWON.LINK_MS};
@@ -96,6 +109,7 @@ function giwonTake(a, t, startT, neutralT){
 const linkOk = l => l.ewgf && l.fire <= GP_FIRE_MAX;   // 초풍이고, GP_TARGET 프레임까지 발동했다
 function linkWhy(l){
   if(l.aborted) return T('gp.abortedNote');
+  if(l.again) return T('link.again');
   if(linkOk(l)) return T('link.ok', GP_TARGET);
   if(!l.ewgf) return T('link.noEwgf');
   return T('link.fireLate', l.cell, l.fire - GP_FIRE_MAX, GP_TARGET)

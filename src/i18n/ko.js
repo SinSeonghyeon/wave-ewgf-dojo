@@ -186,6 +186,7 @@ const I18N_KO = {
   'link.assume':(rec,ground)=>` 연습 전제는 카운터 히트이며 기원권 리커버리 ${rec}f · 배잡기 경직 지상 판정 ${ground}f는 실게임 미확인 가정값입니다. 실제 명중·딜캐 타이밍은 측정하지 않습니다.`,
   'link.fireLate':(cell,late,target)=>`초풍이 ${cell}f에 발동해 ${late}f 늦었습니다. 경직이 풀리는 프레임에 중립을 만들고 바로 ↘+RP로 ${target}f에 발동시키세요.`,
   'link.noEwgf':'초풍이 아닙니다. 대각과 RP가 같은 프레임에 들어가야 초풍입니다.',
+  'link.again':'초풍 대신 기원권이 다시 나갔습니다. 연결 실패입니다.',
   'link.nobufHint':(a,b)=>` 선입력으로 남는 것은 시작 6 하나입니다. ${a}~${b}f 사이에 6을 넣어 두세요.`,
   'link.memo':cell=>`기원초 연결 · 발동 ${cell}f`, 'link.memoOk':'기원초 입력 조건 충족',
   'link.segTitle':'기원권 뒤 연결 입력 (프레임)', 'link.segNames':['발동','중립','6 선입력','RP'],

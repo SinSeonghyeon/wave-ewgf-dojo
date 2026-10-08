@@ -72,9 +72,9 @@ test('연습 모드 통계는 목표 칸 발동을 따로 세고, 실패는 연�
   gpAttempt(a,{rp:F},13000);
   assert.equal(a.gp.last.ewgf,false);assert.equal(a.gp.last.ok,false);
   assert.equal(a.get('gpDetail').textContent,a.T('link.noEwgf'));
-  // the start 6 outside the buffer window is reported, but the verdict still follows the fire frame
-  gpAttempt(a,{pre:a.GIWON.BUFFER_F+3},17000);
-  assert.equal(a.gp.last.buffered,false);assert.equal(a.gp.last.ok,true);
+  // the first frame of the pre-input window (40f) still carries the start 6
+  gpAttempt(a,{pre:a.GP_FREE-a.GP_BUF_A},17000);
+  assert.equal(a.gp.last.f,a.GP_BUF_A-a.GP_FREE);assert.equal(a.gp.last.buffered,true);assert.equal(a.gp.last.ok,true);
   // 6N23 takes one frame more than the target allows: graded late without naming the route
   gpAttempt(a,{route:'standard',fire:2},21000);
   assert.equal(a.gp.last.route,'standard');assert.equal(a.gp.last.ok,false);
@@ -90,14 +90,19 @@ test('연습 모드는 이어지지 않은 기원권을 중단으로 남기고 �
   assert.equal(a.get('gpResult').textContent,a.T('gp.aborted'));
   assert.equal(a.get('gpDetail').textContent,a.T('gp.abortedNote'));
   assert.equal(a.get('gpRows').innerHTML,'','an abandoned attempt is not a row');
-  // 바로 다시 치는 것은 중단이 아니다: 열려 있던 시도를 조용히 넘겨받는다 (사용자 요청 2026-09-27)
+  // 바로 다시 치는 것은 중단이 아니라 연결 실패다(사용자 확인 2026-10-08): 실패로 세고 새 시도가 열린다
   a.onDir('n',3000);giwon(a,3100);
   assert.equal(a.gp.session.aborted,1);
   a.onButton(2,3400);                                           // inside the recovery: no second 기원권, no new attempt
   assert.equal(a.gp.run.t0,3100);assert.equal(a.gp.session.aborted,1);
-  giwon(a,4000);                                                // past the recovery: this one replaces the open attempt
-  assert.deepEqual(gpCounters(a.gp.session),{tries:0,hits:0,onTime:0,streak:0,best:0,aborted:1},'only the LINK_MS timeout counts as abandoned');
-  assert.equal(a.gp.run.t0,4000);assert.equal(a.gp.notice,'live');
+  const before=a.gp.run.events.length;
+  giwon(a,4000);                                                // past the recovery: another 기원권 instead of the EWGF
+  assert.deepEqual(gpCounters(a.gp.session),{tries:1,hits:0,onTime:0,streak:0,best:0,aborted:1},'a second 기원권 is a failed link, not an abandoned one');
+  assert.equal(a.gp.last.again,true);assert.equal(a.gp.last.ok,false);
+  assert.equal(a.get('gpDetail').textContent,a.T('link.again'));
+  assert.ok(a.gp.last.events.length>before,'the failed attempt keeps its marks, including the second 기원권');
+  assert.equal(a.gp.run.t0,4000);
+  assert.equal(a.get('gpResult').textContent,a.T('gp.fail'),'the failure stays on screen until the new attempt gets an input');
   a.tick(4000+a.GIWON.LINK_MS+50);
   assert.equal(a.gp.session.aborted,2,'letting the window run out still counts');
   // every cancel point that clears the link clears the open attempt too
@@ -126,7 +131,7 @@ test('연습 모드는 판정을 바꾸지 않고 초풍 통계도 막지 않는
   const free=boot();giwon(free,1000);
   assert.equal(free.gp.run,null,'other modes open no practice attempt');
   assert.equal(free.gp.session.tries,0);
-  const a=gpBoot();const r=gpAttempt(a,{start:0});
+  const a=gpBoot();const r=gpAttempt(a,{fire:2,pre:1}); // 6·N 1f each needs the 6 after the recovery (47f is no pre-input)
   assert.equal(r.kind,'ewgf');assert.equal(r.fastest,true);assert.equal(r.inputRoute,'mist');
   assert.equal(a.session.tries,1,'unlike wsc, the follow-up EWGF is a real EWGF and still counts');
   assert.equal(a.session.hits,1);assert.equal(a.store.life.ewgf,1);
@@ -219,7 +224,7 @@ test('기원권 경직은 걷기·대시·기술을 막고 마지막 BUFFER_F의
   assert.equal(m.anim.kind,'backdash','once the recovery is over a b,N,b comes out again');
   // the frame the recovery ends is already free
   const after=giwon(boot());after.onDir('n',1100);
-  after.onButton(2,rec(after));
+  after.onButton(2,rec(after));after.tick(rec(after)+F);
   assert.equal(after.session.attempts.length,1,'a button on the recovery-end frame is judged straight away');
   // every cancel point drops the buffered button with the link
   for(const cancel of [x=>x.resetInput(),x=>x.events.blur(),x=>x.setMode('ewgf20')]){
@@ -411,8 +416,9 @@ test('같은 더미에 기원권을 두 번 맞히면 배잡기가 풀리고 살
   g.time(1000);giwon(g,1000);g.updateDummy(g.world.dummy.launchAt+1);
   const run=g.gp.run;assert.ok(run,'the first 기원권 opens an attempt');
   g.onDir('n',1900);g.time(1900);giwon(g,1900);                 // 배잡기 중인 같은 더미를 또 친다
-  assert.equal(g.gp.run,run,'the open attempt is untouched: the timeline does not replay');
-  assert.equal(g.gp.session.tries,0);assert.equal(g.gp.session.aborted,0);
+  assert.equal(g.gp.run,null,'no new attempt: the timeline does not replay');
+  assert.equal(g.gp.last.t0,run.t0,'it keeps showing the attempt that failed');
+  assert.equal(g.gp.session.tries,1,'graded as a failed link (사용자 확인 2026-10-08)');assert.equal(g.gp.session.aborted,0);
   // 더미가 날아가 다시 서면 그때부터가 새 시도다
   g.world.dummy.alive=true;g.world.dummy.hit=0;g.world.dummy.y=0;g.world.dummy.crumpleUntil=0;g.world.dummy.move=null;
   g.tick(1900+g.GIWON.LINK_MS+50);
@@ -532,21 +538,21 @@ test('버퍼된 버튼은 해제 칸의 첫 입력보다 먼저 나간다',()=>{
   const rec=giwonRec(a,1000), slotStart=(a.frameSlot(rec)-0.5)*F;
   a.onButton(2,rec-2*F);                          // buffered
   a.time(slotStart+1);a.onButton(2,slotStart+1);  // the release slot has started, raw tRec has not
+  a.tick(slotStart+F+1);                          // (a lone RP from neutral waits out its own slot)
   assert.equal(a.session.attempts.length,2,'both buttons were judged');
   assert.equal(a.session.attempts[0].t,rec-2*F,'the buffered one first, at its own press time');
 });
-test('재타격 기원권 뒤의 초풍은 앞 시도의 눈금에 기록되지 않고 그 시도를 중단으로 닫는다',()=>{
+test('재타격 기원권은 앞 시도를 실패로 닫고, 그 뒤의 초풍은 앞 시도의 눈금에 기록되지 않는다',()=>{
   const g=gpBoot();g.store.fx=1;g.world.charX=120;g.world.dummyX=190;
   Object.assign(g.world.dummy,{alive:true,hit:0,type:null,y:0});
   g.time(1000);giwon(g,1000);g.updateDummy(g.world.dummy.launchAt+1);
   const run=g.gp.run;
-  g.onDir('n',1900);g.time(1900);giwon(g,1900);   // rehit: no new run
-  assert.equal(g.gp.run,run);
+  g.onDir('n',1900);g.time(1900);giwon(g,1900);   // rehit: the open attempt fails, no new run
+  assert.equal(g.gp.run,null);assert.equal(g.gp.last.t0,run.t0);assert.equal(g.gp.session.tries,1);
   const rec=giwonRec(g,1900);
   g.onDir('n',2000);g.onDir('f',rec-3*F);g.onDir('n',rec);g.onDir('d',rec+F);g.onDir('df',rec+F+1);g.time(rec+F+2);g.onButton(2,rec+F+2);
-  assert.equal(g.gp.run,null,'the stale run is closed');
-  assert.equal(g.gp.session.tries,0,'and not graded against the other 기원권');
-  assert.equal(g.gp.session.aborted,1);
+  assert.equal(g.gp.session.tries,1,'the EWGF is not graded against the failed attempt');
+  assert.equal(g.gp.session.aborted,0);assert.equal(g.gp.last.t0,run.t0);
 });
 test('기원초 10회 도전 중에는 보상 상자·후원 말풍선·자동 공지가 끼어들지 않는다',()=>{
   const a=gpBoot();a.store.pendingRewards.push({kind:'ach',id:'x',at:0,day:1});
@@ -580,4 +586,70 @@ test('설정의 기록 초기화는 기원초 패널도 바로 비운다',()=>{
   assert.notEqual(a.get('gpRows').innerHTML,'','시도 한 줄이 그려졌다');
   a.resetSession();
   assert.equal(a.gp.session.tries,0);assert.equal(a.get('gpRows').innerHTML,'','초기화 뒤 옛 행이 남지 않는다');
+});
+test('경직 중에 6을 다시 눌러도(사이의 N은 버려진다) 마지막 6이 시작 6이 되어 초풍으로 이어진다',()=>{
+  // 2026-10-08: 6 → N(경직, 버려짐) → 6이 커맨드 머신에 f→f로 보여 상태 1이 끊기고, 초풍 대신 기원권이 한 번 더 나갔다
+  for(const [first,mid,again] of [[38,40,43],[44,45,46]]){
+    const a=gpBoot(), at=k=>1000+(k-1)*F;a.onDir('n',900);giwon(a,1000);a.onDir('n',at(2));
+    a.onDir('f',at(first));a.onDir('n',at(mid));a.onDir('f',at(again));a.onDir('n',at(a.GP_FREE));
+    a.onDir('df',at(a.GP_TARGET));a.onButton(2,at(a.GP_TARGET)+2);a.tick(at(a.GP_TARGET+5));
+    assert.equal(a.store.life.giwon,1,'no second 기원권: 6@'+first+' N@'+mid+' 6@'+again);
+    assert.equal(a.session.attempts.at(-1).kind,'ewgf');
+    assert.ok(a.gp.last&&a.gp.last.ok&&a.gp.last.cell===a.GP_TARGET);
+    assert.equal(a.gp.last.f,again-a.GP_FREE,'the start 6 that counts is the last one pressed');
+  }
+});
+test('RP를 대각보다 먼저 눌러도 같은 칸이면 기원권이고, RP 뒤에 누른 6은 RP의 실패에 지워지지 않는다',()=>{
+  for(const half of ['d','f']){
+    const a=gpBoot();a.onDir('n',900);a.onButton(2,1000);a.onDir(half,1000.2);a.onDir('df',1000.4);a.tick(1100);
+    assert.equal(a.store.life.giwon,1,'RP, '+half+', ↘');assert.equal(a.session.attempts.length,0);
+    assert.ok(a.gp.run,'the practice attempt opens');
+  }
+  // RP → 6 in one slot with no ↘: the RP still misses, and the 6 still starts a command
+  const b=boot();b.onDir('n',900);b.onButton(2,1000);b.onDir('f',1000.2);b.onDir('n',1000+2*F);b.onDir('df',1000+3*F);b.onButton(2,1000+3*F+1);
+  assert.deepEqual(Array.from(b.session.attempts,x=>x.kind),['no_cd','ewgf'],'the 6 pressed after the RP begins the EWGF');
+  assert.equal(b.store.life.giwon,0);
+});
+test('경직 중에 버퍼된 기원권은 해제 칸에 나가므로 다음 링크도 해제 칸부터 잰다',()=>{
+  const a=giwon(boot());const rec=giwonRec(a,1000);
+  a.onButton(2,rec-4*F);a.tick(rec+1);                   // ↘ still held: the buffered RP is a 기원권 on the release frame
+  assert.equal(a.store.life.giwon,2);
+  const rec2=giwonRec(a,rec);
+  a.onDir('n',rec+100);a.onDir('f',rec2-3*F);a.onDir('n',rec2);a.onDir('df',rec2+F);a.onButton(2,rec2+F+1);
+  const l=a.session.attempts.at(-1).giwonLink;
+  assert.equal(l.cell,a.GP_TARGET,'measured from the frame the buffered 기원권 came out, not the frame it was pressed');
+  assert.equal(a.linkOk(l),true);
+});
+test('타임라인 한 칸에는 방향이 하나만 그려진다(같은 프레임의 ↓→↘는 마지막 ↘ 하나)',()=>{
+  const a=gpBoot();a.onDir('n',900);giwon(a,1000);const rec=giwonRec(a,1000);
+  a.onDir('n',1100);a.onDir('f',rec-2*F);a.onDir('n',rec);
+  a.onDir('d',rec+F-3);a.onDir('df',rec+F+3);a.onButton(2,rec+F+4);a.tick(rec+4*F);
+  const cell=[...a.get('gpAxis').innerHTML.matchAll(/data-frame="(\d+)"[^>]*><b>([^<]*)<\/b>/g)].find(m=>Number(m[1])===a.GP_TARGET);
+  assert.ok(cell,'the target cell is drawn');
+  assert.deepEqual(cell[2].split('\n'),[a.glyphFor('df'),'RP'],'only the last direction of the frame, then the button');
+});
+test('10회 도전에서 다시 나간 기원권은 실패 1회로 센다',()=>{
+  const a=gpBoot();a.gp.challenge={status:'running',stats:a.gpStats()};
+  a.onDir('n',900);giwon(a,1000);a.onDir('n',1100);giwon(a,2000);
+  assert.equal(a.gp.challenge.stats.tries,1);assert.equal(a.gp.challenge.stats.hits,0);assert.equal(a.gp.challenge.stats.streak,0);
+});
+test('경직 중 버려진 중립 뒤 해제 칸에 ↓→+RP를 함께 누르면 중립도 2도 없는 6→3이라 기원권이 다시 나간다',()=>{
+  // 사용자 보고 2026-10-08: 같은 칸의 ↓를 2로 세어 623 초풍(48f 성공)으로 판정했다
+  for(const rpFirst of [false,true]){
+    const a=gpBoot(), at=k=>1000+(k-1)*F;a.onDir('n',900);giwon(a,1000);a.onDir('n',at(2));
+    a.onDir('f',at(44));a.onDir('n',at(47));
+    const t=at(a.GP_FREE);
+    if(rpFirst) a.onButton(2,t-2);
+    a.onDir('d',t-1);a.onDir('df',t);
+    if(!rpFirst) a.onButton(2,t+1);
+    a.tick(at(60));
+    assert.equal(a.session.attempts.length,0,'no EWGF: rpFirst='+rpFirst);
+    assert.equal(a.session.dashes,0,'and no crouch dash');
+    assert.equal(a.store.life.giwon,2,'the ↘+RP is another 기원권: rpFirst='+rpFirst);
+    assert.equal(a.gp.last.again,true,'graded as a failed link');
+  }
+  // 중립을 해제 칸(48f)에 두고 다음 칸에 ↘+RP면 그대로 성공
+  const ok=gpBoot(), at=k=>1000+(k-1)*F;ok.onDir('n',900);giwon(ok,1000);ok.onDir('n',at(2));
+  ok.onDir('f',at(44));ok.onDir('n',at(48));ok.onDir('d',at(49)-1);ok.onDir('df',at(49));ok.onButton(2,at(49)+1);ok.tick(at(60));
+  assert.equal(ok.gp.last.ok,true);
 });

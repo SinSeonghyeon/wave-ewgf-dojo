@@ -40,12 +40,13 @@ function gpAbort(){
 function gpStart(t, link){ // called from giwonArm, so every 기원권 opens an attempt in this mode
   const rehit = giwonRehit; giwonRehit = false;
   if(mode!=='giwon') return;
-  // 배잡기 중인 같은 더미를 또 친 기원권은 연결에 실패했다는 뜻이지 새 시도가 아니다(사용자 확인 2026-09-27).
-  // 타임라인을 처음부터 다시 돌리지 않고, 읽고 있던 시도와 판정을 그대로 둔다. 더미는 이미 풀려 날아갔으므로
+  // 열린 시도가 초풍으로 이어지기 전에 기원권이 또 나갔다 = 연결 실패(사용자 확인 2026-10-08). 실패로 세되
+  // 눈금은 그 시도에 그대로 둔다 — 타임라인이 처음부터 다시 도는 것이 보기 힘들다는 것이 2026-09-27 요청의 요지였다.
+  if(gp.run) gpFail();
+  // 배잡기 중인 같은 더미를 또 친 기원권은 새 시도가 아니다(사용자 확인 2026-09-27). 더미는 이미 풀려 날아갔으므로
   // 다음 기원권은 새로 선 더미를 치게 되고 그때 새 시도가 열린다.
   if(rehit) return;
-  // 바로 다시 치는 것도 실패 기록이 아니다: 열려 있던 시도는 조용히 놓아주고 직전 판정과 눈금은
-  // 새 시도의 첫 입력이 들어올 때까지 그대로 둔다. 진짜 중단(GIWON.LINK_MS 만료)만 tick의 gpAbort가 센다.
+  // 새 시도가 열려도 직전 판정과 눈금은 새 시도의 첫 입력이 들어올 때까지 그대로 둔다(renderGp의 kept).
   gp.run = {t0:t, tHit:link.tHit, tRec:link.tRec, events:[]};
   gp.notice = 'live'; renderGp();
 }
@@ -54,14 +55,22 @@ function gpInput(ev){ // the axis redraws per input so the marks appear as they 
 }
 function gpFinish(link, a){
   const r = gp.run; if(!r) return;
-  // 재타격 기원권(gpStart 참고)은 시도를 새로 열지 않는다. 그 링크로 들어온 초풍을 앞 시도의 경직 눈금에 기록하면
-  // 발동 칸과 타임라인이 어긋나므로, 앞 시도는 링크 만료 때와 똑같이 중단으로 닫는다.
+  // 안전장치: 다른 기원권의 링크로 들어온 초풍을 이 시도의 경직 눈금에 기록하면 발동 칸과 타임라인이 어긋난다.
+  // 지금은 새 기원권이 열린 시도를 먼저 gpFail로 닫으므로(gpStart) 여기 올 일이 없다.
   if(r.t0 !== link.t0){ gpAbort(); return; }
-  gp.run = null;
   const row = {fire:link.fire, cell:link.cell, n:link.n, f:link.f, buffered:link.buffered, ewgf:link.ewgf, route:link.route, kind:a.kind,
                nf:a.nFrames==null?null:a.nFrames, rp:a.frameOff==null?null:a.frameOff,
                onTime:link.fire===GP_FIRE_MAX, ok:linkOk(link),
                t0:r.t0, tHit:r.tHit, tRec:r.tRec, events:r.events.slice()};
+  gpClose(row);
+}
+function gpFail(){ // the open attempt ended in another 기원권 instead of the EWGF: graded as a failure, its timeline kept
+  const r = gp.run;
+  gpClose({again:true, fire:null, cell:null, n:null, f:null, buffered:false, ewgf:false, route:null, kind:'giwon', nf:null, rp:null,
+           onTime:false, ok:false, t0:r.t0, tHit:r.tHit, tRec:r.tRec, events:r.events.slice()});
+}
+function gpClose(row){
+  gp.run = null;
   gpRecord(gp.session, row);
   const c = gp.challenge;
   if(c.status==='running'){
@@ -142,8 +151,11 @@ function renderGp(){
   $('gpGuide').textContent=T('gp.guide',GIWON.ACTIVE_F,GIWON.RECOVERY_F,GP_FREE,GP_TARGET,GIWON.BUFFER_F);
   $('gpNote').textContent=T('gp.note',GP_TARGET,GIWON.RECOVERY_F,GIWON.BUFFER_F,GP_FREE);
   const segs = gpSegments(), cols = [];
+  // 한 프레임에는 방향이 하나뿐이다: 같은 60Hz 칸의 ↓→↘처럼 지나간 방향은 그리지 않고 그 칸의 마지막 방향만 남긴다
+  // (판정도 같은 칸의 대각을 한 입력으로 본다, 결정 28(input-log)의 입력 기록과 같은 규칙. 사용자 보고 2026-10-08)
+  const lastDir = new Map(); if(view) for(const e of view.events) if(e.dir) lastDir.set(frameSlot(e.t), e);
   for(const sg of segs){
-    const ev = view ? view.events.filter(e=>{const c=gpCell(view,e.t); return c>=sg.a&&c<=sg.b;}) : [];
+    const ev = view ? view.events.filter(e=>{const c=gpCell(view,e.t); return c>=sg.a&&c<=sg.b && (!e.dir || lastDir.get(frameSlot(e.t))===e);}) : [];
     const marks = ev.map(e=>e.btn?['','LP','RP','LK','RK'][e.btn]:glyph(e.dir));
     if(!view&&sg.a===1) marks.push(glyph('df'));
     const cls=(sg.a===GP_HIT?' hit':'')+(sg.span?' span'+(sg.span==='rec'?' rec':''):'')

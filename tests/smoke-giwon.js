@@ -274,15 +274,16 @@ stageAssets(html,out);
       const run=giwonTest.gp.run, t0=run&&run.t0, anchor=giwonTest.stiffAnchor().ax;
       hit();                                        // 배잡기 중인 같은 더미를 또 친다
       // Read the run right away: on a slow CI runner the 30ms waits below can outlast the link window, which ends the run on its own.
-      const same=giwonTest.gp.run===run, again=giwonTest.gp.run&&giwonTest.gp.run.t0;
+      // 실패로 닫히되(사용자 확인 2026-10-08) 새 시도는 열리지 않고 타임라인은 그 시도를 계속 보여 준다
+      const same=!giwonTest.gp.run && !!giwonTest.gp.last && giwonTest.gp.last.again===true, again=giwonTest.gp.last&&giwonTest.gp.last.t0;
       const xs=[];
       // A fixed 420ms window by the clock, not 14 timer ticks: stretched CI timers widened the window into the bag's own crumple motion.
       for(const until=performance.now()+420; performance.now()<until; ){ await wait(30); const B=giwonTest.stiffAnchor(); if(B) xs.push(B.ax); }
       return {same, t0, again,
               drift: xs.length?Math.max(...xs)-Math.min(...xs):0, charX:giwonTest.world.charX, anchor};
     })()`);giwons++;
-    assert.equal(twice.same,true,'the second 기원권 on the same bag does not restart the timeline: '+JSON.stringify(twice));
-    assert.equal(twice.again,twice.t0,'the open attempt keeps its own start');
+    assert.equal(twice.same,true,'the second 기원권 on the same bag fails the attempt without restarting the timeline: '+JSON.stringify(twice));
+    assert.equal(twice.again,twice.t0,'the timeline keeps showing the attempt that failed');
     assert.ok(twice.drift<8,'and the gauge stays put instead of jumping to the fighter: '+JSON.stringify(twice));
     assert.ok(Math.abs(twice.anchor-twice.charX)>30,'the gauge is over the bag, not the fighter: '+JSON.stringify(twice));
     await sleep(1400);
@@ -291,13 +292,13 @@ stageAssets(html,out);
     assert.match(lateLink.coach,new RegExp((K.free+4)+'f에 발동해 3f 늦었습니다'),JSON.stringify(lateLink));
     g=await gpRead();
     assert.equal(g.result,'연결 실패');assert.match(g.detail,new RegExp((K.free+4)+'f에 발동해'));
-    assert.deepEqual({tries:g.session.tries,hits:g.session.hits,onTime:g.session.onTime,streak:g.session.streak,best:g.session.best},{tries:2,hits:1,onTime:1,streak:0,best:1});
-    assert.equal(g.rows,2);
+    assert.deepEqual({tries:g.session.tries,hits:g.session.hits,onTime:g.session.onTime,streak:g.session.streak,best:g.session.best},{tries:3,hits:1,onTime:1,streak:0,best:1}); // on time · second 기원권 (failed link) · late
+    assert.equal(g.rows,3);
     for(const [lang,result] of [['en','Link missed'],['ja','連係失敗'],['ko','연결 실패']]){
       await click(`[data-lang="${lang}"]`);
       const t=await gpRead();
       assert.equal(t.result,result,JSON.stringify({lang,t}));
-      assert.equal(t.rows,2,lang+': the rows survive the language switch');
+      assert.equal(t.rows,3,lang+': the rows survive the language switch');
       assert.ok(t.guide.includes(String(K.target))&&t.ab.length>0,JSON.stringify({lang,t}));
     }
     // 경직 중 버튼: only the last GIWON.BUFFER_F frames are buffered, and they fire on the recovery-end frame
@@ -323,7 +324,7 @@ stageAssets(html,out);
     const dropped=await inRecovery(20);giwons++;
     assert.equal(dropped.tries,buffered.tries,'no EWGF attempt came out of the dropped button');
     assert.equal(dropped.gp.result,'경직 중 입력 · 버퍼되지 않음',JSON.stringify(dropped.gp));
-    assert.equal(dropped.gp.session.tries,3,'a dropped button is never graded');
+    assert.equal(dropped.gp.session.tries,4,'a dropped button is never graded');
     // 경직 중에는 걷지도 않는다: the 기원권 pose ends before the 32f do, and the fighter still cannot move
     await sleep(1300);
     const stiff=await b.evalJs(`(async()=>{

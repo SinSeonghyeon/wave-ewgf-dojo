@@ -186,6 +186,7 @@ const I18N_JA = {
   'link.assume':(rec,ground)=>` 練習の前提はカウンターヒットで、リカバリー${rec}f・崩れ落ち中の地上判定${ground}fは実機未確認の仮定値です。実際の命中やディレイキャッチのタイミングは測定しません。`,
   'link.fireLate':(cell,late,target)=>`最風が${cell}fで発生し${late}f遅れました。硬直が明けるフレームで中立を作り、そのまま3+RPで${target}fに発生させてください。`,
   'link.noEwgf':'最風ではありません。斜め下前とRPが同じフレームに入る必要があります。',
+  'link.again':'最風ではなく3+2がもう一度出ました。連係失敗です。',
   'link.nobufHint':(a,b)=>` 硬直を越えて残る方向は始動6だけです。${a}〜${b}fの間に6を入れておいてください。`,
   'link.memo':cell=>`3+2連係 · 発生 ${cell}f`, 'link.memoOk':'連係の入力条件を満たしました',
   'link.segTitle':'3+2の後の連係入力（フレーム）', 'link.segNames':['発生','中立','6先行','RP'],

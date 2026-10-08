@@ -186,6 +186,7 @@ const I18N_EN = {
   'link.assume':(rec,ground)=>` Practice assumes a counter hit; the ${rec}f recovery and the ${ground}f grounded window are unverified assumptions. Actual hit and punish timing is not measured.`,
   'link.fireLate':(cell,late,target)=>`The EWGF came out on frame ${cell}, ${late}f late. Make the neutral on the frame the recovery ends, then d/f+RP so it is out on frame ${target}.`,
   'link.noEwgf':'That was not an EWGF. The diagonal and RP have to land on the same frame.',
+  'link.again':'Another d/f+2 came out instead of the EWGF. The link failed.',
   'link.nobufHint':(a,b)=>` Only the start f survives the recovery — press it between ${a}f and ${b}f.`,
   'link.memo':cell=>`d/f+2 link · out on ${cell}f`, 'link.memoOk':'Link input conditions met',
   'link.segTitle':'Link input after d/f+2 (frames)', 'link.segNames':['Out','N','6 pre-input','RP'],

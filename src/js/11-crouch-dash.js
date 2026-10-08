@@ -2,6 +2,7 @@
 // Standalone f,N,df+RP. Only the final slot is staged: real d/f holds are
 // replayed into the original machine, with original timestamps and no duplicate history.
 let mist = null, mistRelease=false;
+const mistNew = t => ({f:t,n:null,df:null,rp:null,slot:null,released:false,queue:[]});
 function mistReplay(){
   const m=mist; mist=null;
   if(!m) return;
@@ -36,7 +37,7 @@ function mistDir(dir,t){
   }
   const m=mist;
   if(!m){
-    if(dir==='f' && cd.state===0 && cd.chain===0 && !wsc.active) mist={f:t,n:null,df:null,rp:null,slot:null,released:false,queue:[]};
+    if(dir==='f' && cd.state===0 && cd.chain===0 && !wsc.active) mist=mistNew(t);
     return false;
   }
   if(m.n==null){
@@ -91,13 +92,17 @@ function onDir(dir, t){
   pushHistory({t, dir}); gpInput({t, dir});
   if(challengeStatus(mode)==='countdown') return;
   if(giwonRP){ // the other half of a ↘ in the same slot completes 기원권; anything else replays the RP's own failure
-    const staged = giwonRP; giwonRP = null;
-    if(dir==='df' && frameSlot(t)===staged.slot){ backdashMotion(dir,t); cd.gFault=null; strike('giwon', staged.t); return; }
-    attempt(staged.kind, null, staged.t);
+    const staged = giwonRP, same = frameSlot(t)===staged.slot;
+    if(dir==='df' && same){ giwonRP = null; backdashMotion(dir,t); cd.gFault=null; strike('giwon', staged.t); return; }
+    if(same && staged.fromN && (dir==='d' || dir==='f')){ staged.fromN = false; staged.half = dir; staged.halfT = t; } // RP가 먼저 왔다: 대각의 첫 절반이다, 계속 기다린다
+    else giwonResolve(); // 같은 칸의 다른 방향도 슬롯이 지난 것과 똑같이 푼다(접두 6 재건 포함)
   }
   // 경직 중에 선입력으로 남는 방향은 **시작 6 하나**다(사용자 확인 2026-09-27). 중립은 경직이 끝난 뒤에
   // 들어가야 하므로 6 외의 방향은 커맨드를 잇지 못한다 — 경직 중에 풀어 버린 N은 버려진다.
-  if(giwonStiff(t) && dir!=='f') return;
+  // 경직 중에 6을 다시 누르면 그 사이의 N은 버려졌으므로 커맨드 머신에는 f→f로 보인다. 상태 1은 f→f를
+  // 실패로 끊어 버려서, 6을 한 번 더 눌렀을 뿐인데 초풍 대신 기원권이 또 나갔다. 경직 중의 6은 매번 새 시작 6이다.
+  // 그 6도 선입력 창(GP_BUF_A~GP_BUF_B, 40~46f) 안에서 눌렀을 때만 남는다. 창 앞이나 47f에 누른 6은 버려진다(사용자 보고 2026-10-08).
+  if(giwonStiff(t)){ if(dir!=='f' || !giwonPre(t)) return; resetCD(); }
   if(mistDir(dir,t)) return;
   commandDir(dir,t);
 }
@@ -112,7 +117,12 @@ function startCD(t){ cd.state=1; cd.tF=t; cd.omittedNeutral=false; }
 function commandDir(dir,t,backdashDone=false){
   // A staged "6 → 3" fault only becomes a fault once the ↘ leaves without an RP (see case 1 below).
   if(cd.gFault!=null && dir!=='df'){ const staged=cd.gFault; cd.gFault=null; fault('f_before_d', staged); }
-  wscDir(dir,t);
+  // 623에서 2가 대각과 같은 60Hz 칸이면 그 프레임에는 ↘만 있다: 2가 한 프레임도 없었으므로 크라우치 대시가 아니라 6→3이다
+  // (결정 1(wave-input) 보완. 사용자 보고 2026-10-08: 경직 중 버려진 N 뒤 48f에 ↓→+RP를 함께 누르면 기원초 성공으로 판정됐다)
+  // 6까지 같은 칸이면 그 6도 한 프레임을 차지하지 못했으니 앞 프레임들(예: 6 N ↘ = 무족초)이 실제 입력이다 — 그때는 건드리지 않는다.
+  // wscDir보다 먼저 정해야 웨캔기어도 같은 입력을 웨이브로 세지 않는다(모든 모드 공통).
+  const rolled = dir==='df' && cd.state===3 && cd.omittedNeutral && frameSlot(t)===frameSlot(cd.tD) && frameSlot(cd.tF)<frameSlot(t);
+  wscDir(dir,t,rolled);
   // dash / backdash from a double tap. Runs before the switch so the second f still becomes the start 6 (cd.tF===t → f,f+2 eligible, 대초 label).
   // The wave's cancel 6 → N → start 6 is a dash too (2026-09-12 user decision; the cancel 6 alone is not): shorter visual, no 대초 label (dashWave).
   let bdOutNow = false; // this input completed a b,N,b outside the recovery
@@ -138,7 +148,12 @@ function commandDir(dir,t,backdashDone=false){
       else resetCD();
       break;
     case 3:
-      if(dir==='df'){ completeCD(t); }
+      if(rolled){ // 6→3 (commandDir 머리의 rolled 참고)
+        const p = cd.pending; cd.pending = null; resetCD();
+        if(p && p.btn===2) strike('giwon', p.t);   // 같은 칸에 먼저 온 RP: ↘+RP = 기원권 (4는 d+4라 조용히 버린다)
+        else cd.gFault = t;                         // 6→3 실패는 기원권 굴림처럼 보류한다
+      }
+      else if(dir==='df'){ completeCD(t); }
       else { if(cd.pending){ resolvePending(null, t); } resetCD(); if(dir==='f') startCD(t); }
       break;
     case 4: // d/f held (crouch dash active)
