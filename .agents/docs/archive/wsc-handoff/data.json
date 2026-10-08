@@ -1,74 +1,522 @@
 {
   "schema_version": 1,
-  "as_of": "2026-09-17",
+  "as_of": "2026-09-18",
   "purpose": "production_handoff_not_a_verified_final_dataset",
-  "context": {"game": "Tekken 8", "character": "Devil Jin", "move": "WS RP", "build": null, "input_side": "notation_assumes_facing_right"},
-  "notation": {"forward": "→", "neutral": "★", "down": "↓", "down_forward": "↘", "back": "←", "down_back": "↙", "attack": "RP"},
-  "definitions": {"A": "frames from df reference to back", "B": "frames from back to RP", "inclusive_count_verified": false, "A_plus_B_is_total_time_to_hit": false},
+  "context": {
+    "game": "Tekken 8",
+    "character": "Devil Jin",
+    "move": "WS RP",
+    "build": null,
+    "input_side": "notation_assumes_facing_right"
+  },
+  "notation": {
+    "forward": "→",
+    "neutral": "★",
+    "down": "↓",
+    "down_forward": "↘",
+    "back": "←",
+    "down_back": "↙",
+    "attack": "RP"
+  },
+  "definitions": {
+    "A": "elapsed frames from df to back; historic test A remains elapsed, back ordinal = A + 1",
+    "B": "frames from back to RP",
+    "inclusive_count_verified": true,
+    "A_plus_B_is_total_time_to_hit": false,
+    "df_frame_ordinal": 1,
+    "frame_count_basis": "User confirmed 2026-09-18: df is frame 1; back at frames 8, 9, 10 after elapsed 7, 8, 9 frames"
+  },
   "rule": [
-    {"back_at_f": 7, "rp_after_back_f": [1]},
-    {"back_at_f": 8, "rp_after_back_f": [1, 2]},
-    {"back_at_f": 9, "rp_after_back_f": [1, 2, 3]}
+    {
+      "back_at_f": 8,
+      "rp_after_back_f": [
+        1
+      ],
+      "elapsed_df_to_back_f": 7
+    },
+    {
+      "back_at_f": 9,
+      "rp_after_back_f": [
+        1,
+        2
+      ],
+      "elapsed_df_to_back_f": 8
+    },
+    {
+      "back_at_f": 10,
+      "rp_after_back_f": [
+        1,
+        2,
+        3
+      ],
+      "elapsed_df_to_back_f": 9
+    }
   ],
   "tests": [
-    {"A": 6, "B": 1, "success": false, "evidence": "memo_explicit"},
-    {"A": 6, "B": 2, "success": false, "evidence": "memo_explicit"},
-    {"A": 7, "B": 1, "success": true, "evidence": "memo_explicit"},
-    {"A": 7, "B": 2, "success": false, "evidence": "memo_explicit"},
-    {"A": 7, "B": 3, "success": false, "evidence": "memo_explicit"},
-    {"A": 7, "B": 4, "success": false, "evidence": "memo_explicit"},
-    {"A": 8, "B": 1, "success": true, "evidence": "memo_explicit"},
-    {"A": 8, "B": 2, "success": true, "evidence": "memo_explicit"},
-    {"A": 8, "B": 3, "success": false, "evidence": "memo_explicit"},
-    {"A": 9, "B": 1, "success": true, "evidence": "memo_explicit"},
-    {"A": 9, "B": 2, "success": true, "evidence": "user_rule_only"},
-    {"A": 9, "B": 3, "success": true, "evidence": "memo_explicit"},
-    {"A": 10, "B": 1, "success": false, "evidence": "memo_explicit"},
-    {"A": 10, "B": 2, "success": false, "evidence": "memo_explicit"},
-    {"A": 11, "B": 4, "success": false, "evidence": "memo_explicit"}
+    {
+      "A": 6,
+      "B": 1,
+      "success": false,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 7
+    },
+    {
+      "A": 6,
+      "B": 2,
+      "success": false,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 7
+    },
+    {
+      "A": 7,
+      "B": 1,
+      "success": true,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 8
+    },
+    {
+      "A": 7,
+      "B": 2,
+      "success": false,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 8
+    },
+    {
+      "A": 7,
+      "B": 3,
+      "success": false,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 8
+    },
+    {
+      "A": 7,
+      "B": 4,
+      "success": false,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 8
+    },
+    {
+      "A": 8,
+      "B": 1,
+      "success": true,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 9
+    },
+    {
+      "A": 8,
+      "B": 2,
+      "success": true,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 9
+    },
+    {
+      "A": 8,
+      "B": 3,
+      "success": false,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 9
+    },
+    {
+      "A": 9,
+      "B": 1,
+      "success": true,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 10
+    },
+    {
+      "A": 9,
+      "B": 2,
+      "success": true,
+      "evidence": "user_rule_only",
+      "back_frame_ordinal": 10
+    },
+    {
+      "A": 9,
+      "B": 3,
+      "success": true,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 10
+    },
+    {
+      "A": 10,
+      "B": 1,
+      "success": false,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 11
+    },
+    {
+      "A": 10,
+      "B": 2,
+      "success": false,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 11
+    },
+    {
+      "A": 11,
+      "B": 4,
+      "success": false,
+      "evidence": "memo_explicit",
+      "back_frame_ordinal": 12
+    }
   ],
-  "tests_metadata": {"repeat_counts": null, "exact_failure_move_mapping": null, "individual_video_links_verified": false},
+  "tests_metadata": {
+    "repeat_counts": null,
+    "exact_failure_move_mapping": null,
+    "individual_video_links_verified": false
+  },
   "assets": [
-    {"id": "raw_gameplay", "local_path": "C:/Users/gus54/Videos/Captures/TEKKEN™8   2026-09-16 23-24-32.mp4", "package_path": null, "duration_s_approx": 263.367, "width": 1920, "height": 1080, "container_fps": 120, "game_fps_observed_approx": 60},
-    {"id": "character_reference", "local_path": "C:/Users/gus54/OneDrive/문서/카카오톡 받은 파일/코덱스.png", "package_path": "assets/character-reference.png", "target": "lower_right_bearded_character", "publication_rights_confirmed": false},
-    {"id": "original_memo", "local_path": "C:/Users/gus54/OneDrive/Desktop/새 폴더/웨캔기어 프레임 정리.txt", "package_path": "assets/frame-notes-original.txt"}
+    {
+      "id": "raw_gameplay",
+      "local_path": "C:/Users/gus54/Videos/Captures/TEKKEN™8   2026-09-16 23-24-32.mp4",
+      "package_path": null,
+      "duration_s_approx": 263.367,
+      "width": 1920,
+      "height": 1080,
+      "container_fps": 120,
+      "game_fps_observed_approx": 60
+    },
+    {
+      "id": "character_reference",
+      "local_path": "C:/Users/gus54/OneDrive/문서/카카오톡 받은 파일/코덱스.png",
+      "package_path": "assets/character-reference.png",
+      "target": "lower_right_bearded_character",
+      "publication_rights_confirmed": true
+    },
+    {
+      "id": "original_memo",
+      "local_path": "C:/Users/gus54/OneDrive/Desktop/새 폴더/웨캔기어 프레임 정리.txt",
+      "package_path": "assets/frame-notes-original.txt"
+    },
+    {
+      "id": "capture_tests_60",
+      "local_path": "D:\\테스트 모음집.mp4",
+      "working_copy": "C:\\Users\\gus54\\orca\\workspaces\\dojo\\workspace03\\.sandbox\\wsc-workspace03-production\\assets\\captures-20260918\\tests.mp4",
+      "sha256": "a73b622d94e06fd500f38892c3076a60299895422f88e6582570be70e1f0f3e9",
+      "duration_s": 148.916667,
+      "width": 1920,
+      "height": 1080,
+      "container_fps": 60,
+      "source": "user_recording_2026-09-18"
+    },
+    {
+      "id": "capture_wave46_60",
+      "local_path": "D:\\46초 웨캔기어 성공 이전은 모두 실패.mp4",
+      "working_copy": "C:\\Users\\gus54\\orca\\workspaces\\dojo\\workspace03\\.sandbox\\wsc-workspace03-production\\assets\\captures-20260918\\wave-at-46.mp4",
+      "sha256": "28fbe0f570c1e92f7afffb3f1d63ee03cfc46a1ad8663fe481cc87c6f17eacc5",
+      "duration_s": 55.916667,
+      "width": 1920,
+      "height": 1080,
+      "container_fps": 60,
+      "source": "user_recording_2026-09-18"
+    },
+    {
+      "id": "capture_failure_success_60",
+      "local_path": "D:\\7초 선자세 실패 9초 풍신권 실패 13초 성공 .mp4",
+      "working_copy": "C:\\Users\\gus54\\orca\\workspaces\\dojo\\workspace03\\.sandbox\\wsc-workspace03-production\\assets\\captures-20260918\\failure-success.mp4",
+      "sha256": "0027952bd5c067756d6f7d93f84c2777c1adb18c4e6b46b21453619c4a6aff8f",
+      "duration_s": 25.45,
+      "width": 1920,
+      "height": 1080,
+      "container_fps": 60,
+      "source": "user_recording_2026-09-18"
+    }
   ],
   "clip_candidates": [
-    {"id": "clean_success", "asset_id": "raw_gameplay", "in_s": 142.85, "out_s": 144.20, "evidence": "prior_visual_candidate", "exact_AB_verified": false},
-    {"id": "wgf_failure", "asset_id": "raw_gameplay", "in_s": 10.95, "out_s": 11.85, "evidence": "prior_visual_candidate", "exact_AB_verified": false},
-    {"id": "standing_failure", "asset_id": "raw_gameplay", "in_s": 24.60, "out_s": 25.40, "evidence": "prior_visual_candidate", "exact_AB_verified": false},
-    {"id": "success_log", "asset_id": "raw_gameplay", "in_s": 12.75, "out_s": 13.55, "evidence": "prior_visual_candidate", "suggested_AB": [8, 2], "exact_AB_verified": false}
+    {
+      "id": "clean_success",
+      "asset_id": "raw_gameplay",
+      "in_s": 142.85,
+      "out_s": 144.2,
+      "evidence": "prior_visual_candidate",
+      "exact_AB_verified": false
+    },
+    {
+      "id": "wgf_failure",
+      "asset_id": "raw_gameplay",
+      "in_s": 10.95,
+      "out_s": 11.85,
+      "evidence": "prior_visual_candidate",
+      "exact_AB_verified": false
+    },
+    {
+      "id": "standing_failure",
+      "asset_id": "raw_gameplay",
+      "in_s": 24.6,
+      "out_s": 25.4,
+      "evidence": "prior_visual_candidate",
+      "exact_AB_verified": false
+    },
+    {
+      "id": "success_log",
+      "asset_id": "raw_gameplay",
+      "in_s": 12.75,
+      "out_s": 13.55,
+      "evidence": "prior_visual_candidate",
+      "suggested_AB": [
+        8,
+        2
+      ],
+      "exact_AB_verified": false
+    }
   ],
   "comparison": {
-    "start_condition": null,
+    "start_condition": "wave_cancel starts at df input; leading f,N,d excluded; other rows retain user-reported preparation values",
     "counting_convention": null,
     "rows": [
-      {"id": "wave_cancel", "display_label": "웨이브 캔슬", "preparation_f": null, "input_to_hit_f": null, "evidence": "measurement_pending"},
-      {"id": "down_release", "display_label": "↓ 유지 후 떼기", "down_hold_user_report_f": 8, "down_7_or_less_user_report": "sidestep", "preparation_f": null, "input_to_hit_f": null, "evidence": "user_report_pending_capture"},
-      {"id": "qcb", "display_label": "↓ ↙ ←", "preparation_f": null, "input_to_hit_f": null, "evidence": "user_report_pending_capture"},
-      {"id": "down_back_release", "display_label": "↙ 유지 후 떼기", "preparation_f": null, "input_to_hit_f": null, "evidence": "user_report_pending_capture"}
+      {
+        "id": "wave_cancel",
+        "display_label": "웨캔기어 · 3부터",
+        "preparation_f": 8,
+        "input_to_hit_f": null,
+        "evidence": "user_report_explicit_pending_capture",
+        "reference_start": "df",
+        "leading_wave_inputs_included": false
+      },
+      {
+        "id": "down_release",
+        "display_label": "2 유지",
+        "down_hold_user_report_f": 8,
+        "down_7_or_less_user_report": "sidestep",
+        "preparation_f": 8,
+        "input_to_hit_f": null,
+        "evidence": "user_report_explicit_pending_capture"
+      },
+      {
+        "id": "qcb",
+        "display_label": "뒤 웨이브 · 214",
+        "preparation_f": 6,
+        "input_to_hit_f": null,
+        "evidence": "user_report_explicit_pending_capture",
+        "updated": "2026-09-18 user explicitly corrected optimal qcb to 6f"
+      },
+      {
+        "id": "down_back_release",
+        "display_label": "1 유지",
+        "preparation_f": 7,
+        "input_to_hit_f": null,
+        "evidence": "user_report_explicit_pending_capture"
+      }
     ],
-    "user_reported_conclusion": "qcb and down_back methods take similar time to wave_cancel; exact values not supplied",
-    "missing_value_display": "측정 대기"
+    "user_reported_conclusion": "Preparation minima: wave 8f from df (leading f,N,d excluded), down 8f, qcb/214 optimal 6f, down-back 7f. User correction 2026-09-18 supersedes prior qcb 7f. 214 preferred for ease and fewer mistakes. Independent minimum-frame capture verification pending.",
+    "missing_value_display": "측정 대기",
+    "measurement_scope": "minimum preparation before attack-button input, maximum-speed assumption; excludes move startup and time to hit",
+    "user_reported_on": "2026-09-17",
+    "wave_reference_confirmed": "2026-09-17 user explicitly confirmed df input"
   },
-  "montage_counts": [1, 2, 4, 8, 16],
-  "montage_slots": [
-    {"id": "failure_01", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_02", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_03", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_04", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_05", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_06", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_07", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_08", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_09", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_10", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_11", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_12", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_13", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_14", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_15", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"},
-    {"id": "failure_16", "asset_id": null, "unique_attempt_id": null, "in_s": null, "out_s": null, "status": "dummy"}
+  "montage_counts": [
+    1,
+    2,
+    4,
+    8,
+    16
   ],
-  "publication_gates": {"history_claim_verified": false, "frame_count_convention_verified": false, "comparison_measurements_verified": false, "real_match_example_selected": false, "character_rights_confirmed": false, "all_montage_slots_real": false}
+  "montage_slots": [
+    {
+      "slot": 1,
+      "asset": "failure-success",
+      "in_s": 9.45,
+      "out_s": 11.3,
+      "result": "wgf",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 2,
+      "asset": "wave-at-46",
+      "in_s": 46.55,
+      "out_s": 49.45,
+      "result": "success",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 3,
+      "asset": "failure-success",
+      "in_s": 6.55,
+      "out_s": 8.05,
+      "result": "standing",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 4,
+      "asset": "wave-at-46",
+      "in_s": 4.2,
+      "out_s": 6.0,
+      "result": "failure",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 5,
+      "asset": "failure-success",
+      "in_s": 14.05,
+      "out_s": 16.7,
+      "result": "success",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 6,
+      "asset": "failure-success",
+      "in_s": 9.45,
+      "out_s": 11.3,
+      "result": "wgf",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 7,
+      "asset": "wave-at-46",
+      "in_s": 16.1,
+      "out_s": 17.9,
+      "result": "failure",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 8,
+      "asset": "wave-at-46",
+      "in_s": 46.55,
+      "out_s": 49.45,
+      "result": "success",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 9,
+      "asset": "failure-success",
+      "in_s": 9.45,
+      "out_s": 11.3,
+      "result": "wgf",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 10,
+      "asset": "wave-at-46",
+      "in_s": 23.0,
+      "out_s": 24.8,
+      "result": "failure",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 11,
+      "asset": "failure-success",
+      "in_s": 14.05,
+      "out_s": 16.7,
+      "result": "success",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 12,
+      "asset": "failure-success",
+      "in_s": 6.55,
+      "out_s": 8.05,
+      "result": "standing",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 13,
+      "asset": "wave-at-46",
+      "in_s": 31.2,
+      "out_s": 33.0,
+      "result": "failure",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 14,
+      "asset": "failure-success",
+      "in_s": 9.45,
+      "out_s": 11.3,
+      "result": "wgf",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 15,
+      "asset": "wave-at-46",
+      "in_s": 38.3,
+      "out_s": 40.1,
+      "result": "failure",
+      "distinct_attempt_claim": false
+    },
+    {
+      "slot": 16,
+      "asset": "wave-at-46",
+      "in_s": 46.55,
+      "out_s": 49.45,
+      "result": "success",
+      "distinct_attempt_claim": false
+    }
+  ],
+  "publication_gates": {
+    "history_claim_verified": false,
+    "frame_count_convention_verified": false,
+    "comparison_measurements_verified": false,
+    "real_match_example_selected": false,
+    "character_rights_confirmed": true,
+    "all_montage_slots_real": true
+  },
+  "active_gameplay_assets": [
+    "capture_tests_60",
+    "capture_wave46_60",
+    "capture_failure_success_60"
+  ],
+  "current_edit_ranges": [
+    {
+      "id": "wave_success",
+      "asset_id": "capture_wave46_60",
+      "in_s": 46.55,
+      "out_s": 49.45,
+      "exact_AB_verified": false
+    },
+    {
+      "id": "stand_failure",
+      "asset_id": "capture_failure_success_60",
+      "in_s": 6.55,
+      "out_s": 8.05,
+      "exact_AB_verified": false
+    },
+    {
+      "id": "wgf_failure",
+      "asset_id": "capture_failure_success_60",
+      "in_s": 9.45,
+      "out_s": 11.3,
+      "exact_AB_verified": false
+    },
+    {
+      "id": "indoor_success",
+      "asset_id": "capture_failure_success_60",
+      "in_s": 14.05,
+      "out_s": 16.7,
+      "exact_AB_verified": false
+    },
+    {
+      "id": "input_analysis",
+      "asset_id": "capture_tests_60",
+      "in_s": 124.7,
+      "out_s": 128.8,
+      "exact_AB_verified": false
+    },
+    {
+      "id": "wave_trials",
+      "asset_id": "capture_tests_60",
+      "in_s": 102.0,
+      "out_s": 106.9,
+      "exact_AB_verified": false
+    }
+  ],
+  "notation_display": {
+    "basis": "1P numpad",
+    "6": "→",
+    "4": "←",
+    "2": "↓",
+    "3": "↘",
+    "1": "↙",
+    "N": "neutral",
+    "qcb_name": "뒤 웨이브",
+    "direction_ruby": true
+  },
+  "public_revision": {
+    "wave_df_context": "3 is the final direction of wave 6N23; preceding 6 N 2 excluded from the numbered axis",
+    "overlays": "production badges removed; credits and useful input constraints retained",
+    "tail_success_source": [
+      "wave-at-46",
+      46.55,
+      49.45
+    ]
+  },
+  "all_montage_slots_real": true,
+  "montage_unique_attempt_count": null
 }
