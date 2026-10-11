@@ -57,6 +57,14 @@ const fx = {
   tongbal(){ playSfx('tongbal'); startAnim('tongbal'); moveChar(48, 110); puff(3, 1); pop(T('pop.tongbal'), cssVar('--gold','#F5C542'), 40); if(!world.dummy.type) tryHit('tongbal'); }, // fast forward snap
   hellsweep(){ playSfx('hellsweep'); startAnim('hellsweep'); moveChar(22, 110); puff(4, 1); setTimeout(()=>puff(5, 1), 80); pop(T('pop.hellsweep'), cssVar('--red','#E5484D'), 40, {y:-70}); if(!world.dummy.type) tryHit('hellsweep'); }, // fast low sweep: quick forward slide and a second dust burst as the leg comes around
   giwon(){ playSfx('giwon'); startAnim('giwon'); moveChar(8, 110); puff(2, 1); pop(T('pop.giwon'), cssVar('--warn','#F5A524'), 38, {y:-100}); if(!world.dummy.type) tryHit('giwon'); }, // d/f+2: a short hook from a standing guard; almost no travel
+  // 초스카이 (결정 33(jfsr)): a rising kick; electric = the just frame (blue sparks on the foot, the EWGF sound), else the normal Sky Rocket
+  sky(electric, n=1){
+    const L = streakStyle(n), color = electric ? cssVar(L.color[0], L.color[1]) : cssVar('--warn','#F5A524');
+    playSfx(electric ? 'ewgf' : 'tongbal'); startAnim('sky'); anim.electric = electric; moveChar(26, 120); puff(3, 1);
+    if(electric && store.fx && !reduced){ flash=1; flashGold=false; shake=L.shake; }
+    pop(electric ? (n>1 ? T('pop.jfStreak', n) : T('pop.jfsr')) : T('pop.sky'), color, electric ? L.size : 36, electric ? {lvl:clamp(n,1,6), glow:L.glow, rings:reduced?0:L.rings, core:L.core} : undefined);
+    if(!world.dummy.type) tryHit(electric ? 'jfsr' : 'sky');
+  },
   jab(){ startAnim('jab'); pop('?', '#E5484D', 30); },
   stumble(){ startAnim('stumble'); pop('MISS', '#E5484D', 30); },
   dash(short){ if(anim.kind==='ewgf' && performance.now()-anim.t0<260) return; startAnim('dash'); if(short) moveChar(24, 120); else moveChar(64, 150); puff(3, 1); }, // short: the wave restart dash (a full 64px per cycle would double wave travel)
@@ -79,13 +87,13 @@ const fx = {
 };
 function pop(text,color,size,opts){ pops.push({text,color,size,t0:performance.now(),x:world.charX+30*store.side, ...(opts||{})}); } // opts: lvl, glow, rings, core, life, x (world px), y (px above the floor, default −118)
 // Presentation contact points in milliseconds, tuned to each pose (not game frame data).
-const HIT_CONTACT_MS = {ewgf:180,wgf:180,tongbal:180,hellsweep:160,wsc:200,giwon:Math.round(GIWON.ACTIVE_F*FRAME)}; // giwon만 연출 튜닝값이 아니라 GIWON.ACTIVE_F(가정값)에서 파생된다
+const HIT_CONTACT_MS = {ewgf:180,wgf:180,tongbal:180,hellsweep:160,wsc:200,jfsr:190,sky:190,giwon:Math.round(GIWON.ACTIVE_F*FRAME)}; // giwon만 연출 튜닝값이 아니라 GIWON.ACTIVE_F(가정값)에서 파생된다
 const crumpling = (d, now) => d.crumpleUntil>0 && !d.launchAt && now<d.crumpleUntil; // 배잡기 경직: still standing, so a follow-up lands on a grounded opponent
 function tryHit(move){ // move: 'ewgf'|'wgf'|'tongbal'|'hellsweep'|'wsc'|'giwon'. Returns true when the dummy is knocked. Plain dummy: any move within reach; typed dummy: only HIT_TYPE[move]
   const d = world.dummy, now = performance.now(); const dist = (world.dummyX - world.charX)*store.side;
   if(!d.alive || (d.hit && !crumpling(d, now)) || dist<10 || dist>130) return false;
   if(d.type && HIT_TYPE[move]!==d.type) return false; // giwon is in no HIT_TYPE, so rush30 targets always read it as a whiff
-  const electric = move==='ewgf';
+  const electric = move==='ewgf' || move==='jfsr';
   // 같은 더미를 기원권으로 두 번 치면 연결에 실패한 것이다(사용자 확인 2026-09-27): 배잡기를 풀고
   // 늦은 초풍과 같은 약한 반응으로 살살 날려 보낸다. 새 기원권 자체는 그대로 나가고 링크도 다시 걸린다.
   const again = move==='giwon' && d.move==='giwon' && crumpling(d, now);

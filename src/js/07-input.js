@@ -36,7 +36,8 @@ const buttonForCode = code => {
   return 0;
 };
 const buttonHeld = n => held.has(store.keys['b'+n]) || (!!store.altKeys['b'+n] && held.has(store.altKeys['b'+n]));
-const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open || $('donateDlg').open || $('fitDlg').open || $('noticeDlg').open; // any dialog pauses game input (called at pad-poll rate, so no DOM query)
+const MODAL_IDS = ['nickDlg','shareDlg','setDlg','donateDlg','fitDlg','noticeDlg','charDlg']; // every <dialog> in app.html (tests/modals.test.cjs checks the list)
+const modalOpen = () => MODAL_IDS.some(id => $(id).open); // any dialog pauses game input
 let listening = null; // key remap target: {slot, alt}
 let bindingDevice='kb', bindingMessage=['set.bindIdle'], padCapture=null, padNeedsRelease=false, bindingPadPrevious=null;
 let bindingCheck=false, bindingCheckPad=[], bindingCheckSignature='';
@@ -137,7 +138,7 @@ addEventListener('keyup', e => {
 function resetInput(){
   historyStopT=performance.now();
   const openHistory=history.slice().reverse().find(e=>e.dir); if(openHistory && openHistory.endT==null) openHistory.endT=historyStopT;
-  wscCancel(); gpChallengeCancel();
+  wscCancel(); gpChallengeCancel(); jfChallengeCancel();
   held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); touchDir={x:0,y:0}; curDir='n'; heldDir='n'; prevDir='n'; heldDirT=0; touchRelease();
   clearCommand(); resetCombo(); resetTaps(); bdClear(); giwonClear(); updateHud(); renderWsc();
 }

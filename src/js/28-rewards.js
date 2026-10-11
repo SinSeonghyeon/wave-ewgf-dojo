@@ -142,5 +142,5 @@ $('fitClose').addEventListener('click', () => $('fitDlg').close());
 $('fitTabs').addEventListener('click', e => { const b = e.target && e.target.closest ? e.target.closest('button[data-view]') : null; if(b) fitView(b.dataset.view); });
 $('fitSlots').addEventListener('click', e => { const b = e.target && e.target.closest ? e.target.closest('button[data-id]') : null; if(b) setFit(b.dataset.slot, b.dataset.id); });
 $('fitReset').addEventListener('click', () => { for(const s of SLOTS) store.fit[s] = 'base'; lookCache = null; save(); renderFit(); });
-['setDlg','donateDlg','fitDlg'].forEach(id => $(id).addEventListener('close', () => setTimeout(renderRewards, 0))); // refresh claiming availability (#shareDlg/#nickDlg: their own close handlers)
+['setDlg','donateDlg','fitDlg','charDlg'].forEach(id => $(id).addEventListener('close', () => setTimeout(renderRewards, 0))); // refresh claiming availability (#shareDlg/#nickDlg: their own close handlers)
 

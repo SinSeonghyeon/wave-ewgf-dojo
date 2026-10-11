@@ -204,7 +204,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.moves.sweep = await evalJs(`({title:${q('#rTitle')}.textContent, log:${q('#logBody')}.textContent.slice(0,60)})`);
   await evalJs(`${q('#modes button[data-mode="rush30"]')}.click(); ${q('#dStart')}.click()`); await sleep(3300);
   await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(40); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(400);
-  out.moves.rush = await evalJs(`({score:${q('#hudScore')}.textContent, prog:${q('#dProg')}.textContent, timer:${q('#hudTimer')}.textContent, hint:${q('#hudHint')}.textContent, modes:document.querySelectorAll('#modes button').length})`);
+  out.moves.rush = await evalJs(`({score:${q('#hudScore')}.textContent, prog:${q('#dProg')}.textContent, timer:${q('#hudTimer')}.textContent, hint:${q('#hudHint')}.textContent, modes:[...document.querySelectorAll('#modes button')].filter(b=>!b.hidden).length})`);
   await evalJs(`${q('#modes button[data-mode="free"]')}.click()`); await sleep(200);
   out.moves.left = await evalJs(`({score:${q('#hudScore')}.textContent, records:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.rush30.length})`);
   // backdash 10s (2026-09-13): 4 N 4, 1 cancel near 10f, roll 1→4 N 4 → distance on the HUD and a graded ×2 set on the card; leaving the mode clears it without a record
@@ -270,8 +270,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(!out.card.open || out.card.w!==1200 || out.card.h!==630 || !out.card.png.startsWith('data:image/png;base64') || out.trialEnd.shareHidden) errors.push('share card check failed: '+JSON.stringify(out.card));
   // backend (UI is in en here): the first trial was auto-submitted at the gate nickname → my row on the always-visible board card
   out.board = await evalJs(`(() => { const q=s=>document.querySelector(s); return {cardHidden:q('#boardCard').hidden, postsHidden:q('#postsCard').hidden, rank:q('#dRank').textContent, retryHidden:q('#dRankRetry').hidden,
-    info:q('#boardInfo').textContent, me:q('#boardMe').textContent, visits:q('#visits').textContent, rows:[...document.querySelectorAll('#boardList tbody tr')].map(r=>[...r.children].map(c=>c.textContent)), meRow:!!q('#boardList tr.me'),
-    tabs:[...document.querySelectorAll('#boardTabs button')].map(b=>b.textContent+':'+b.getAttribute('aria-pressed'))}; })()`);
+    info:q('#boardInfo').textContent, me:q('#boardMe').textContent, visits:q('#visits').textContent, rows:[...document.querySelectorAll('#boardList tbody tr')].map(r=>[...r.children].map(c=>{const x=c.cloneNode(true);x.querySelectorAll('.char-tag').forEach(t=>t.remove());return x.textContent;})), tag:q('#boardList .char-tag')?.textContent||'', meRow:!!q('#boardList tr.me'),
+    tabs:[...document.querySelectorAll('#boardTabs button')].filter(b=>!b.hidden).map(b=>b.textContent+':'+b.getAttribute('aria-pressed'))}; })()`);
   // second trial: submitted automatically again, 0 dashes → the stored best stands; the result card reopens with the "kept" line
   await evalJs(`${q('#dStart')}.click()`); await sleep(3300);
   out.board.auto = {during:await evalJs(`({rank:${q('#dRank')}.textContent, open:${q('#shareDlg')}.open})`)};
@@ -310,7 +310,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.db = {scores:db.rows.map(r => ({board:r.board, nick:r.nick, score:r.score, tie:r.tie, win:r.win, week:r.week})), posts:db.posts.map(p => [p.nick, p.text]), replies:db.replies.map(r => [r.post_id,r.nick,r.text]), visits:db.visits, nicks:db.db.prepare('SELECT key,nick FROM nicks ORDER BY key').all().map(r => [r.key, r.nick])};
   const bd = out.board, auto = bd.auto;
   if(bd.tabs.length!==7 || !/Wave-cancel upper/.test(bd.tabs[5]||'') || !/d\/f\+2 link/.test(bd.tabs[6]||'') || !/rush30|Dummy Rush/.test(bd.tabs[3]||'') || !/bd10|Backdash/.test(bd.tabs[4]||'')) errors.push('leaderboard tabs check failed: '+JSON.stringify(bd.tabs));
-  if(bd.cardHidden || bd.postsHidden || !/rank 1 of 1 · top 100%/.test(bd.rank) || !bd.retryHidden || bd.info!=='1 entries' || !/rank 1 of 1 · top 100%/.test(bd.me) || !bd.meRow || bd.rows.length!==1 || bd.rows[0][1]!=='스모크 테스트' || bd.rows[0][0]!=='1' || !/^Today 1 · total 1 visits$/.test(bd.visits)) errors.push('leaderboard check failed: '+JSON.stringify(bd));
+  if(bd.cardHidden || bd.postsHidden || !/rank 1 of 1 · top 100%/.test(bd.rank) || !bd.retryHidden || bd.info!=='1 entries' || !/rank 1 of 1 · top 100%/.test(bd.me) || !bd.meRow || bd.rows.length!==1 || bd.rows[0][1]!=='스모크 테스트' || bd.tag!=='Kazuya' || bd.rows[0][0]!=='1' || !/^Today 1 · total 1 visits$/.test(bd.visits)) errors.push('leaderboard check failed: '+JSON.stringify(bd));
   if(!auto || auto.during.rank!=='' || auto.during.open || !/best stands · rank 1 of 1/.test(auto.after.rank) || auto.after.rows!==1 || !auto.after.open || !/best stands/.test(auto.after.line) || auto.after.tier!=='S') errors.push('leaderboard auto-submit check failed: '+JSON.stringify(auto));
   if(!bd.deleted || bd.deleted.msg!=='Your result was deleted.' || !/No entry from you/.test(bd.deleted.me) || bd.deleted.rows!==0 || bd.deleted.button || bd.deleted.db!==0) errors.push('leaderboard self-delete check failed: '+JSON.stringify(bd.deleted));
   if(!bd.ewgfTab.empty || !/No entry from you/.test(bd.ewgfTab.me) || bd.ewgfTab.pressed!=='true') errors.push('leaderboard tab check failed: '+JSON.stringify(bd.ewgfTab));

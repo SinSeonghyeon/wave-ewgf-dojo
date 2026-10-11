@@ -155,7 +155,7 @@ test('bd10: countdown, distance on the HUD, record, share card, board entry agai
   const rec=a.store.records.bd10[1];assert.equal(rec.score,+total.toFixed(2));assert.equal(rec.dashes,3);assert.equal(rec.top,2);assert.equal(rec.chain,3);assert.equal(rec.bdv,a.BD_REC_V);
   assert.equal(a.trial.result.personalBest,true,'the old 40.7 m does not block a personal best');assert.equal(a.get('hudCenter').textContent,total.toFixed(1)+' m');
   assert.equal(a.get('dProg').textContent,a.T('trial.bdEnd',total.toFixed(1),3));assert.equal(a.store.life.trials.bd10,1);
-  const e=JSON.parse(JSON.stringify(a.boardEntry(a.trial.result,'bd10')));assert.deepEqual(e,{board:'bd10',win:a.store.window,lang:'en',score:+total.toFixed(2),tie:2,detail:{dashes:3,top:2,chain:3}});
+  const e=JSON.parse(JSON.stringify(a.boardEntry(a.trial.result,'bd10')));assert.deepEqual(e,{board:'bd10',win:a.store.window,lang:'en',score:+total.toFixed(2),tie:2,detail:{dashes:3,top:2,chain:3,char:'kazuya'}});
   assert.equal(w.validate({...e,nick:'smoke'}).error,undefined);
   const card=a.buildCard({kind:'trial',mode:'bd10',rec,attempts:[],cycles:[],window:a.store.window});assert.equal(card.hero.value,total.toFixed(1)+' m');assert.equal(card.chart,null);
   assert.doesNotMatch(JSON.stringify(card),/NaN|undefined|(^|[\s"])(card|rec|trial|mode|bd)\.[a-zA-Z0-9]+/);

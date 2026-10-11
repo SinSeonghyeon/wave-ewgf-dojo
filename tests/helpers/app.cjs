@@ -30,6 +30,10 @@ function topLevelNames(src){
 }
 const APP_NAMES = topLevelNames(APP_SCRIPT);
 const BANNED = /데빌진|화랑|카즈야|헤이하치|진 카자마|Jin\b|Hwoarang|Kazuya|Heihachi|Devil Jin|仁|風間|カズヤ|平八|ファラン|デビル/; // official character names (design decision 3(no-official-ip)); 三島 alone is the app's own name (三島道場), so the item/bd tests add it themselves
+// 결정 3(no-official-ip) 2026-10-11 개정: the selectable characters' names may appear as text (character select, guides, notices).
+// offNames strips exactly those names, so any other official name still trips BANNED. The wardrobe keeps the full ban (결정 15(wardrobe)).
+const CHAR_NAMES = /카즈야|화랑|Kazuya|Hwoarang|一八|ファラン/g;
+const offNames = s => String(s).replace(CHAR_NAMES, '');
 function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls (default: none, every call fails inside its try/catch)
   let now=1000, pads=[];
   const elements=new Map(), events={}, timers=new Map(); let next=1;
@@ -123,4 +127,4 @@ function gpAttempt(a,opts={},t0=1000){ a.onDir('n',t0-100); giwon(a,t0); return 
 const gpCounters = s => ({tries:s.tries,hits:s.hits,onTime:s.onTime,streak:s.streak,best:s.best,aborted:s.aborted});
 const gpCells = a => new Map([...a.get('gpAxis').innerHTML.matchAll(/class="wsc-cell([^"]*)" data-frame="(\d+)"/g)].map(m=>[Number(m[2]),m[1].trim()]));
 
-module.exports = {html, BANNED, APP_NAMES, topLevelNames, boot, dash, F, fr, mistInput, bdOut, bdSet, bdAt, samplePad, backend, topRes, AudioStub, J, kstToday, wscPrefix, wscRun, wscChainRun, giwonRec, giwon, linkAfter, gpBoot, gpAttempt, gpCounters, gpCells};
+module.exports = {html, BANNED, CHAR_NAMES, offNames, APP_NAMES, topLevelNames, boot, dash, F, fr, mistInput, bdOut, bdSet, bdAt, samplePad, backend, topRes, AudioStub, J, kstToday, wscPrefix, wscRun, wscChainRun, giwonRec, giwon, linkAfter, gpBoot, gpAttempt, gpCounters, gpCells};

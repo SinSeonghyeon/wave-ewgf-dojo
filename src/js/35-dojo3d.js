@@ -213,7 +213,15 @@ function frame(now){
   ctx.fillStyle='rgba(0,0,0,.45)'; ctx.beginPath(); ctx.ellipse(sx, gy+2, 26-(pose.jump||0)*0.2, 5, 0, 0, Math.PI*2); ctx.fill();
   // fighter
   const fist = drawFighter(ctx, sx, gy, pose, store.side, 1, null);
-  // electricity
+  // electricity: the EWGF fist, or the kicking foot of a 초스카이 (결정 33(jfsr))
+  if(anim.kind==='sky' && anim.electric && fist.foot && now-anim.t0>70 && now-anim.t0<420){
+    const [x,y] = fist.foot;
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    for(let i=0;i<6;i++) drawBolt(ctx, x, y, 30+Math.random()*36, Math.random()*Math.PI*2, 2.2, 'rgba(143,220,255,.9)');
+    for(let i=0;i<3;i++) drawBolt(ctx, x, y, 18+Math.random()*22, Math.random()*Math.PI*2, 1, '#ffffff');
+    const gl = ctx.createRadialGradient(x,y,2,x,y,40); gl.addColorStop(0,'rgba(76,201,255,.6)'); gl.addColorStop(1,'rgba(76,201,255,0)'); ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(x,y,40,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
   if(anim.kind==='ewgf' && anim.electric){
     const t = now-anim.t0;
     if(t>60 && t<420){

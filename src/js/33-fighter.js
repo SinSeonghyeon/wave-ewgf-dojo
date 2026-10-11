@@ -14,6 +14,7 @@ function drawFighter(g, px, py, p, dir, alpha, tint, look){ // look: slot → it
   const legL = 24 - 11*crouch;
   g.lineCap='round'; g.lineJoin='round';
   const tuck = p.tuck||0, step = p.step||0; // step −1..1: stride phase for walk/dash (front foot forward and lifted). 0 keeps the legacy stance pixel-identical.
+  let kickFoot = null; // the kicking foot in the caller's canvas coordinates (초스카이 sparks)
   const foot = (x,y) => { if(tint){ g.fillStyle=tint; g.beginPath(); g.ellipse(x,y,7,3.5,0,0,Math.PI*2); g.fill(); } else SH.foot(g,x,y); };
   if(p.sweep!=null){
     // hell sweep: the right leg extends straight and orbits a low, flattened circle around the crotch (the lower body spins one turn); the left leg stays tucked as the pivot
@@ -30,12 +31,14 @@ function drawFighter(g, px, py, p, dir, alpha, tint, look){ // look: slot → it
   } else {
   // legs
   g.lineWidth=LG.width||8; g.strokeStyle = tint||LG.pants;
-  const lx = -spread - step*8, rx = spread + step*8, ly = -tuck*10 - Math.max(0,-step)*4, ry = -tuck*8 - Math.max(0,step)*4;
+  let lx = -spread - step*8, rx = spread + step*8, ly = -tuck*10 - Math.max(0,-step)*4, ry = -tuck*8 - Math.max(0,step)*4;
+  if(p.kick){ const a = p.kick*2.5, L = legL+8; rx = spread*0.3 + Math.sin(a)*L; ry = -legL + Math.cos(a)*L; } // 초스카이: the front leg swings up from the hip (0 = planted, 1 = above the head)
   g.beginPath(); g.moveTo(lx, ly); g.lineTo(-spread*0.35, -legL); g.stroke();
   g.beginPath(); g.moveTo(rx, ry); g.lineTo(spread*0.3, -legL); g.stroke();
   if(!tint && LG.deco) LG.deco(g, [[lx,ly,-spread*0.35,-legL],[rx,ry,spread*0.3,-legL]]);
   // shoes
   foot(lx-1, ly); foot(rx+2, ry);
+  if(p.kick) kickFoot = fighterPoint(parentTransform, g.getTransform(), rx+2, ry);
   }
   // hips / torso
   g.translate(0,-legL); g.rotate(lean);
@@ -82,6 +85,7 @@ function drawFighter(g, px, py, p, dir, alpha, tint, look){ // look: slot → it
   // front arm
   const fist = arm(6, (p.armR==null?30:p.armR)*Math.PI/180, true, p.reach||0);
   g.restore();
+  fist.foot = kickFoot;
   return fist;
 }
 function poseAt(now){
@@ -99,6 +103,11 @@ function poseAt(now){
       if(t<70) return {crouch:0.95, lean:32, armR:-40, armL:-30, spread:0.9, eyeGlow:anim.electric};
       if(t<260){ const k = e((t-70)/190); return {crouch:0.9*(1-k), lean:32-42*k, armR:-40+240*k, armL:-20, jump:38*Math.sin(k*Math.PI*0.5), tuck:k, spread:0.4, eyeGlow:anim.electric}; }
       if(t<520){ const k=(t-260)/260; return {crouch:0, lean:-10+10*k, armR:200-40*k, armL:-20, jump:38*Math.cos(k*Math.PI/2), tuck:1-k, spread:0.2, eyeGlow:anim.electric&&k<.6}; }
+      break; }
+    case 'sky': { // 초스카이 / Sky Rocket (결정 33(jfsr)): a short sink, then the front leg swings straight up as the body rises
+      if(t<70){ const k=t/70; return {crouch:0.7*k, lean:18*k, armR:-30, armL:-50, spread:0.7, eyeGlow:anim.electric}; }
+      if(t<270){ const k=e((t-70)/200); return {crouch:0.7*(1-k), lean:18-34*k, armR:-30+50*k, armL:-50-30*k, spread:0.5, jump:34*Math.sin(k*Math.PI*0.5), kick:k, eyeGlow:anim.electric}; }
+      if(t<540){ const k=(t-270)/270; return {crouch:0, lean:-16+16*k, armR:20, armL:-80+50*k, spread:0.4, jump:34*Math.cos(k*Math.PI/2), kick:1-k, eyeGlow:anim.electric&&k<.6}; }
       break; }
     case 'jab': { if(t<200){ const k = Math.sin(Math.min(1,t/200)*Math.PI); return {crouch:0.5, lean:12, armR:90*k+10, armL:-20, spread:0.4, sweat:true}; } break; }
     case 'stumble': { if(t<420){ const k=Math.sin(t/420*Math.PI); return {crouch:0.15*k, lean:-18*k, armR:120*k, armL:100*k, spread:0.8, sweat:true}; } break; }

@@ -1,5 +1,5 @@
 /* ---------- backdash (414 N 414 N …) machine. Reads/writes only bd, session.bd, trial.dist/bdCount/bdTop/bestChain; shows through the same result card / coach / log as everything else ---------- */
-const bdActive = () => mode==='bd10' || (mode==='free' && !trial.running);
+const bdActive = () => charCap('kbd') && (mode==='bd10' || (mode==='free' && !trial.running)); // 결정 34(char-select): every character with kbd shares BD.CURVE
 const bdLoud = () => bd.engaged || mode==='bd10'; // free practice is silent until the first 1(↙) cancel
 function bdClear(){ Object.assign(bd,{state:0,t4a:0,tN:0,t4b:0,prev:null,chain:0,engaged:false,lastT:-1e9,seg:null,open:null,card:null}); bdpClear(); }
 function bdBreak(t, why='crouch'){ // chain over (fail, no cancel, timeout). Logs a 3+ chain like endChain does for the wave.

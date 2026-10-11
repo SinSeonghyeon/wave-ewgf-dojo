@@ -3,20 +3,43 @@
 // replayed into the original machine, with original timestamps and no duplicate history.
 let mist = null, mistRelease=false;
 const mistNew = t => ({f:t,n:null,df:null,rp:null,slot:null,released:false,queue:[]});
+// The button this staged 6N3 waits for (0 = none): RP for the legacy 무족초, the recipe button for a just-frame
+// character (결정 33(jfsr), 결정 34(char-select)). The rest of the staging is the same for both.
+const mistBtn = () => { const c = charOf(); return c.legacy ? (moveOn('mist') ? 2 : 0) : (c.jf && moveOn(c.jf.move) ? c.jf.btn : 0); };
+// Where the legacy 무족초 may start (checked in mistDir, before commandDir): only a fresh start 6 — a wave link is not 무족초.
+const mistStart = () => cd.state===0 && cd.chain===0 && !wsc.active;
+// A just-frame character arms on every 6 (결정 33(jfsr)): a fresh start, a retry after an abandoned 6N2 / 62, the wave's cancel 6
+// (6N23 6 N 3) and restart 6 (6N23 6 N 6 N 3) — the game refuses the wave ones, the practice tool accepts them. It runs after
+// commandDir (onDir) because commandDir's own resetCD on a re-pressed 6 (states 1·3) would drop a slot armed before it.
+function mistArmJf(dir,t){ if(dir==='f' && !mist && !charOf().legacy && mistBtn()) mist=mistNew(t); }
 function mistReplay(){
   const m=mist; mist=null;
   if(!m) return;
   for(const e of m.queue){ if(e.dir) commandDir(e.dir,e.t,true); else commandButton(e.btn,e.t); }
+  // 결정 33(jfsr): for a just-frame character a staged 6 that never became a 3 starts the next 6N3 (6 N 6 N 3+4).
+  // The legacy 무족초 keeps its rule: a 6 after a neutral is a dash start (통발), never a new 무족 start.
+  const last=m.queue[m.queue.length-1];
+  if(!charOf().legacy && !mist && m.df==null && m.rp==null && last && last.dir==='f' && mistBtn()) mist=mistNew(last.t);
 }
 function mistTick(t){
   const m=mist; if(!m) return;
-  if(m.slot!=null && frameSlot(t)>m.slot){ mistReplay(); return; }
+  if(m.slot!=null && frameSlot(t)>m.slot){
+    if(m.df==null || charOf().legacy){ mistReplay(); return; }
+    // 결정 33(jfsr): for the 초스카이 judge a d that shared the d/f frame never existed, so the slot stays a plain 6N3 still
+    // waiting for its 4 — a late 4 is 3RK, not a crouch-dash Sky Rocket. The wave machine still gets the 6N23 exactly as the
+    // legacy replay gives it (결정 1(wave-input): with a neutral it is a crouch dash), so a mixed board (결정 34(char-select))
+    // counts the same dashes for every character. N → 6 → ↘ in one frame is no crouch dash and only closes the prefix.
+    const q=m.queue; m.slot=null; m.queue=[];
+    if(q[0] && q[0].dir==='d'){ mist=null; for(const e of q) commandDir(e.dir,e.t,true); mist=m; }
+    else { cd.state=0; wsc.prefix=0; resetTaps(); }
+  }
   const expired=t-(m.df??m.n??m.f)>(m.df!=null?450:250);
   if(expired || (m.rp!=null && t-m.rp>120)){
     // Resolve owned events before the original machine's timeout clears its prefix.
     // Replay directions with their buttons in order; an RP alone fails exactly once.
     // Keep the original button time instead of the render time in that failure.
     if(m.slot!=null || m.rp==null) mistReplay();
+    else if(!charOf().legacy) mist=null; // 6N+4 with no 3 is another move, not a Sky Rocket attempt
     else {mist=null;attempt('no_df',null,m.rp);}
   }
 }
@@ -25,7 +48,8 @@ function mistFinish(t){
   cd.state=0; wsc.prefix=0; resetTaps(); // commit only after RP; never count a wave
   const input={inputRoute:'mist',fFrames:frameSlot(m.n)-frameSlot(m.f),nFrames:frameSlot(m.df)-frameSlot(m.n),startT:m.f,neutralT:m.n}; // startT/neutralT: 기원초 링크가 읽는 시작 6·중립 시각
   const off=t-m.df;
-  if(input.fFrames<1||input.nFrames<1) attempt('early_stage',off,t,input);
+  if(!charOf().legacy) jfStaged(off,t,input);
+  else if(input.fFrames<1||input.nFrames<1) attempt('early_stage',off,t,input);
   else classify(off,t,input);
   mistRelease=!m.released; // neutral may already have arrived before this RP
 }
@@ -37,11 +61,12 @@ function mistDir(dir,t){
   }
   const m=mist;
   if(!m){
-    if(dir==='f' && cd.state===0 && cd.chain===0 && !wsc.active && moveOn('mist')) mist=mistNew(t);
+    if(dir==='f' && charOf().legacy && mistStart() && mistBtn()) mist=mistNew(t); // a just-frame character arms in mistArmJf
     return false;
   }
   if(m.n==null){
-    if(dir==='n' && cd.state===1 && cd.dashT!==cd.tF) m.n=t;
+    // Legacy keeps a real f,N,f dash for 통발; a just-frame character has no 통발, so any 6 → N goes on
+    if(dir==='n' && (charOf().legacy ? cd.state===1 && cd.dashT!==cd.tF : true)) m.n=t;
     else mist=null;
     return false;
   }
@@ -67,11 +92,12 @@ function mistDir(dir,t){
     backdashMotion(dir,t);
     m.slot=frameSlot(t); m.queue.push({dir,t}); return true;
   }
-  mistReplay(); return false;
+  mistReplay(); if(mist && dir==='n') mist.n=t; // a just-frame character restarts on the staged 6 (mistReplay)
+  return false;
 }
 function mistButton(n,t){
   const m=mist; if(!m) return false;
-  if(n!==2 || m.n==null){ mistReplay(); return false; }
+  if(n!==mistBtn() || m.n==null){ mistReplay(); return false; }
   if(m.df!=null){ mistFinish(t); return true; }
   // A real dash + RP remains a tongbal; only an RP in the same slot as
   // the provisional forward waits until that slot can no longer become df.
@@ -104,7 +130,7 @@ function onDir(dir, t){
   // 그 6도 선입력 창(GP_BUF_A~GP_BUF_B, 40~46f) 안에서 눌렀을 때만 남는다. 창 앞이나 47f에 누른 6은 버려진다(사용자 보고 2026-10-08).
   if(giwonStiff(t)){ if(dir!=='f' || !giwonPre(t)) return; resetCD(); }
   if(mistDir(dir,t)) return;
-  commandDir(dir,t);
+  commandDir(dir,t); mistArmJf(dir,t);
 }
 function backdashMotion(dir,t,bdOutNow=false){
   if(t<bdRec.until && (dir==='d'||dir==='db'||dir==='df'||dir==='u'||dir==='ub'||dir==='uf')){ bdRec.until = t; bdCut(t); if(anim.kind==='backdash'){ anim.moveDur=0; startAnim('bdCrouch'); } }
@@ -153,7 +179,7 @@ function commandDir(dir,t,backdashDone=false){
         if(p && p.btn===2) strike('giwon', p.t);   // 같은 칸에 먼저 온 RP: ↘+RP = 기원권 (4는 d+4라 조용히 버린다)
         else cd.gFault = t;                         // 6→3 실패는 기원권 굴림처럼 보류한다
       }
-      else if(dir==='df'){ completeCD(t); }
+      else if(dir==='df'){ if(charCap('wave')) completeCD(t); else { if(cd.pending) resolvePending(null, t); resetCD(); } } // 결정 34(char-select): no crouch dash, no wave for a character without one
       else { if(cd.pending){ resolvePending(null, t); } resetCD(); if(dir==='f') startCD(t); }
       break;
     case 4: // d/f held (crouch dash active)

@@ -75,7 +75,7 @@ test('rush30: typed dummies, wave points by chain, 10 for the right move, 5 for 
   const rec=a.store.records.rush30[0];assert.equal(rec.score,46);assert.equal(rec.kills,3);assert.equal(rec.whiffs,4);assert.equal(rec.dashPts,21,'15 from the chain + 1 per single dash');
   assert.equal(rec.label,'46 pts');assert.equal(rec.sub,'3 destroyed · 4 whiffs · wave 21 pts');assert.ok(a.get('bests').innerHTML.includes('46 pts'));
   const e=JSON.parse(JSON.stringify(a.boardEntry(a.trial.result,'rush30')));
-  assert.deepEqual(e,{board:'rush30',win:12,lang:'en',score:46,tie:3,detail:{kills:3,whiffs:4,dashPts:21}});assert.equal(w.validate({...e,nick:'smoke'}).error,undefined);
+  assert.deepEqual(e,{board:'rush30',win:12,lang:'en',score:46,tie:3,detail:{kills:3,whiffs:4,dashPts:21,char:'kazuya'}});assert.equal(w.validate({...e,nick:'smoke'}).error,undefined);
   assert.equal(a.boardRowText('rush30',{score:46,detail:e.detail}).sub,'3 destroyed · 4 whiffs · wave 21 pts');
   const card=a.buildCard(a.shareSource());assert.equal(card.hero.value,'46');assert.equal(card.hero.label,'Points');assert.equal(card.metrics[0].value,'3');assert.ok(card.sub.includes('46 pts'));
   assert.doesNotMatch(JSON.stringify(card),/(^|[\s"])(card|rec|trial|mode)\.[a-zA-Z0-9]+/);

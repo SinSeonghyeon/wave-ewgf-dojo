@@ -22,6 +22,7 @@
 | `src/i18n/ko.js` · `en.js` · `ja.js` | `I18N_KO/EN/JA` 사전. 세 파일은 같은 키(테스트가 검사). 공지 문구 `notice.*`도 여기 |
 | `src/js/00-core.js` | `FRAME`, `$`, `clamp`, 판정·연출 공용 상수, 백대시 실측 모델 `BD`·`bdDist`·`bdPeriod`·`bdBestH`·`BD_NEXT_F`·`BD_MOVE_MS`, 프레임 원점 함수 `bdFrameNo`(몇 f째)·`bdF`(몇 f 동안), 가정값 `GIWON`·`GIWON_ZOOM` |
 | `src/js/01-wardrobe-items.js` | 옷장 슬롯·아이템(그리기 훅), 업적 정의, `TRIAL_MODES` |
+| `src/js/02-chars.js` | 캐릭터 데이터 `CHARS`(능력 플래그 `caps`·기술 `moves`·`legacy`·저스트 레시피 `jf`), `charId`·`charOf`·`charCap`·`charHas` (결정 34) |
 | `src/js/02-notices.js` | `NOTICES`(최신순 공지 데이터) |
 | `src/js/03-store.js` | `STORE`, `store` 로드·검증·저장, `PAGE_LANG`·`ASSET_ROOT` |
 | `src/js/04-i18n.js` | `LOCALE`, `I18N` 결합, `T()`·`msg()`·`displayFont()` |
@@ -37,6 +38,7 @@
 | `src/js/13-button.js` | `onButton` 진입점, `commandButton`(초풍·나락·통발·기원권 분기), `resolvePending` |
 | `src/js/14-giwon.js` | 기원권 판정·경직·버퍼, 기원초 링크 판정 |
 | `src/js/15-giwon-practice.js` | 기원초 연습 모드: 타임라인·통계·10회 도전 |
+| `src/js/16-jfsr.js` | 초스카이(결정 33): `jfStaged`(무족 보류 경로의 결과)·`jfButton`·`jfPending`·`jfAttempt`, 초스카이 연습 패널·10회 도전(`jfp`) |
 | `src/js/16-strikes.js` | `strike()`(통발·나락·기원권), `classify()`(초풍 슬롯 판정), `attempt()`(초풍 계열 기록·연출 분기) |
 | `src/js/17-coach.js` | 코치·경향 문구 |
 | `src/js/18-hud.js` | 결과 카드·통계·HUD·로그 |
@@ -59,6 +61,7 @@
 | `src/js/35-dojo3d.js` | WebGL 3D 도장·Canvas 대체, `frame()` 렌더 루프 |
 | `src/js/36-boot.js` | 부트 순서 |
 | `src/assets/room-atlas.webp` | 목재/회벽 재질 아틀라스(자체 생성) |
+| `src/assets/portrait-kazuya.webp` · `src/assets/portrait-hwoarang.webp` | 캐릭터 선택 초상(tekken.com 공식 fighter-select 이미지를 240×300 WebP로 자름, 2026-10-11 사용자 결정 — 결정 3 예외). `CHARS[id].portrait`에 data URI로 인라인 |
 | `src/pages/ko.js` · `en.js` · `ja.js` | 가이드·개인정보처리방침 원고(CommonJS, 앱에 포함되지 않음). 세 파일은 같은 slug 순서와 `ui` 키. 본문 링크 `href="@<slug>"`는 같은 언어 페이지, `@`만 쓰면 연습 화면 |
 | `src/pages/page.css` | 가이드·개인정보 페이지 스타일. 색 토큰은 빌드가 `src/style.css`의 `:root`를 복사해 붙인다 |
 
@@ -67,7 +70,7 @@
 | 파일 | 내용 |
 |---|---|
 | `tests/helpers/app.cjs` | 단위 테스트 하네스. `boot(saved, fetch, env)`가 조립한 앱을 vm에서 돌리고 **앱의 모든 최상위 이름**을 돌려준다(목록 관리 없음. `let`은 부트 직후 값의 스냅샷, 객체는 살아 있는 참조) |
-| `tests/<주제>.test.cjs` | judging · input · modals · i18n-pages · backend · sound · strikes-rush · moves · wardrobe-rewards · backdash · wsc · stage · giwon · giwon-practice · board(워커) · docs(문서 경로·결정 인용·파일 지도 검사) · source(`src/` include·파싱·조립 결과 검사) |
+| `tests/<주제>.test.cjs` | chars(캐릭터 선택·초스카이) · judging · input · modals · i18n-pages · backend · sound · strikes-rush · moves · wardrobe-rewards · backdash · wsc · stage · giwon · giwon-practice · board(워커) · docs(문서 경로·결정 인용·파일 지도 검사) · source(`src/` include·파싱·조립 결과 검사) |
 | `tests/smoke-*.js` | 헤드리스 Chrome/Edge 브라우저 검사. 조립한 페이지를 `.sandbox/`나 임시 폴더에 쓰고 `stageAssets()`로 자원을 복사 |
 | `tests/fake-d1.js` | node:sqlite 인메모리 가짜 D1 |
 | `tools/assemble.js` | `src/` → 한 페이지. `sourceFileContaining()`은 생성 상수를 고치는 도구가 대상 파일을 찾는 데 쓴다 |
@@ -85,7 +88,9 @@
 | 웨이브·초풍 판정 | `06-state` `11-crouch-dash` `13-button` `16-strikes` `19-tick` | `judging` | 결정 1·2 |
 | 무족초 | `11-crouch-dash`(`mistDir`/`mistButton`) `16-strikes` | `judging` | `MIST_EWGF.md` |
 | 통발·나락 | `13-button` `16-strikes` | `strikes-rush` | 결정 12 |
-| 기술 온오프 | `03-store`(`MOVE_IDS`) `13-button`(`moveOn`·`MOVE_FORCED`) `23-settings-ui` `20-trials`(`renderMode` 표시) | `moves` | 결정 32 |
+| 기술 온오프 | `02-chars`(`CHARS[id].moves` = 그 캐릭터의 스위치 목록, `movesDefault`) `03-store`(`store.moves[캐릭터][기술]`, 옛 평평한 형식 → 카즈야) `13-button`(`moveOn`·`MOVE_FORCED`) `23-settings-ui`(`renderMoveSel`이 지금 캐릭터의 버튼·안내를 그림) `20-trials`(`renderMode` 표시) | `moves` | 결정 32 |
+| 캐릭터 선택 | `02-chars` `03-store`(`store.char`·`?c=`) `13-button`(`moveOn`·`legacy` 분기) `20-trials`(`MODES.needs`·`modeAvailFor`·`renderCharUI`·`renderCharTiles`·`setChar`) `23-settings-ui`(`#charOpen`→`#charDlg` 타일 창) `29-backend`(`detail.char`·행 태그) `10-wsc`·`12-backdash`(능력 가드) | `chars` | 결정 34 |
+| 초스카이 | `16-jfsr` `11-crouch-dash`(`mistBtn`·`mistArmJf`) `31-stage`(`fx.sky`) `33-fighter`(`sky` 포즈·`kick`) `35-dojo3d`(발끝 번개) | `chars` `smoke-jfsr` | 결정 33, `JFSR.md` |
 | 기원권·기원초 | `00-core`(`GIWON`) `14-giwon` `15-giwon-practice` `16-strikes` `31-stage` | `giwon` `giwon-practice` `smoke-giwon` | `GIWONCHO.md` |
 | 웨캔기어 | `10-wsc` `20-trials`(`CHALLENGES`) | `wsc` `smoke-wsc` | `WSC_PRACTICE.md` |
 | 백대시·bd10 | `00-core`(`BD`) `06-state` `12-backdash` `12-bd-practice` `11-crouch-dash`(`backdashMotion`) `31-stage`(`bdEase`) | `backdash` `smoke-backdash` | 결정 17, `BACKDASH.md` |
@@ -99,7 +104,9 @@
 | 화면·3D 도장 | `src/style.css` `31-stage` `33-fighter` `35-dojo3d` | `stage` `smoke-design` | 결정 5 |
 | 공유 카드·og.png | `22-share-model` `24-share-dialog` `34-share-draw` `tools/make-og.js` | `i18n-pages` | — |
 
-새 모드를 추가할 때: `20-trials`의 `MODES`(측정 모드면 `01-wardrobe-items`의 `TRIAL_MODES`도), 로컬 N회 도전이면 `CHALLENGES` 한 줄(보드·패널 id 접두어·바쁨 검사가 여기서 파생된다), 워커 `BOARDS`, 세 언어 `mode.<id>.*` 문구, `src/app.html`의 모드 탭·순위 탭 버튼.
+새 캐릭터를 추가할 때(결정 34): `02-chars`의 `CHARS` 한 항목(능력 플래그·기술·레시피), 세 언어 `char.<id>.name`·`char.<id>.moves`(타일 설명), 초상 `portrait`(`src/assets/portrait-<id>.webp`, 240×300), 워커 `CHARS`, 캐릭터별 모드 문구가 필요하면 `mode.<mode>.desc.<id>`·`hint.<mode>.<id>`(없으면 공용 문구), 타일은 `CHAR_IDS`로 자동 생성(`renderCharTiles`)되므로 HTML은 손대지 않는다. 새 저스트 기술이면 `poseAt` 포즈·`fx`·`HIT_CONTACT_MS`. 모드 탭·순위 탭은 `MODES.needs`로 자동으로 걸러진다.
+
+새 모드를 추가할 때: `20-trials`의 `MODES`(필요한 능력·기술은 `needs`)(측정 모드면 `01-wardrobe-items`의 `TRIAL_MODES`도), 로컬 N회 도전이면 `CHALLENGES` 한 줄(보드·패널 id 접두어·바쁨 검사가 여기서 파생된다), 워커 `BOARDS`, 세 언어 `mode.<id>.*` 문구, `src/app.html`의 모드 탭·순위 탭 버튼.
 
 ## 입력 처리 순서 (판정 우선순위)
 
@@ -113,7 +120,7 @@
 | 2 | 도전 카운트다운 중(`challengeStatus(mode)==='countdown'`) | 끝 |
 | 3 | 보류된 기원권 RP(`giwonRP`)가 있으면: 같은 칸 `↘`는 기원권 `strike`, 아니면 보류한 실패를 기록 | 기원권이면 끝 |
 | 4 | 기원권 경직 중(`giwonStiff`)이면 시작 6(`f`) 말고는 버린다 | 끝 |
-| 5 | 무족초 같은 칸 보류(`mistDir`) | 끝 |
+| 5 | 무족초 같은 칸 보류(`mistDir`). 보류 버튼은 `mistBtn()`(카즈야 RP, 초스카이 캐릭터는 레시피 버튼), 시작 자리는 카즈야 `mistStart()`(새 시작 6만), 초스카이 캐릭터는 `commandDir` 뒤의 `mistArmJf`(모든 6) | 끝 |
 | 6 | `commandDir`: 보류한 `f_before_d` 실패 → `wscDir` → 더블 탭(대시·백대시 연출, `bd` 머신은 `backdashMotion`) → `cd` 상태 머신 `switch` | — |
 
 기술 온오프(결정 32): 끈 기술은 아래 표에서 **그 줄만 건너뛴다**(`moveOn(k)`). 초풍은 `attempt()` 첫 줄에서 막으므로 초풍 계열 결과가 전부 사라지고, 기원권은 `giwonReady`·`giwonStage`·6→↘ 보류(`cd.gFault`), 무족초는 `mistDir`의 시작, 통발·나락은 `commandButton`의 해당 분기에서 막는다.
@@ -125,8 +132,9 @@
 | 1 | `practiceInput`·`trialTick`·`tick`, 입력 기록 | — |
 | 2 | 기원권 경직 중(`giwonRecovery`): 마지막 `BUFFER_F` 안이면 한 칸 버퍼(덮어쓰기), 그 전이면 버림 | 끝(해제 칸에 `buttonJudge`로 재전달) |
 | 3 | 도전 카운트다운 중 | 끝 |
-| 4 | 무족초 후보(`mistButton`) | 끝 |
+| 4 | 무족초 후보(`mistButton`). 초스카이 캐릭터는 `mistFinish` → `jfStaged` | 끝 |
 | 5 | 웨캔기어 뒤 입력이 열려 있으면(`wsc.active.back`) `wscButton` | 끝 |
+| 5½ | `legacy`가 아닌 캐릭터(결정 34): `jfButton` — 대시 중 4 = 일반 스카이, 상태 3이면 `cd.pending`(`jfPending`), ↘ 유지 + 4 = 3+4. 아래 6~10은 카즈야 전용 | 끝 |
 | 6 | `4`: 크라우치 대시 중이면 나락, 상태 3이면 `cd.pending`, 그 외 무시 | 끝 |
 | 7 | `2` 외 버튼: 초풍 측정 모드면 잘못된 버튼 코치 | 끝 |
 | 8 | `2`: 대시 중·캔슬 창·같은 칸 대각 → 초풍 판정 `classify` | 끝 |

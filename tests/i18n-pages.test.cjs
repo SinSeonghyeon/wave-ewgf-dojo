@@ -3,7 +3,7 @@
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const {html, BANNED, boot, dash, F, kstToday} = require('./helpers/app.cjs');
+const {html, BANNED, offNames, boot, dash, F, kstToday} = require('./helpers/app.cjs');
 test('language falls back to English without navigator.language and honours saved lang',()=>{
   const a=boot();assert.equal(a.store.lang,'en');assert.equal(a.get('dName').textContent,'Free practice');
   const b=boot({v:4,lang:'ja'});assert.equal(b.store.lang,'ja');assert.equal(b.get('dName').textContent,'自由練習');
@@ -41,7 +41,7 @@ test('the three dictionaries share exactly the same key set',()=>{
 test('announcements render in every language and persist the latest read marker',()=>{
   let saved;
   const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
-  assert.deepEqual(Array.from(a.NOTICES,n=>n.id),['2026-10-08-update','2026-10-04-backdash','2026-09-30-roundup','2026-09-21-roundup','2026-09-21-mist','2026-09-19-dojo','2026-09-15-notices']);assert.equal(a.NOTICES[0].items.length,6);assert.equal(a.NOTICES.find(n=>n.id==='2026-09-30-roundup').highlight.items.length,2);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
+  assert.deepEqual(Array.from(a.NOTICES,n=>n.id),['2026-10-11-jfsr','2026-10-08-update','2026-10-04-backdash','2026-09-30-roundup','2026-09-21-roundup','2026-09-21-mist','2026-09-19-dojo','2026-09-15-notices']);assert.equal(a.NOTICES[0].items.length,4);assert.equal(a.NOTICES[1].items.length,6);assert.equal(a.NOTICES.find(n=>n.id==='2026-09-30-roundup').highlight.items.length,2);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
   assert.ok(a.get('noticeList').innerHTML.includes(a.T(a.NOTICES[0].title)));
   a.setMode('wave10');a.startTrial();a.openNotices();
   assert.equal(a.get('noticeDlg').open,true);assert.equal(a.trial.cdTimer,null,'opening an announcement cancels a countdown');
@@ -264,7 +264,7 @@ test('search text: static localized apps, hreflang and legacy query override',()
     assert.ok(markup.includes('href="#histCard"'),'fragment links stay on this page');
     const ld=JSON.parse(markup.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
     assert.equal(ld.url,alt[l]);assert.equal(ld.inLanguage,l);assert.equal(ld.description,a.I18N[l]['app.description']);
-    assert.doesNotMatch(markup,BANNED);
+    assert.doesNotMatch(offNames(markup),BANNED);
     for(const k of MODES)assert.ok(markup.includes(a.I18N[l][k]),'localized mode names before JS');
     assert.ok(markup.includes(a.I18N[l]['about.what.p']),'localized introduction before JS');
   }
@@ -290,7 +290,7 @@ test('search text: static localized apps, hreflang and legacy query override',()
   for(const k of keys) assert.ok(html.includes(`data-i18n="${k}">${a.T(k)}<`),k+' static text matches the ko dictionary');
   const about=html.indexOf('<details class="about" id="about">');assert.ok(about>0&&about<html.indexOf('<footer>'),'about block sits right above the footer');
   for(const l of ['ko','en','ja']){ const D=a.I18N[l];
-    for(const k of keys){ assert.equal(typeof D[k],'string',l+' '+k); assert.doesNotMatch(D[k],BANNED,l+' '+k+' uses no official character names'); }
+    for(const k of keys){ assert.equal(typeof D[k],'string',l+' '+k); assert.doesNotMatch(offNames(D[k]),BANNED,l+' '+k+' uses no official character names but the selectable ones'); }
     assert.match(D['about.what.p'],/8/,l+' about text names Tekken 8');
     for(const k of MODES) assert.ok(D['about.modes.p'].includes(D[k]),l+' about.modes.p names the mode as the app does: '+D[k]);
     for(const k of ['r.noCancel.title','fault.cancel_as_start.title']) assert.ok(D['about.a2'].includes(D[k]),l+' about.a2 quotes the real fault label: '+D[k]);
@@ -318,7 +318,7 @@ test('guide and privacy pages: same slugs in every language, crawlable text, app
     assert.deepEqual(page.match(/<script\b[^>]*>/g),['<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8394509799881324" crossorigin="anonymous">','<script type="application/ld+json">'],where+' only the AdSense loader and JSON-LD (decision 4(single-page))');
     const ld=JSON.parse(page.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
     assert.equal(ld.url,a.SITE_URL+lang+'/'+slug);assert.equal(ld.inLanguage,lang);
-    assert.doesNotMatch(page,BANNED,where+' uses no official character names (decision 3(no-official-ip))');
+    assert.doesNotMatch(offNames(page),BANNED,where+' uses no official character names but the selectable ones (decision 3(no-official-ip))');
     assert.doesNotMatch(page,/href="@/,where+' every @ link was resolved');
     // The only embed allowed is the operator's YouTube video in privacy-enhanced mode, lazy-loaded (decision 4(single-page)).
     for(const [frame] of page.matchAll(/<iframe\b[^>]*>/g))assert.match(frame,/^<iframe src="https:\/\/www\.youtube-nocookie\.com\/embed\/[\w-]{11}" title="[^"]+" loading="lazy"/,where+' iframe');

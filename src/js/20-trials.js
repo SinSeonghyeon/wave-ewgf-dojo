@@ -1,19 +1,25 @@
 /* ---------- trials ---------- */
 // guide: the article under /<lang>/ that the ? button next to the mode name opens (src/pages/, built by tools/build-site.js)
+// needs (결정 34(char-select)): the capability flags and moves a character must have for the mode to appear; the mode tabs,
+// the board tabs and setChar all read modeAvailFor. A board that more than one character can reach shows whose record each row is.
 const MODES = {
   free:   {start:false, guide:'guide/'},
-  wsc:    {start:false, guide:'guide/wsc/'},
-  giwon:  {start:false, guide:'guide/giwon-link/'}, // 기원초 연습: free practice plus the recovery timeline (결정 30(giwon))
-  wave10: {start:true, dur:10000, guide:'guide/wave-dash/'},
-  ewgf20: {start:true, target:20, guide:'guide/ewgf/'},
-  combo10:{start:true, target:10, guide:'guide/wave-dash/'},
-  rush30: {start:true, dur:30000, rush:true, guide:'guide/ewgf/'}, // 더미 격파: typed dummies, points (see RUSH_PTS)
-  bd10:   {start:true, dur:10000, bd:true, guide:'guide/backdash/'},   // 백대시: metres retreated with cancelled backdashes (see BD)
+  wsc:    {start:false, guide:'guide/wsc/', needs:{cap:'wsc'}},
+  giwon:  {start:false, guide:'guide/giwon-link/', needs:{cap:'giwon'}}, // 기원초 연습: free practice plus the recovery timeline (결정 30(giwon))
+  jfsr:   {start:false, guide:'guide/jfsr/', needs:{moves:['jfsr']}},  // 초스카이 연습 + 10회 도전 (결정 33(jfsr))
+  wave10: {start:true, dur:10000, guide:'guide/wave-dash/', needs:{cap:'wave'}},
+  ewgf20: {start:true, target:20, guide:'guide/ewgf/', needs:{moves:['ewgf']}},
+  combo10:{start:true, target:10, guide:'guide/wave-dash/', needs:{cap:'wave', moves:['ewgf']}},
+  rush30: {start:true, dur:30000, rush:true, guide:'guide/ewgf/', needs:{moves:['ewgf','tongbal','hellsweep']}}, // 더미 격파: typed dummies, points (see RUSH_PTS)
+  bd10:   {start:true, dur:10000, bd:true, guide:'guide/backdash/', needs:{cap:'kbd'}},   // 백대시: metres retreated with cancelled backdashes (see BD)
 };
+function modeAvailFor(c, m){ const n = MODES[m] && MODES[m].needs || {}, C = CHARS[c]; return !!MODES[m] && (!n.cap || !!C.caps[n.cap]) && (n.moves||[]).every(k => C.moves.includes(k)); }
+const modeAvail = m => modeAvailFor(charId(), m);
+const boardMixed = m => CHAR_IDS.filter(c => modeAvailFor(c, m)).length>1; // rows carry a character tag (결정 34(char-select), 2026-10-11 Q27)
 // Local N-try challenges with their own boards (결정 26(wsc-board)·31(giwon-board)): mode → target, where its challenge state lives, and the
 // id prefix of its challenge button / panel / timeline (#wscPanel, #gpPanel …). BOARDS, boardEntry, rankingResult,
 // renderMode and the busy/countdown checks all read this one table; a new challenge mode is one row here plus the worker's BOARDS.
-const CHALLENGES = {wsc:{target:WSC_TARGET, state:()=>wsc.challenge, ui:'wsc'}, giwon:{target:GP_CHALLENGE, state:()=>gp.challenge, ui:'gp'}};
+const CHALLENGES = {wsc:{target:WSC_TARGET, state:()=>wsc.challenge, ui:'wsc'}, giwon:{target:GP_CHALLENGE, state:()=>gp.challenge, ui:'gp'}, jfsr:{target:JF_CHALLENGE, state:()=>jfp.challenge, ui:'jf'}};
 const BOARDS = [...TRIAL_MODES, ...Object.keys(CHALLENGES)]; // matches worker and tabs
 const challengeTarget = m => CHALLENGES[m] ? CHALLENGES[m].target : 0; // 0 = not a challenge board
 const challengeStatus = m => CHALLENGES[m] ? CHALLENGES[m].state().status : ''; // '' for modes without a challenge
@@ -36,18 +42,48 @@ function renderMode(){
   $('dName').textContent=T('mode.'+mode+'.name');
   const guide=$('dGuide'); guide.dataset.page=M.guide; guide.setAttribute('href', ASSET_ROOT+store.lang+'/'+M.guide);
   const off=movesOff(); // 결정 32(move-toggle): 꺼 둔 기술을 모드 설명 끝에 적어 둔다 (모드가 강제로 켜는 기술은 빠진다)
-  $('dDesc').textContent=T('mode.'+mode+'.desc')+(off.length?T('moves.off',off.map(k=>T('move.'+k)).join(', ')):''); $('dStart').hidden=!M.start;
-  $('hudHint').textContent = mode==='giwon' ? T('hint.giwon', GP_FREE, GP_TARGET) : T('hint.'+mode);
+  $('dDesc').textContent=T(charKey('mode.'+mode+'.desc'))+(off.length?T('moves.off',off.map(k=>T('move.'+k)).join(', ')):''); $('dStart').hidden=!M.start; // charKey: a character may word a shared mode its own way (결정 34(char-select))
+  $('hudHint').textContent = mode==='giwon' ? T('hint.giwon', GP_FREE, GP_TARGET) : T(charKey('hint.'+mode));
   const sb = $('dShare'); sb.textContent = T(M.start?'share.card':'share.session'); sb.hidden = !!M.start && !trial.result;
-  if(mode==='wsc') sb.hidden=true;
+  if(mode==='wsc' || (!M.start && !charHas('ewgf'))) sb.hidden=true; // the session card is an EWGF summary (결정 34(char-select))
   for(const [m,{ui}] of Object.entries(CHALLENGES)){ // body.wsc-mode / body.giwon-mode and each mode's own button, panel and timeline
     if(document.body) document.body.classList.toggle(m+'-mode', mode===m);
     for(const part of ['ChallengeBtn','Panel','Timeline']) $(ui+part).hidden = mode!==m;
   }
   if(document.body) document.body.classList.toggle('bd10-mode', mode==='bd10'); // 백대시 10초: the frame timeline and its panel (12-bd-practice.js)
   $('bdpTimeline').hidden = $('bdpPanel').hidden = mode!=='bd10';
-  renderWsc(); renderGp(); renderBdp();
+  renderWsc(); renderGp(); renderBdp(); renderJf();
   renderTrialRank();
+}
+// 캐릭터 선택 (결정 34(char-select)): the selector, the mode tabs and the board tabs follow the character's capabilities
+function renderCharUI(){
+  $('charOpenName').textContent = T('char.'+charId()+'.name'); $('charOpenFace').src = CHARS[charId()].portrait || '';
+  if($('charDlg').open) renderCharTiles();
+  document.querySelectorAll('#modes button').forEach(b => { b.hidden = !modeAvail(b.dataset.mode); });
+  document.querySelectorAll('#boardTabs button').forEach(b => { b.hidden = !modeAvail(b.dataset.board); });
+  if(document.body) document.body.classList.toggle('no-ewgf', !charHas('ewgf'));
+  for(const id of ['stRate','stTry','stMean']){ const tile = $(id).parentElement; if(tile) tile.hidden = !charHas('ewgf'); } // EWGF tiles mean nothing without an EWGF
+  $('movesRow').hidden = $('movesNote').hidden = !charOf().moves.length; // a character with no toggleable move has nothing to switch (2026-10-11 Q15)
+}
+function renderCharTiles(){
+  const box = $('charTiles');
+  box.innerHTML = CHAR_IDS.map(id => { const on = id===charId();
+    return '<button type="button" class="char-tile" data-char="'+id+'" aria-pressed="'+on+'"><img src="'+(CHARS[id].portrait||'')+'" width="240" height="300" alt="" draggable="false"><b>'+escapeHTML(T('char.'+id+'.name'))+'</b><small>'+escapeHTML(T('char.'+id+'.moves'))+'</small>'+(on?'<em>'+escapeHTML(T('char.current'))+'</em>':'')+'</button>'; }).join('')
+    + '<div class="char-tile soon" aria-hidden="true"><span class="char-soon">?</span><b>'+escapeHTML(T('char.soon'))+'</b><small>'+escapeHTML(T('char.soonSub'))+'</small></div>';
+}
+function setChar(c){
+  if(!CHAR_IDS.includes(c) || c===charId()) return;
+  store.char = c; save();
+  if(typeof location!=='undefined'){ // keep ?c= in step so a reload or a shared address opens the same character
+    const params = new URLSearchParams(location.search);
+    if(c===CHAR_DEFAULT) params.delete('c'); else params.set('c', c);
+    const q = params.toString(); // not params.size: Safari before 17 has none, and the ?c= would silently drop
+    try{ window.history.replaceState(null, '', location.pathname + (q?'?'+q:'') + location.hash); }catch(e){}
+  }
+  renderCharUI(); renderMoveSel();
+  setMode(modeAvail(mode) ? mode : 'free'); // ends a trial or challenge and clears the input like any mode change
+  if(!modeAvail(board.tab)){ board.tab = BOARDS.find(modeAvail) || board.tab; board.msg=''; }
+  renderBoard(); boardLoad();
 }
 function clearShare(){ trial.result=null; $('dShare').hidden = !!MODES[mode].start; renderTrialRank(); }
 function setMode(m){
@@ -107,7 +143,7 @@ function endTrial(cancel){
   const oldRecords = trialRecs(mode), personalBest = !oldRecords.length || rec.score > Math.max(...oldRecords.map(r=>r.score));
   store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); save(); renderBests();
   store.life.trials[mode]++; jackpotHold = true; setTimeout(() => { jackpotHold = false; renderRewards(); }, 2300); checkAch(); // claiming waits for the result flash
-  trial.result = {rec, attempts:at, cycles:session.cycles.filter(since), window:store.window, personalBest}; $('dShare').hidden=false;
+  trial.result = {rec, attempts:at, cycles:session.cycles.filter(since), window:store.window, personalBest, char:charId()}; $('dShare').hidden=false;
   boardSubmit(); // always to the ranking (the server keeps only the best); no-op without a claimed nickname
   trial.openTimer = setTimeout(() => openShare().then(() => { trial.openTimer = null; }), 900); // result card after the HUD flash; openTimer stays set until it is open
 }
