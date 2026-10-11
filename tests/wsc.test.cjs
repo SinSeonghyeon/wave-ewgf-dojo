@@ -2,7 +2,7 @@
 // Harness: tests/helpers/app.cjs (boot() runs the assembled app from src/).
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
-const {html, boot, dash, F, backend, topRes, wscPrefix, wscRun, wscTaskRun} = require('./helpers/app.cjs');
+const {html, boot, dash, F, backend, topRes, wscPrefix, wscRun, wscChainRun} = require('./helpers/app.cjs');
 test('WSC six success combinations and rejected timings use approved independent rounded intervals',()=>{
   for(const [A,B,ok] of [[8,1,true],[9,1,true],[9,2,true],[10,1,true],[10,2,true],[10,3,true],[7,1,false],[8,2,false],[8,3,false],[9,3,false],[10,4,false],[11,1,false],[12,4,false],[8,0,false],[8,-1,false]]){
     const a=boot();a.setMode('wsc');const r=wscRun(a,A,B);
@@ -42,13 +42,38 @@ test('WSC permits neutral and one forward, rejects other directions, replaces on
     const a=boot();a.setMode('wsc');const df=wscPrefix(a,1000);
     dirs.forEach((d,i)=>a.onDir(d,df+20+i*20));a.onDir('b',df+8*F);if(release)a.onDir('n',df+8*F+2);a.onButton(2,df+9*F);assert.equal(a.wsc.last.ok,true,dirs+' / '+release);
   }
-  for(const dirs of [['f','n','f'],['d'],['db'],['u'],['uf'],['ub'],['n','df']]){
+  for(const dirs of [['f','n','f'],['u'],['uf'],['ub'],['n','df'],['d','df'],['db','u']]){
     const a=boot();a.setMode('wsc');const df=wscPrefix(a);dirs.forEach((d,i)=>a.onDir(d,df+10+i*10));a.onDir('b',df+7*F);a.onButton(2,df+8*F);assert.equal(a.wsc.last.ok,false,dirs.join(','));
   }
   for(const d of ['f','df','d','db','u','ub','uf']){const a=boot();a.setMode('wsc');const df=wscPrefix(a);a.onDir('b',df+7*F);a.onDir(d,df+7*F+1);a.onButton(2,df+8*F);assert.equal(a.wsc.last.reason,'direction');}
   const a=boot();a.setMode('wsc');wscPrefix(a);a.onDir('f',1080);a.onDir('n',1090);const df=wscPrefix(a,1100);a.onDir('b',df+9*F);a.onButton(2,df+12*F);
   assert.equal(a.wsc.last.ok,true);assert.equal(a.wsc.last.df,df);assert.equal(a.wsc.session.tries,1);
   const b=boot();b.setMode('wsc');b.onDir('f',1000);b.onDir('df',1020);b.onButton(2,1100);assert.equal(b.wsc.session.tries,0);assert.equal(b.wsc.session.errors,1);
+});
+// 한마디 #105: 웨캔기어를 연속 성공해도 연속이 2회 정도로 끊겼다. 3→4 사이에 ↓·↙를 지나면(→를 먼저 떼기, ↓→ 누른 채 ←,
+// 스틱으로 아래를 굴리기) 'direction' 실패였다. 사용자 결정(2026-10-11): A 구간의 ↓·↙ 허용, A는 여전히 4가 들어온 프레임.
+test('WSC A window lets 3→4 pass through down and down-back; A is still timed by the back input',()=>{
+  for(const dirs of [['d'],['db'],['d','db'],['d','n'],['n','d','db'],['f','d'],['d','db','n']])for(const [A,B,ok] of [[8,1,true],[9,2,true],[10,3,true],[7,1,false],[11,1,false],[8,2,false]]){
+    const a=boot();a.setMode('wsc');const df=wscPrefix(a);dirs.forEach((d,i)=>a.onDir(d,df+F+i*5));a.onDir('b',df+(A-1)*F);a.onButton(2,df+(A-1+B)*F);
+    assert.equal(a.wsc.last.ok,ok,dirs+' '+A+'+'+B);assert.equal(a.wsc.last.a,A);assert.equal(a.wsc.last.b,B);
+  }
+  // real keyboard release orders: → released before ↓, and ← pressed while ↓→ are held (SOCD ←→ = neutral x → ↓, then ↙)
+  const a=boot();a.setMode('wsc');
+  const key=(code,t,up=false)=>a.events[up?'keyup':'keydown']({code,timeStamp:t,target:{tagName:'BODY'},preventDefault(){},repeat:false});
+  const orders=[
+    t=>{key('KeyD',t+40,true);key('KeyS',t+45,true);key('KeyA',t+30+8*F);},            // 3 → 2 → N → 4
+    t=>{key('KeyA',t+40);key('KeyD',t+45,true);key('KeyS',t+30+8*F,true);},            // 3 → 2 → 1 → 4 (A from the 4)
+    t=>{key('KeyS',t+40,true);key('KeyD',t+45,true);key('KeyA',t+30+8*F);},            // 3 → 6 → N → 4 (already allowed)
+  ];
+  for(let i=0;i<8;i++){
+    const t=1000+i*1000;key('KeyD',t);key('KeyD',t+10,true);key('KeyS',t+20);key('KeyD',t+30);
+    orders[i%3](t);key('KeyI',t+30+9*F);key('KeyI',t+30+9*F+5,true);key('KeyA',t+30+9*F+6,true);
+  }
+  const s=a.wsc.session;assert.deepEqual([s.tries,s.hits,s.streak,s.best],[8,8,8,8]);
+  // other modes: the same keyboard path still yields the WSC (no EWGF try), and plain EWGF is untouched
+  const b=boot();b.setMode('free');const df=wscPrefix(b);b.onDir('d',df+F);b.onDir('db',df+2*F);b.onDir('b',df+7*F);b.onButton(2,df+8*F);
+  assert.equal(b.wsc.last.ok,true);assert.equal(b.session.tries,0);
+  const c=boot();c.setMode('free');const df2=wscPrefix(c);c.onButton(2,df2);assert.equal(c.session.tries,1);assert.equal(c.session.hits,1);
 });
 test('neutral omission completes standalone and linked waves',()=>{
   const a=boot();a.onDir('f',1000);a.onDir('d',1020);a.onDir('df',1040);
@@ -84,55 +109,37 @@ test('WSC deadlines are independent of 60/120Hz ticks; hidden tabs cancel and a 
   const a=boot();a.setMode('wsc');let df=wscPrefix(a);a.onDir('b',df+7*F);
   df=wscPrefix(a,1300);a.onDir('b',df+7*F);a.onButton(2,df+8*F);assert.equal(a.wsc.last.ok,true);assert.equal(a.wsc.last.df,df);assert.equal(a.wsc.session.tries,1);
 });
-test('WSC 10 random tasks count down, complete once, expose a separate ranking result and preserve practice totals',()=>{
+test('WSC 10-try challenge counts down, completes once, exposes a separate ranking result and preserves practice totals',()=>{
   const a=boot();a.setMode('wsc');wscRun(a,8,1);const before=JSON.stringify([a.session,a.store.life,a.store.records,a.store.ach,a.store.pendingRewards]);
   a.time(2000);a.wscStartChallenge();assert.equal(a.wsc.challenge.status,'countdown');
   wscRun(a,8,1,2100);assert.equal(a.wsc.challenge.stats.tries,0);assert.equal(a.wsc.session.tries,1);
   a.tick(5000);assert.equal(a.wsc.challenge.status,'running');
-  const first=a.wsc.challenge.taskN;
-  wscPrefix(a,5100);a.tick(6131);assert.equal(a.wsc.challenge.stats.aborted,1);assert.equal(a.wsc.challenge.stats.tries,0);assert.equal(a.wsc.challenge.taskN,first);
+  wscPrefix(a,5100);a.tick(6131);assert.equal(a.wsc.challenge.stats.aborted,1);assert.equal(a.wsc.challenge.stats.tries,0);
   for(let i=0;i<10;i++){
-    const n=a.wsc.challenge.taskN;assert.ok(Number.isInteger(n)&&n>=0&&n<=3);
-    for(const lang of ['ko','en','ja']){a.setLang(lang);assert.equal(a.wsc.challenge.taskN,n);assert.doesNotMatch(a.get('wscTask').textContent,/wsc\./);}
-    const r=wscTaskRun(a,n+1,i<8?1:2,7000+i*1000);assert.equal(r.waves,n+1);assert.equal(r.ok,i<8);
+    for(const lang of ['ko','en','ja']){a.setLang(lang);assert.doesNotMatch(a.get('wscChallengeStatus').textContent,/wsc\./);}
+    const r=wscChainRun(a,1+i%4,i<8?1:2,7000+i*1000);assert.equal(r.ok,i<8);
   }
   assert.equal(a.wsc.challenge.status,'done');assert.equal(a.wsc.challenge.stats.tries,10);assert.equal(a.wsc.challenge.stats.hits,8);assert.equal(a.wsc.challenge.stats.best,8);
   assert.equal(a.wsc.session.tries,11);assert.equal(a.trial.result,null);assert.equal(a.shareSource(),null);assert.equal(a.get('hudScore').textContent,'');
   wscRun(a,8,1,20000);assert.equal(a.wsc.challenge.stats.tries,10);assert.equal(a.wsc.session.tries,12);
   for(const lang of ['ko','en','ja']){a.setLang(lang);assert.match(a.get('wscChallengeStatus').textContent,/80%/);}
   assert.equal(JSON.stringify([a.session,a.store.life,a.store.records,a.store.ach,a.store.pendingRewards]),before);
+  assert.doesNotMatch(html,/id="wscTask"/);
 });
-test('WSC random tasks include both endpoints, permit repeats and redraw only after completion',()=>{
-  let value=0;
-  const a=boot({fx:0},undefined,{Math:Object.assign(Object.create(Math),{random:()=>value})});
-  a.setMode('wsc');a.wscStartChallenge();assert.equal(a.wsc.challenge.taskN,0);a.tick(4000);
-  value=0.999999;wscTaskRun(a,1);assert.equal(a.wsc.challenge.taskN,3);
-  wscTaskRun(a,4,1,9000);assert.equal(a.wsc.challenge.taskN,3);
-  a.setLang('en');assert.equal(a.wsc.challenge.taskN,3);
-  wscPrefix(a,11000);a.tick(12031);assert.equal(a.wsc.challenge.taskN,3);
-  value=0;wscTaskRun(a,4,1,13000);assert.equal(a.wsc.challenge.taskN,0);
-});
-test('WSC tasks require exactly N+1 waves for all N=0..3 and both sides',()=>{
-  for(const side of [1,-1])for(let n=0;n<=3;n++)for(const delta of [-1,0,1]){
-    const a=boot({fx:0});a.store.side=side;a.setMode('wsc');a.wscStartChallenge();a.tick(4000);a.wsc.challenge.taskN=n;
-    const waves=n+1+delta;if(waves===0)continue;
-    const r=wscTaskRun(a,waves);assert.equal(r.timingOK,true);assert.equal(r.taskOK,delta===0);assert.equal(r.ok,delta===0);assert.equal(r.waves,waves);assert.equal(r.taskN,n);
-    assert.equal(a.wsc.challenge.stats.tries,1);assert.equal(a.wsc.challenge.stats.hits,delta===0?1:0);
+// 한마디 #105: 도전에서 웨이브 횟수 과제를 안 맞추면 기상어퍼 연출·소리는 나오는데 집계는 실패라 연속이 끊겼다.
+// 사용자 결정(2026-10-11): 웨이브 횟수 과제를 없앤다 — 도전도 타이밍만 본다.
+test('WSC challenge and session streaks follow timing only, whatever wave count leads in',()=>{
+  for(const side of [1,-1]){
+    const a=boot({fx:0});a.store.side=side;a.setMode('wsc');a.wscStartChallenge();a.tick(4000);
+    for(let i=0;i<8;i++){const r=wscChainRun(a,1+(i*3)%4,1,5000+i*1000);assert.equal(r.ok,true,String(i));assert.equal('taskN' in r||'waves' in r||'timingOK' in r,false);}
+    for(const st of [a.wsc.challenge.stats,a.wsc.session])assert.deepEqual([st.tries,st.hits,st.streak,st.best],[8,8,8,8]);
   }
-});
-test('WSC wave count does not carry across broken links, cancel reuse or interrupted retries',()=>{
-  for(const broken of ['direction','back','reuse','pause']){
-    const a=boot();a.setMode('wsc');a.wscStartChallenge();a.tick(4000);a.wsc.challenge.taskN=1;
-    const df=wscPrefix(a,5000);
-    if(broken==='pause'){a.tick(df+1001);wscTaskRun(a,1,1,6500);}
-    else{
-      if(broken==='direction')a.onDir('u',df+10);
-      if(broken==='back')a.onDir('b',df+10);
-      a.onDir('f',df+20);a.onDir('n',df+30);
-      if(broken==='reuse'){a.onDir('d',df+40);a.onDir('df',df+50);a.onDir('b',df+7*F);a.onButton(2,df+8*F);}
-      else wscTaskRun(a,1,1,df+50);
-    }
-    assert.equal(a.wsc.last.ok,false,broken);assert.equal(a.wsc.challenge.stats.hits,0,broken);
+  // a broken lead-in still fails on its own merits (direction / missing back), not on a wave count
+  for(const broken of ['direction','reuse']){
+    const a=boot();a.setMode('wsc');a.wscStartChallenge();a.tick(4000);const df=wscPrefix(a,5000);
+    if(broken==='direction'){a.onDir('u',df+10);a.onDir('b',df+7*F);a.onButton(2,df+8*F);assert.equal(a.wsc.last.reason,'direction');}
+    else{a.onDir('f',df+20);a.onDir('n',df+30);a.onDir('d',df+40);a.onDir('df',df+50);a.onDir('b',df+7*F);a.onButton(2,df+8*F);assert.equal(a.wsc.last.ok,false);}
+    assert.equal(a.wsc.challenge.stats.hits,0,broken);
   }
 });
 test('WSC challenge cancels on blur, hidden, mode, side reset, modal and explicit cancel without saving a result',()=>{
@@ -179,14 +186,14 @@ test('all modes share WSC recognition without counting the finisher as an EWGF o
     a.tick(2500);assert.equal(a.wsc.session.tries,1);
   }
 });
-test('WSC practice accepts EWGF, early RP, hellsweep and demon paw with isolated records and unchanged tasks',()=>{
+test('WSC practice accepts EWGF, early RP, hellsweep and demon paw with isolated records and an unchanged challenge',()=>{
   for(const move of ['ewgf','pending','hellsweep','tongbal']){
     const a=boot({fx:1});a.setMode('wsc');a.wscStartChallenge();a.tick(4000);
-    const n=a.wsc.challenge.taskN,before=JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]);
+    const before=JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]);
     if(move==='tongbal'){a.onDir('f',5000);a.onDir('n',5020);a.onDir('f',5040);a.onButton(2,5050);}
     else if(move==='pending'){a.onDir('f',5000);a.onDir('n',5010);a.onDir('d',5020);a.onButton(2,5030);a.onDir('df',5030);}
     else{const df=wscPrefix(a,5000);a.onButton(move==='hellsweep'?4:2,df);}
-    assert.equal(a.anim.kind,move==='pending'?'ewgf':move,move);assert.equal(a.wsc.active,null,move);assert.equal(a.wsc.session.tries,0,move);assert.equal(a.wsc.challenge.stats.tries,0,move);assert.equal(a.wsc.challenge.taskN,n,move);
+    assert.equal(a.anim.kind,move==='pending'?'ewgf':move,move);assert.equal(a.wsc.active,null,move);assert.equal(a.wsc.session.tries,0,move);assert.equal(a.wsc.challenge.stats.tries,0,move);
     a.tick(7000);assert.equal(a.wsc.session.aborted,0,move);
     assert.equal(JSON.stringify([a.session,a.store.life,a.store.ach,a.store.pendingRewards,a.store.records]),before,move);
   }
@@ -231,9 +238,9 @@ test('WSC submits only a completed challenge, retries failure once and remains s
     return {ok:true,json:async()=>({rows:[],total:0})};
   });
   a.setMode('wsc');a.wscStartChallenge();a.tick(4000);
-  for(let i=0;i<9;i++)wscTaskRun(a,a.wsc.challenge.taskN+1,i===4?2:1,5000+i*1000);
+  for(let i=0;i<9;i++)wscChainRun(a,1,i===4?2:1,5000+i*1000);
   assert.equal(sent.length,0);assert.equal(a.rankingResult(),undefined);
-  wscTaskRun(a,a.wsc.challenge.taskN+1,1,14000);await new Promise(setImmediate);
+  wscChainRun(a,1,1,14000);await new Promise(setImmediate);
   assert.equal(sent.length,1);assert.equal(a.rankingResult().submit.state,'fail');
   assert.deepEqual(sent[0].detail,{hits:9,target:10,best:5});assert.equal(sent[0].board,'wsc');assert.equal(sent[0].score,9);assert.equal(sent[0].tie,5);
   assert.equal(a.trial.result,null);assert.equal(a.session.tries,0);assert.equal(a.shareSource(),null);

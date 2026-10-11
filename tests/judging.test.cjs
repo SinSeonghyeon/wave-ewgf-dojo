@@ -180,29 +180,28 @@ test('623 wave chains retain distinct cancel/start forwards and zero neutral gap
     assert.equal(a.cd.chain,2,release);
   }
 });
-test('623 seeds and refreshes WSC challenge prefixes without consuming tasks early',()=>{
+test('623 seeds and refreshes WSC challenge prefixes without consuming challenge tries early',()=>{
   for(const initialNeutral of [false,true]){
     const a=boot();a.setMode('wsc');a.wscStartChallenge();a.time(4100);a.tick(4100);
-    a.wsc.challenge.taskN=1;
     a.onDir('f',4200);if(initialNeutral)a.onDir('n',4210);a.onDir('d',4220);a.onDir('df',4240);
-    assert.equal(a.wsc.active.waves,1);assert.equal(a.wsc.challenge.stats.tries,0);
+    assert.equal(a.wsc.active.df,4240);assert.equal(a.wsc.challenge.stats.tries,0);
     a.onDir('f',4260);a.onDir('n',4280);a.onDir('f',4300);a.onDir('d',4320);a.onDir('df',4340);
-    assert.equal(a.wsc.active.waves,2);assert.equal(a.wsc.active.df,4340);
+    assert.equal(a.wsc.active.df,4340);
     a.onDir('b',4340+7*F);a.onButton(2,4340+8*F);
     assert.equal(a.wsc.session.hits,1);assert.equal(a.wsc.challenge.stats.hits,1);
     assert.equal(a.session.tries,0);assert.equal(a.store.life.dashes,0);
   }
-  // the WSC wave counter must agree with cd.chain for either release direction, 623 or 6N23
+  // the next wave re-seeds the WSC d/f for either release direction, 623 or 6N23
   for(const release of ['n','d'])for(const neutral of [false,true]){
     const a=boot();a.setMode('wsc');
     a.onDir('f',1000);a.onDir('n',1020);a.onDir('d',1040);a.onDir('df',1060);
     a.onDir(release,1080);a.onDir('f',1100);a.onDir('n',1120);a.onDir('f',1140);
     if(neutral)a.onDir('n',1150);
     a.onDir('d',1160);a.onDir('df',1180);
-    assert.equal(a.wsc.active.waves,2,JSON.stringify({release,neutral}));
+    assert.equal(a.wsc.active.df,1180,JSON.stringify({release,neutral}));assert.equal(a.cd.chain,2);
   }
 });
-test('mist uses existing trial scores without wave credits and does not consume WSC tasks',()=>{
+test('mist uses existing trial scores without wave credits and does not consume WSC challenge tries',()=>{
   for(const mode of ['wave10','ewgf20','combo10','rush30','bd10']){
     const a=boot();a.setMode(mode);a.startTrial();const go=a.timers.get(a.trial.cdTimer);go();go();go();
     const before=a.trial.count;mistInput(a,{start:4100});
@@ -213,8 +212,8 @@ test('mist uses existing trial scores without wave credits and does not consume 
     if(mode==='bd10')assert.equal(a.trial.dist,0);
   }
   const a=boot();a.setMode('wsc');a.wscStartChallenge();a.time(4100);a.tick(4100);
-  const task=a.wsc.challenge.taskN;mistInput(a,{start:4200});
-  assert.equal(a.wsc.challenge.taskN,task);assert.equal(a.wsc.challenge.stats.tries,0);assert.equal(a.wsc.session.tries,0);
+  mistInput(a,{start:4200});
+  assert.equal(a.wsc.challenge.stats.tries,0);assert.equal(a.wsc.session.tries,0);
   assert.equal(a.session.tries,0);assert.equal(a.store.life.ewgf,0);assert.equal(a.anim.kind,'ewgf');
 });
 test('mist result, log, coach and segments translate without losing timing or streak',()=>{

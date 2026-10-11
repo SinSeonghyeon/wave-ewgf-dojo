@@ -328,7 +328,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await evalJs(`document.querySelector('[data-mode="wsc"]').click();document.querySelector('#wscChallengeBtn').click()`);await sleep(3300);
   for(let attempt=0;attempt<10;attempt++){
     await sleep(600);
-    await evalJs(`(()=>{const waves=Number(document.querySelector('#wscTask').dataset.n)+1,F=1000/60;let t=performance.now()-550;
+    await evalJs(`(()=>{const waves=1,F=1000/60;let t=performance.now()-550;
       const key=(code,at,up=false)=>{const e=new KeyboardEvent(up?'keyup':'keydown',{code,bubbles:true,cancelable:true});Object.defineProperty(e,'timeStamp',{value:at});window.dispatchEvent(e);};
       for(let wave=0;wave<waves;wave++){key('KeyD',t);key('KeyD',t+10,true);key('KeyS',t+20);key('KeyD',t+30);if(wave+1<waves){key('KeyS',t+40,true);key('KeyD',t+50,true);t+=80;}}
       key('KeyS',t+40,true);key('KeyD',t+50,true);key('KeyA',t+30+7*F);key('KeyI',t+30+8*F);key('KeyI',t+31+8*F,true);key('KeyA',t+32+8*F,true);
@@ -337,7 +337,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   try{
     await waitFor(`document.querySelector('#boardTabs [data-board="wsc"]').getAttribute('aria-pressed')==='true' && /1위/.test(document.querySelector('#dRank').textContent)`);
   }catch(err){
-    const state=await evalJs(`({status:document.querySelector('#wscChallengeStatus').textContent,task:document.querySelector('#wscTask').textContent,rank:document.querySelector('#dRank').textContent,board:document.querySelector('#boardMsg').textContent,tab:document.querySelector('#boardTabs [aria-pressed="true"]')?.dataset.board,dialogs:[...document.querySelectorAll('dialog[open]')].map(d=>d.id)})`);
+    const state=await evalJs(`({status:document.querySelector('#wscChallengeStatus').textContent,rank:document.querySelector('#dRank').textContent,board:document.querySelector('#boardMsg').textContent,tab:document.querySelector('#boardTabs [aria-pressed="true"]')?.dataset.board,dialogs:[...document.querySelectorAll('dialog[open]')].map(d=>d.id)})`);
     throw new Error(err.message+'; WSC state='+JSON.stringify(state)+'; rows='+JSON.stringify(db.rows.filter(r=>r.board==='wsc')));
   }
   out.wscBoard=await evalJs(`({status:document.querySelector('#wscChallengeStatus').textContent,rank:document.querySelector('#dRank').textContent,row:document.querySelector('#boardList .me').textContent,shown:getComputedStyle(document.querySelector('.records')).display})`);

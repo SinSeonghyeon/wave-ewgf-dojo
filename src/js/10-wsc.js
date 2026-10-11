@@ -21,7 +21,7 @@ function wscStartChallenge(){
   const cancel=['countdown','running'].includes(wsc.challenge.status);
   resetInput();
   if(!cancel){
-    wsc.challenge={status:'countdown',startAt:performance.now()+3000,remaining:3,stats:wscStats(),taskN:Math.floor(Math.random()*4)};
+    wsc.challenge={status:'countdown',startAt:performance.now()+3000,remaining:3,stats:wscStats()};
     wsc.last=null; wsc.notice='ready';
   }
   renderWsc(); renderRewards(); renderTrialRank();
@@ -46,17 +46,15 @@ function wscDir(dir,t,rolled=false){ // rolled: commandDir이 623의 2·3 같은
     if(a.back!=null){ if(dir!=='n') a.bad='direction'; }
     else if(dir==='b') a.back=t;
     else if(dir==='f'){ if(a.forwards>1) a.bad='forward'; }
-    else if(dir!=='n') a.bad='direction';
+    // ↓·↙ between 3 and 4 (key release order, stick rolling under) is allowed; A is still timed by the 4 (결정 25(wsc), 2026-10-11)
+    else if(dir!=='n' && dir!=='d' && dir!=='db') a.bad='direction';
   }
   // First forward after d/f is a cancel. A separate start forward completes the next wave.
   if(dir==='f' && (!a || a.back!=null || a.forwards>=2)) wsc.prefix=1;
   else if(dir==='n' && wsc.prefix===1) wsc.prefix=2;
   else if(dir==='d' && (wsc.prefix===1 || wsc.prefix===2)) wsc.prefix=3;
   else if(dir==='df' && wsc.prefix===3 && !rolled){
-    // A new wave extends the chain only through cancel 6, N, separate start 6, optional N, 2, 3.
-    // The single release before the cancel 6 may be N or 2, matching cd states 4→7→cancelCD.
-    const linked=a&&/^df,([nd],)?f,n,f,(n,)?d,df$/.test(a.events.map(e=>e.dir).join(','));
-    wsc.active={df:t,back:null,forwards:0,bad:null,lastAt:t,waves:linked?a.waves+1:1,events:[{dir,t}]};
+    wsc.active={df:t,back:null,forwards:0,bad:null,lastAt:t,events:[{dir,t}]};
     wsc.prefix=0; wsc.last=null; wsc.notice='backWait';
  // no SFX or lifetime counters
   } else if(dir!=='n' || wsc.prefix!==2){
@@ -82,19 +80,13 @@ function wscFinish(t,reason){
   if(a.back==null){ r.a=null; r.aRaw=null; r.aOK=false; }
   Object.assign(r,{reason,df:a.df,events:a.events.slice()}); r.ok=!reason&&r.ok;
   const c=wsc.challenge;
-  r.timingOK=r.ok;
-  if(c.status==='running'){
-    r.taskN=c.taskN;r.waves=a.waves;r.taskOK=a.waves===c.taskN+1;
-    r.ok=r.ok&&r.taskOK;
-  }
   wscRecord(wsc.session,r);
   if(c.status==='running'){
     wscRecord(c.stats,r);
     if(c.stats.tries>=WSC_TARGET) completeChallenge(c,WSC_TARGET);
-    else if(reason!=='aborted') c.taskN=Math.floor(Math.random()*4);
   }
   wsc.last=r; wsc.active=null; wsc.prefix=0;
-  if(r.timingOK) wscAnimate(); // the move still executes when only the challenge wave count is wrong
+  if(r.ok) wscAnimate();
   showResult(r.ok?'wave':'miss','WAVE-CANCEL WS UPPER',[r.ok?'wsc.success':r.reason==='aborted'?'wsc.aborted':'wsc.fail'],()=>wscReason(r));
   renderWsc(); renderRewards();
 }
@@ -108,7 +100,6 @@ function wscAnimate(){
 function wscReason(r){
   if(r.reason==='aborted') return T('wsc.aborted');
   const parts=r.reason?[T('wsc.'+r.reason)]:[];
-  if(r.taskN!=null) parts.push(T('wsc.waveResult',r.taskN+1,r.waves));
   if(r.a!=null&&!r.aOK) parts.push(T(r.a<8?'wsc.aEarly':'wsc.aLate'));
   if(r.b!=null){
     if(r.bRaw===0) parts.push(T('wsc.simultaneous'));
@@ -125,9 +116,6 @@ function renderWscChallenge(){
   $('wscChallengeBtn').title=T(busy?'wsc.challengeCancel':'wsc.challengeStart',WSC_TARGET);
   $('wscChallengeBtn').setAttribute('aria-label',$('wscChallengeBtn').title);
   $('wscChallengeStatus').textContent=c.status==='countdown'?T('wsc.countdown',c.remaining):c.status==='running'?T('wsc.challengeProgress',st.tries,WSC_TARGET,st.hits):c.status==='done'?T('wsc.challengeDone',st.hits,WSC_TARGET,Math.round(st.hits/WSC_TARGET*100),st.best):T(c.status==='cancelled'?'wsc.challengeCancelled':'wsc.challengeHint',WSC_TARGET);
-  $('wscTask').hidden=!busy;
-  $('wscTask').dataset.n=busy?String(c.taskN):'';
-  $('wscTask').textContent=busy?T('wsc.task',st.tries+1,WSC_TARGET,c.taskN,c.taskN+1,wsc.active?wsc.active.waves:0):'';
   $('hudCenter').textContent=c.status==='countdown'?String(c.remaining):'';
   $('hudScore').textContent=c.status==='running'?st.tries+' / '+WSC_TARGET:'';
 }
