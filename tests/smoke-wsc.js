@@ -53,7 +53,6 @@ stageAssets(html,out);
    await click(`[data-lang="${lang}"]`);await click(`[data-side="${side}"]`);
    const r=await command(9,2,side);assert.match(r.result,lang==='ko'?/웨캔기어 성공/:lang==='en'?/upper success/:/キャンセル成功/);
    await click('#wscChallengeBtn');
-   assert.equal(await b.evalJs(`document.querySelector('#wscTask').hidden`),false);
    const layout=await b.evalJs(`(()=>{const q=s=>document.querySelector(s),r=q('#wscPanel').getBoundingClientRect(),axis=q('.wsc-scroll');return {width:document.documentElement.scrollWidth,panelRight:r.right,panelX:r.x,panelY:r.y,stageRight:q('#stageBox').getBoundingClientRect().right,stageBottom:q('#stageBox').getBoundingClientRect().bottom,negative:q('#wscAxis').querySelector('[data-frame^="-"]')!==null,command:q('#wscCommand').textContent,cells:q('#wscAxis').children.length,scroll:axis.scrollWidth>axis.clientWidth,records:getComputedStyle(q('.records')).display,missing:[...q('#wscPanel').querySelectorAll('[data-i18n]')].filter(e=>!e.textContent||e.textContent.startsWith('wsc.')).length};})()`);
    assert.ok(layout.width<=width,JSON.stringify(layout));assert.ok(layout.panelRight<=width);assert.equal(layout.command,'6N23 · '+(side===1?'←':'→')+' · RP');assert.equal(layout.cells,15);assert.equal(layout.negative,false);assert.equal(await b.evalJs(`document.querySelector('#wscAxis').firstElementChild.dataset.frame`),'1');assert.ok(layout.panelY>layout.stageBottom);assert.equal(layout.missing,0);assert.equal(layout.records,'grid');if(width===390)assert.ok(layout.scroll);
    await b.evalJs(`document.querySelector('#wscPanel').scrollIntoView({block:'center'})`);await sleep(100);
@@ -73,11 +72,11 @@ stageAssets(html,out);
   await click('[data-lang="ko"]');await click('[data-side="1"]');
   await b.evalJs(`(()=>{let t=performance.now();for(const [code,up] of [['KeyD',false],['KeyD',true],['KeyS',false],['KeyD',false]]){const e=new KeyboardEvent(up?'keyup':'keydown',{code,bubbles:true});Object.defineProperty(e,'timeStamp',{value:t+=10});dispatchEvent(e);}})()`);
   await click('#setOpen');await click('#setClose');assert.match(await b.evalJs(`document.querySelector('#wscResult').textContent`),/취소/);
-  // Complete an actual 10-task challenge after its real countdown; no existing trial/board runs.
+  // Complete an actual 10-try challenge after its real countdown; no existing trial/board runs.
   await click('#wscChallengeBtn');assert.match(await b.evalJs(`document.querySelector('#wscChallengeStatus').textContent`),/초 후/);
   await command(8,1);assert.doesNotMatch(await b.evalJs(`document.querySelector('#wscChallengeStatus').textContent`),/성공/);
   await sleep(3100);
-  for(let i=0;i<10;i++){const n=Number(await b.evalJs(`document.querySelector('#wscTask').dataset.n`));assert.ok(n>=0&&n<=3);await command(8,i<8?1:2,1,n+1);}
+  for(let i=0;i<10;i++) await command(8,i<8?1:2,1,1+i%4); // timing only: any wave count before the cancel
   assert.match(await b.evalJs(`document.querySelector('#wscChallengeStatus').textContent`),/8\/10.*80%.*8연속/);
   assert.equal(await b.evalJs(`document.querySelector('#dShare').hidden`),true);
   assert.equal(await b.evalJs(`document.querySelector('#hudScore').textContent`),'');

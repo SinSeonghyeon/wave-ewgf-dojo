@@ -146,7 +146,7 @@ workers.dev 서브도메인이 없으면 deploy가 멈춘다. 대시보드 Worke
 
 ## 2026-09-19 웨캔기어 보드 추가
 
-`wsc` = 랜덤 과제 10회 완주. `score`는 성공 횟수, `tie`는 최고 연속 성공. `detail={hits,target:10,best}`이며 정수·일치·범위를 검증한다. 기존 `/top`, `/submit`, `DELETE /score`, 섀도 밴을 사용하고 scores 스키마는 그대로다. **사이트 푸시 전에 워커만 재배포**한다. 별도 마이그레이션 없음.
+`wsc` = 웨캔기어 10회 도전 완주(2026-10-11부터 웨이브 횟수 과제 없음, 워커 변경 없음). `score`는 성공 횟수, `tie`는 최고 연속 성공. `detail={hits,target:10,best}`이며 정수·일치·범위를 검증한다. 기존 `/top`, `/submit`, `DELETE /score`, 섀도 밴을 사용하고 scores 스키마는 그대로다. **사이트 푸시 전에 워커만 재배포**한다. 별도 마이그레이션 없음.
 
 ```powershell
 Push-Location worker

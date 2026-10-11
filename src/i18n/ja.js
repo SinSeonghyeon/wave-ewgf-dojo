@@ -445,6 +445,6 @@ const I18N_JA = {
   "wsc.move":"立ち途中アッパー！",
   "wsc.challengeCancel":"チャレンジ取消",
   "wsc.challengeCancelled":"チャレンジ取消 · 自由練習を続けられます。",
-  'wsc.liveA':n=>'進行中 · A '+n+'f', 'wsc.liveB':(a,b)=>'A '+a+'f確定 · B '+b+'f進行中', 'wsc.liveReady':'斜め入力からフレーム計測開始', 'wsc.liveDone':'入力完了 · タイムラインを確認', 'wsc.otherMove':'別の技の入力 · キャンセル練習を続けましょう', 'wsc.task':(i,total,n,target,current)=>'課題 '+i+'/'+total+' · ウェーブ'+n+'回後、'+target+'回目でキャンセル成功 · 現在'+current+'回目', 'wsc.waveResult':(target,actual)=>'目標'+target+'回目 · 実際'+actual+'回目', 'wsc.bTarget':n=>'目標1～'+n+'f', 'wsc.counts':n=>'先行コマンドエラー '+n+' · 成功率から除外', 'wsc.challengeStart':n=>n+'回チャレンジ開始', 'wsc.countdown':n=>n+'秒後に開始', 'wsc.challengeProgress':(n,total,h)=>n+' / '+total+'回 · 成功'+h+'回', 'wsc.challengeDone':(h,n,rate,best)=>'完了 · '+h+'/'+n+'成功 ('+rate+'%) · 最高'+best+'連続', 'wsc.challengeHint':n=>'ランダム課題'+n+'回：ウェーブ0～3回後、次のウェーブでキャンセル。判定後は次の課題へ、中断時は同じ課題をやり直します。',
+  'wsc.liveA':n=>'進行中 · A '+n+'f', 'wsc.liveB':(a,b)=>'A '+a+'f確定 · B '+b+'f進行中', 'wsc.liveReady':'斜め入力からフレーム計測開始', 'wsc.liveDone':'入力完了 · タイムラインを確認', 'wsc.otherMove':'別の技の入力 · キャンセル練習を続けましょう', 'wsc.bTarget':n=>'目標1～'+n+'f', 'wsc.counts':n=>'先行コマンドエラー '+n+' · 成功率から除外', 'wsc.challengeStart':n=>n+'回チャレンジ開始', 'wsc.countdown':n=>n+'秒後に開始', 'wsc.challengeProgress':(n,total,h)=>n+' / '+total+'回 · 成功'+h+'回', 'wsc.challengeDone':(h,n,rate,best)=>'完了 · '+h+'/'+n+'成功 ('+rate+'%) · 最高'+best+'連続', 'wsc.challengeHint':n=>n+'回チャレンジ：ウェーブキャンセル立ち途中RPを'+n+'回判定し、成功率と最高連続を記録します。入力中断は回数に含めません。',
   'wsc.elapsed':(f,ms)=>'経過 '+f+'f / '+ms+'ms',
 };

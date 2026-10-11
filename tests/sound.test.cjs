@@ -100,10 +100,10 @@ test('contact sound and burst occur once at dummy launch, never on misses or mis
     assert.equal(a.tryHit('hellsweep'),true);a.store.sound=0;a.updateDummy(1200);assert.equal(played.filter(s=>s==='sfx/hit.mp3').length,1);
   }
 });
-test('WSC move sound follows technique success even when the challenge asks for a different wave count',()=>{
+test('WSC move sound follows the judged result in the challenge',()=>{
   const played=[];class Sound extends AudioStub {play(){played.push(this.src);return super.play();}}
-  const a=boot({fx:0,bgm:0},undefined,{Audio:Sound});a.unlockAudio();a.setMode('wsc');a.wscStartChallenge();a.tick(4000);a.wsc.challenge.taskN=1;
-  wscRun(a,8,1,5000);assert.equal(a.wsc.last.ok,false);assert.equal(a.wsc.last.timingOK,true);assert.equal(a.wsc.challenge.stats.hits,0);assert.equal(played.filter(s=>s==='sfx/wsc.mp3').length,1);
+  const a=boot({fx:0,bgm:0},undefined,{Audio:Sound});a.unlockAudio();a.setMode('wsc');a.wscStartChallenge();a.tick(4000);
+  wscRun(a,8,1,5000);assert.equal(a.wsc.last.ok,true);assert.equal(a.wsc.challenge.stats.hits,1);assert.equal(played.filter(s=>s==='sfx/wsc.mp3').length,1);
   wscRun(a,8,2,6000);assert.equal(played.filter(s=>s==='sfx/wsc.mp3').length,1);
 });
 test('move gain survives live volume changes and every contact cue waits for the per-move timestamp',()=>{

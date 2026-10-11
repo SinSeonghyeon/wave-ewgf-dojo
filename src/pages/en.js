@@ -173,7 +173,7 @@ module.exports = {
     },
     {
       slug: 'guide/wsc/',
-      updated: '2026-10-01',
+      updated: '2026-10-11',
       title: 'Wave-Cancel WS Upper Guide — Back on Frame 8–10, Then RP',
       description: 'A frame-by-frame guide to the Tekken Mishima wave-cancel while-standing upper: back input on frame 8, 9 or 10 after d/f, the matching RP gaps, common mistakes and how to practise.',
       lead: 'Cancel a wave dash with back, then press RP as you rise to get the while-standing upper. When the command is right but nothing comes out, the timing is almost always the reason.',
@@ -205,7 +205,7 @@ module.exports = {
 
 <h2>Directions allowed between inputs</h2>
 <ul>
-<li><strong>Window A</strong>: holding d/f, neutral, or one forward (6) is fine. Two or more forwards, or any other direction, voids the attempt.</li>
+<li><strong>Window A</strong>: holding d/f, neutral, or one forward (6) is fine, and so is passing through down or down-back on the way to back (the timing still counts from the frame back arrives). Two or more forwards, or any other direction, voids the attempt.</li>
 <li><strong>Window B</strong>: hold back or go neutral, then RP. Any other direction fails.</li>
 <li><strong>Back+RP together</strong>: B becomes 0 and fails. RP must come at least one frame after back.</li>
 </ul>
@@ -223,7 +223,7 @@ module.exports = {
 <ol>
 <li>In the <strong>Wave-cancel WS upper</strong> mode, do one wave dash and then the cancel, over and over. The frame table under the stage shows inputs after d/f in cells 1–15f, and the evaluation panel reports A and B separately.</li>
 <li>Read whether A was early or late and whether B was early or late, and fix one at a time.</li>
-<li>When it feels steady, run the <strong>10-try challenge</strong>. Each task picks 0–3 wave dashes at random; do that many, then land the cancel on the next dash. With a nickname set, the result goes on the leaderboard.</li>
+<li>When it feels steady, run the <strong>10-try challenge</strong> to record success rate and best streak over 10 attempts. With a nickname set, the result goes on the leaderboard.</li>
 <li>Stopping for more than a second marks the attempt as abandoned and leaves it out of the success rate.</li>
 </ol>
 `,

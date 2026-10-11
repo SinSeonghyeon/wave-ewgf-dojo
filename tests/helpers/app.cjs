@@ -92,7 +92,7 @@ const J=x=>JSON.parse(JSON.stringify(x));
 const kstToday=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
 function wscPrefix(a,t=1000,neutral=true){a.onDir('f',t);if(neutral)a.onDir('n',t+10);a.onDir('d',t+20);a.onDir('df',t+30);return t+30;}
 function wscRun(a,A,B,t=1000){const df=wscPrefix(a,t);a.onDir('b',df+(A-1)*F);if(B!=null)a.onButton(2,df+(A-1+B)*F);return a.wsc.last;}
-function wscTaskRun(a,waves,B=1,t=7000){
+function wscChainRun(a,waves,B=1,t=7000){
   let df=wscPrefix(a,t);
   for(let n=1;n<waves;n++){
     a.onDir('f',df+20);a.onDir('n',df+30);
@@ -123,4 +123,4 @@ function gpAttempt(a,opts={},t0=1000){ a.onDir('n',t0-100); giwon(a,t0); return 
 const gpCounters = s => ({tries:s.tries,hits:s.hits,onTime:s.onTime,streak:s.streak,best:s.best,aborted:s.aborted});
 const gpCells = a => new Map([...a.get('gpAxis').innerHTML.matchAll(/class="wsc-cell([^"]*)" data-frame="(\d+)"/g)].map(m=>[Number(m[2]),m[1].trim()]));
 
-module.exports = {html, BANNED, APP_NAMES, topLevelNames, boot, dash, F, fr, mistInput, bdOut, bdSet, bdAt, samplePad, backend, topRes, AudioStub, J, kstToday, wscPrefix, wscRun, wscTaskRun, giwonRec, giwon, linkAfter, gpBoot, gpAttempt, gpCounters, gpCells};
+module.exports = {html, BANNED, APP_NAMES, topLevelNames, boot, dash, F, fr, mistInput, bdOut, bdSet, bdAt, samplePad, backend, topRes, AudioStub, J, kstToday, wscPrefix, wscRun, wscChainRun, giwonRec, giwon, linkAfter, gpBoot, gpAttempt, gpCounters, gpCells};

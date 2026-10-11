@@ -295,7 +295,6 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 
 - 2026-09-22 중립 생략 허용: `commandDir`의 시작 앞→아래는 상태 3으로 진행하고 `tN=tD`로 중립 구간 0을 기록한다. `cd.omittedNeutral`은 실패 상태가 아니라 초풍 로그의 `noNeutral` 경로 구분용이다. 캔슬 앞/대각 해제 때는 유지하고 새 시작 앞·초기화에서 해제한다. `commandButton`은 일반 판정 경로를 사용한다. `wscDir`는 앞→아래와 앞→중립→아래를 모두 허용하고 연결 정규식에서도 시작 앞 다음 중립만 선택 처리한다. 캔슬 앞→N→별도 시작 앞은 필수다.
 - 상태 1 진입은 `startCD(t)` 한 곳뿐이다(상태 0/2/3/6의 시작 앞). `cd.state=1`을 직접 쓰지 말 것: 시작 앞은 반드시 `omittedNeutral`을 해제해야 하고, 캔슬 앞(상태 4/5/7 → `cancelCD`)은 반대로 유지해야 250ms 안의 RP가 `noNeutral`로 남는다.
-- `wscDir` 연결 정규식의 대각 해제 한 칸은 `[nd]`다. `cd`가 상태 4에서 N과 아래를 모두 상태 7로 보내므로(해제는 한 번만) 정규식이 N만 받으면 ↘→↓→6 웨이브에서 `cd.chain`은 늘고 `wsc.active.waves`만 1로 돌아가 랜덤 과제 수가 어긋난다.
 - 설계/구현 경계: `MIST_EWGF.md` 8절, AGENTS 결정 27. 독립 `6N3+RP`, 같은 슬롯 성공 + 앞/N 각각 1칸일 때 최속. 실제 명중 프레임은 측정하지 않음.
 - `onDir/onButton`은 시각·기록·측정 기한 처리 후 `mistDir/mistButton`에 먼저 전달한다. 기존 본문은 `commandDir/commandButton`으로 분리. 독립 시작이 아닌 대시·웨이브·활성 WSC에서는 무족 후보를 만들지 않는다.
 - `mist{f,n,df,rp,slot,released,queue}`: 중립 다음 d 또는 f 중간 방향 한 번만 한 슬롯 보류해 마지막 세 버튼 순서를 흡수한다. 대각 전에 두 번째 단독 방향이 오면 큐를 재전달하고 일반 순서 검사를 적용한다(6→2는 중립 생략 일반 경로로 처리). 같은 슬롯 df/RP로 끝나면 `mistFinish` → 기존 `classify/attempt`에 선택 input 문맥 전달. `completeCD` 미호출이므로 무족 자체로 웨이브·대시 점수는 없음.
@@ -420,17 +419,17 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 
 ## 웨캔기어 (2026-09-18, 후속 UI 반영)
 
-- `wsc`는 메모리 전용 `session` 하나 + `challenge{status,stats,startAt,remaining,taskN}`. onDir/tick은 모든 모드에서 wsc와 기존 cd를 함께 실행한다. onButton은 active.back이 있으면 wscButton으로 소비하고 endCommand, 없으면 wscOtherMove로 후보를 지우고 기존 기술을 판정한다. pending RP/나락 확정도 attempt/strike에서 후보를 정리한다.
+- `wsc`는 메모리 전용 `session` 하나 + `challenge{status,stats,startAt,remaining}`. onDir/tick은 모든 모드에서 wsc와 기존 cd를 함께 실행한다. onButton은 active.back이 있으면 wscButton으로 소비하고 endCommand, 없으면 wscOtherMove로 후보를 지우고 기존 기술을 판정한다. pending RP/나락 확정도 attempt/strike에서 후보를 정리한다.
   wsc 모드의 completeCD/attempt/strike/addLog 기록 쓰기는 가드로 막아 기존 session/life/업적을 유지한다. 다른 모드에서는 기존 웨이브만 정상 집계하며 WSC 마무리로 attempt/strike/측정 점수를 만들지 않는다. 공통 입력 정규화·키보드/패드/터치와 1P/2P 변환은 유지.
 - `wscJudge` / `wscFrames` / `wscA`: 경과 간격 반올림, A만 +1(대각 입력 프레임 포함). A=8..10(실제 경과 7..9)/B=1..A−7, B는 뒤 입력 0f 기준 유지. 원시 값·정수 값 보존. 초풍 `frameSlot`과 다른 정책.
-- `wscDir`: 선행 prefix 순서만 인식하고 시간 기록은 마지막 df부터 `active.events`에 넣는다. 첫 앞은 캔슬, 별도 시작 앞부터 새 prefix; 완성된 대각만 기준 교체. `wscButton` → `wscFinish` 결과 최대 1회, `wscRecord`로 세션 및 실행 중 도전에 각각 집계. 중단 aborted/선행 errors는 분모 제외, 최근 rows 12건.
-- `wscStartChallenge` / `WSC_TARGET=10`: countdown(3초) → running → done. wscTick의 입력 시각·RAF tick으로 진행, 별도 타이머 없음. 카운트다운 입력은 무시. N=0~3을 과제마다 무작위 추첨, active.waves의 유효한 연결 수가 taskN+1인지 A/B와 함께 평가. 결과 taskN/waves/taskOK/timingOK로 횟수와 타이밍을 따로 보존. 10번째 평가 결과에서 완료, 다음 시도는 세션에만 추가.
+- `wscDir`: 선행 prefix 순서만 인식하고 시간 기록은 마지막 df부터 `active.events`에 넣는다. 첫 앞은 캔슬, 별도 시작 앞부터 새 prefix; 완성된 대각만 기준 교체. A 구간(뒤 전)은 대각 유지·N·앞 1회·↓·↙ 허용(3→4 사이 경로, 2026-10-11), 그 밖은 `bad='direction'`. `wscButton` → `wscFinish` 결과 최대 1회, `wscRecord`로 세션 및 실행 중 도전에 각각 집계. 중단 aborted/선행 errors는 분모 제외, 최근 rows 12건.
+- `wscStartChallenge` / `WSC_TARGET=10`: countdown(3초) → running → done. wscTick의 입력 시각·RAF tick으로 진행, 별도 타이머 없음. 카운트다운 입력은 무시. 도전도 A/B 타이밍만 평가한다(2026-10-11 웨이브 횟수 과제·`taskN`·`#wscTask` 제거). 10번째 평가 결과에서 완료, 다음 시도는 세션에만 추가.
   기존 trial/공유와 분리되며 2026-09-19부터 완주 결과만 전용 wsc 리더보드에 등록. rewardBlocked는 도전 중 보상 수령도 막는다.
 - `resetInput` → `wscCancel`이 진행 입력과 도전을 취소한다. 내부 GO·다른 기술·일반 모드의 미완성 웨이브 만료에서는 `wscCancel(false)`로 후보만 지운다. 모드/side/모달/blur/hidden에서 취소. 세션 초기화는 WSC의 session/challenge만 비운다.
-- 왼쪽 #inputs(기존 입력 간격 f 이력), #wscTimeline(6N23 묶음 + 1..15f 축 + #wscLive 실시간 A/B), 플레이 아래 .coach 안 #wscPanel(전체 결과, #wscAB 두 칸, 도전 요약/#wscTask 요구·현재 횟수, 이번 세션 통계, 접이식 기록/안내). 단계 버튼 없음. 기본 2열 레이아웃/모바일 1열 유지. 표는 가로 스크롤하며 새 결과의 뒤·RP 구간으로 정적 이동.
+- 왼쪽 #inputs(기존 입력 간격 f 이력), #wscTimeline(6N23 묶음 + 1..15f 축 + #wscLive 실시간 A/B), 플레이 아래 .coach 안 #wscPanel(전체 결과, #wscAB 두 칸, 도전 요약, 이번 세션 통계, 접이식 기록/안내). 단계 버튼 없음. 기본 2열 레이아웃/모바일 1열 유지. 표는 가로 스크롤하며 새 결과의 뒤·RP 구간으로 정적 이동.
   renderWscLive(now)는 RAF 현재 시각으로 판정과 동일한 반올림을 표시하고 .current 칸을 강조·스크롤한다. 판정 자체는 입력 시각만 사용한다. 완료/취소에는 진행 강조 제거, 15f 초과 입력·현재 칸 강조는 표에서 생략하고 실제 숫자와 판정은 유지. #resultCard도 표시해 다른 기술 결과를 보여준다. shareSource/openShare 가드 유지.
 - `wscAnimate` → poseAt('wsc'): 앉기/상승/복귀, moveChar·기상어퍼 팝·tryHit('wsc')로 일반 더미만 반응. wsc 기술음은 playSfx, 일반 더미 tryHit는 연출 설정과 독립. rushStrike·기술 통계 없음. timingOK(도전 횟수와 독립)일 때 기술 연출·소리. fx off/reduced는 기상어퍼 추가 모션만 생략.
-- `tests/smoke-wsc.js`: 백엔드 없는 사본, 실제 브라우저 키 이벤트, 여섯 조합/동시/모달 취소, 실제 3초 카운트다운/랜덤 과제 10회 완료/취소, 1366·390px × ko/en/ja × 1P/2P 레이아웃 및 기상어퍼 스크린샷. `.sandbox/wsc/browser/` 저장.
+- `tests/smoke-wsc.js`: 백엔드 없는 사본, 실제 브라우저 키 이벤트, 여섯 조합/동시/모달 취소, 실제 3초 카운트다운/10회 도전 완료/취소, 1366·390px × ko/en/ja × 1P/2P 레이아웃 및 기상어퍼 스크린샷. `.sandbox/wsc/browser/` 저장.
 - `tools/make-og.js`는 임시 사본의 백엔드를 끄고 QR 리소스를 복사해 외부 서버·누락 리소스 없이 생성한다.
 
 
