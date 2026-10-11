@@ -82,8 +82,8 @@ const ITEM_SLOT = {}; for(const s of SLOTS) for(const id of Object.keys(ITEMS[s]
 const DAILY_IDS = Object.keys(ITEM_SLOT).filter(id => ITEMS[ITEM_SLOT[id]][id].set==='daily');
 const TRIAL_MODES = ['wave10','ewgf20','combo10','rush30','bd10']; // every start-mode trial (MODES/#modes/#boardTabs/worker BOARDS follow this order); records, life.trials and the reset button all derive from it
 const perTrial = v => Object.fromEntries(TRIAL_MODES.map(m => [m, v()]));
-const LIFE_KEYS = ['dashes','ewgf','tries','tongbal','hellsweep','giwon','maxChain','maxStreak','tightEwgf','days','donate'];
-const lifeDefault = () => ({dashes:0, ewgf:0, tries:0, tongbal:0, hellsweep:0, giwon:0, maxChain:0, maxStreak:0, tightEwgf:0, days:0, donate:0, giftDay:'', trials:perTrial(() => 0)});
+const LIFE_KEYS = ['dashes','ewgf','tries','tongbal','hellsweep','giwon','maxChain','maxStreak','tightEwgf','days','donate','jfsr']; // jfsr: 초스카이 successes (결정 33(jfsr)), kept for later achievements
+const lifeDefault = () => ({dashes:0, ewgf:0, tries:0, tongbal:0, hellsweep:0, giwon:0, jfsr:0, maxChain:0, maxStreak:0, tightEwgf:0, days:0, donate:0, giftDay:'', trials:perTrial(() => 0)});
 const fitDefault = () => Object.fromEntries(SLOTS.map(s => [s,'base']));
 // achievements: id = the item it unlocks. stat(life) is the current value, done when stat >= target. Records-based ones read store.records (best of the last 30).
 const bestRec = (m, f) => (store.records[m]||[]).reduce((b,r) => Math.max(b, f(r)||0), 0);

@@ -1,7 +1,7 @@
 /* ---------- backend: local N-try challenges, rankings, nickname, visit counter, shoutbox (BOARD_URL lives in 26-backend-config.js) ---------- */
 // CHALLENGES / BOARDS / challengeTarget live next to MODES in 20-trials.js.
 function completeChallenge(c, target){ // a finished run is kept (until the next start) as the result the board submits
-  c.status='done'; c.result={completed:true, window:store.window, rec:{hits:c.stats.hits, target, best:c.stats.best}};
+  c.status='done'; c.result={completed:true, window:store.window, char:charId(), rec:{hits:c.stats.hits, target, best:c.stats.best}};
   boardSubmit();
 }
 const board = { tab:'wave10', data:{}, msg:'', seq:0, rev:{}, loads:new Map(), deleting:false, submitting:false, loadAfterDelete:false, submitQueue:[] }; // queued writes own their result/payload/identity; changing the visible mode cannot replace them
@@ -31,6 +31,7 @@ function boardEntry(r, m){ // pure: finished trial result → submission payload
   else if(m==='rush30'){ e.score = rec.score; e.tie = rec.kills||0; e.detail = {kills:rec.kills||0, whiffs:rec.whiffs||0, dashPts:rec.dashPts||0}; }
   else if(m==='bd10'){ e.score = +rec.score; e.tie = rec.top||0; e.detail = {dashes:rec.dashes||0, top:rec.top||0, chain:rec.chain||0}; }
   else { e.score = rec.score; e.tie = -Math.abs(rec.mean) || 0; e.detail = {hits:rec.hits, target:rec.target, mean:rec.mean}; }
+  e.detail.char = r.char || CHAR_DEFAULT; // whose record it is (결정 34(char-select)); one board per mode, characters mixed
   return e;
 }
 function boardRowText(m, row){ const x = recText(m, {score:row.score, ...(row.detail||{})}); return {label: x.label ?? String(row.score), sub: x.sub ?? ''}; }
@@ -51,7 +52,7 @@ function openNick(msgKey){
   if(!BOARD_URL) return;
   donateNudgeDefer();
   if(trial.running || trial.cdTimer) endTrial(true); // a modal pauses input but not the clock: cancel rather than let the trial end blind
-  if(mode==='wsc'||mode==='giwon') resetInput(); // cancels a running local challenge like any other modal
+  if(CHALLENGES[mode]) resetInput(); // cancels a running local challenge like any other modal
   live.nickMsg = msgKey ? [msgKey] : ''; live.nickLater = false; $('nickInput').value = store.nick || ''; renderNick();
   const d = $('nickDlg'); if(!d.open && typeof d.showModal==='function') d.showModal(); jackpotPause();
 }
@@ -109,7 +110,9 @@ function renderBoard(){
   $('boardMe').textContent = !d ? '' : me ? T('board.me', me.rank, d.total, pctTop(me.rank, d.total)) : T('board.meNone');
   $('boardMsg').textContent = msg(board.msg);
   const rows = d ? d.rows : [];
-  const tr = r => { const mine = me && r.id===me.id, x = boardRowText(t, r), del = mine ? `<button class="board-delete" data-delete-score aria-label="${escapeHTML(T('board.deleteAria'))}"${board.deleting||board.submitting?' disabled':''}>${escapeHTML(T('board.delete'))}</button>` : ''; return `<tr${mine?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="act">${del}</td></tr>`; };
+  // a board two characters can reach tags every row; rows from before the selector have no char and were all the default character
+  const tag = r => boardMixed(t) ? `<small class="char-tag">${escapeHTML(T('char.'+(CHAR_IDS.includes(r.detail&&r.detail.char) ? r.detail.char : CHAR_DEFAULT)+'.name'))}</small>` : '';
+  const tr = r => { const mine = me && r.id===me.id, x = boardRowText(t, r), del = mine ? `<button class="board-delete" data-delete-score aria-label="${escapeHTML(T('board.deleteAria'))}"${board.deleting||board.submitting?' disabled':''}>${escapeHTML(T('board.delete'))}</button>` : ''; return `<tr${mine?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}${tag(r)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="act">${del}</td></tr>`; };
   const below = me && !rows.some(r => r.id===me.id) ? `<tr class="sep"><td colspan="4">⋯</td></tr>` + tr(me) : ''; // my row when it sits under the top list
   $('boardList').innerHTML = !d ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('board.empty'))}</div>` :
     `<table><thead><tr><th>${escapeHTML(T('board.hRank'))}</th><th>${escapeHTML(T('board.hNick'))}</th><th>${escapeHTML(T('board.hScore'))}</th><th></th></tr></thead><tbody>` +

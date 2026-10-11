@@ -32,8 +32,8 @@ function renderSeg(cyc){
     return;
   }
   if(cyc&&cyc.mist){
-    $('segTitle').textContent=T('mist.segTitle');
-    const names=T('mist.segNames'), vals=[cyc.f,cyc.n,cyc.rp];
+    $('segTitle').textContent=T(cyc.jf?'jf.segTitle':'mist.segTitle'); // jf: 초스카이 uses the same staged 6N3 (결정 33(jfsr))
+    const names=T(cyc.jf?'jf.segNames':'mist.segNames'), vals=[cyc.f,cyc.n,cyc.rp];
     [...$('segBar').children].forEach((el,i)=>{el.style.flex=i<3?Math.max(1,Math.abs(vals[i])):0;el.textContent=i<3?names[i]+' '+(i===2&&vals[i]>0?'+':'')+vals[i]+'f':'';el.title=el.textContent;});
     return;
   }

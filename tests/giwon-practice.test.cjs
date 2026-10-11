@@ -356,7 +356,7 @@ test('기원초 10회 도전은 평가된 시도만 세고, 완주하면 등록�
   assert.equal(a.gp.session.tries,a.GP_CHALLENGE,'세션 통계도 같이 쌓인다');
   assert.deepEqual(JSON.parse(JSON.stringify(c.result.rec)),{hits:c.stats.hits,target:a.GP_CHALLENGE,best:c.stats.best},'완주 결과가 기원초 보드로 간다 (결정 31(giwon-board))');
   assert.equal(a.rankingResult(),c.result);
-  assert.deepEqual(JSON.parse(JSON.stringify(a.boardEntry(c.result,'giwon'))),{board:'giwon',win:c.result.window,lang:a.store.lang,score:c.stats.hits,tie:c.stats.best,detail:{hits:c.stats.hits,target:a.GP_CHALLENGE,best:c.stats.best}});
+  assert.deepEqual(JSON.parse(JSON.stringify(a.boardEntry(c.result,'giwon'))),{board:'giwon',win:c.result.window,lang:a.store.lang,score:c.stats.hits,tie:c.stats.best,detail:{hits:c.stats.hits,target:a.GP_CHALLENGE,best:c.stats.best,char:'kazuya'}});
   assert.equal(a.boardEntry({completed:false,rec:c.result.rec},'giwon'),null,'미완주는 등록하지 않는다');
   assert.equal(a.boardEntry({completed:true,rec:{...c.result.rec,target:9}},'giwon'),null);
 });
@@ -573,7 +573,7 @@ test('기원초 10회는 완주만 자동 등록하고, 실패는 재시도하�
   assert.equal(sent.length,0,'nothing before the last try');assert.equal(a.rankingResult(),undefined);
   gpAttempt(a,{},t);await new Promise(setImmediate);
   assert.equal(sent.length,1);assert.equal(sent[0].board,'giwon');assert.equal(sent[0].score,9);assert.equal(sent[0].tie,5);
-  assert.deepEqual(sent[0].detail,{hits:9,target:10,best:5});
+  assert.deepEqual(sent[0].detail,{hits:9,target:10,best:5,char:'kazuya'});
   assert.equal(a.rankingResult().submit.state,'fail');assert.equal(a.trial.result,null,'separate from ordinary trials');
   fail=false;await a.boardSubmit();assert.equal(sent.length,2);assert.equal(a.rankingResult().submit.state,'done');
   await a.boardSubmit();assert.equal(sent.length,2,'a done result is not sent twice');

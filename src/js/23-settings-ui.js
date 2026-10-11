@@ -19,10 +19,15 @@ $('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDl
 $('setClose').addEventListener('click', () => { setBindingCheck(false); cancelBinding(); padNeedsRelease=true; $('setDlg').close(); });
 $('setDlg').addEventListener('cancel', e => { if(listening || padCapture){ e.preventDefault(); cancelBinding(); } });
 $('setDlg').addEventListener('close', () => { setBindingCheck(false); cancelBinding(); padNeedsRelease=true; });
-// 기술 온오프 (결정 32(move-toggle)): 버튼마다 따로 켜고 끈다. 무족초는 초풍이 꺼지면 누를 수 없다.
-function renderMoveSel(){ $('moveSel').querySelectorAll('button').forEach(b => { const k=b.dataset.move; b.disabled = k==='mist' && store.moves.ewgf===0; b.setAttribute('aria-pressed', String(store.moves[k]!==0 && !b.disabled)); }); }
-function setMove(k, on){ store.moves[k]=on?1:0; save(); resetInput(); renderMoveSel(); renderMode(); }
-$('moveSel').querySelectorAll('button').forEach(b => b.addEventListener('click', () => setMove(b.dataset.move, !store.moves[b.dataset.move])));
+// 기술 온오프 (결정 32(move-toggle)): 지금 캐릭터의 기술만 버튼으로 그리고, 캐릭터마다 따로 저장한다. 무족초는 초풍이 꺼지면 누를 수 없다.
+function renderMoveSel(){
+  const on = store.moves[charId()];
+  $('moveSel').innerHTML = charOf().moves.map(k => { const locked = k==='mist' && on.ewgf===0;
+    return '<button type="button" data-move="'+k+'" aria-pressed="'+(on[k]!==0 && !locked)+'"'+(locked?' disabled':'')+'>'+escapeHTML(T('move.'+k))+'</button>'; }).join('');
+  $('movesNote').textContent = T(charKey('set.movesNote'));
+}
+function setMove(k, on){ store.moves[charId()][k]=on?1:0; save(); resetInput(); renderMoveSel(); renderMode(); }
+$('moveSel').addEventListener('click', ev => { const b = ev.target && ev.target.closest ? ev.target.closest('button[data-move]') : null; if(b && !b.disabled) setMove(b.dataset.move, !store.moves[charId()][b.dataset.move]); });
 renderMoveSel();
 segSel('soundSel','sound', v => { store.sound=+v; save(); unlockAudio(); bgmSync(); sfxSync(); renderSound(); });
 function setBgm(on){
@@ -92,6 +97,10 @@ $('bindingReset').addEventListener('click',()=>{
 });
 $('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { setMode(b.dataset.mode); if(b.scrollIntoView) b.scrollIntoView({block:'nearest', inline:'nearest'}); })); // a half-hidden tab slides fully into the scrolling list
 $('modes').addEventListener('wheel', e => { const m = e.currentTarget; if(e.deltaX || !e.deltaY || m.scrollWidth <= m.clientWidth) return; m.scrollLeft += e.deltaY; e.preventDefault(); }, {passive:false}); // a plain mouse wheel over the list scrolls it sideways
+// 캐릭터 선택 (결정 34(char-select)): the prominent button opens the tile view; a tile picks and closes
+$('charOpen').addEventListener('click', () => { const d = $('charDlg'); if(d.open) return; donateNudgeDefer(); endTrial(true); resetInput(); renderCharTiles(); d.showModal(); jackpotPause(); });
+$('charClose').addEventListener('click', () => $('charDlg').close());
+$('charTiles').addEventListener('click', ev => { const b = ev.target && ev.target.closest ? ev.target.closest('button[data-char]') : null; if(!b) return; setChar(b.dataset.char); $('charDlg').close(); });
 $('dStart').addEventListener('click', startTrial);
 function resetSession(){
   // Only the settings data reset calls this now: reset every mode, including retained ranking results.
@@ -99,7 +108,8 @@ function resetSession(){
   endTrial(true); resetInput();
   wsc.session=wscStats(); wsc.challenge={status:'idle',stats:null}; wsc.last=null; wsc.notice='ready';
   gp.session=gpStats(); gp.challenge={status:'idle',stats:null}; gp.last=null; gp.run=null; gp.notice='ready';
-  clearShare(); renderWsc(); renderGp();
+  jfp.session=jfStats(); jfp.challenge={status:'idle',stats:null}; jfp.last=null; jfp.streak=0;
+  clearShare(); renderWsc(); renderGp(); renderJf();
   Object.assign(session, sessionDefault()); history.length=0; lastInputT=performance.now();
   bdpReset(); // after the session: its stats tile reads session.bd.bestChain
   updateStats(); updateHud(); renderHistory(); renderLog(); renderHist(); renderWave(); coachTrend();

@@ -18,7 +18,7 @@ module.exports = {
   pages: [
     {
       slug: 'guide/',
-      updated: '2026-10-01',
+      updated: '2026-10-11',
       title: 'Tekken Mishima Input Guides — EWGF, Wave Dash, Backdash, d/f+2 Link',
       description: 'Free frame-by-frame guides to the Tekken 8 Mishima inputs: EWGF, wave dash, Korean backdash and the d/f+2 → EWGF link, with notation and a practice order.',
       lead: 'These guides explain the inputs behind Mishima Dojo\'s practice modes. Start with the notation, then open the guide for the move you are working on.',
@@ -47,6 +47,7 @@ module.exports = {
 <li><a href="@guide/wsc/">Wave-cancel WS upper guide</a><p>Cancelling a wave dash with back and pressing RP as you rise: back on frame 8, 9 or 10 and the RP gap that goes with each.</p></li>
 <li><a href="@guide/backdash/">Korean backdash guide</a><p>Retreating fast with 414 N, cancel timing and the sidestep-cancel mistake.</p></li>
 <li><a href="@guide/giwon-link/">d/f+2 → EWGF link guide</a><p>Neutral on frame 48 and EWGF by frame 49 after d/f+2 recovers.</p></li>
+<li><a href="@guide/jfsr/">JF Sky Rocket guide</a><p>Hwoarang f,n,df:4: d/f and 4 on one frame, and why a normal Sky Rocket or d/f+4 comes out instead.</p></li>
 <li><a href="@guide/frames/">Frames and input judging</a><p>The 60Hz grid, why a browser is not the game, and device timing errors.</p></li>
 </ul>
 
@@ -317,6 +318,47 @@ module.exports = {
 <li>In the frame table under the stage, read the grey <strong>pre-input</strong>, gold <strong>neutral</strong> and red <strong>attack</strong> bands to see which cell each input landed in.</li>
 <li>A late EWGF makes the dummy crumple weakly; a success launches it and the app pops “Demon Slayer Link!”.</li>
 <li>When it feels steady, run the <strong>10-try challenge</strong> for success rate and best streak. With a nickname set, the result goes on the leaderboard.</li>
+</ol>
+`,
+    },
+    {
+      slug: 'guide/jfsr/',
+      updated: '2026-10-11',
+      title: 'JF Sky Rocket guide — Hwoarang f,n,df:4',
+      description: 'A frame-by-frame guide to Hwoarang\'s just-frame Sky Rocket (Lethal Sky Rocket, f,n,df:4) in Tekken: pressing d/f and 4 on one frame, why a normal Sky Rocket or d/f+4 comes out, and how to practice it.',
+      lead: 'The JF Sky Rocket is Hwoarang\'s Sky Rocket entered on a just frame. Pick Hwoarang in Mishima Dojo\'s character selector to practice it.',
+      body: `
+<h2>What it is</h2>
+<p>Sky Rocket is Hwoarang\'s mid launcher kick. <code>f,n,d,df+4</code> — 4 during the crouch dash — gives the normal Sky Rocket. Rolling <code>f,n,df</code> <strong>without the d</strong> and pressing <strong>d/f and 4 (RK) on the same frame</strong> gives the just-frame version: Lethal Sky Rocket (JFSR; Korean players call it 초스카이, Japanese players 青ライ). Tekken 8 lists it in the move list.</p>
+<p>Community frame data (Wavu Wiki and others) gives both the same startup; the JF version is much safer on block and gives more on hit, which is why it is treated as a skill check like the EWGF. Numbers can change with patches, so check a current source.</p>
+
+<h2>Inputs and how they are judged</h2>
+<div class="table"><table>
+<tr><th>Input</th><th>Mishima Dojo verdict</th><th>What the game does</th></tr>
+<tr><td><code>f,n,df</code> + 4 on one frame</td><td>JF Sky Rocket</td><td>JF Sky Rocket</td></tr>
+<tr><td>the same with forward and neutral 1f each</td><td>Fastest JF Sky Rocket</td><td>JF Sky Rocket</td></tr>
+<tr><td><code>f,n,d,df</code> + 4</td><td>Normal Sky Rocket (went through d)</td><td>Sky Rocket</td></tr>
+<tr><td><code>f,n,df</code> then a late 4</td><td>4 late</td><td>d/f+4 (mid Claymore)</td></tr>
+<tr><td>4 before the d/f</td><td>4 early</td><td>no JF Sky Rocket</td></tr>
+<tr><td><code>f,df</code> + 4, or d/f+4 alone</td><td>d/f+4 (no f,n)</td><td>d/f+4</td></tr>
+<tr><td><code>f,n,d</code> + 4</td><td>d+4</td><td>d+4</td></tr>
+</table></div>
+<p>The judge is the same <a href="@guide/frames/">shared 60Hz grid</a> as the EWGF: d/f and 4 inside one frame cell is a success. It has the same shape as the mist-step EWGF (<code>f,n,df+2</code>) with a different button.</p>
+<p class="note">The game\'s maximum leniency (how long f and n may be held) is unconfirmed, so the mist-step limits apply. The right-stance (flamingo) JF Sky Rocket, which is more lenient, is not covered. The game refuses the JF in the middle of a wavedash (<code>f,n,d,df,f,n,df+4</code>); the practice tool accepts it anyway. A success means the input condition was met; it does not reproduce a real hit or frame advantage.</p>
+
+<h2>Common mistakes</h2>
+<ul>
+<li><strong>Going through d</strong>: dropping to down before d/f makes a crouch dash and a normal Sky Rocket. Roll straight from neutral to d/f.</li>
+<li><strong>A late 4</strong>: waiting to see the d/f is too late. Press d/f and 4 together like one button.</li>
+<li><strong>Losing the neutral</strong>: sliding from f straight to d/f has no neutral and gives d/f+4. Let the stick go for a moment.</li>
+</ul>
+
+<h2>How to practice</h2>
+<ol>
+<li>On the <a href="@">practice screen</a>, press the <strong>Character</strong> button left of the mode tabs and pick <strong>Hwoarang</strong>.</li>
+<li>On the <strong>JF Sky Rocket</strong> tab every input shows the forward and neutral frames and the d/f ↔ 4 gap. A single <code>↘+4</code> row in the input log means one frame.</li>
+<li>When the rate climbs, run the <strong>10-try challenge</strong>. With a nickname the result goes to the "JF Sky Rocket ×10" leaderboard.</li>
+<li>Hwoarang can also play Wavedash 10s and Backdash 10s; those records share Kazuya\'s leaderboards with a character tag.</li>
 </ol>
 `,
     },

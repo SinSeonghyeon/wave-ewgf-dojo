@@ -39,6 +39,7 @@ function wscTick(t){
 }
 function wscDir(dir,t,rolled=false){ // rolled: commandDir이 623의 2·3 같은 칸을 6→3으로 본 ↘ — 웨이브를 완성하지 않는다
   if(wsc.challenge.status==='countdown') return;
+  if(!charCap('wsc')) return; // 결정 34(char-select): 웨캔기어 belongs to a character with the wsc capability
   const a=wsc.active;
   if(a){
     a.lastAt=t; a.events.push({dir,t});

@@ -235,7 +235,7 @@ test('WSC submits only a completed challenge, retries failure once and remains s
   assert.equal(sent.length,0);assert.equal(a.rankingResult(),undefined);
   wscTaskRun(a,a.wsc.challenge.taskN+1,1,14000);await new Promise(setImmediate);
   assert.equal(sent.length,1);assert.equal(a.rankingResult().submit.state,'fail');
-  assert.deepEqual(sent[0].detail,{hits:9,target:10,best:5});assert.equal(sent[0].board,'wsc');assert.equal(sent[0].score,9);assert.equal(sent[0].tie,5);
+  assert.deepEqual(sent[0].detail,{hits:9,target:10,best:5,char:'kazuya'});assert.equal(sent[0].board,'wsc');assert.equal(sent[0].score,9);assert.equal(sent[0].tie,5);
   assert.equal(a.trial.result,null);assert.equal(a.session.tries,0);assert.equal(a.shareSource(),null);
   fail=false;await a.boardSubmit();assert.equal(sent.length,2);assert.equal(a.rankingResult().submit.state,'done');await a.boardSubmit();assert.equal(sent.length,2);
   a.wscStartChallenge();a.tick(17000);a.wscStartChallenge();await a.boardSubmit();assert.equal(sent.length,2,'cancelled challenges never submit');

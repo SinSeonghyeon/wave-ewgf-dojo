@@ -5,10 +5,23 @@ const assert = require('node:assert/strict');
 const {boot, dash, mistInput} = require('./helpers/app.cjs');
 const off = (...ks) => ({moves:Object.fromEntries(ks.map(k=>[k,0]))});
 
-test('stored move toggles load as 0/1 only, default on',()=>{
-  assert.deepEqual({...boot().store.moves},{ewgf:1,mist:1,tongbal:1,hellsweep:1,giwon:1});
-  const a=boot({moves:{giwon:0,tongbal:'x',ewgf:2}});
-  assert.deepEqual({...a.store.moves},{ewgf:1,mist:1,tongbal:1,hellsweep:1,giwon:0});
+const plain = o => JSON.parse(JSON.stringify(o));
+test('stored move toggles load per character as 0/1 only, default on; the old flat format belonged to Kazuya',()=>{
+  assert.deepEqual(plain(boot().store.moves),{kazuya:{ewgf:1,mist:1,tongbal:1,hellsweep:1,giwon:1},hwoarang:{jfsr:1}});
+  let a=boot({moves:{giwon:0,tongbal:'x',ewgf:2}});
+  assert.deepEqual(plain(a.store.moves),{kazuya:{ewgf:1,mist:1,tongbal:1,hellsweep:1,giwon:0},hwoarang:{jfsr:1}});
+  a=boot({moves:{kazuya:{tongbal:0},hwoarang:{jfsr:0,ewgf:0},nobody:{x:0}}});
+  assert.deepEqual(plain(a.store.moves),{kazuya:{ewgf:1,mist:1,tongbal:0,hellsweep:1,giwon:1},hwoarang:{jfsr:0}},'unknown characters and moves are dropped');
+});
+test('each character keeps its own toggles, and the settings row lists only its moves',()=>{
+  const a=boot();a.setMove('giwon',false);
+  a.setChar('hwoarang');assert.match(a.get('moveSel').innerHTML,/data-move="jfsr"/);assert.doesNotMatch(a.get('moveSel').innerHTML,/data-move="giwon"/);
+  assert.equal(a.get('movesNote').textContent,a.T('set.movesNote.hwoarang'));
+  a.setMove('jfsr',false);assert.equal(a.moveOn('jfsr'),false);assert.deepEqual([...a.movesOff()],['jfsr']);
+  a.onDir('f',1000);a.onDir('n',1017);a.onDir('df',1034);a.onButton(4,1034);a.tick(1600);assert.equal(a.jfp.last,null,'초스카이 off: 6N3+4 is nothing');
+  a.setMode('jfsr');assert.equal(a.moveOn('jfsr'),true,'the 초스카이 mode forces it');assert.deepEqual([...a.movesOff()],[]);
+  a.setChar('kazuya');assert.equal(a.moveOn('giwon'),false,'the 기원권 of Kazuya stays off');assert.equal(a.store.moves.hwoarang.jfsr,0);
+  assert.match(a.get('moveSel').innerHTML,/data-move="giwon" aria-pressed="false"/);assert.equal(a.get('movesNote').textContent,a.T('set.movesNote'));
 });
 test('기원권 off: ↘+RP falls through to the failed EWGF, and the 6→↘ fault is not held for it',()=>{
   let a=boot(off('giwon'));a.onDir('df',1000);a.onButton(2,1100);
@@ -49,7 +62,7 @@ test('modes force the moves they need, and the mode description lists what is of
 });
 test('MOVE_FORCED names real modes and real move ids',()=>{
   const a=boot();
-  for(const [m,ks] of Object.entries(a.MOVE_FORCED)){ assert.ok(m in a.MODES,m); for(const k of ks) assert.ok(a.MOVE_IDS.includes(k),k); }
+  for(const [m,ks] of Object.entries(a.MOVE_FORCED)){ assert.ok(m in a.MODES,m); for(const k of ks) assert.ok(a.CHAR_IDS.some(c=>a.CHARS[c].moves.includes(k)),k); }
 });
 test('초풍 off: the 기원권 coach drops the "aiming for EWGF" hint',()=>{
   let a=boot();a.onDir('df',1000);a.onButton(2,1100);

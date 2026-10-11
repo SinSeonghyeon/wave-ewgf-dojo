@@ -46,16 +46,20 @@
         <p data-i18n="app.tagline">미시마류 입력 트레이너 · 6N23 6 N 6N23 … 웨이브와 6N23+2 초풍을 프레임 단위로 판정</p>
       </div>
     </div>
+    <div class="mode-bar">
+    <button class="char-open" id="charOpen" type="button" aria-haspopup="dialog" data-i18n-title="char.open"><img id="charOpenFace" width="80" height="80" alt="" draggable="false"><span class="char-open-text"><small data-i18n="char.label">캐릭터</small><b id="charOpenName">카즈야</b></span><span class="char-open-caret" aria-hidden="true">▾</span></button>
     <nav class="modes" role="tablist" data-i18n-aria="modes.aria" aria-label="연습 모드" id="modes">
       <button role="tab" data-mode="free" aria-selected="true" data-i18n="mode.free.name">자유 연습</button>
       <button role="tab" data-mode="wsc" aria-selected="false" data-i18n="mode.wsc.name">웨캔기어 연습</button>
       <button role="tab" data-mode="giwon" aria-selected="false" data-i18n="mode.giwon.name">기원초 연습</button>
+      <button role="tab" data-mode="jfsr" aria-selected="false" data-i18n="mode.jfsr.name" hidden>초스카이 연습</button>
       <button role="tab" data-mode="wave10" aria-selected="false" data-i18n="mode.wave10.name">웨이브 10초</button>
       <button role="tab" data-mode="ewgf20" aria-selected="false" data-i18n="mode.ewgf20.name">초풍 20회</button>
       <button role="tab" data-mode="combo10" aria-selected="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button>
       <button role="tab" data-mode="rush30" aria-selected="false" data-i18n="mode.rush30.name">더미 격파 30초</button>
       <button role="tab" data-mode="bd10" aria-selected="false" data-i18n="mode.bd10.name">백대시 10초</button>
     </nav>
+    </div>
     <div class="top-right">
       <button class="notice-btn" id="noticeOpen" type="button" data-i18n-aria="notice.open" data-i18n-title="notice.open" aria-label="공지사항 열기"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span data-i18n="notice.button">공지</span><span class="notice-new" id="noticeBadge" data-i18n="notice.new">NEW</span></button>
       <a class="notice-btn youtube-btn" id="youtubeLink" href="https://www.youtube.com/@master_shin" target="_blank" rel="noopener noreferrer" data-i18n-aria="youtube.open" data-i18n-title="youtube.open" aria-label="제작자 YouTube 채널 열기 (새 탭)"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 4h14a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H5a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4Zm5 4v8l7-4-7-4Z"/></svg><span class="youtube-label" data-i18n="youtube.button">YouTube</span></a>
@@ -85,6 +89,7 @@
         <button class="btn" id="dStart" hidden data-i18n="trial.start">시작</button>
           <button class="btn" id="wscChallengeBtn" type="button" hidden></button>
           <button class="btn" id="gpChallengeBtn" type="button" hidden></button>
+          <button class="btn" id="jfChallengeBtn" type="button" hidden></button>
         </div>
         <div class="hud">
           <div class="hud-chain" id="hudChain"><span id="hudChainN">0</span><small id="hudChainL">WAVE</small></div>
@@ -164,6 +169,23 @@
         <details><summary data-i18n="gp.recent"></summary><table><thead><tr><th data-i18n="wsc.result"></th><th data-i18n="gp.fireCol"></th><th data-i18n="gp.nCol"></th><th data-i18n="wsc.reason"></th></tr></thead><tbody id="gpRows"></tbody></table></details>
         <details><summary data-i18n="gp.help"></summary><p class="note" id="gpNote"></p></details>
       </section>
+      <section class="wsc-panel wsc-timeline" id="jfTimeline" hidden aria-labelledby="jfCommand">
+        <div class="wsc-command" id="jfCommand"></div>
+        <p class="note" id="jfGuide"></p>
+      </section>
+      <section class="wsc-panel" id="jfPanel" hidden aria-labelledby="jfTitle">
+        <h2 id="jfTitle" data-i18n="jf.evaluation"></h2>
+        <div class="wsc-result" id="jfResult" role="status" aria-live="polite"></div>
+        <div class="wsc-ab" id="jfAB"></div>
+        <p class="note" id="jfDetail"></p>
+        <div class="wsc-challenge">
+          <p class="note" id="jfChallengeStatus" role="status" aria-live="polite"></p>
+        </div>
+        <h3 class="note" data-i18n="stats.aria"></h3>
+        <div class="wsc-stats" id="jfStats"></div>
+        <details><summary data-i18n="jf.recent"></summary><table><thead><tr><th data-i18n="wsc.result"></th><th data-i18n="jf.fnCol"></th><th data-i18n="jf.rkCol"></th><th data-i18n="wsc.reason"></th></tr></thead><tbody id="jfRows"></tbody></table></details>
+        <details><summary data-i18n="jf.help"></summary><p class="note" data-i18n="jf.note"></p></details>
+      </section>
       <section class="wsc-panel wsc-timeline" id="bdpTimeline" hidden aria-labelledby="bdpCommand">
         <div class="wsc-command" id="bdpCommand"></div>
         <div class="wsc-live" id="bdpLive" role="timer" aria-live="off"></div>
@@ -220,9 +242,9 @@
             <div class="binding-feedback"><p id="bindingMessage" role="status" aria-live="polite"></p><button class="btn ghost" id="bindingClear" type="button" hidden data-i18n="set.bindClear"></button><button class="btn ghost" id="bindingCancel" type="button" hidden data-i18n="set.bindCancel"></button></div>
           </section>
           <p class="note" data-i18n="ewgf.gridNote"></p>
-          <div class="row"><label class="t" data-i18n="set.moves">기술 켜기·끄기</label>
-            <div class="segc moves" id="moveSel" role="group" data-i18n-aria="set.moves"><button type="button" data-move="ewgf" aria-pressed="true" data-i18n="move.ewgf"></button><button type="button" data-move="mist" aria-pressed="true" data-i18n="move.mist"></button><button type="button" data-move="tongbal" aria-pressed="true" data-i18n="move.tongbal"></button><button type="button" data-move="hellsweep" aria-pressed="true" data-i18n="move.hellsweep"></button><button type="button" data-move="giwon" aria-pressed="true" data-i18n="move.giwon"></button></div></div>
-          <p class="note" data-i18n="set.movesNote"></p>
+          <div class="row" id="movesRow"><label class="t" data-i18n="set.moves">기술 켜기·끄기</label>
+            <div class="segc moves" id="moveSel" role="group" data-i18n-aria="set.moves"></div></div>
+          <p class="note" id="movesNote"></p>
           <div class="row"><label class="t" data-i18n="set.fx">연출 (흔들림·플래시)</label>
             <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div class="row"><label class="t" data-i18n="set.touch">터치 컨트롤</label>
@@ -254,6 +276,12 @@
       <div class="card-msg" id="postMsg"></div>
     </div>
   </main>
+
+  <dialog class="share char-dlg" id="charDlg" aria-labelledby="charTitle">
+    <div class="set-head"><h2 id="charTitle" data-i18n="char.title">캐릭터 선택</h2><button class="btn ghost" id="charClose" type="button" data-i18n="share.close">닫기</button></div>
+    <p class="note" data-i18n="char.sub">연습할 캐릭터를 고르세요.</p>
+    <div class="char-tiles" id="charTiles" role="group" data-i18n-aria="char.aria"></div>
+  </dialog>
 
   <dialog class="share notices" id="noticeDlg" aria-labelledby="noticeTitle">
     <div class="set-head"><h2 id="noticeTitle" data-i18n="notice.title">공지사항</h2><button class="btn ghost" id="noticeClose" type="button" data-i18n="share.close">닫기</button></div>
@@ -339,7 +367,7 @@
     <div class="card board-card" id="boardCard" hidden>
       <h2 data-i18n="board.title">순위</h2>
       <p class="sub" data-i18n="board.note">상위 10명 · 닉네임당 최고 기록 1건 · 초기화 없이 계속 쌓입니다 · 닉네임과 기록만 저장됩니다</p>
-      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button><button data-board="rush30" aria-pressed="false" data-i18n="mode.rush30.name">더미 격파 30초</button><button data-board="bd10" aria-pressed="false" data-i18n="mode.bd10.name">백대시 10초</button><button data-board="wsc" aria-pressed="false" data-i18n="wsc.rankTitle">웨캔기어 10회</button><button data-board="giwon" aria-pressed="false" data-i18n="gp.rankTitle">기원초 10회</button></div>
+      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button><button data-board="rush30" aria-pressed="false" data-i18n="mode.rush30.name">더미 격파 30초</button><button data-board="bd10" aria-pressed="false" data-i18n="mode.bd10.name">백대시 10초</button><button data-board="wsc" aria-pressed="false" data-i18n="wsc.rankTitle">웨캔기어 10회</button><button data-board="giwon" aria-pressed="false" data-i18n="gp.rankTitle">기원초 10회</button><button data-board="jfsr" aria-pressed="false" data-i18n="jf.rankTitle" hidden>초스카이 10회</button></div>
       <div class="board-info" id="boardInfo"></div>
       <div class="board-me" id="boardMe"></div>
       <div class="tbl board-list" id="boardList"></div>
@@ -384,6 +412,7 @@
 'use strict';
 @@include js/00-core.js
 @@include js/01-wardrobe-items.js
+@@include js/02-chars.js
 @@include js/02-notices.js
 @@include js/03-store.js
 @@include i18n/ko.js
@@ -402,6 +431,7 @@
 @@include js/13-button.js
 @@include js/14-giwon.js
 @@include js/15-giwon-practice.js
+@@include js/16-jfsr.js
 @@include js/16-strikes.js
 @@include js/17-coach.js
 @@include js/18-hud.js

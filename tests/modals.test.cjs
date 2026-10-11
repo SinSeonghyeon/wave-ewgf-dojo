@@ -142,3 +142,7 @@ test('donate: header/footer stay visible while the result prompt waits for a dai
   a.get('donateBack').click();assert.equal(a.get('donateChoose').hidden,false);
   assert.ok(fs.existsSync(require('node:path').join(__dirname,'..','donate-kakao.png')),'QR image exists');
 });
+test('every <dialog> pauses input through MODAL_IDS',()=>{
+  const ids=[...html.matchAll(/<dialog[^>]*\bid="(\w+)"/g)].map(m=>m[1]);
+  assert.deepEqual([...boot().MODAL_IDS].sort(),ids.sort(),'a new dialog must join MODAL_IDS (07-input.js), or input keeps judging behind it');
+});

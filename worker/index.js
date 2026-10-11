@@ -36,7 +36,11 @@ export const BOARDS = {
   bd10:    {score: [0, 60],   tie: [0, 200],  detail: {dashes: [0, 200], top: [0, 200], chain: [0, 200]}},      // 백대시 10초 (2026-09-13): score = metres retreated, tie = 'very fast' sets (theoretical max ≈ 24 m with a 3f hand, 2026-10-08 model)
   wsc:     CHALLENGE_10, // 웨캔기어 10회 (2026-09-19)
   giwon:   CHALLENGE_10, // 기원초 10회 (2026-09-30)
+  jfsr:    CHALLENGE_10, // 초스카이 10회 (2026-10-11, 결정 33(jfsr))
 };
+// 결정 34(char-select): every board mixes characters; detail.char says whose record a row is. Optional — older sites send none
+// and those rows read as the default character. Anything outside this list is dropped, never rejected.
+export const CHARS = ['kazuya', 'hwoarang'];
 export const WINDOWS = [8, 12, 15];
 const LANGS = ['ko', 'en', 'ja'];
 // Characters that render blank or hijack layout: control (Cc), format (Cf: zero-width, bidi, soft hyphen, word joiner, BOM), private-use
@@ -114,6 +118,7 @@ export function validate(body) {
     const v = num(body.detail?.[k], range); if (v === undefined) return {error: 'detail.' + k};
     detail[k] = v;
   }
+  if (CHARS.includes(body.detail?.char)) detail.char = body.detail.char;
   if(BOARDS[body.board]===CHALLENGE_10){
     if(!Number.isInteger(score)||!Number.isInteger(tie)||!Number.isInteger(detail.hits)||!Number.isInteger(detail.best)||score!==detail.hits||tie!==detail.best||tie>score||(score>0&&tie<1))return {error:'detail'};
   }
