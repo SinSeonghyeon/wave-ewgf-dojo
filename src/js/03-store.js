@@ -14,9 +14,16 @@ const DEFAULT_PAD = {up:'auto',down:'auto',left:'auto',right:'auto',b1:'b2',b2:'
 function padAutoConflict(keys,slot,code){
   return Object.entries(keys).some(([k,v])=>k!==slot && v==='auto' && PAD_AUTO_INPUTS[k]?.includes(code));
 }
-function validPadBinding(k,v){ return typeof v==='string' && (v==='none' || (v==='auto' && !k.startsWith('b')) || /^b(?:[0-9]|[1-9][0-9]|1[01][0-9]|12[0-7])$/.test(v) || (!k.startsWith('b') && /^(?:a(?:[0-9]|[12][0-9]|3[01])[+-]|h[udlr])$/.test(v))); }
+// 핫키 (결정 36(hotkeys)): 공격 버튼 1~4 조합을 키 하나·패드 버튼 하나에 묶는다. 철권 버튼 설정의 메뉴 순서
+const HOTKEYS = ['h13','h24','h12','h34','h14','h23','h123','h124','h134','h234','h1234'];
+const isHotkey = slot => HOTKEYS.includes(slot); // the one hotkey-slot test: pad input codes also start with 'h' (hat 'hu'…), so never test slot[0]==='h'
+const hotkeyButtons = slot => [...slot.slice(1)].map(Number); // 'h13' → [1,3]
+const padAttackSlot = k => k[0]==='b' || isHotkey(k); // attack buttons and hotkeys take pad buttons only; directions may also take axes, the hat or 'auto'
+function validPadBinding(k,v){ return typeof v==='string' && (v==='none' || (v==='auto' && !padAttackSlot(k)) || /^b(?:[0-9]|[1-9][0-9]|1[01][0-9]|12[0-7])$/.test(v) || (!padAttackSlot(k) && /^(?:a(?:[0-9]|[12][0-9]|3[01])[+-]|h[udlr])$/.test(v))); }
+const emptyHotKeys = () => Object.fromEntries(HOTKEYS.map(h=>[h,'']));
+const emptyPadHotKeys = () => Object.fromEntries(HOTKEYS.map(h=>[h,'none']));
 const emptyPadAlt = () => Object.fromEntries(Object.keys(DEFAULT_PAD).map(k=>[k,'none']));
-let store = {padAltKeys:emptyPadAlt(),padKeys:{...DEFAULT_PAD},v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', touchSize:100, touchX:0, touchY:0, sound:1, bgm:1, bgmLast:-1, bgmVol:100, sfxVol:100, keys:{...DEFAULT_KEYS}, altKeys:{up:'',down:'',left:'',right:'',b1:'',b2:'',b3:'',b4:''}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault(), moves:movesDefault(), donateResultDay:'', donateNudgeDay:'', donatePlayDay:'', donatePlayMs:0, char:CHAR_DEFAULT};
+let store = {padAltKeys:emptyPadAlt(),padKeys:{...DEFAULT_PAD},hotKeys:emptyHotKeys(),padHotKeys:emptyPadHotKeys(),v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', touchSize:100, touchX:0, touchY:0, sound:1, bgm:1, bgmLast:-1, bgmVol:100, sfxVol:100, keys:{...DEFAULT_KEYS}, altKeys:{up:'',down:'',left:'',right:'',b1:'',b2:'',b3:'',b4:''}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault(), moves:movesDefault(), donateResultDay:'', donateNudgeDay:'', donatePlayDay:'', donatePlayMs:0, char:CHAR_DEFAULT};
 const owned = id => id==='base' || !!store.ach[id]; // store.ach = unlock record (achievement items and daily gifts alike): id → time
 const pendingReward = id => store.pendingRewards.some(j => j.id===id);
 const earned = id => owned(id) || pendingReward(id);
@@ -64,6 +71,10 @@ try{
       const autoConflict=padAutoConflict(store.padKeys,k,code);
       if(code!=='auto' && validPadBinding(k,code) && !autoConflict && (code==='none' || !usedPadInputs.has(code))){ store.padAltKeys[k]=code; if(code!=='none') usedPadInputs.add(code); }
     }
+    for(const k of HOTKEYS){ // a hotkey that reuses a pad input already bound (or a d-pad direction under 'auto') is dropped
+      const code=s.padHotKeys?.[k];
+      if(code!=='none' && validPadBinding(k,code) && !padAutoConflict(store.padKeys,k,code) && !usedPadInputs.has(code)){ store.padHotKeys[k]=code; usedPadInputs.add(code); }
+    }
     const keys = {...store.keys};
     for(const k of Object.keys(keys)) if(validKey(k,s.keys?.[k])) keys[k]=s.keys[k];
     if(new Set(Object.values(keys)).size===Object.keys(keys).length) store.keys=keys;
@@ -71,6 +82,10 @@ try{
     for(const k of Object.keys(store.altKeys)){
       const code = s.altKeys?.[k];
       if(validKey(k,code) && !usedKeys.has(code)){ store.altKeys[k]=code; usedKeys.add(code); }
+    }
+    for(const k of HOTKEYS){
+      const code = s.hotKeys?.[k];
+      if(validKey(k,code) && !usedKeys.has(code)){ store.hotKeys[k]=code; usedKeys.add(code); }
     }
     for(const m of Object.keys(store.records)){
       if(Array.isArray(s.records?.[m])) store.records[m]=s.records[m].filter(r =>

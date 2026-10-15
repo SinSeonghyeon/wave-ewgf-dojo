@@ -30,12 +30,16 @@ function kbVector(){
   const lf = held.has(k.left)||held.has(a.left)||held.has('ArrowLeft'), rt = held.has(k.right)||held.has(a.right)||held.has('ArrowRight');
   kbDir = { x:(rt?1:0)-(lf?1:0), y:(up?1:0)-(dn?1:0) };
 }
-const mappedCodes = () => new Set([...Object.values(store.keys),...Object.values(store.altKeys).filter(Boolean),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
-const buttonForCode = code => {
-  for(let n=1;n<=4;n++) if(code===store.keys['b'+n] || code===store.altKeys['b'+n]) return n;
-  return 0;
+const mappedCodes = () => new Set([...Object.values(store.keys),...Object.values(store.altKeys).filter(Boolean),...Object.values(store.hotKeys).filter(Boolean),'ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
+const buttonsForCode = code => { // attack buttons one key presses: its own button, or every button of a hotkey (결정 36(hotkeys))
+  for(let n=1;n<=4;n++) if(code===store.keys['b'+n] || code===store.altKeys['b'+n]) return [n];
+  const h = HOTKEYS.find(h => store.hotKeys[h]===code);
+  return h ? hotkeyButtons(h) : [];
 };
-const buttonHeld = n => held.has(store.keys['b'+n]) || (!!store.altKeys['b'+n] && held.has(store.altKeys['b'+n]));
+const buttonHeld = n => [...held].some(code => buttonsForCode(code).includes(n)); // primary, alternate and hotkeys merge into one held logical button
+const keyField = (slot,alt) => isHotkey(slot) ? 'hotKeys' : alt ? 'altKeys' : 'keys'; // a hotkey has one input, so alt never applies to it
+const padField = (slot,alt) => isHotkey(slot) ? 'padHotKeys' : alt ? 'padAltKeys' : 'padKeys';
+const keyClearable = target => !!target && keyField(target.slot,target.alt)!=='keys'; // alternates and hotkeys can be emptied; primary keys always stay bound
 // 결정 35(button-chord): a new attack press is read together with every attack still held on any device (keyboard, pad, touch).
 // Holding RP and pressing LP is LP+RP ('1+2'), not LP; releasing one of a held 1+2 and pressing it again is 1+2 again.
 // A button input is a number (one attack) or the chord string '1+2' (ascending). Only these helpers build or split it.
@@ -60,7 +64,7 @@ function setBindingDevice(device,automatic=false){
 function clearBinding(){
   if(bindingCheck) return;
   if(padCapture) store[padCapture.field][padCapture.slot]='none';
-  else if(listening?.alt) store.altKeys[listening.slot]='';
+  else if(keyClearable(listening)) store[keyField(listening.slot,listening.alt)][listening.slot]='';
   else return;
   listening=null; padCapture=null; padNeedsRelease=true; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys();
 }
@@ -79,8 +83,8 @@ function suspendBindings(){
 }
 function bindingChecked(device,k,alt){
   if(!bindingCheck) return false;
-  if(device==='kb') return bindingCheckHeld.has(store[alt?'altKeys':'keys'][k]);
-  const code=store[alt?'padAltKeys':'padKeys'][k];
+  if(device==='kb') return bindingCheckHeld.has(store[keyField(k,alt)][k]);
+  const code=store[padField(k,alt)][k];
   return code==='auto'?PAD_AUTO_INPUTS[k].some(v=>bindingCheckPad.includes(v)):bindingCheckPad.includes(code);
 }
 function renderBindingCheck(force=false){
@@ -116,24 +120,23 @@ addEventListener('keydown', e => {
     e.preventDefault();
     if(e.code==='Escape'){ cancelBinding(); return; }
     if(e.repeat) return;
-    if(listening.alt && (e.code==='Delete' || e.code==='Backspace')){
-      store.altKeys[listening.slot]=''; listening=null; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys(); return;
-    }
-    const allKeys = [...Object.entries(store.keys).map(([slot,code])=>({slot,alt:false,code})), ...Object.entries(store.altKeys).map(([slot,code])=>({slot,alt:true,code}))];
-    if(!validKey(listening.slot,e.code) || allKeys.some(x=>x.code===e.code && (x.slot!==listening.slot || x.alt!==listening.alt))){
+    if(keyClearable(listening) && (e.code==='Delete' || e.code==='Backspace')){ clearBinding(); return; }
+    const field = keyField(listening.slot,listening.alt);
+    const taken = ['keys','altKeys','hotKeys'].some(f => Object.entries(store[f]).some(([slot,code]) => code===e.code && (slot!==listening.slot || f!==field)));
+    if(!validKey(listening.slot,e.code) || taken){
       bindingFeedback('set.keyConflict'); return;
     }
-    store[listening.alt?'altKeys':'keys'][listening.slot]=e.code; listening=null; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys(); return;
+    store[field][listening.slot]=e.code; listening=null; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys(); return;
   }
   if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if(modalOpen()) return;
   if(!mappedCodes().has(e.code)) return;
   e.preventDefault(); unlockAudio();
   if(e.repeat || held.has(e.code)) return;
-  const button = buttonForCode(e.code), alreadyPressed = button && buttonHeld(button);
+  const buttons = buttonsForCode(e.code), fresh = buttons.filter(n => !buttonHeld(n)); // a hotkey presses only the buttons not already held through another binding
   held.add(e.code);
   const t = e.timeStamp || performance.now();
-  if(button){ if(!alreadyPressed) onButton(button,t); }
+  if(buttons.length){ if(fresh.length) onButton(fresh[fresh.length-1],t); } // one key, one timestamp: a hotkey's buttons are all held now, so onButton reads them as one chord (결정 35(button-chord))
   else { kbVector(); recomputeDir(t,'kb'); }
   if(lastSrc!=='kb') setSrc('kb');
 });
@@ -155,7 +158,9 @@ addEventListener('blur', () => { suspendBindings(); resetInput(); endTrial(true)
 /* gamepad */
 let padIndex = null, padLastT = 0; // padLastT: last judged pad time (keeps t monotonic across the timestamp fallback)
 function renderPadStatus(){ $('padStatus').textContent = ui.padId==null ? T('set.padNone') : T('set.padOn') + ui.padId; if(ui.padId==null) $('padLive').textContent=T('set.padConnect'); }
-addEventListener('gamepadconnected', e => { padIndex = e.gamepad.index; ui.padId = e.gamepad.id.slice(0,40); renderPadStatus(); });
+const padIsPS = id => /054c|playstation|dualsense|dualshock|\bps[345]\b|^wireless controller/i.test(id||''); // binding glyphs: PlayStation symbols, else Xbox letters
+function notePad(gp){ ui.padId = gp.id.slice(0,40); ui.padStd = gp.mapping==='standard'; ui.padPS = padIsPS(gp.id); renderPadStatus(); if($('setDlg').open) renderKeys(); }
+addEventListener('gamepadconnected', e => { padIndex = e.gamepad.index; notePad(e.gamepad); });
 function releasePad(){
   bindingCheckPad=[]; renderBindingCheck();
   if(padCapture) cancelBinding();
@@ -191,11 +196,11 @@ function padBindingShort(code){
   return code==='none'?'—':padBindingName(code);
 }
 function padBindingEntries(){
-  return ['padKeys','padAltKeys'].flatMap(field=>Object.entries(store[field]).map(([slot,code])=>({field,slot,code})));
+  return ['padKeys','padAltKeys','padHotKeys'].flatMap(field=>Object.entries(store[field]).map(([slot,code])=>({field,slot,code})));
 }
 function beginPadBinding(slot,alt=false){
   if(bindingCheck) return;
-  bindingDevice='pad'; listening=null; padCapture={slot,field:alt?'padAltKeys':'padKeys',previous:null}; padNeedsRelease=true;
+  bindingDevice='pad'; listening=null; padCapture={slot,field:padField(slot,alt),previous:null}; padNeedsRelease=true;
   bindingFeedback(ui.padId==null?'set.padConnect':'set.bindRelease'); renderKeys();
   pollPad(true); // Snapshot held inputs at the click, before the next physical press.
 }
@@ -206,7 +211,7 @@ function capturePad(inputs){
   if(previous===null){ bindingFeedback('set.bindListen'); return; }
   // Some controllers report idle trigger axes as -1. Do not wait for every
   // axis to become zero; only newly pressed inputs can change an assignment.
-  let candidates=inputs.filter(v=>!previous.has(v) && (!slot.startsWith('b') || v[0]==='b'));
+  let candidates=inputs.filter(v=>!previous.has(v) && (!padAttackSlot(slot) || v[0]==='b'));
   if(!candidates.length) return;
   // A d-pad can report the same physical direction as both button and axis.
   // Collapse only known aliases; unrelated simultaneous inputs stay ambiguous.
@@ -229,7 +234,7 @@ function pollPad(snapshotOnly=false){
   let gp = null;
   for(const p of pads){ if(p && (padIndex===null || p.index===padIndex)){ gp=p; break; } }
   if(!gp){ if(padIndex!==null) releasePad(); return; }
-  if(padIndex===null){ padIndex=gp.index; ui.padId=gp.id.slice(0,40); renderPadStatus(); }
+  if(padIndex===null){ padIndex=gp.index; notePad(gp); }
   const inputs=padInputs(gp);
   const samePad=bindingPadPrevious?.index===gp.index && bindingPadPrevious.id===gp.id;
   const newPadInput=!snapshotOnly && inputs.some(code=>samePad?!bindingPadPrevious.inputs.has(code):code[0]==='b');
@@ -261,7 +266,8 @@ function pollPad(snapshotOnly=false){
   const nx = clamp(x,-1,1), ny = clamp(y,-1,1);
   let changed = false;
   if(nx!==padDir.x || ny!==padDir.y){ padDir={x:nx,y:ny}; changed=true; }
-  const pressed = ['b1','b2','b3','b4'].map(k=>inputs.includes(store.padKeys[k]) || inputs.includes(store.padAltKeys[k]));
+  const hot = HOTKEYS.filter(h=>inputs.includes(store.padHotKeys[h])).flatMap(hotkeyButtons); // 결정 36(hotkeys): one pad button, several attacks in the same sample
+  const pressed = ['b1','b2','b3','b4'].map((k,i)=>inputs.includes(store.padKeys[k]) || inputs.includes(store.padAltKeys[k]) || hot.includes(i+1));
   if(changed || pressed.some((p,i)=>p!==padBtn[i])) padLastT = t;
   if(changed) recomputeDir(t,'pad'); // Direction must precede buttons in the same sample for d/f+2.
   // Two physical buttons form one held logical attack. Attacks newly pressed in the same sample are one chord (결정 35(button-chord)).

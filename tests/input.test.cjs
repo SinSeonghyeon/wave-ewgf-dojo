@@ -357,3 +357,35 @@ test('timeline marks name the chord and can wrap after its +',()=>{
   assert.equal(a.btnMark('1+2'),'LP+​RP');
   assert.deepEqual([...a.chordButtons('3+4')],[3,4]);
 });
+test('hotkeys (결정 36(hotkeys)): one key or pad button presses its attack buttons as one chord (결정 35(button-chord)) and merges with held buttons',()=>{
+  const ev=(code,timeStamp=1000)=>({code,timeStamp,target:{tagName:'DIV'},preventDefault(){}});
+  const btns=a=>JSON.stringify(a.history.filter(e=>e.btn).map(e=>[e.btn,e.t]));
+  const a=boot({hotKeys:{h12:'KeyL',h13:'KeyU',h1234:'ArrowUp'},padHotKeys:{h34:'b4',h24:'b2',h12:'b12'}});
+  assert.equal(a.store.hotKeys.h12,'KeyL');
+  assert.equal(a.store.hotKeys.h13,'','a key already bound to an action is dropped');assert.equal(a.store.hotKeys.h1234,'','arrow keys stay directions');
+  assert.equal(a.store.padHotKeys.h34,'b4');assert.equal(a.store.padHotKeys.h24,'none','a pad button already bound to 1 is dropped');
+  assert.equal(a.store.padHotKeys.h12,'none','the d-pad stays direction while up is automatic');
+  a.events.keydown(ev('KeyL',1000));assert.equal(btns(a),'[["1+2",1000]]');
+  a.events.keydown(ev('KeyI',1010));assert.equal(btns(a),'[["1+2",1000]]','2 is already held through the hotkey');
+  a.events.keyup(ev('KeyL',1020));a.events.keydown(ev('KeyL',1030));assert.equal(btns(a),'[["1+2",1000],["1+2",1030]]','only the released 1 is pressed again, chorded with the held 2');
+  a.events.keyup(ev('KeyL',1040));a.events.keyup(ev('KeyI',1040));
+  const b=boot({padHotKeys:{h34:'b4'}});b.time(2000);samplePad(b,[4]);
+  assert.equal(btns(b),'[["3+4",2000]]');
+  b.time(2010);samplePad(b,[4,0]);assert.equal(b.history.filter(e=>e.btn).length,1,'3 stays held through the hotkey');
+});
+test('hotkeys are assigned, cleared and reset in the controller settings like the other bindings',()=>{
+  const a=boot();a.get('setDlg').open=true;
+  a.get('ctlOpen').click();
+  assert.equal(a.get('setCtl').hidden,false);assert.equal(a.get('setMain').hidden,true); // keyboard capture runs through the real DOM in smoke-bindings
+  assert.equal(a.get('bindingMessage').textContent,a.T('set.bindIdle'),'entering the sub-view shows the idle prompt, not a cancel');
+  a.beginPadBinding('h13');samplePad(a);a.get('ctlBack').click();samplePad(a,[6]);
+  assert.equal(a.store.padHotKeys.h13,'none','leaving the sub-view drops the capture');assert.equal(a.get('setMain').hidden,false);
+  assert.equal(a.get('bindingMessage').textContent,a.T('set.bindIdle'));
+  a.get('ctlOpen').click();samplePad(a);
+  a.beginPadBinding('h12');samplePad(a);samplePad(a,[5]);assert.equal(a.store.padHotKeys.h12,'b5');
+  samplePad(a);a.beginPadBinding('h34');samplePad(a);samplePad(a,[3]);
+  assert.equal(a.store.padHotKeys.h34,'b3');assert.equal(a.store.padKeys.b2,'none','the displaced action takes the hotkey\'s old (empty) slot');
+  a.setBindingCheck(true);samplePad(a,[5]);assert.equal(a.bindingChecked('pad','h12',false),true);a.setBindingCheck(false);
+  a.setBindingDevice('pad');a.get('bindingReset').click();
+  assert.equal(a.store.padHotKeys.h12,'none');assert.equal(a.store.padKeys.b2,'b3');
+});
