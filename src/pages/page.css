@@ -1,4 +1,4 @@
-  /* Guide and privacy pages (tools/build-site.js). Colour tokens come from the :root block of src/style.css, copied in at build time. */
+  /* Guide, about/contact and privacy pages (tools/build-site.js). Colour tokens come from the :root block of src/style.css, copied in at build time. */
   *{box-sizing:border-box}
   html{background:var(--bg)}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.75;

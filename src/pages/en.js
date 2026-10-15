@@ -1,4 +1,4 @@
-// Guide and privacy page copy (English). tools/build-site.js renders each entry as a static page at /en/<slug>.
+// Guide, about/contact and privacy page copy (English). tools/build-site.js renders each entry as a static page at /en/<slug>.
 // Each page's updated (YYYY-MM-DD) is its shown last-updated date, JSON-LD dateModified and sitemap lastmod. Change the copy → change the date.
 // Body links `href="@guide/ewgf/"` point at a page in the same language, `href="@"` at the practice app. Slugs must match ko.js and ja.js.
 module.exports = {
@@ -7,18 +7,19 @@ module.exports = {
     practice: 'Practice',
     guides: 'Guides',
     privacy: 'Privacy policy',
+    about: 'About & contact',
     updated: 'Last updated',
     home: 'All guides',
     next: 'Read next',
     open: 'Practice it now in Mishima Dojo',
     contact: 'Contact',
     watch: 'Watch on YouTube',
-    copy: '© 2026 Seonghyeon Shin. All rights reserved. Unofficial fan-made practice tool.',
+    copy: '© 2026 master_shin. All rights reserved. Unofficial fan-made practice tool.',
   },
   pages: [
     {
       slug: 'guide/',
-      updated: '2026-10-01',
+      updated: '2026-10-16',
       title: 'Tekken Mishima Input Guides — EWGF, Wave Dash, Backdash, d/f+2 Link',
       description: 'Free frame-by-frame guides to the Tekken 8 Mishima inputs: EWGF, wave dash, Korean backdash and the d/f+2 → EWGF link, with notation and a practice order.',
       lead: 'These guides explain the inputs behind Mishima Dojo\'s practice modes. Start with the notation, then open the guide for the move you are working on.',
@@ -59,7 +60,7 @@ module.exports = {
 </ol>
 
 <h2>Who runs this and how to reach us</h2>
-<p>Mishima Dojo is run by an individual developer who plays Tekken. If a verdict feels different from the game or a guide gets something wrong, please write to the address below. What the site stores is described in the <a href="@privacy/">privacy policy</a>.</p>
+<p>Mishima Dojo is run by an individual developer who plays Tekken. If a verdict feels different from the game or a guide gets something wrong, please write to the address below. What the site stores is described in the <a href="@privacy/">privacy policy</a>, and how the site is run on the <a href="@about/">About &amp; contact</a> page.</p>
 `,
     },
     {
@@ -363,14 +364,70 @@ module.exports = {
 `,
     },
     {
+      slug: 'about/',
+      updated: '2026-10-16',
+      title: 'About Mishima Dojo & Contact',
+      description: 'Mishima Dojo is a free browser trainer that judges Tekken Mishima inputs frame by frame. Why it exists, where its judging is limited, how it is run and how to get in touch.',
+      lead: 'Mishima Dojo is an unofficial, fan-made practice tool built and run by an individual developer who plays Tekken.',
+      body: `
+<h2>What is Mishima Dojo?</h2>
+<p>Mishima Dojo (미시마 도장, 三島道場) is a free browser tool for practising the core inputs of the Mishima-style characters in Tekken: the EWGF (<code>f,N,d,d/f+2</code>), the wave dash (<code>6N23 6 N …</code>), the Korean backdash (<code>414 N …</code>), the wave-cancel while-standing upper and the d/f+2 → EWGF link. There is nothing to install and no sign-up. It works with a keyboard, a gamepad or a leverless (hitbox) controller, and phones get on-screen touch buttons.</p>
+<p>Besides unlimited <strong>Free practice</strong>, there are measured modes that test you under fixed conditions:</p>
+<ul>
+<li><strong>Wave 10s</strong>: how many crouch dashes you chain in ten seconds, and how fast</li>
+<li><strong>EWGF ×20</strong>: success rate and button-timing spread over twenty standing EWGFs</li>
+<li><strong>Wave EWGF ×10</strong>: a wave dash finished with an EWGF, the way you use it in a match</li>
+<li><strong>Dummy Rush 30s</strong>: hit high, mid and low dummies with EWGF, f,f+2 and hell sweep for points</li>
+<li><strong>Backdash 10s</strong>: distance covered in ten seconds, and your cancel timing</li>
+<li><strong>Wave-cancel upper · 10 tries</strong> and <strong>d/f+2 link · 10 tries</strong>: ten-try challenges in their own practice modes</li>
+</ul>
+<p>Pick a nickname and your results go on the leaderboards, so you can compare with other players. Every result card can be saved as an image and shared.</p>
+
+<h2>Why it exists</h2>
+<p>You cannot play a Mishima without the EWGF and the wave dash, but practising them means booting the game, entering training mode and checking one attempt at a time. When an attempt fails, you are usually left with a vague “too late” feeling: it is hard to tell how many milliseconds late the button was, or which input broke the wave.</p>
+<p>So this tool lets you warm up with just a keyboard, without the game, and <strong>names the cause</strong> of every failure. When an EWGF comes out as a plain wind god fist, it shows how many ms late the button was; when a wave breaks, it tells you whether it was a “Missing cancel 6” or a “Missing start 6”. Results over many attempts are collected into a histogram and a speed chart, so you can see which way your mistakes lean.</p>
+
+<h2>How judging works, and its limits</h2>
+<p>Every judgment on Mishima Dojo is based only on <strong>when and in what order you pressed things</strong>. The site does not connect to the game or read its screen, and it does not act as a macro or a cheat.</p>
+<ul>
+<li>Just-frame inputs such as the EWGF are judged by placing each input time on a shared 60Hz grid and checking whether they land in the same cell. The details are in <a href="@guide/frames/">Frames and Input Judging</a>.</li>
+<li>A browser cannot see the game's frame timing, so inputs near a boundary can be judged differently from the game. Look at your success rate and error spread over many attempts rather than a single result.</li>
+<li>Backdash distance uses community measurements; the frame targets for the wave-cancel upper and the d/f+2 link are values the operator checked in the game. Some values are still assumptions and are labelled as such in the guides; they are corrected when better data comes in.</li>
+<li>The walking, dashing and backdash animation is for show only and never changes judging or records.</li>
+</ul>
+
+<h2>How the site is run</h2>
+<p>Everything is free. The domain, the server and new features are paid for by donations (Ko-fi and KakaoPay), and ads may be shown to help with running costs. There are no paid features and no records you have to pay for.</p>
+<p>Practice records, settings and achievements stay in your browser. The server keeps only what the leaderboards, the Shoutbox and the visitor count need. What is stored where is explained in the <a href="@privacy/">privacy policy</a>.</p>
+<p>The operator may hide or delete manipulated records and inappropriate posts. Updates are listed by date under <strong>Announcements</strong> on the practice screen.</p>
+
+<h2>Trademarks and assets</h2>
+<p>Mishima Dojo is an unofficial fan-made tool and is not affiliated with the game's publisher. TEKKEN is a trademark of Bandai Namco Entertainment Inc. The character art and the dojo background on the site were made by the operator, and no official character names or artwork are used. Move names and notation in the guides follow what players commonly use.</p>
+
+<h2>The operator</h2>
+<p>Mishima Dojo is built and run by master_shin, an individual developer who plays Tekken. It first went public in September 2026 and has since added Mist Step EWGF (f,N,d/f+2), backdash, wave-cancel upper and d/f+2 link practice, as well as English and Japanese screens. Input breakdown videos go up on the <a href="https://www.youtube.com/@master_shin" rel="noopener">operator's YouTube channel</a>.</p>
+
+<h2>Contact</h2>
+<p>If judging feels different from the game, a guide has something wrong, you have a feature idea, or you want a record or post deleted, please send an email.</p>
+<p><strong>Email</strong>: <a href="mailto:tlstjdgus3@gmail.com">tlstjdgus3@gmail.com</a></p>
+<p>Including the following helps a quick answer:</p>
+<ul>
+<li><strong>Judging issues</strong>: your input device (keyboard, pad, stick, …), browser and practice mode, and if possible a screenshot that shows the input history</li>
+<li><strong>Deleting records or posts</strong>: your nickname and the record or post in question. You can also delete your own leaderboard entry with the delete button on your row.</li>
+<li><strong>Guide errors</strong>: the page address and what is wrong</li>
+</ul>
+<p>Quick comments and questions are also welcome in the <strong>Shoutbox</strong> on the practice screen. The site is run by one person, so replies may take a few days.</p>
+`,
+    },
+    {
       slug: 'privacy/',
-      updated: '2026-10-01',
+      updated: '2026-10-16',
       title: 'Privacy Policy',
       description: 'What Mishima Dojo stores, how it uses browser storage, advertising (Google AdSense) cookies, and how to delete your data.',
       lead: 'Mishima Dojo (mishimaryu.com, “the site”) has no accounts and handles only the minimum information the service needs.',
       body: `
 <h2>1. Operator</h2>
-<p>The site is run by an individual, Seonghyeon Shin. Questions about personal data and deletion requests go to <a href="mailto:tlstjdgus3@gmail.com">tlstjdgus3@gmail.com</a>.</p>
+<p>The site is run by an individual operator, master_shin. Questions about personal data and deletion requests go to <a href="mailto:tlstjdgus3@gmail.com">tlstjdgus3@gmail.com</a>.</p>
 
 <h2>2. Data stored in your browser</h2>
 <p>The following is stored in your browser\'s storage (localStorage). Your nickname and ownership token are also sent for server authentication; leaderboard records, posts and votes are sent when you use the server features described below.</p>
