@@ -288,7 +288,7 @@ test('search text: static localized apps, hreflang and legacy query override',()
   const keys=Object.keys(a.I18N.ko).filter(k=>k.startsWith('about.'));
   assert.ok(keys.length>=19,'about.* keys present');
   for(const k of keys) assert.ok(html.includes(`data-i18n="${k}">${a.T(k)}<`),k+' static text matches the ko dictionary');
-  const about=html.indexOf('<details class="about" id="about">');assert.ok(about>0&&about<html.indexOf('<footer>'),'about block sits right above the footer');
+  const about=html.indexOf('<details class="about" id="about" open>');assert.ok(about>0&&about<html.indexOf('<footer>'),'about block sits right above the footer, open by default so visitors see it (the visitor can still fold it)');
   for(const l of ['ko','en','ja']){ const D=a.I18N[l];
     for(const k of keys){ assert.equal(typeof D[k],'string',l+' '+k); assert.doesNotMatch(offNames(D[k]),BANNED,l+' '+k+' uses no official character names but the selectable ones'); }
     assert.match(D['about.what.p'],/8/,l+' about text names Tekken 8');
@@ -307,8 +307,12 @@ test('search text: static localized apps, hreflang and legacy query override',()
 test('guide and privacy pages: same slugs in every language, crawlable text, approved scripts only, working links',()=>{
   const path=require('node:path'), {contentSources,contentPage,buildSite}=require('../tools/build-site');
   const content=contentSources(), a=boot();
-  assert.ok(content.slugs.includes('privacy/')&&content.slugs.includes('guide/'),'privacy policy and guide index exist');
+  assert.ok(['privacy/','guide/','about/'].every(s=>content.slugs.includes(s)),'privacy policy, guide index and about/contact page exist');
   const {output}=buildSite();
+  // The site, LICENSE included, names the operator by the handle master_shin (2026-10-16 user decision).
+  assert.ok(fs.existsSync(path.join(output,'LICENSE')),'LICENSE is published with the site');
+  for(const f of fs.readdirSync(output,{recursive:true}).filter(f=>/\.(html|xml|json|txt)$|^LICENSE$/.test(f)))
+    assert.doesNotMatch(fs.readFileSync(path.join(output,f),'utf8'),/신성현|Seonghyeon Shin|ソンヒョン/,f+' shows the handle, not the real name');
   const text=page=>page.slice(page.indexOf('<article>'),page.indexOf('</article>')).replace(/<[^>]+>/g,'').replace(/\s+/g,'');
   for(const lang of ['ko','en','ja'])for(const slug of content.slugs){
     const page=contentPage(html,lang,slug,content), head=page.slice(0,page.indexOf('<style>')), where=lang+'/'+slug;
@@ -336,7 +340,7 @@ test('guide and privacy pages: same slugs in every language, crawlable text, app
   assert.ok(contentPage(html,'en','guide/wsc/',content).includes('youtube-nocookie.com/embed/bu4R8n7Y4J4'),'WSC guide embeds the operator video');
   for(const needle of ['youtube-nocookie.com','adssettings.google.com','localStorage','Cloudflare','Google Fonts'])assert.ok(privacy.includes(needle),'privacy policy covers '+needle);
   // The app links to the pages in the visitor's language: root page = ko, localized pages rewrite to their own language.
-  assert.ok(html.includes('href="ko/privacy/" data-page="privacy/"'));
+  assert.ok(html.includes('href="ko/privacy/" data-page="privacy/"')&&html.includes('href="ko/about/" data-page="about/"'));
   const en=require('../tools/build-site').localizedPage(html,'en');
   assert.ok(en.includes('href="../en/privacy/" data-page="privacy/"')&&en.includes('href="../en/guide/ewgf/" data-page="guide/ewgf/"'));
 });

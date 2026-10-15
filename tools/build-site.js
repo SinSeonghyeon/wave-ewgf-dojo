@@ -53,7 +53,7 @@ function localizedPage(source, lang){
     Object.assign(data,{name:t('app.title'),url,inLanguage:lang,description:t('app.description')});
     return '<script type="application/ld+json">'+JSON.stringify(data).replace(/</g,'\\u003c')+'</script>';
   });
-  // Guide/privacy links name the root page's language (ko/); point them at this page's language before the prefix below.
+  // Content-page links (guides, about, privacy) name the root page's language (ko/); point them at this page's language before the prefix below.
   markup=markup.replace(/<a\b[^>]*\bdata-page="([^"]*)"[^>]*>/g,(tag,slug)=>
     tag.replace(/\bhref="[^"]*"/,()=>`href="${lang}/${escape(slug)}"`));
   // Leave #anchors local to the page; only relative assets/language links need the parent prefix.
@@ -61,7 +61,7 @@ function localizedPage(source, lang){
   return markup+source.slice(split);
 }
 
-// ---------- guide and privacy pages (src/pages/{ko,en,ja}.js, 2026-10-01 decision 4(single-page)) ----------
+// ---------- guide, about/contact and privacy pages (src/pages/{ko,en,ja}.js, 2026-10-01 decision 4(single-page)) ----------
 // Static articles next to the app, written for readers and search engines. The app stays one page; these carry no app script.
 // Each page carries its own `updated` date: shown on the page, JSON-LD dateModified and the sitemap <lastmod>. Google trusts lastmod only
 // while it matches real edits, so it is per page (one typo fix must not re-date every article) and the app URLs get none.
@@ -118,13 +118,13 @@ function contentPage(source, lang, slug, all=contentSources()){
   const title=page.title+' | '+ui.siteName;
   const ld={'@context':'https://schema.org','@type':isGuide?'Article':'WebPage',headline:page.title,name:page.title,description:page.description,
     inLanguage:lang,url:url(lang),dateModified:page.updated,image:site+'og.png',
-    author:{'@type':'Person',name:'Seonghyeon Shin'},publisher:{'@type':'Organization',name:ui.siteName,url:site+lang+'/'}};
+    author:{'@type':'Person',name:'master_shin'},publisher:{'@type':'Organization',name:ui.siteName,url:site+lang+'/'}};
   // Operator's own YouTube video, in privacy-enhanced mode, loaded only near the viewport (2026-10-01 decision 4(single-page)).
   if(page.video&&!/^[\w-]{11}$/.test(page.video.id))throw new Error('Bad YouTube id in '+lang+' '+slug);
   const video=page.video?`<figure class="video"><div class="video-frame"><iframe src="https://www.youtube-nocookie.com/embed/${page.video.id}" title="${escape(page.video.title)}" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
 <figcaption>▶ ${escape(page.video.title)}${page.videoNote?' · '+escape(page.videoNote):''} · <a href="https://www.youtube.com/watch?v=${page.video.id}" target="_blank" rel="noopener">${escape(ui.watch)}</a></figcaption></figure>\n`:'';
   const body=page.body.trim().replace(/href="@([^"]*)"/g,(_,target)=>`href="${at(target)}"`);
-  const nav=[['',ui.practice],['guide/',ui.guides],['privacy/',ui.privacy]]
+  const nav=[['',ui.practice],['guide/',ui.guides],['about/',ui.about],['privacy/',ui.privacy]]
     .map(([t,label])=>`<a href="${at(t)}"${t===slug?' aria-current="page"':''}>${escape(label)}</a>`).join('\n');
   const langs=LANGS.map(l=>`<a href="${rel(l+'/'+slug)}" hreflang="${l}" lang="${l}"${l===lang?' aria-current="true"':''}>${LANG_NAMES[l]}</a>`).join('');
   const others=slugs.filter(s=>s.startsWith('guide/')&&s!=='guide/'&&s!==slug).map(s=>copy.pages.find(p=>p.slug===s));
@@ -132,7 +132,7 @@ function contentPage(source, lang, slug, all=contentSources()){
   const next=isGuide?`<div class="next">${cta}\n<p>${escape(ui.next)}</p>\n<ul>${others.map(p=>`<li><a href="${at(p.slug)}">${escape(p.title)}</a></li>`).join('')}</ul></div>`
     :slug==='guide/'?cta:'';
   return `<!doctype html>
-<!-- 미시마 도장 (Mishima Dojo) © 2026 신성현 (Seonghyeon Shin). All rights reserved. Not open source: see LICENSE in the repository. -->
+<!-- 미시마 도장 (Mishima Dojo) © 2026 master_shin. All rights reserved. Not open source: see LICENSE in the repository. -->
 <html lang="${lang}">
 <head>
 <meta charset="utf-8">

@@ -62,8 +62,8 @@
 | `src/js/36-boot.js` | 부트 순서 |
 | `src/assets/room-atlas.webp` | 목재/회벽 재질 아틀라스(자체 생성) |
 | `src/assets/portrait-kazuya.webp` · `src/assets/portrait-hwoarang.webp` | 캐릭터 선택 초상(tekken.com 공식 fighter-select 이미지를 240×300 WebP로 자름, 2026-10-11 사용자 결정 — 결정 3 예외). `CHARS[id].portrait`에 data URI로 인라인 |
-| `src/pages/ko.js` · `en.js` · `ja.js` | 가이드·개인정보처리방침 원고(CommonJS, 앱에 포함되지 않음). 세 파일은 같은 slug 순서와 `ui` 키. 본문 링크 `href="@<slug>"`는 같은 언어 페이지, `@`만 쓰면 연습 화면 |
-| `src/pages/page.css` | 가이드·개인정보 페이지 스타일. 색 토큰은 빌드가 `src/style.css`의 `:root`를 복사해 붙인다 |
+| `src/pages/ko.js` · `en.js` · `ja.js` | 가이드·소개·문의(`/<언어>/about/`)·개인정보처리방침 원고(CommonJS, 앱에 포함되지 않음). 세 파일은 같은 slug 순서와 `ui` 키. 본문 링크 `href="@<slug>"`는 같은 언어 페이지, `@`만 쓰면 연습 화면 |
+| `src/pages/page.css` | 가이드·소개·개인정보 페이지 스타일. 색 토큰은 빌드가 `src/style.css`의 `:root`를 복사해 붙인다 |
 
 테스트·도구:
 
@@ -149,7 +149,7 @@
 원본 앱은 `src/`를 조립한 한 페이지이며 외부 라이브러리는 없다. `tools/build-site.js`가 I18N 사전의 정적 문자열로 최초 HTML을 번역해 `_site/ko/`·`en/`·`ja/`에 앱을 생성한다. 루트는 조립한 페이지 그대로다. 세 언어의 인라인 앱 스크립트는 원본과 동일하며 `data-page-lang`으로 고정 언어를 지정한다. 제목·설명·OG·JSON-LD·본문·접근성 문구를 언어에 맞추고 자원 경로는 루트 공유 자원으로 보정한다. 상대 `#` 링크는 그대로 유지한다.
 루트 및 생성 페이지에 기존 승인 AdSense 연결 스크립트를 유지한다.
 
-가이드·개인정보처리방침(2026-10-01, AdSense 심사의 "가치 없는 콘텐츠" 대응): `src/pages/{ko,en,ja}.js`의 원고를 `contentPage`가 `_site/<언어>/<slug>index.html` 정적 글로 만든다. 앱 스크립트는 없고 AdSense 연결 스크립트·JSON-LD(가이드는 Article)·Google Fonts만 쓴다. canonical은 각 주소, hreflang은 같은 slug의 ko/en/ja + x-default=영어. `sitemap.xml`은 루트 파일이 아니라 빌드가 앱 4 URL + 글 전체로 생성한다(`sitemap()`). 앱 푸터·소개 블록의 링크는 `data-page="<slug>"`로 표시하고, 빌드는 언어별 앱에서 그 언어 주소로, `applyStatic`은 현재 언어 주소로 바꾼다. 글마다 `updated: 'YYYY-MM-DD'`가 있고(없거나 형식이 틀리면 빌드 실패) 화면의 최종 수정일·JSON-LD `dateModified`·사이트맵 `<lastmod>`가 모두 이 값이다. **본문을 고치면 그 글의 `updated`를 그날로 고친다**(번역판도 고쳤으면 그 언어 것도). 구글은 lastmod가 실제 수정과 꾸준히 맞을 때만 믿으므로 글 단위로 두고, 앱 주소에는 정직한 수정일이 없어 lastmod를 넣지 않는다. changefreq는 쓰지 않는다. 모드 이름 옆 `?` 버튼(`#dGuide`, 새 탭)은 `MODES[mode].guide`의 글을 연다(`renderMode`). 영상은 글 항목의 `video: {id, title}`(선택 `videoNote`)로 넣으며, 빌드가 메타 줄 아래에 `youtube-nocookie.com/embed/<id>` iframe(lazy)과 YouTube 링크를 그린다. id는 11자 검사. 다른 iframe은 테스트가 막는다.
+가이드·개인정보처리방침(2026-10-01, AdSense 심사의 "가치 없는 콘텐츠" 대응): `src/pages/{ko,en,ja}.js`의 원고를 `contentPage`가 `_site/<언어>/<slug>index.html` 정적 글로 만든다. 앱 스크립트는 없고 AdSense 연결 스크립트·JSON-LD(가이드는 Article)·Google Fonts만 쓴다. canonical은 각 주소, hreflang은 같은 slug의 ko/en/ja + x-default=영어. `sitemap.xml`은 루트 파일이 아니라 빌드가 앱 4 URL + 글 전체로 생성한다(`sitemap()`). 글 머리·바닥 메뉴는 연습·가이드·소개·문의·개인정보처리방침(`contentPage`의 `nav`). 앱 소개 블록 `#about`은 기본으로 펼친 `<details open>`이다(2026-10-16, 방문자가 접을 수 있고 상태는 저장하지 않음). 앱 푸터·소개 블록의 링크는 `data-page="<slug>"`로 표시하고, 빌드는 언어별 앱에서 그 언어 주소로, `applyStatic`은 현재 언어 주소로 바꾼다. 글마다 `updated: 'YYYY-MM-DD'`가 있고(없거나 형식이 틀리면 빌드 실패) 화면의 최종 수정일·JSON-LD `dateModified`·사이트맵 `<lastmod>`가 모두 이 값이다. **본문을 고치면 그 글의 `updated`를 그날로 고친다**(번역판도 고쳤으면 그 언어 것도). 구글은 lastmod가 실제 수정과 꾸준히 맞을 때만 믿으므로 글 단위로 두고, 앱 주소에는 정직한 수정일이 없어 lastmod를 넣지 않는다. changefreq는 쓰지 않는다. 모드 이름 옆 `?` 버튼(`#dGuide`, 새 탭)은 `MODES[mode].guide`의 글을 연다(`renderMode`). 영상은 글 항목의 `video: {id, title}`(선택 `videoNote`)로 넣으며, 빌드가 메타 줄 아래에 `youtube-nocookie.com/embed/<id>` iframe(lazy)과 YouTube 링크를 그린다. id는 11자 검사. 다른 iframe은 테스트가 막는다.
 
 배포는 `.github/workflows/pages.yml`(main 푸시/수동 실행)의 단위 테스트 → Node 생성 → Pages artifact 게시다. 기존 main/root Jekyll 배포에서 사용자가 Pages Source를 GitHub Actions로 전환해야 한다. `_site/`는 빌드 때 교체하며 커밋하지 않는다. 공개 자원 화이트리스트로 CNAME·robots·이미지·효과음·검색 소유권 파일을 복사하고 BGM MP3/playlist.json을 생성한다.
 Worker·DB·도메인은 변경하지 않는다. 절차는 [LOCALIZED_PAGES.md](LOCALIZED_PAGES.md).

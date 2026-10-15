@@ -10,6 +10,7 @@
 - 코드: 원본은 `src/`(`app.html` 셸·`style.css`·`i18n/{ko,en,ja}.js`·`js/NN-*.js`·`assets/`). `tools/assemble.js`가 외부 라이브러리 없는 **한 페이지**로 조립하고, `node tools/build-site.js`가 루트·ko/en/ja 앱을 `_site/`에 만든다. 저장소 루트에 `index.html`은 없다. 로컬 미리보기는 루트 `preview.cmd`(빌드 후 `tools/serve.js`로 `_site/`를 http://localhost:8080/ 에 띄워 연다 — 폴더 주소가 GitHub Pages처럼 `index.html`로 열리게, CRLF 유지).
 - 배포: GitHub Pages, main 푸시 → `.github/workflows/pages.yml`(단위 테스트 → 빌드 → `_site/` 배포). 커스텀 도메인 https://mishimaryu.com/ (루트 `CNAME`, Cloudflare Registrar 2026-09-13 구매, 자동 갱신 꺼짐 — 만료 전 사용자가 결정). 예전 주소 https://sinseonghyeon.github.io/wave-ewgf-dojo/ 는 301. 저장소 이름 `wave-ewgf-dojo`·도메인·`CNAME`·워커 `ALLOWED_ORIGINS`는 사용자 결정 없이 바꾸지 않는다.
 - 주소 모음: 저장소 https://github.com/SinSeonghyeon/wave-ewgf-dojo · 백엔드 Worker https://mishima-dojo-board.mishima-dojo.workers.dev · 후원 Ko-fi https://ko-fi.com/misimadojo (en/ja) · 카카오페이 https://qr.kakaopay.com/Ej8EBCpJu (ko, 휴대폰 전용) · 문의 tlstjdgus3@gmail.com (푸터·README·LICENSE) — 코드의 `BOARD_URL`(`src/js/26-backend-config.js`)·`DONATE`(`src/js/27-donate.js`)와 같아야 한다.
+- 운영자 표기: 사이트(앱·글·JSON-LD·HTML 주석)와 `LICENSE`에는 실명 대신 `master_shin`만 쓴다(2026-10-16 사용자 결정, 테스트가 빌드 산출물을 검사).
 - 테스트: `node --test "tests/*.test.cjs"` (Node 22.13+, 의존성 없음. 따옴표째 입력하면 Node가 직접 펼친다. 가짜 D1이 `node:sqlite`를 쓴다) · 브라우저 스모크 `node tests/smoke-chrome.js` 외 `tests/smoke-*.js` (로컬 Chrome/Edge 헤드리스, CDP).
 - 개발 도구: `tools/` (커밋 대상). `assemble.js` 조립, `build-site.js` 배포 산출물, `cdp.js` 헤드리스 브라우저 공용 모듈, `make-og.js` `og.png` 재생성, `update-bgm.js`·`measure-bgm.js` BGM 목록·게인 생성, `board-admin.js` 관리자.
 - 백엔드: `worker/` (Cloudflare Worker + D1: 누적 순위·방문자 수·한마디). 배포는 `npx wrangler deploy`(`worker/README.md`). 앱은 `fetch`로만 호출하며 `BOARD_URL`이 비면 백엔드 UI 전체가 숨겨진다.
@@ -32,7 +33,7 @@
 1. wave-input — 웨이브는 `6N23 6 N 6N23 …`. 시작 6 뒤 중립을 생략한 `623`도 같은 경로로 허용(2026-09-22 실게임 확인, 일반 초풍·나락·웨캔기어 공통). 단 2가 3과 같은 60Hz 칸이면 `6→3`(2026-10-08). 캔슬 6 누락/시작 6 누락을 구분한다.
 2. ewgf-judge — 초풍은 대각·RP 입력 시각을 브라우저 공통 60Hz 격자(`floor(t/(1000/60)+0.5)`)에 놓아 같은 칸일 때만 성공. 옛 `store.window`는 저장·통신 호환용.
 3. no-official-ip — 철권 공식 캐릭터 그림·음원·로고를 쓰지 않는다. 자체 리소스가 원칙, 사용자가 추가한 BGM과 캐릭터 선택 초상(tekken.com 공식 이미지, 2026-10-11 사용자 결정·위험 감수)만 예외. 이름은 2026-10-11부터 선택 가능한 캐릭터(결정 34)의 이름·기술명만 텍스트로 허용(테스트가 나머지 이름을 금지어 검사, 옷장은 전부 금지).
-4. single-page — 배포는 외부 라이브러리 없는 한 페이지. 원본은 `src/`로 나누고 `tools/assemble.js`가 조립(2026-09-30 승인, 번들러·npm 의존성 없음). 런타임 외부 자원은 Google Fonts·백엔드 Worker·AdSense 사이트 연결 스크립트뿐 — 늘리려면 먼저 묻는다. `/ko/`·`/en/`·`/ja/`는 해당 언어 앱을 바로 연다. 가이드·개인정보처리방침은 앱과 별도의 정적 글(`src/pages/` → 빌드 생성, 2026-10-01). 가이드 글에만 운영자 YouTube 영상(nocookie iframe)을 넣을 수 있다.
+4. single-page — 배포는 외부 라이브러리 없는 한 페이지. 원본은 `src/`로 나누고 `tools/assemble.js`가 조립(2026-09-30 승인, 번들러·npm 의존성 없음). 런타임 외부 자원은 Google Fonts·백엔드 Worker·AdSense 사이트 연결 스크립트뿐 — 늘리려면 먼저 묻는다. `/ko/`·`/en/`·`/ja/`는 해당 언어 앱을 바로 연다. 가이드·소개·문의·개인정보처리방침은 앱과 별도의 정적 글(`src/pages/` → 빌드 생성, 2026-10-01, 소개·문의 2026-10-16). 가이드 글에만 운영자 YouTube 영상(nocookie iframe)을 넣을 수 있다.
 5. theme-layout — 다크 단일 테마, 색 토큰은 `:root`에만. WebGL 3D 도장 배경 + 기존 2D SD 캐릭터(WebGL 불가 시 Canvas 대체). 화면 배치 세부는 전문.
 6. app-name — "미시마 도장" / Mishima Dojo / 三島道場.
 7. i18n — 사용자에게 보이는 모든 문자열은 `I18N`(ko/en/ja 같은 키, `src/i18n/`). 동적 문구는 `[key, ...args]`나 클로저로 저장해 언어 전환 때 다시 그린다.

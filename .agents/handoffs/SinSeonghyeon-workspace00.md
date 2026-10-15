@@ -1,4 +1,6 @@
-# 인수인계 — SinSeonghyeon/workspace00 (웨캔기어 한마디 #105·#104)
+# 인수인계 — SinSeonghyeon/workspace00 (웨캔기어 한마디 #105·#104, 소개·문의 페이지)
+
+이 브랜치에는 작업이 두 묶음 있다. 위쪽 1~9절은 웨캔기어(커밋 `49f1a4b`), 아래 "2차" 절은 AdSense 재심사 대비 소개·문의 페이지와 운영자 표기 변경이다.
 
 ## 1. 브랜치·기준·목적
 
@@ -50,3 +52,56 @@
 
 - 웨캔기어 연습: 6N23 후 → 먼저 떼고(↓만 남김) ← → RP가 성공. ↓→ 누른 채 ← → →·↓ 떼고 RP도 성공.
 - 10회 도전: 과제 줄이 없고, 웨이브 횟수와 무관하게 타이밍 성공이 연속으로 쌓임.
+
+---
+
+# 2차 — 소개·문의 페이지, 앱 소개 블록 펼침, 운영자 표기 master_shin (2026-10-16)
+
+## 1. 브랜치·기준·목적
+
+- 같은 브랜치 `SinSeonghyeon/workspace00`, 기준 커밋 `49f1a4b` 위 커밋 하나.
+- 목적: AdSense "가치 없는 콘텐츠" 재심사 대비(OST 문제는 사용자 결정으로 보류). 정적 글 `/<언어>/about/` 추가, 앱 소개 블록 기본 펼침, 사이트·`LICENSE`의 실명을 핸들 `master_shin`으로 교체.
+
+## 2. 합류 순서·의존
+
+- 1차(웨캔기어)와 같은 브랜치라 함께 합류. 다른 브랜치와 의존 없음.
+- `origin/main`에 이 브랜치에 없는 `24ab24c`(백대시 문서)가 있다. 둘 다 `.agents/docs/log/2026-10.md` 끝에 줄을 더하므로 그 파일만 충돌할 수 있다 — 양쪽 줄을 모두 남긴다.
+
+## 3. 사용자에게 보이는 변경 / 공지 필요: 아니요
+
+- 글 상단·하단 메뉴에 "소개·문의"(en "About · Contact", ja "サイトについて・お問い合わせ") 추가, 앱 푸터에 같은 링크(`footer.about`), 가이드 목록의 운영자 절에서 링크.
+- 앱 아래 "미시마 도장은 어떤 사이트인가요?" 블록이 처음부터 펼쳐짐(`<details open>`, 접을 수 있고 상태 저장 없음).
+- 푸터·글·JSON-LD author·HTML 주석·`LICENSE`의 저작권자 표기가 `master_shin`.
+- 연습 기능 변화가 없어 공지는 필요 없다고 판단(통합 담당자가 원하면 1차 공지에 한 줄 추가 가능).
+
+## 4. 공지 초안
+
+- 없음.
+
+## 5. 배포 전후 사람 작업
+
+- 워커·D1 없음.
+- 배포 뒤(선택): Search Console에서 `/ko/about/`·`/en/about/`·`/ja/about/` 색인 요청. AdSense 재신청은 2~4주 뒤 권장.
+
+## 6. 충돌 가능 파일·보존할 동작
+
+- `src/pages/{ko,en,ja}.js`: `ui.about` 키와 `about/` 글(privacy 앞). 가이드 목록 `updated` 2026-10-16. 세 파일 slug 순서·`ui` 키가 같아야 빌드가 통과한다.
+- `tools/build-site.js`: `contentPage`의 `nav`에 `about/`, JSON-LD author `master_shin`.
+- `src/app.html`: `<details class="about" id="about" open>`, 푸터 `data-page="about/"` 링크, 머리 주석 표기.
+- `src/i18n/{ko,en,ja}.js`: `footer.about` 추가, `footer.copy` 표기 변경 — 다른 브랜치가 근처 키를 바꿨으면 양쪽 보존.
+- `tests/i18n-pages.test.cjs`: about 슬러그·푸터 링크·펼침 검사, 빌드 산출물 전체에 실명(신성현/Seonghyeon Shin/ソンヒョン)이 없는지 검사. 다른 브랜치가 실명을 새로 넣으면 이 테스트가 잡는다.
+
+## 7. 테스트
+
+- `node --test "tests/*.test.cjs"`: 278/278 통과.
+- `node tests/smoke-locales.js`·`smoke-chrome.js`·`smoke-design.js`: errors [].
+
+## 8. 결정·문서
+
+- 결정 4 전문·AGENTS 요약(소개·문의 정적 글), 결정 10 전문(저작권자 표기 `master_shin`), AGENTS "운영자 표기" 줄.
+- `CODE_MAP.md`(pages 원고·nav·`#about` 펼침), `LOCALIZED_PAGES.md`(언어마다 9쪽), `log/2026-10.md`.
+
+## 9. 합류 후 브라우저 확인
+
+- `/ko/` 맨 아래: 소개 블록이 펼쳐져 있고 제목을 누르면 접힘. 푸터에 "소개·문의" 링크, 저작권 줄은 `© 2026 master_shin`.
+- `/ko/about/`: 메뉴가 연습하기·가이드·소개·문의·개인정보처리방침, 언어 버튼으로 en/ja판, 운영자 절에 실명이 없음.
