@@ -109,7 +109,7 @@ function resetSession(){
   wsc.session=wscStats(); wsc.challenge={status:'idle',stats:null}; wsc.last=null; wsc.notice='ready';
   gp.session=gpStats(); gp.challenge={status:'idle',stats:null}; gp.last=null; gp.run=null; gp.notice='ready';
   jfp.session=jfStats(); jfp.challenge={status:'idle',stats:null}; jfp.last=null; jfp.streak=0;
-  tjp.challenge={status:'idle',stats:null}; tjReset();
+  tjp.challenge={status:'idle',stats:null}; tjReset(); juReset();
   clearShare(); renderWsc(); renderGp(); renderJf();
   Object.assign(session, sessionDefault()); history.length=0; lastInputT=performance.now();
   bdpReset(); // after the session: its stats tile reads session.bd.bestChain

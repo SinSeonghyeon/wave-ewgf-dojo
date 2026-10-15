@@ -1,4 +1,4 @@
-# 인수인계 — SinSeonghyeon/workspace01: 브라이언 + 도발 제트어퍼 연습
+# 인수인계 — SinSeonghyeon/workspace01: 브라이언 + 도발 제트어퍼 연습 + 최속 제트어퍼 연습
 
 `.agents/docs/MERGE_PROCESS.md` 형식. 합류 직전에 이 파일은 삭제한다. 오래 남을 근거(영상 실측 F번호, 판정 설계 이유, 모션 출처, 초상 출처)는 `.agents/docs/TJU.md`로 옮겼다.
 
@@ -8,22 +8,22 @@
 |---|---|
 | 브랜치 | `SinSeonghyeon/workspace01` (원격 `origin/SinSeonghyeon/workspace01`) |
 | 기반 커밋 | `32bbb61` = 통합 브랜치 `origin/wsc-sample-workspace03`의 머리(workspace00 웨캔기어 + workspace02 캐릭터 선택·초스카이가 합류된 상태). 사용자 요청 "디벨롭 최신으로 리베이스"를 이 브랜치로 fast-forward한 것으로 해석 |
-| 인수인계 기준 | 기능 커밋 `7382089` "Bryan and Taunt Jet Upper practice"(2026-10-15) + 이 문서를 합류용으로 고친 뒤속 커밋 = 원격 브랜치 머리 |
-| 합류 범위 | `git diff --stat 32bbb61 origin/SinSeonghyeon/workspace01` — 기능 커밋 기준 48개 파일(+1,806 −70), 새 파일 8개(6절 끝) |
-| 한 줄 목적 | 사용자 요청: **브라이언**(백대시 O, 웨이브·풍신류 X)과 **도발 제트어퍼 연습**(영상 프로젝트 실측 기준, 모션 맞춤, 프레임 타임라인) |
-| 상태 | 구현·테스트·코드 리뷰(1·2차) 완료, 사용자 지시로 커밋·푸시 완료(2026-10-15). 통합 대기 |
+| 인수인계 기준 | 원격 브랜치 머리 = 기능 커밋 `7382089` "Bryan and Taunt Jet Upper practice"(2026-10-15) → 인수인계 커밋 `780afd4` → 2026-10-16 커밋 "Fastest Jet Upper practice tab for Bryan"(최속 제트어퍼 연습 + 리뷰 수정 + 이 문서 갱신) |
+| 합류 범위 | `git diff --stat 32bbb61 origin/SinSeonghyeon/workspace01` — 49개 파일(+2,246 −73), 새 파일 9개(6절 끝) |
+| 한 줄 목적 | 사용자 요청: **브라이언**(백대시 O, 웨이브·풍신류 X)과 **도발 제트어퍼 연습**(영상 프로젝트 실측 기준, 모션 맞춤, 프레임 타임라인), 이어서 2026-10-16 **최속 제트어퍼 연습**(도발 제트어퍼에 쓰는 6N4+RP만 따로, 입력 프레임을 15프레임 타임라인으로) |
+| 상태 | 구현·테스트·코드 리뷰 완료(도발 제트어퍼 1·2차, 최속 제트어퍼 1차). 사용자 지시로 커밋·푸시(2026-10-15, 2026-10-16). 통합 대기 |
 
 ## 2. 합류 순서·의존
 
 - **workspace00·workspace02 뒤에** 합류한다. workspace02(캐릭터 선택, 결정 34)의 `CHARS`·`MODES.needs`·`CHALLENGES`·`legacy` 분기를 그대로 쓴다. 두 브랜치는 이미 `wsc-sample-workspace03`에 들어 있다.
-- 2026-10-15 fetch 기준 `wsc-sample-workspace03`은 `32bbb61`에서 움직이지 않았다 → 이 브랜치를 **fast-forward로 합칠 수 있다**(충돌 없음). 그 사이 통합 브랜치에 새 커밋이 생겼으면 6절 표로 충돌을 푼다.
-- `origin/main`(`24ab24c`)은 통합 브랜치보다 4커밋, 이 브랜치보다 5커밋 뒤이고 앞선 커밋은 없다.
+- 2026-10-16 fetch 기준 `wsc-sample-workspace03`은 여전히 `32bbb61`이다 → 이 브랜치를 **fast-forward로 합칠 수 있다**(충돌 없음). 그 사이 통합 브랜치에 새 커밋이 생겼으면 6절 표로 충돌을 푼다.
+- `origin/main`(`24ab24c`)은 통합 브랜치보다 4커밋, 이 브랜치보다 7커밋 뒤이고 앞선 커밋은 없다.
 - 통합 브랜치에는 workspace00·02의 인수인계(`.agents/handoffs/SinSeonghyeon-workspace00.md`·`-workspace02.md`)가 아직 남아 있다. 이 문서와 함께 세 개를 처리하고 `main` 전에 모두 지운다(`MERGE_PROCESS.md` 9~10).
 - 새 결정 번호 35를 썼다. 다른 브랜치도 35를 만들었으면 합류 순서대로 다시 매기고 코드 주석 `결정 N(slug)`·`AGENTS.md` 요약·`DECISIONS.md` 제목을 함께 고친다(`tests/docs.test.cjs`가 대조).
 
 ## 3. 사용자에게 보이는 변경 · 공지 필요: **예(이미 넣음)**
 
-1. 캐릭터 타일에 **브라이언**(초상 = tekken.com 공식 이미지, 5절·8절). `?c=bryan`. 모드 탭 = 자유 연습 · 도발 제트어퍼 연습 · 백대시 10초, 순위 탭 = 백대시 10초 · 도발 제트어퍼 10회.
+1. 캐릭터 타일에 **브라이언**(초상 = tekken.com 공식 이미지, 5절·8절). `?c=bryan`. 모드 탭 = 자유 연습 · 도발 제트어퍼 연습 · 최속 제트어퍼 연습 · 백대시 10초, 순위 탭 = 백대시 10초 · 도발 제트어퍼 10회.
 2. 웨이브가 없는 캐릭터 화면(`body.no-wave`): 웨이브·초풍 타일, 초풍 기록·웨이브 카드를 숨기고 "연습 분석" 링크는 최고 기록 카드로. 코치 칸은 도발 박자 안내와 빈 도발 막대로 시작.
 3. **도발 판정**: 1·3·4가 같은 60Hz 칸이면 도발(나뉘면 "도발 안 나감"). 28f 무릎(+16), 첫 입력 32f까지 캔슬(28f까지는 무릎 전), 33~77f 무시. 후속기는 44f까지 맞으면 콤보. **29f 6 · 30f N · 31f 4+RP = 도발 제트어퍼**. 가드·무릎 전 캔슬·입력 무시·캔슬 안 함·←+RP(N 없음)·RP 먼저를 구분. 더블 도발은 첫 도발 기준. 자유 연습에서도 판정하고, 10회 도전도 같은 판정이다(카운트다운부터 쥔 방향 포함).
 4. **단독 제트어퍼**(도발 없이 6N4+RP): 앞·중립·4 먼저 프레임과 최속(앞 1f · 중립 1f · 4+RP 동시 = 6부터 16f) 표시. 도발 시도로 세지 않음.
@@ -32,16 +32,19 @@
 7. 연출: 실측 영상의 도발 자세 — 사용자 지적으로 게임 입력 기록 프레임에 다시 맞춤(두 팔을 앞뒤로 벌리고, 팔을 벌린 채 무릎이 22~28f에 천천히 올라와 28f 명중, 무릎 든 채 버팀, 뒷손 허리·앞팔 뻗기, 77f 앞 주먹을 세우며 주황빛 → 김, 끝난 뒤 잠깐 그 자세. 웅크림·점프 없음), 무릎 명중 시 더미가 44f까지 휘청(가드된 후속기의 GUARD는 그 뒤 명중 프레임에), 캔슬하면 머리 불꽃, 제트어퍼(웅크렸다 올려치기). 효과음은 기존 음원.
 8. 가이드 글 `guide/tju/`(ko/en/ja) + 가이드 목록 카드.
 9. 카즈야·화랑은 기존 동작 그대로(기존 테스트 전부 통과).
+10. **최속 제트어퍼 연습 탭**(2026-10-16, 브라이언 전용, 모드 `ju`): 도발 없이 6 N 4+RP만. 6을 누른 칸 = 1f인 **15프레임 타임라인**(실측 최장 입력 5+6+3+1f)에 읽힌 입력, 앞·중립·4 먼저 길이(→ 1f · ★ 1f · ← 1f), 6부터 RP까지 입력 프레임(최속 3f = 초록)과 결과 기술·명중 프레임. 평가 4칸·세션 통계·평균·최근 표. 이 탭에서는 도발 밖 RP가 모두 시도라 제트어퍼가 안 나오면 이유(6 없음·대각선·너무 느림·다른 버튼·순서)를 보여 준다. 앞 시도의 RP 뒤 14f(제트어퍼 동작 중) 안의 RP는 제트어퍼든 미스든 세지 않는다. **연습만**(사용자 결정: 10회 도전·순위표 없음 → 워커 변경 없음). 판정은 기존 단독 제트어퍼 그대로.
 
 ## 4. 공지 (최종 문자열은 `src/i18n/*.js`의 `notice.20261015.*`, `NOTICES` 맨 위 `2026-10-15-tju`)
 
 | 언어 | 제목 | 요약 | 항목 |
 |---|---|---|---|
-| ko | 10월 15일 업데이트 · 브라이언과 도발 제트어퍼 연습 | 캐릭터 선택에 브라이언을 추가했습니다. 도발(1+3+4) 뒤 제트어퍼를 프레임 타임라인으로 연습할 수 있습니다. | 1. 브라이언: 백대시는 그대로, 웨이브와 풍신류 기술은 없습니다. 고르면 도발 제트어퍼 연습 탭이 나타납니다.<br>2. 도발 제트어퍼: 도발을 누른 프레임을 1f로 세어 28f 무릎과 29f 6 · 30f N · 31f 4+RP를 프레임마다 보여 줍니다. 판정은 철권 8 실측값입니다.<br>3. 설정의 1+3+4 키(키보드 L)로 LP·LK·RK를 한 번에 누를 수 있습니다. 터치 화면에는 도발 버튼이 생깁니다.<br>4. 도발 제트어퍼 연습 탭의 10회 도전 결과가 새 순위표 「도발 제트어퍼 10회」에 올라갑니다. |
-| en | October 15 update · Bryan and Taunt Jet Upper practice | Bryan joins the character select. Practice the taunt (1+3+4) into the Jet Upper on a frame timeline. | 1. Bryan: backdash as usual, no wavedash and no Mishima moves. Picking him shows the Taunt Jet Upper tab.<br>2. Taunt Jet Upper: counting the taunt press as 1f, the timeline shows the 28f knee and f 29f · n 30f · b+2 31f frame by frame. The numbers are TEKKEN 8 measurements.<br>3. The 1+3+4 key in the settings (L on the keyboard) presses LP, LK and RK at once. Touch screens get a taunt button.<br>4. The 10-try challenge on the Taunt Jet Upper tab goes to the new Taunt Jet Upper ×10 leaderboard. |
-| ja | 10月15日アップデート · ブライアンと挑発ジェット練習 | キャラクター選択にブライアンを追加しました。挑発(1+3+4)からのジェットアッパーをフレームタイムラインで練習できます。 | 1. ブライアン: バックダッシュはそのまま、ウェーブと風神系の技はありません。選ぶと挑発ジェット練習タブが表示されます。<br>2. 挑発ジェット: 挑発を押したフレームを1fとして、28fの膝と29f 6 · 30f N · 31f 4+RPをフレームごとに表示します。判定は鉄拳8の実測値です。<br>3. 設定の1+3+4キー(キーボードのL)でLP・LK・RKを一度に押せます。タッチ画面には挑発ボタンが付きます。<br>4. 挑発ジェット練習タブの10回チャレンジの結果が新しいランキング「挑発ジェット10回」に載ります。 |
+| ko | 10월 15일 업데이트 · 브라이언과 도발 제트어퍼 연습 | 캐릭터 선택에 브라이언을 추가했습니다. 도발(1+3+4) 뒤 제트어퍼를 프레임 타임라인으로 연습할 수 있습니다. | 1. 브라이언: 백대시는 그대로, 웨이브와 풍신류 기술은 없습니다. 고르면 도발 제트어퍼 연습·최속 제트어퍼 연습 탭이 나타납니다.<br>2. 도발 제트어퍼: 도발을 누른 프레임을 1f로 세어 28f 무릎과 29f 6 · 30f N · 31f 4+RP를 프레임마다 보여 줍니다. 판정은 철권 8 실측값입니다.<br>3. 설정의 1+3+4 키(키보드 L)로 LP·LK·RK를 한 번에 누를 수 있습니다. 터치 화면에는 도발 버튼이 생깁니다.<br>4. 도발 제트어퍼 연습 탭의 10회 도전 결과가 새 순위표 「도발 제트어퍼 10회」에 올라갑니다.<br>5. 최속 제트어퍼 연습: 도발 없이 6N4+RP만 연습합니다. 6을 누른 프레임부터 15프레임 타임라인에 입력을 그리고, 앞 1f · 중립 1f · 4+RP 같은 프레임(최속)인지 보여 줍니다. |
+| en | October 15 update · Bryan and Taunt Jet Upper practice | Bryan joins the character select. Practice the taunt (1+3+4) into the Jet Upper on a frame timeline. | 1. Bryan: backdash as usual, no wavedash and no Mishima moves. Picking him shows the Taunt Jet Upper and Fastest Jet Upper tabs.<br>2. Taunt Jet Upper: counting the taunt press as 1f, the timeline shows the 28f knee and f 29f · n 30f · b+2 31f frame by frame. The numbers are TEKKEN 8 measurements.<br>3. The 1+3+4 key in the settings (L on the keyboard) presses LP, LK and RK at once. Touch screens get a taunt button.<br>4. The 10-try challenge on the Taunt Jet Upper tab goes to the new Taunt Jet Upper ×10 leaderboard.<br>5. Fastest Jet Upper: practice f,n,b+2 on its own, without the taunt. A 15-frame timeline draws the input from the frame you press f and shows whether it was f 1f · n 1f · b+2 on one frame (the fastest). |
+| ja | 10月15日アップデート · ブライアンと挑発ジェット練習 | キャラクター選択にブライアンを追加しました。挑発(1+3+4)からのジェットアッパーをフレームタイムラインで練習できます。 | 1. ブライアン: バックダッシュはそのまま、ウェーブと風神系の技はありません。選ぶと挑発ジェット練習・最速ジェット練習タブが表示されます。<br>2. 挑発ジェット: 挑発を押したフレームを1fとして、28fの膝と29f 6 · 30f N · 31f 4+RPをフレームごとに表示します。判定は鉄拳8の実測値です。<br>3. 設定の1+3+4キー(キーボードのL)でLP・LK・RKを一度に押せます。タッチ画面には挑発ボタンが付きます。<br>4. 挑発ジェット練習タブの10回チャレンジの結果が新しいランキング「挑発ジェット10回」に載ります。<br>5. 最速ジェット練習: 挑発なしで6N4+RPだけを練習します。6を押したフレームから15フレームのタイムラインに入力を表示し、前1f · N 1f · 4+RPが同じフレーム(最速)かを示します。 |
 
-같은 묶음의 다른 공지와 합칠지는 통합 담당자가 사용자에게 확인한다. 합치면 `tests/smoke-locales.js`(공지 9개·최신 4항목)와 `tests/i18n-pages.test.cjs`(공지 id 목록·항목 수) 기대값도 맞춘다.
+위 표가 최종 문자열이다. 2026-10-16 최속 제트어퍼 연습으로 항목 1의 끝(탭 이름)을 바꾸고 항목 5(`notice.20261015.5`)를 더했다(아직 배포 전 공지라 새 공지를 만들지 않음). 테스트 기대값(항목 5개)도 맞췄다.
+
+같은 묶음의 다른 공지와 합칠지는 통합 담당자가 사용자에게 확인한다. 합치면 `tests/smoke-locales.js`(공지 9개·최신 5항목)와 `tests/i18n-pages.test.cjs`(공지 id 목록·항목 수) 기대값도 맞춘다.
 
 ## 5. 사람 작업과 순서
 
@@ -53,6 +56,7 @@
 4. **사이트 푸시**(`main` → Pages Actions). 기능 브랜치·통합 브랜치 푸시는 배포되지 않는다(`pages.yml`은 `main`만).
 - 순서가 바뀌면: 재배포 전까지 도발 제트어퍼 10회 등록이 400 `board`로 거부되고 순위 바에 실패 문구(데이터 손실 없음). 그동안 브라이언의 bd10 기록은 옛 워커가 `char`를 버려 카즈야로 표시된다.
 - 관리자 도구 `tools/board-admin.js`에 `tju`('도발 제트어퍼 10회') 추가.
+- 2026-10-16 최속 제트어퍼 연습은 **워커·스키마·보드 변경 없음**(사용자 결정: 연습만). 위 3번 워커 재배포에 더할 것이 없다.
 
 ## 6. 충돌 가능 파일과 반드시 보존할 동작
 
@@ -74,9 +78,11 @@
 | `src/pages/{ko,en,ja}.js` | `guide/tju/` 글(frames 앞), 목록 카드, 목록 `updated` 2026-10-15 | 같음 |
 | `worker/index.js` · `tools/board-admin.js` | `BOARDS.tju`, `CHARS`에 `bryan`, 관리자 목록 | 새 보드 브랜치와 겹치면 양쪽 유지 |
 | 문서: `AGENTS.md` · `.agents/docs/DECISIONS.md` · `CODE_MAP.md` · `PLAN.md` · `log/2026-10.md` · `README.md` · `worker/README.md` | 결정 35 요약·전문, 결정 3·32·34 보완, 라우팅 `TJU.md` · 파일 지도(`16-tju`·`17-tju-practice`)·색인·입력 순서 1½·"도발 제트어퍼" 절 · PLAN 2줄(결정 35 확인, 코드 정리: 10회 도전 공용화) · log 3줄 · README "도발 제트어퍼 연습" 절·캐릭터 행 · worker "2026-10-15" 절 | 결정 번호가 겹치면 다시 매김(2절). 그 밖에는 양쪽 항목 합침 |
-| 기존 테스트 기대값 | `tests/helpers/app.cjs`(금지어·선택 가능 이름에 브라이언), `moves.test`(`bryan:{tju:1}`), `i18n-pages.test`(공지 id·항목 수), `smoke-locales`(공지 9개) | 다른 브랜치가 공지·캐릭터를 넣으면 함께 맞춘다 |
+| 기존 테스트 기대값 | `tests/helpers/app.cjs`(금지어·선택 가능 이름에 브라이언), `moves.test`(`bryan:{tju:1}`), `i18n-pages.test`(공지 id·최신 공지 항목 5개), `smoke-locales`(공지 9개·최신 5항목), `tju.test`·`smoke-tju`(브라이언 모드 탭 `free,tju,ju,bd10`) | 다른 브랜치가 공지·캐릭터를 넣으면 함께 맞춘다 |
 
-새 파일: `src/js/16-tju.js`(판정), `src/js/17-tju-practice.js`(연습 모드), `src/assets/portrait-bryan.webp`, `tests/tju.test.cjs`, `tests/smoke-tju.js`, `.agents/docs/TJU.md`, `.agents/docs/reviews/2026-10-15-tju-review.md`, 이 파일.
+2026-10-16 최속 제트어퍼 연습이 더 건드린 곳: `16-tju.js`(`tjIn.hist`, `tjFree`의 `juMashed`·`juMiss` 호출, `tjJu(mv, fr, P)`와 `tjJuFix`, 렌더 분기) · `20-trials.js`(`MODES.ju`, `PANEL_MODES`(bd10·ju 타임라인·패널 표시를 `renderMode`의 표 하나로)) · `13-button.js`(`MOVE_FORCED.ju`) · `19-tick.js`(`renderJuLive`) · `23-settings-ui.js`(`juReset`) · `30-language.js`(`renderJu`) · `31-stage.js`(`parkPx`) · `app.html`(탭·include `17-ju-practice.js`(`17-coach` 뒤)·`#juTimeline`·`#juPanel`) · `style.css`(`body.ju-mode`·`#juTimeline`, 750px 미디어 쿼리) · 세 언어 `mode.ju.*`·`hint.ju`·`ju.*`·`notice.20261015.5`와 `02-notices.js`의 항목 5 · 가이드 `guide/tju/` 연습 방법 2번(`updated` 2026-10-16). 각 1~몇 줄이라 충돌 시 양쪽 유지.
+
+새 파일: `src/js/16-tju.js`(판정), `src/js/17-tju-practice.js`(연습 모드), `src/js/17-ju-practice.js`(최속 제트어퍼 연습, 2026-10-16), `src/assets/portrait-bryan.webp`, `tests/tju.test.cjs`, `tests/smoke-tju.js`, `.agents/docs/TJU.md`, `.agents/docs/reviews/2026-10-15-tju-review.md`, 이 파일.
 
 ## 7. 테스트·리뷰
 
@@ -84,18 +90,23 @@
 - 브라우저 스모크 11종 통과(`smoke-chrome`·`tju`(신규)·`jfsr`·`bindings`·`locales`·`design`·`backdash`·`giwon`·`mist`·`sound`·`wsc`, 페이지 오류 0). 리뷰 수정 뒤, 코치 칸 수정 뒤, 타임라인·도발 모션 수정 뒤에 전체를 다시 돌렸다(그 회차 11/11 통과, 그 뒤 고친 캔슬 연결·가이드 문단은 `tju`·`locales`·`design`을 다시 돌려 통과. 앞선 실행에서 `bindings`가 다른 Chrome과 겹친 1회만 실시간 대기 구간에서 실패했고 단독 재실행 3/3 통과).
 - 2차 리뷰 수정 뒤(커밋 직전) 스모크 11종을 순서대로 다시 돌려 10종 통과. `sound`만 두 창 BGM 검사(300ms 실시간 대기)에서 1회 실패했고 단독 재실행 4/4 통과(소리 코드·그 테스트는 이 브랜치에서 바뀌지 않음). 걷기 확인 스크립트(도발 중 6을 쥐어도 제자리, 끝난 힘준 자세는 걷기가 끊음) 통과.
 - 코드 리뷰: `.agents/docs/reviews/2026-10-15-tju-review.md` — 1차 발견 6건 모두 수정(늦게 도착한 입력 판정, 옛 저장값 보조 입력, 김 연출, 가로 화면 터치, L·RB가 카즈야에서 나락을 내던 것, 브라이언 무대 카운터)과 시연 영상을 준비하다 찾은 7번째(브라이언 코치 칸에 크라우치 대시 안내가 남던 것). 2차 리뷰(다른 세션)의 버그 5건·유지보수 7건은 10회 도전 공용화(B, `PLAN.md`)만 남기고 반영했다.
+- 2026-10-16 최속 제트어퍼 연습 추가 뒤: `node --test "tests/*.test.cjs"` **319/319 통과**(`tju.test`에 7개 추가 — 탭·강제 켜짐, 최속 3f 축·띠, 느린 입력 5종과 b+2·RP 먼저, 미스 이유 5종과 축 넘침, 연타·다른 모드·도발 뒤, 진행 중 축, 키보드 SOCD·통계·초기화). 스모크 11종 전부 통과(`smoke-tju`에 최속 탭 동작과 390·1366px × 3개 언어 배치 검사 추가).
+- 2026-10-16 최속 제트어퍼 코드 리뷰(같은 날, 미커밋 작업 트리) 수정: ① 느린 b+2·2(N 없음·RP 먼저)를 "순서는 맞는데 느림"(`stale`)으로 잘못 알리던 것 → `order` ② 연타 무시(앞 시도 RP 뒤 14f)가 미스에만 걸려 동작 중에 다시 넣은 6 N 4+RP가 시도로 세이던 것 → `juMashed`를 `tjFree`가 판정 전에 확인(이 모드만) ③ 섞인 방향 화살표를 판정 때 글자로 굳혀 1P/2P를 바꾸면 축과 어긋나던 것 → 방향 코드로 저장 ④ `ju.c.mixed`가 4가 없을 때도 "6과 4 사이"라고 하던 문구, ko `liveReady`의 조사 ⑤ `renderMode`의 bd10·ju 패널 토글 중복 → `PANEL_MODES` 표. 단위 테스트에 회귀 검사 추가(같은 테스트 안).
+- 2026-10-16 커밋 직전(리뷰 수정까지 합친 작업 트리): 단위 **319/319 통과**, 스모크 **11종 전부 통과**(`tju`·`locales`·`design`·`jfsr`·`backdash`·`giwon`·`mist`·`wsc`·`bindings`·`sound`·`chrome`, 순서대로 한 번씩). 그때 다른 세션이 `smoke-chrome`을 돌리고 있었지만 `smoke-chrome`은 빈 포트·별도 프로필을 써서 겹치지 않는다.
 - 알려진 실패: 없음(`sound`·`bindings`의 실시간 대기 흔들림은 위와 같이 단독 재실행 통과). 미완료: 결정 35·브라이언 초상 사용자 확인(5절 2, `PLAN.md`), 10회 도전 공용화(`PLAN.md` 코드 정리).
 
 ## 8. 바뀐 설계 결정·문서
 
+- 2026-10-16: 결정 35에 최속 제트어퍼 연습 항목 추가(사용자 결정: 연습만, 이름). `AGENTS.md` 요약·`TJU.md` 8절·`CODE_MAP.md`(파일 지도·색인·"도발 제트어퍼" 절)·`README.md`·`log/2026-10.md`.
 - **결정 35(tju) 신설**, 결정 3(브라이언 이름·초상), 32(브라이언 기술 스위치), 34(브라이언·`no-wave` 화면) 보완. `DECISIONS.md` 전문·`AGENTS.md` 요약·라우팅(`TJU.md`).
 - 결정 35는 사용자 요청을 바탕으로 **에이전트가 영상 실측에서 옮긴 규칙**이라 사용자 확인이 필요하다(`PLAN.md` 실게임 확인 대기 1줄). 브라이언 초상도 2026-10-11 예외를 그대로 적용한 것이라 확인 필요 — 커밋·푸시는 사용자 지시로 했지만 결정 문서의 확인 표시는 바꾸지 않았다(5절 2).
 - 문서: `CODE_MAP.md`(파일 지도·색인·입력 순서·"도발 제트어퍼" 절), `TJU.md`(신규), `README.md`, `PLAN.md`(결정 35 확인, 코드 정리: 10회 도전 공용화 — 2차 리뷰 B), `log/2026-10.md`, `worker/README.md`(2026-10-15 절), `reviews/2026-10-15-tju-review.md`(1·2차).
 
 ## 9. 합류 후 브라우저 확인
 
-1. 캐릭터 버튼 → 브라이언: 탭이 자유 연습 · 도발 제트어퍼 연습 · 백대시 10초만, 웨이브·초풍 타일이 없다. 코치 칸은 도발 박자 안내.
+1. 캐릭터 버튼 → 브라이언: 탭이 자유 연습 · 도발 제트어퍼 연습 · 최속 제트어퍼 연습 · 백대시 10초만, 웨이브·초풍 타일이 없다. 코치 칸은 도발 박자 안내.
 2. 도발 제트어퍼 연습 탭에서 L(1+3+4) → 29f 6 · 30f N · 31f 4+RP: 결과 "도발 제트어퍼!", 타임라인 28f 빨강(무릎)·29~31f 표시·초록 발동 막대. 13~34f는 한 칸씩 넓게, 입력 무시 35~77f는 좁은 한 칸이고 그 안의 초록 눈금이 44f. 6을 한 박자 늦추면 "가드됨", L만 누르고 기다리면 "캔슬하지 않은 도발". 통계의 "29f 캔슬"은 29f에 캔슬했을 때만 오른다.
 3. 도발 동작(두 팔을 양쪽으로 천천히 벌리고 22f부터 무릎이 천천히 올라와 28f 명중 → 주먹을 가슴 앞으로 모아 버팀 → 77f 힘주기·주황빛 → 김), 무릎에 더미가 휘청, 제트어퍼에 더미가 뜬다. 30f ←+RK(뒷무릎, 가드)는 더미가 휘청임을 멈춘 뒤에 GUARD가 뜬다.
 4. 10회 도전: 카운트다운 중에 →를 누른 채로 두고, 시작 뒤 L → 29f에 → 놓기 = "29f 캔슬"(자유 연습과 같은 판정). 10회를 마치면 「도발 제트어퍼 10회」 등록(워커 재배포 뒤).
 5. 카즈야·화랑으로 돌아가 기존 모드·판정이 그대로인지(L·RB는 아무 일 없음).
+6. 브라이언 **최속 제트어퍼 연습** 탭: → · ★ · ←+RP를 한 프레임씩 → 결과 "최속 제트어퍼!", 타임라인 1~3f에 → ★ ←+RP, 윗줄 초록 "→ 1f"·"★ 1f", 아랫줄 초록 "입력 3f · 발동 14f → 6부터 16f 명중". 중립을 길게 → 노랑 "제트어퍼"와 빨강 "★ 2f". ←+RP만 → "제트어퍼가 나오지 않음 · RP 앞에 6이 없음". 순위 탭에는 이 모드가 없다.

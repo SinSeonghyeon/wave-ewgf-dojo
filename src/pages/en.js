@@ -365,7 +365,7 @@ module.exports = {
     },
     {
       slug: 'guide/tju/',
-      updated: '2026-10-15',
+      updated: '2026-10-16',
       title: 'Taunt Jet Upper guide — Bryan\'s taunt cancel on frame 29',
       description: 'A frame-by-frame guide to Bryan\'s Taunt Jet Upper (TJU) in Tekken: the unblockable knee on frame 28, the f on 29 · n on 30 · b+2 on 31 order, the cancel window, why it gets blocked, and how to practice it with the timeline.',
       lead: 'The Taunt Jet Upper lands the knee of Bryan\'s taunt (1+3+4), cancels the taunt and links a Jet Upper into a combo. Pick Bryan in Mishima Dojo\'s character selector to practice it.',
@@ -423,7 +423,7 @@ module.exports = {
 <h2>How to practice</h2>
 <ol>
 <li>On the <a href="@">practice screen</a>, press the <strong>Character</strong> button left of the mode tabs and pick <strong>Bryan</strong>.</li>
-<li>Start with the <strong>fastest Jet Upper</strong> without the taunt (f 1 · n 1 · b+2 together). The result and the input log show the frames.</li>
+<li>Start on the <strong>Fastest Jet Upper</strong> tab with the Jet Upper alone, no taunt. The f is frame 1 and a 15-frame timeline draws your input; f 1 · n 1 · b+2 together (a 3-frame input) is the fastest. When no Jet Upper comes out it tells you why (no f, a diagonal in between, too slow).</li>
 <li>On the <strong>Taunt Jet Upper</strong> tab, press the taunt and line the f up with frame 29 using the timeline and the first-input (cancel) frame.</li>
 <li>When it sticks, run the <strong>10-try challenge</strong>. With a nickname the result goes to the "Taunt Jet Upper ×10" leaderboard.</li>
 <li>Bryan has no wavedash and no Mishima moves like the EWGF, so those modes are hidden; Backdash 10s is still there.</li>

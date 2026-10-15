@@ -54,6 +54,7 @@
       <button role="tab" data-mode="giwon" aria-selected="false" data-i18n="mode.giwon.name">기원초 연습</button>
       <button role="tab" data-mode="jfsr" aria-selected="false" data-i18n="mode.jfsr.name" hidden>초스카이 연습</button>
       <button role="tab" data-mode="tju" aria-selected="false" data-i18n="mode.tju.name" hidden>도발 제트어퍼 연습</button>
+      <button role="tab" data-mode="ju" aria-selected="false" data-i18n="mode.ju.name" hidden>최속 제트어퍼 연습</button>
       <button role="tab" data-mode="wave10" aria-selected="false" data-i18n="mode.wave10.name">웨이브 10초</button>
       <button role="tab" data-mode="ewgf20" aria-selected="false" data-i18n="mode.ewgf20.name">초풍 20회</button>
       <button role="tab" data-mode="combo10" aria-selected="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button>
@@ -208,6 +209,24 @@
         <p class="note" id="tjCounts"></p>
         <details><summary data-i18n="tj.recent"></summary><table><thead><tr><th data-i18n="wsc.result"></th><th data-i18n="tj.cancelCol"></th><th data-i18n="tj.moveCol"></th><th data-i18n="wsc.reason"></th></tr></thead><tbody id="tjRows"></tbody></table></details>
         <details><summary data-i18n="tj.help"></summary><p class="note" id="tjNote"></p></details>
+      </section>
+      <section class="wsc-panel wsc-timeline" id="juTimeline" hidden aria-labelledby="juCommand">
+        <div class="wsc-command" id="juCommand"></div>
+        <div class="wsc-live" id="juLive" role="timer" aria-live="off"></div>
+        <div class="wsc-scroll" tabindex="0" role="region" data-i18n-aria="ju.timeline" aria-label="제트어퍼 프레임 타임라인"><div class="wsc-axis" id="juAxis"></div></div>
+        <p class="note" id="juLegend"></p>
+        <p class="note" id="juGuide"></p>
+      </section>
+      <section class="wsc-panel" id="juPanel" hidden aria-labelledby="juTitle">
+        <h2 id="juTitle" data-i18n="ju.evaluation"></h2>
+        <div class="wsc-result" id="juResult" role="status" aria-live="polite"></div>
+        <div class="wsc-ab" id="juAB"></div>
+        <p class="note" id="juDetail"></p>
+        <h3 class="note" data-i18n="stats.aria"></h3>
+        <div class="wsc-stats" id="juStats"></div>
+        <p class="note" id="juCounts"></p>
+        <details><summary data-i18n="ju.recent"></summary><table><thead><tr><th data-i18n="wsc.result"></th><th data-i18n="jf.fnCol"></th><th data-i18n="tj.rpLabel"></th><th data-i18n="ju.inCol"></th></tr></thead><tbody id="juRows"></tbody></table></details>
+        <details><summary data-i18n="ju.help"></summary><p class="note" id="juNote"></p></details>
       </section>
       <section class="wsc-panel wsc-timeline" id="bdpTimeline" hidden aria-labelledby="bdpCommand">
         <div class="wsc-command" id="bdpCommand"></div>
@@ -458,6 +477,7 @@
 @@include js/16-strikes.js
 @@include js/16-tju.js
 @@include js/17-coach.js
+@@include js/17-ju-practice.js
 @@include js/17-tju-practice.js
 @@include js/18-hud.js
 @@include js/19-tick.js

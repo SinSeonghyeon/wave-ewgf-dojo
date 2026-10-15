@@ -30,7 +30,7 @@ function renderAll(){
   $('shareMsg').textContent = msg(ui.shareMsg); if($('shareDlg').open) renderShare();
   renderBoard(); renderTrialRank(); renderVisits(); renderPosts(); if(BOARD_URL) renderNick(); renderDonate(); renderNotices(); if($('fitDlg').open) renderFit();
   if(trial.running) trialTick(performance.now());
-  renderWsc(); renderGp(); renderBdp(); renderJf(); renderTj(); renderCharUI(); renderMoveSel();
+  renderWsc(); renderGp(); renderBdp(); renderJf(); renderTj(); renderJu(); renderCharUI(); renderMoveSel();
 }
 function setLang(l){
   if(!LANGS.includes(l)) return;

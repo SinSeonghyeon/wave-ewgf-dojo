@@ -650,6 +650,23 @@
   #tjTimeline .wsc-cell.span.last{border:1px dashed var(--line2);position:relative;isolation:isolate}
   #tjTimeline .wsc-cell.span.last::before{content:'';position:absolute;z-index:-1;top:0;bottom:0;left:calc(var(--hit)*100%);width:max(2px,calc(100%/var(--n)));background:var(--good)}
   #tjPanel .wsc-ab{grid-template-columns:repeat(3,minmax(0,1fr))}#tjPanel .wsc-ab b{font-size:18px}
+  /* 최속 제트어퍼 연습 (결정 35(tju)): one 6 N 4+RP on a 15-frame axis, frame 1 = the 6. Rows: how long 6 · N · an early 4 were held · frames · the input to the RP */
+  body.ju-mode .coach{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);border-top:1px solid var(--line)}
+  .coach>#juTimeline{grid-column:1/-1}.coach>#juPanel{grid-column:auto}
+  #juTimeline .wsc-command{margin:4px 0}#juTimeline .wsc-live{margin:6px 0;min-height:1.4em;font-size:15px}
+  #juTimeline .wsc-axis{display:grid;gap:2px;min-width:480px}
+  #juTimeline .ju-band{font:700 9px var(--mono);text-decoration:none;letter-spacing:.3px;text-align:center;padding:0 2px 2px;border-bottom:2px solid currentColor;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:end;min-width:0}
+  #juTimeline .ju-band.ok{color:var(--good)}#juTimeline .ju-band.no{color:var(--red)}
+  #juTimeline .ju-band.in{align-self:start;border-bottom:0;border-top:3px solid currentColor;padding:2px 2px 0}
+  #juTimeline .ju-band.lbl{color:var(--ink2);border-top-color:transparent;text-align:left;padding-left:4px} /* the input's label runs on past its short bar */
+  #juTimeline .wsc-cell{min-width:0;padding:6px 0 4px;font-size:9px;grid-row:2;overflow:hidden}
+  #juTimeline .wsc-cell b{font-size:12px;min-height:30px;overflow-wrap:anywhere}
+  #juTimeline .wsc-cell em{display:block;font-style:normal;font-size:9px;line-height:12px;min-height:12px;color:var(--gold);opacity:.8}
+  #juTimeline .wsc-cell i{font-style:normal;display:block}
+  #juTimeline .wsc-cell.go{border:2px solid var(--gold)}
+  #juTimeline .wsc-cell.rp.ok{border:2px solid var(--good)}#juTimeline .wsc-cell.rp.no{border:2px solid var(--red)}
+  #juTimeline .wsc-cell.after{opacity:.45}
+  #juTimeline .wsc-cell.mark{background:var(--accent-soft)}
   /* 결정 34(char-select): a character with no wave (브라이언) has no wave/EWGF tiles, charts or 무족초 guide */
   body.no-wave .coach>.stats,body.no-wave .coach>.mist-guide,body.no-wave #histCard,body.no-wave #waveCard{display:none}
   .wsc-panel{min-width:0;border:0;padding:20px 16px}
@@ -671,7 +688,7 @@
   .posts-card .posts-form .btn{font-size:11px;padding:8px 10px}.posts-card .card-msg{font-size:11px;margin-top:5px}
   @media(min-width:1100px){body.has-community .main{grid-template-columns:minmax(0,1fr) 330px}}
   @media(max-width:1099px){.posts-card{grid-column:1;grid-row:2;height:520px;border-left:0}.has-community .main>.coach{grid-row:3}}
-  @media(max-width:750px){body.wsc-mode .coach,body.giwon-mode .coach,body.bd10-mode .coach,body.jfsr-mode .coach,body.tju-mode .coach{grid-template-columns:minmax(0,1fr)}#tjPanel .wsc-ab{grid-template-columns:repeat(2,minmax(0,1fr))}#gpTimeline .wsc-cell{font-size:9px;padding:6px 0}#gpTimeline .wsc-cell b{font-size:12px;min-height:26px}.wsc-timeline+.wsc-panel{border-left:0;border-top:1px solid var(--line)}.wsc-panel{padding:16px 4px}.posts-card{padding:12px}.stage-actions{top:46px;max-width:65%}.stage-actions .btn{min-height:30px;font-size:11px;padding:5px 12px}.stage .result,html.touch-ui .stage .result{top:94px}.hud-timer{top:50px;font-size:14px}.input-ledger,html.touch-ui .input-ledger{top:89px}.inputs,html.touch-ui .inputs{max-height:125px}}
+  @media(max-width:750px){body.wsc-mode .coach,body.giwon-mode .coach,body.bd10-mode .coach,body.jfsr-mode .coach,body.tju-mode .coach,body.ju-mode .coach{grid-template-columns:minmax(0,1fr)}#tjPanel .wsc-ab{grid-template-columns:repeat(2,minmax(0,1fr))}#gpTimeline .wsc-cell{font-size:9px;padding:6px 0}#gpTimeline .wsc-cell b{font-size:12px;min-height:26px}.wsc-timeline+.wsc-panel{border-left:0;border-top:1px solid var(--line)}.wsc-panel{padding:16px 4px}.posts-card{padding:12px}.stage-actions{top:46px;max-width:65%}.stage-actions .btn{min-height:30px;font-size:11px;padding:5px 12px}.stage .result,html.touch-ui .stage .result{top:94px}.hud-timer{top:50px;font-size:14px}.input-ledger,html.touch-ui .input-ledger{top:89px}.inputs,html.touch-ui .inputs{max-height:125px}}
 
 
   /* Use the full free vertical lane, with all 40 retained inputs available by scrolling. */

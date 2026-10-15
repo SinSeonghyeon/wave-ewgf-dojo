@@ -120,7 +120,7 @@ const HIT_CONTACT_MS = {ewgf:180,wgf:180,tongbal:180,hellsweep:160,wsc:200,jfsr:
   knee:0, ju:Math.round((TJ.JU_F-1)*FRAME), tjs:180}; // giwon만 연출 튜닝값이 아니라 GIWON.ACTIVE_F(가정값)에서 파생된다. knee: fx.knee is called once 28f is read · ju: 14f from the 4+RP (TJ.JU_F)
 let tjFlameUntil = 0, tjSteamUntil = 0; // 도발 연출 (결정 35(tju)): flames on the head after a cancelled knee, steam after an uncancelled taunt
 const TJ_FLAME_MS = 30*FRAME, TJ_STEAM_MS = 700; // how long each lasts
-const parkPx = () => mode==='giwon' ? GP_DUMMY_PX : mode==='tju' ? TJ_DUMMY_PX : 0;
+const parkPx = () => mode==='giwon' ? GP_DUMMY_PX : mode==='tju' || mode==='ju' ? TJ_DUMMY_PX : 0; // ju: the Jet Upper reaches the bag from the knee's distance too
 function dummyGuard(at){ world.dummy.guardAt = at; } // the bag blocks: a ring and GUARD at that time, no knockback (updateDummy)
 const crumpling = (d, now) => d.crumpleUntil>0 && !d.launchAt && now<d.crumpleUntil; // 배잡기 경직: still standing, so a follow-up lands on a grounded opponent
 function tryHit(move, until){ // move: 'ewgf'|'wgf'|'tongbal'|'hellsweep'|'wsc'|'giwon'|'knee'|'ju'|'tjs'. Returns true when the dummy is knocked. Plain dummy: any move within reach; typed dummy: only HIT_TYPE[move]. until: knee only — when the reel ends
@@ -184,7 +184,7 @@ function updateDummy(now){
     d.y += d.vy; d.vy += 0.45; world.dummyX += d.vx; d.rot += (d.spin||0.12)*store.side;
     if(d.y>0){ d.y=0; d.hit=0; d.alive=false; if(!d.type) d.respawn=now+(parkPx()?GP_DUMMY_MS:700); }
   }
-  // 기원초·도발 제트어퍼 연습: one bag, always parked inside the move's range in front of the character, so every rep connects
+  // 기원초·도발 제트어퍼·최속 제트어퍼 연습: one bag, always parked inside the move's range in front of the character, so every rep connects
   const park = parkPx(), spawnDist = () => park || Math.min(300, W*0.5) + Math.random()*40;
   if(!d.type && !d.alive && now>d.respawn){ d.alive=true; d.rot=0; d.y=0; world.dummyX = world.charX + spawnDist()*store.side; }
   if(park && !d.type && d.alive && !d.hit){ world.dummyX = world.charX + park*store.side; return; } // follows the small steps the moves take

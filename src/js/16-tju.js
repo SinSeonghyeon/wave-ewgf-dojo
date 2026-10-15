@@ -8,12 +8,13 @@
    · the follow-up: its startup (TJ.STARTUP) counts from the frame of its button; it combos when it lands by TJ_LAST (44f)
    · the Jet Upper: 6 → N → 4+RP. With no N it is b+2, an RP before the 4 is 2, a 4 up to 3f before the RP delays it.
    Nothing here touches the EWGF statistics: the attempts live in tjp and store.life.tju only.
-   This file judges in every mode; the tju practice mode (10-try challenge, frame timeline, panel) is 17-tju-practice.js and the
-   taunt pose is drawn by 33-fighter.js (TJ_POSE). */
+   This file judges in every mode; the tju practice mode (10-try challenge, frame timeline, panel) is 17-tju-practice.js, the
+   최속 제트어퍼 practice mode (the Jet Upper alone on a frame axis) is 17-ju-practice.js and the taunt pose is drawn by 33-fighter.js (TJ_POSE). */
 const TJ_STALE_F = 12;                                     // a 6 N 4 that stops moving this long is dropped (the measured windows are 5·6·3f)
 const TJ_SPLIT_F = 3;                                      // 1·3·4 spread over up to this many frames is reported as a taunt that did not come out
 const TJ_MARKS = 48;                                       // input frames one taunt keeps for its timeline (each a direction change or a button)
 const TJ_ROWS = 12;                                        // the recent-taunts table
+const TJ_HIST = 48;                                        // input frames kept outside a taunt (tjIn.hist): the 최속 제트어퍼 timeline draws its try from them
 const TJ_STREAK_MS = 5000;                                 // successes further apart than this start the on-stage streak over
 const TJ_BTN = ['','LP','RP','LK','RK'];
 // six = taunts cancelled on TJ_SIX (29f), the Jet Upper's 6
@@ -22,8 +23,9 @@ const tjStats = () => ({tries:0, hits:0, knee:0, six:0, streak:0, best:0, juTrie
 const tjp = {run:null, view:null, last:null, ju:null, session:tjStats(), challenge:{status:'idle', stats:null}, streak:0, streakT:-1e9};
 // The per-frame reader: open = the frame still collecting, read = the last frame read, dir = the direction at the end of it.
 // p = the 6 N 4 reading outside a taunt (a taunt keeps its own, run.p): fS·nS·bS = the slots of the 6, the N after it and the first 4
-// after them, at = the slot of its last step. recent = the frames of a 1·3·4 spread over frames (tjSplit).
-const tjIn = {open:null, read:-1e9, dir:'n', p:{fS:null, nS:null, bS:null, at:0}, recent:[]};
+// after them, at = the slot of its last step. recent = the frames of a 1·3·4 spread over frames (tjSplit). hist = the input frames read
+// outside a taunt, newest last (a taunt starts it over).
+const tjIn = {open:null, read:-1e9, dir:'n', p:{fS:null, nS:null, bS:null, at:0}, recent:[], hist:[]};
 const tjClearReading = P => Object.assign(P, {fS:null, nS:null, bS:null});
 const tjOn = () => !!charOf().tj && moveOn(charOf().tj.move);
 const tjBusy = () => !!tjp.run && tjp.run.cancel==null;    // still in the taunt (not cancelled): no walking, the pose plays on
@@ -46,10 +48,10 @@ function tjTick(now){
   if(r && r.phase==='pre' && !r.kneeFx && frameSlot(now)>=kneeSlot && !(tjIn.open && tjIn.open.slot<=kneeSlot)) tjKneeFx(r);
 }
 function tjClear(){ // resetInput: a mode change, a modal, blur or a challenge start ends the taunt and the reading
-  tjp.run = null; tjIn.open = null; tjIn.read = -1e9; tjIn.dir = 'n'; tjIn.recent = [];
+  tjp.run = null; tjIn.open = null; tjIn.read = -1e9; tjIn.dir = 'n'; tjIn.recent = []; tjIn.hist = [];
   tjClearReading(tjIn.p);
   if(['taunt','ju','bknee'].includes(anim.kind)) anim.kind = 'idle';
-  if(mode==='tju') renderTj();
+  if(mode==='tju') renderTj(); else if(mode==='ju') renderJu();
 }
 function tjReset(){ Object.assign(tjp, {run:null, view:null, last:null, ju:null, session:tjStats(), streak:0}); renderTj(); } // session reset (설정의 세션 초기화)
 // 결정 2(ewgf-judge)의 60Hz 칸 하나 = 게임의 한 프레임. 칸이 끝나야 그 프레임의 방향(마지막 방향)과 버튼이 정해진다.
@@ -93,7 +95,7 @@ function tjRead(o){
   const r = tjp.run;
   if(r){ fr.f = fr.slot - r.s0 + 1; r.frames.push(fr); if(r.frames.length>TJ_MARKS) r.frames.shift(); tjRun(r, fr); }
   else tjFree(fr);
-  if(mode==='tju') renderTj();
+  if(mode==='tju') renderTj(); else if(mode==='ju') renderJu();
 }
 // 6 N 4+RP reader, the same inside a taunt (run.p) and alone (tjIn.p): a 6 starts it, then the first N, then the first 4
 function tjTrack(P, fr){
@@ -129,7 +131,7 @@ function tjStart(fr){
   const r = {s0:fr.slot, t0:fr.t, phase:'pre', p:{fS:null, nS:null, bS:null, at:0}, frames:[{slot:fr.slot, f:1, dir:fr.dir, changed:false, btns:fr.btns, taunt:true}],
              double:null, cancel:null, cancelSlot:null, knee:false, ignored:null, move:null, verdict:null};
   tjp.run = tjp.view = r;
-  tjClearReading(tjIn.p); tjIn.recent = [];
+  tjClearReading(tjIn.p); tjIn.recent = []; tjIn.hist = [];
   fx.taunt(r.t0);
   if(mode==='tju') renderTj();
 }
@@ -167,12 +169,17 @@ function tjEnd(r){ if(tjp.run===r) tjp.run = null; if(!r.verdict) tjVerdict(r, '
 function tjFree(fr){ // outside a taunt: a new taunt, a 1·3·4 spread over frames, or a 6 N 4+RP on its own
   if(fr.taunt){ tjStart(fr); return; }
   const P = tjIn.p;
+  tjIn.hist.push(fr); if(tjIn.hist.length>TJ_HIST) tjIn.hist.shift();
   tjTrack(P, fr);
   if(!fr.btns.length) return;
   const part = fr.btns.every(n => TJ_TAUNT.includes(n));
   tjIn.recent = part ? tjIn.recent.filter(x => fr.slot-x.slot<TJ_SPLIT_F).concat({slot:fr.slot, btns:fr.btns}) : [];
   if(part && new Set(tjIn.recent.flatMap(x => x.btns)).size===TJ_TAUNT.length){ const span = fr.slot - tjIn.recent[0].slot + 1; tjIn.recent = []; tjSplit(fr, span); }
-  if(fr.btns.includes(2) && P.fS!=null){ const mv = tjMoveOf(P, fr, null); if(mv.ju) tjJu(mv, fr); }
+  if(fr.btns.includes(2) && !juMashed(fr)){                 // juMashed: the 최속 제트어퍼 mode drops an RP pressed during its last try's move
+    const mv = P.fS!=null ? tjMoveOf(P, fr, null) : null;
+    if(mv && mv.ju) tjJu(mv, fr, P);
+    else juMiss(fr);                                         // the 최속 제트어퍼 mode takes every other RP as a try (17-ju-practice.js)
+  }
   tjClearReading(P);                                         // any button ends a 6 N 4 reading
 }
 function tjSplit(fr, span){ // not a try: the buttons never shared a frame, so the game shows no taunt either
@@ -180,20 +187,23 @@ function tjSplit(fr, span){ // not a try: the buttons never shared a frame, so t
   setCoach(['tj.c.split', span]);
   addLog(fr.t, 'log.tTj', ['tj.res.split'], ['tj.n.split', span], '', 'no');
 }
-// 단독 제트어퍼 (연습 1 · 최속 제트어퍼): judged on its own, never a challenge try
-function tjJu(mv, fr){
+// 단독 제트어퍼 (연습 1 · 최속 제트어퍼): judged on its own, never a challenge try. P = the 6 N 4 reading it came from (its slots)
+function tjJu(mv, fr, P){
   const kind = mv.key==='ju' ? (mv.out ? 'slow' : 'ju') : mv.why==='noN' ? 'b2' : 'rp';
   const fast = kind==='ju' && mv.fF===1 && mv.nF===1 && mv.early===0;
   const st = tjp.session; st.juTries++; if(fast) st.juFast++;
   const ju = tjp.ju = Object.assign({kind, fast}, mv);
   const frames = mv.key==='ju' ? ['tj.n.ju', mv.fF, mv.nF, mv.early, mv.total] : ['tj.n.f', mv.fF];
   showResult(kind==='ju' ? (fast ? 'ewgf' : 'wave') : kind==='slow' ? 'wgf' : 'miss', kind==='ju' || kind==='slow' ? 'JET UPPER' : 'MISS', ['tj.j.'+kind+(fast ? 'Fast' : '')], frames);
-  setCoach(kind==='ju' ? (fast ? ['tj.c.juFast', mv.total] : ['tj.c.ju', mv.fF-1, mv.nF-1, mv.early]) : ['tj.c.'+kind, mv.fF, mv.nF, mv.early]);
+  setCoach(tjJuFix(ju));
   addLog(fr.t, 'log.tJu', ['tj.res.'+kind+(fast ? 'Fast' : '')], frames, '', kind==='ju' ? 'ok' : kind==='slow' ? 'wg' : 'no');
   renderSeg({tj:true, c:null, f:ju.fF, n:ju.nF??null, rp:ju.early??null, hit:ju.total??null});
   fx.tjMove(mv.key, 'hit');                                // alone it is just the move: it hits whatever stands in range
+  juAttempt(ju, P, fr);                                    // the 최속 제트어퍼 mode's try (its axis and session)
   if(mode==='tju') renderTj();
 }
+// What to fix in a Jet Upper on its own, as [key, ...args] (the coach sentence; the 최속 제트어퍼 panel reads it too)
+const tjJuFix = j => j.kind==='ju' ? (j.fast ? ['tj.c.juFast', j.total] : ['tj.c.ju', j.fF-1, j.nF-1, j.early]) : ['tj.c.'+j.kind];
 // One verdict per taunt. A cancelled taunt is over at its verdict; an ignored input leaves the taunt running to 77f (tjEnd).
 function tjVerdict(r, kind, x){
   if(r.verdict) return;

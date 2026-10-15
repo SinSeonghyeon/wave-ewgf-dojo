@@ -8,6 +8,7 @@ const MODES = {
   giwon:  {start:false, guide:'guide/giwon-link/', needs:{cap:'giwon'}}, // 기원초 연습: free practice plus the recovery timeline (결정 30(giwon))
   jfsr:   {start:false, guide:'guide/jfsr/', needs:{moves:['jfsr']}},  // 초스카이 연습 + 10회 도전 (결정 33(jfsr))
   tju:    {start:false, guide:'guide/tju/', needs:{moves:['tju']}},    // 도발 제트어퍼 연습: 프레임 타임라인 + 10회 도전 (결정 35(tju))
+  ju:     {start:false, guide:'guide/tju/', needs:{moves:['tju']}},    // 최속 제트어퍼 연습: 6N4+RP alone on a frame timeline, no challenge (결정 35(tju))
   wave10: {start:true, dur:10000, guide:'guide/wave-dash/', needs:{cap:'wave'}},
   ewgf20: {start:true, target:20, guide:'guide/ewgf/', needs:{moves:['ewgf']}},
   combo10:{start:true, target:10, guide:'guide/wave-dash/', needs:{cap:'wave', moves:['ewgf']}},
@@ -21,6 +22,9 @@ const boardMixed = m => CHAR_IDS.filter(c => modeAvailFor(c, m)).length>1; // ro
 // id prefix of its challenge button / panel / timeline (#wscPanel, #gpPanel …). BOARDS, boardEntry, rankingResult,
 // renderMode and the busy/countdown checks all read this one table; a new challenge mode is one row here plus the worker's BOARDS.
 const CHALLENGES = {wsc:{target:WSC_TARGET, state:()=>wsc.challenge, ui:'wsc'}, giwon:{target:GP_CHALLENGE, state:()=>gp.challenge, ui:'gp'}, jfsr:{target:JF_CHALLENGE, state:()=>jfp.challenge, ui:'jf'}, tju:{target:TJ_CHALLENGE, state:()=>tjp.challenge, ui:'tj'}};
+// Modes with a frame timeline and panel but no local challenge: mode → the id prefix of #<ui>Timeline / #<ui>Panel (renderMode also sets
+// body.<mode>-mode) — 백대시 10초 (12-bd-practice.js) · 최속 제트어퍼 연습 (17-ju-practice.js)
+const PANEL_MODES = {bd10:'bdp', ju:'ju'};
 const BOARDS = [...TRIAL_MODES, ...Object.keys(CHALLENGES)]; // matches worker and tabs
 const challengeTarget = m => CHALLENGES[m] ? CHALLENGES[m].target : 0; // 0 = not a challenge board
 const challengeStatus = m => CHALLENGES[m] ? CHALLENGES[m].state().status : ''; // '' for modes without a challenge
@@ -51,9 +55,11 @@ function renderMode(){
     if(document.body) document.body.classList.toggle(m+'-mode', mode===m);
     for(const part of ['ChallengeBtn','Panel','Timeline']) $(ui+part).hidden = mode!==m;
   }
-  if(document.body) document.body.classList.toggle('bd10-mode', mode==='bd10'); // 백대시 10초: the frame timeline and its panel (12-bd-practice.js)
-  $('bdpTimeline').hidden = $('bdpPanel').hidden = mode!=='bd10';
-  renderWsc(); renderGp(); renderBdp(); renderJf(); renderTj();
+  for(const [m,ui] of Object.entries(PANEL_MODES)){ // the same for a timeline and panel with no challenge button
+    if(document.body) document.body.classList.toggle(m+'-mode', mode===m);
+    $(ui+'Timeline').hidden = $(ui+'Panel').hidden = mode!==m;
+  }
+  renderWsc(); renderGp(); renderBdp(); renderJf(); renderTj(); renderJu();
   renderTrialRank();
 }
 // 캐릭터 선택 (결정 34(char-select)): the selector, the mode tabs and the board tabs follow the character's capabilities

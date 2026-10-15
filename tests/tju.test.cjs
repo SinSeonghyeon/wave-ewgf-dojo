@@ -21,7 +21,7 @@ const key = (a, type, code, t) => a.events[type]({code, timeStamp:t, target:{tag
 
 test('Bryan: the backdash yes, no wave and none of the Mishima moves; the tju tab and its board',()=>{
   const a=br();
-  assert.deepEqual(Object.keys(a.MODES).filter(a.modeAvail),['free','tju','bd10']);
+  assert.deepEqual(Object.keys(a.MODES).filter(a.modeAvail),['free','tju','ju','bd10']);
   assert.equal(boot().modeAvail('tju'),false);assert.equal(boot({char:'hwoarang'}).modeAvail('tju'),false);
   assert.ok(a.BOARDS.includes('tju'));assert.equal(a.boardMixed('tju'),false);assert.equal(a.boardMixed('bd10'),true);
   dash(a,1000);assert.equal(a.session.dashes,0,'no crouch dash, so no wave');
@@ -255,4 +255,109 @@ test('the tju 10-try challenge: every taunt with a verdict is a try, only a fini
   assert.deepEqual(e,{board:'tju',win:c.result.window,lang:a.store.lang,score:7,tie:2,detail:{hits:7,target:10,best:2,char:'bryan'}});
   const w=await import(pathToFileURL(path.join(__dirname,'../worker/index.js')).href);
   const v=w.validate({...e,nick:'smoke'});assert.equal(v.error,undefined);assert.equal(v.value.detail.char,'bryan');
+});
+
+// 최속 제트어퍼 연습 (2026-10-16): the Jet Upper alone on a 15-frame axis, frame 1 = the 6. s = the slot of the 6
+function ju6(a, s, {f=1, n=1, early=0}={}){ a.onDir('f',s*F); a.onDir('n',(s+f)*F); a.onDir('b',(s+f+n)*F); a.onButton(2,(s+f+n+early)*F); a.tick((s+f+n+early+6)*F); return a.jup.last; }
+const bands = a => [...a.get('juAxis').innerHTML.matchAll(/<u class="ju-band ([^"]*)" style="grid-row:(\d);grid-column:(\d+)\/(\d+)">([^<]*)<\/u>/g)].map(m => [m[1], +m[2], +m[3], +m[4], m[5]]);
+const marks = a => [...a.get('juAxis').innerHTML.matchAll(/<b>([^<]*)<\/b>/g)].map(m => m[1]);
+test('the 최속 제트어퍼 tab: Bryan only, practice only (no challenge, no board), the Jet Upper forced on, its own panel',()=>{
+  const a=br();
+  assert.equal(a.modeAvail('ju'),true);assert.equal(boot().modeAvail('ju'),false);assert.equal(boot({char:'hwoarang'}).modeAvail('ju'),false);
+  assert.equal(a.BOARDS.includes('ju'),false);assert.equal('ju' in a.CHALLENGES,false);assert.equal(a.MODES.ju.start,false);
+  a.setMove('tju',false);a.setMode('ju');assert.equal(a.moveOn('tju'),true,'the mode forces the move on');
+  assert.equal(a.get('juTimeline').hidden,false);assert.equal(a.get('juPanel').hidden,false);assert.equal(a.get('tjTimeline').hidden,true);
+  assert.equal(a.get('dGuide').dataset.page,'guide/tju/');assert.equal(a.get('hudHint').textContent,a.T('hint.ju'));
+  assert.equal(a.JU_AXIS,a.TJ.JU_F_MAX+a.TJ.JU_N_MAX+a.TJ.JU_B_EARLY+1,'the slowest measured Jet Upper input fits the axis whole');assert.equal(a.JU_AXIS,15);
+  a.setMode('tju');assert.equal(a.get('juTimeline').hidden,true);assert.equal(a.get('juPanel').hidden,true);
+});
+test('the fastest Jet Upper: 6 1f · N 1f · 4+RP together is a 3f input, drawn frame by frame; no taunt and no EWGF stats',()=>{
+  const a=br();a.setMode('ju');const r=ju6(a,600);
+  assert.deepEqual(pick(r,['kind','fast','s0','rp','input','fF','nF','early','total']),{kind:'ju',fast:true,s0:600,rp:602,input:3,fF:1,nF:1,early:0,total:16});
+  for(const k of ['fF','nF','early','total']) assert.equal(r[k],a.tjp.ju[k],'the same numbers as the judging ('+k+')');
+  assert.deepEqual(pick(a.jup.session,['tries','fast','ju','streak','best']),{tries:1,fast:1,ju:1,streak:1,best:1});
+  assert.equal(a.tjp.session.tries,0,'not a taunt try');assert.equal(a.session.tries,0,'the EWGF stats stay untouched');
+  assert.equal(a.get('rTitle').textContent,a.T('tj.j.juFast'));assert.equal(a.get('juResult').textContent,a.T('tj.res.juFast'));
+  const m=marks(a);assert.equal(m.length,15);assert.deepEqual(m.slice(0,4),['→','★','←+RP','']);
+  assert.match(a.get('juAxis').innerHTML,/class="wsc-cell go mark rp ok" data-frame="3"/);assert.match(a.get('juAxis').innerHTML,/class="wsc-cell after" data-frame="4"/);
+  assert.deepEqual(bands(a),[['ok',1,1,2,'→ 1f'],['ok',1,2,3,'★ 1f'],['in ok',3,1,4,''],['in lbl',3,1,16,a.T('ju.barIn',3)+' · '+a.T('ju.bar.ju',14,16)]]);
+  assert.equal(a.get('juAxis').style['grid-template-columns'],'repeat(15,minmax(0,1fr))');
+  assert.match(a.get('juAB').innerHTML,/^(<div class="ok">.*?<\/div>){4}$/,'every tile is green');assert.match(a.get('juCommand').textContent,/^1f → · 2f ★ · 3f ←\+RP$/);
+});
+test('a slower input shows the frames it took: 6 or N held longer, the 4 before the RP, no neutral, the RP first',()=>{
+  const cases=[ // [input, the try, the top-row bands]
+    [{f:2},{kind:'ju',fast:false,input:4,fF:2,nF:1,early:0,total:17},[['no',1,1,3],['ok',1,3,4]]],
+    [{n:3},{kind:'ju',input:5,fF:1,nF:3,early:0,total:18},[['ok',1,1,2],['no',1,2,5]]],
+    [{early:2},{kind:'ju',input:5,fF:1,nF:1,early:2,total:18},[['ok',1,1,2],['ok',1,2,3],['no',1,3,5,'← 2f']]],
+    [{f:5,n:6,early:3},{kind:'ju',input:15,fF:5,nF:6,early:3},[['no',1,1,6],['no',1,6,12],['no',1,12,15]]],
+    [{f:6},{kind:'slow',input:8,fF:6},[['no',1,1,7],['ok',1,7,8]]],
+  ];
+  for(const [o,want,top] of cases){
+    const a=br();a.setMode('ju');const r=ju6(a,600,o);
+    assert.deepEqual(pick(r,Object.keys(want)),want,JSON.stringify(o));
+    assert.deepEqual(bands(a).filter(b=>b[1]===1).map((b,i)=>b.slice(0,top[i]&&top[i].length>4?5:4)),top,JSON.stringify(o));
+    assert.deepEqual(bands(a).find(b=>b[0]==='in no').slice(2,4),[1,Math.min(r.input,15)+1],'the input bar runs to the RP '+JSON.stringify(o));
+  }
+  let a=br();a.setMode('ju');a.onDir('f',600*F);a.onDir('b',602*F);a.onButton(2,602*F);a.tick(610*F);
+  assert.deepEqual(pick(a.jup.last,['kind','input','fF','nF','early']),{kind:'b2',input:3,fF:2,nF:null,early:0},'no neutral: b+2');
+  assert.ok(a.get('juAB').innerHTML.includes(a.T('ju.nNone')));assert.ok(bands(a).at(-1)[4].endsWith(a.T('ju.bar.b2')));
+  a=br();a.setMode('ju');a.onDir('f',600*F);a.onDir('n',601*F);a.onButton(2,602*F);a.onDir('b',603*F);a.tick(610*F);
+  assert.deepEqual(pick(a.jup.last,['kind','input','fF','nF','early']),{kind:'rp',input:3,fF:1,nF:1,early:null},'the RP first: 2');
+  assert.ok(a.get('juRows').innerHTML.includes(a.T('ju.rpFirst')));
+  assert.deepEqual(pick(a.jup.session,['tries','fast','ju','streak']),{tries:1,fast:0,ju:0,streak:0});
+});
+test('every RP outside a taunt is a try in this tab: a miss says why no Jet Upper came out',()=>{
+  const miss=(fn,why)=>{ const a=br();a.setMode('ju');fn(a);a.tick(900*F);
+    assert.deepEqual(pick(a.jup.last,['kind','why']),{kind:'none',why},why);assert.equal(a.jup.session.tries,1,why);
+    assert.equal(a.get('rTitle').textContent,a.T('ju.r.none'),why);assert.equal(a.ui.coach[0],'ju.c.'+why,why);return a.jup.last; };
+  let r=miss(a=>{a.onDir('b',600*F);a.onButton(2,601*F);},'noSix');assert.equal(r.input,null);
+  r=miss(a=>{a.onDir('f',600*F);a.onDir('df',601*F);a.onDir('b',602*F);a.onButton(2,602*F);},'mixed');assert.deepEqual([...r.odd],['df']);assert.equal(r.input,3);
+  r=miss(a=>{a.onDir('f',600*F);a.tick(620*F);a.onDir('n',620*F);a.onDir('b',621*F);a.onButton(2,621*F);},'stale');assert.equal(r.input,22);
+  r=miss(a=>{a.onDir('f',600*F);a.onDir('n',601*F);a.onDir('b',602*F);a.onButton(2,602*F);a.onButton(3,602*F);},'btns');assert.equal(r.extra,'LK');
+  miss(a=>{a.onDir('f',600*F);a.onDir('b',601*F);a.onDir('n',602*F);a.onDir('b',603*F);a.onButton(2,603*F);},'order');
+  // too slow, but no N (b+2) or the RP first (2): out of order, not "in order but slow" (review 2026-10-16)
+  miss(a=>{a.onDir('f',600*F);a.tick(621*F);a.onDir('b',621*F);a.onButton(2,621*F);},'order');
+  miss(a=>{a.onDir('f',600*F);a.onDir('n',601*F);a.tick(622*F);a.onButton(2,622*F);},'order');
+  // the arrows of a mixed-in direction follow the side like the axis does
+  const s=br();s.setMode('ju');s.onDir('f',600*F);s.onDir('df',601*F);s.onDir('b',602*F);s.onButton(2,602*F);s.tick(620*F);
+  assert.ok(bands(s).at(-1)[4].includes('↘'));s.store.side=-1;s.renderJu();
+  assert.ok(bands(s).at(-1)[4].includes('↙'),'2P: the reason shows the mirrored arrow');assert.equal(s.get('juDetail').textContent,s.T('ju.c.mixed','↙'));
+  // an input past the axis is drawn in the last cell with its frame number
+  const a=br();a.setMode('ju');a.onDir('f',600*F);a.tick(620*F);a.onDir('n',620*F);a.onDir('b',621*F);a.onButton(2,621*F);a.tick(640*F);
+  assert.ok(20>a.TJ_STALE_F,'the 6 was held past the reading limit');
+  assert.deepEqual(marks(a).slice(0,2),['→','']);assert.equal(marks(a)[14],'★ 21f\n←+RP 22f');
+});
+test('an RP during the last try\'s move is no new try; outside this tab an RP alone is nothing, and a Jet Upper is no try of this tab',()=>{
+  let a=br();a.setMode('ju');ju6(a,600);a.onButton(2,(602+a.TJ.JU_F-1)*F);a.tick(700*F);
+  assert.equal(a.jup.session.tries,1,'mashing RP inside the Jet Upper');
+  a.onButton(2,(602+a.TJ.JU_F+20)*F);a.tick(800*F);assert.equal(a.jup.session.tries,2);assert.equal(a.jup.last.why,'noSix');
+  // a whole 6 N 4+RP inside the last Jet Upper is no try either (and no new result), the next one after it is
+  a=br();a.setMode('ju');const first=ju6(a,600);const title=a.get('rTitle').textContent;ju6(a,605);
+  assert.equal(a.jup.session.tries,1,'a Jet Upper mashed during the last one');assert.equal(a.jup.last,first);assert.equal(a.get('rTitle').textContent,title);
+  ju6(a,600+a.TJ.JU_F);assert.equal(a.jup.session.tries,2);
+  a=br();ju6(a,600);ju6(a,605);assert.equal(a.tjp.session.juTries,2,'other modes judge every Jet Upper as before');
+  a=br();a.onDir('b',600*F);a.onButton(2,601*F);a.tick(610*F);assert.equal(a.jup.last,null);assert.notEqual(a.get('rTitle').textContent,a.T('ju.r.none'));
+  ju6(a,700);assert.equal(a.jup.session.tries,0);assert.equal(a.tjp.session.juTries,1,'the free-play count of 16-tju.js still runs');
+  a=br();a.setMode('ju');tju(a,600);
+  assert.equal(a.tjp.last.kind,'tju','a taunt still works in this tab');assert.equal(a.jup.session.tries,0,'its Jet Upper is the taunt\'s follow-up, not a try here');
+});
+test('the axis follows a reading in progress, keeps the last try while a 6 is only held, and goes back to it when the reading drops',()=>{
+  const a=br();a.setMode('ju');const last=ju6(a,600);
+  a.onDir('n',620*F);a.onDir('f',630*F);a.time(634*F);a.tick(634*F);
+  assert.equal(a.jup.shown,last,'a 6 alone (walking forward) leaves the last try up');assert.equal(a.get('juLive').textContent,a.T('ju.liveRun',5,3));
+  a.onDir('n',632*F);a.time(636*F);a.tick(636*F);
+  assert.equal(a.jup.shown,'630:2');assert.deepEqual(marks(a).slice(0,4),['→','','★','']);assert.equal(bands(a).length,0,'no verdict yet');
+  a.time(660*F);a.tick(660*F);assert.equal(a.jup.shown,last,'held past the limit: the reading drops, the last try is back');
+  assert.equal(a.get('juLive').textContent,a.T('ju.liveDone',3));
+});
+test('keyboard: 6, 6+4 (neutral) and 4+RP on three frames is the fastest; the stats, the averages and the session reset',()=>{
+  const a=br();a.setMode('ju');
+  key(a,'keydown','KeyD',600*F);key(a,'keydown','KeyA',601*F);key(a,'keyup','KeyD',602*F);key(a,'keydown','KeyI',602*F);a.tick(610*F);
+  assert.deepEqual(pick(a.jup.last,['kind','fast','input']),{kind:'ju',fast:true,input:3});
+  key(a,'keyup','KeyA',620*F);key(a,'keyup','KeyI',620*F);
+  ju6(a,700,{n:2});ju6(a,800);
+  assert.deepEqual(pick(a.jup.session,['tries','fast','ju','streak','best']),{tries:3,fast:2,ju:3,streak:1,best:1});
+  assert.equal(a.get('juCounts').textContent,a.T('ju.avg','1.0f','1.3f','3.3f'));
+  assert.ok(a.get('juStats').innerHTML.includes('<b>67%</b>'+a.T('ju.rate')));assert.equal(a.get('juRows').innerHTML.split('<tr>').length-1,3);
+  a.resetSession();assert.equal(a.jup.last,null);assert.equal(a.jup.session.tries,0);
 });

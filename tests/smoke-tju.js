@@ -1,6 +1,6 @@
 // 브라이언·도발 제트어퍼 (결정 35(tju)·34(char-select)): real keyboard listeners with 60Hz-aligned timestamps — the 1+3+4 key,
 // 29f 6 · 30f N · 31f 4+RP, a late 6, a Jet Upper on its own —, the Bryan tabs and no-wave screen, the timeline and panel,
-// the touch taunt button, the 10-try countdown, and layout at desktop and phone widths in three languages.
+// the touch taunt button, the 10-try countdown, the 최속 제트어퍼 tab (15-frame axis, a miss), and layout at desktop and phone widths in three languages.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {launch,fileUrl,sleep,stageAssets}=require('../tools/cdp');
 const {assemble}=require('../tools/assemble');
@@ -33,7 +33,7 @@ stageAssets(html,out);
     };
     let r=await read();
     assert.equal(r.char,'bryan','?c=bryan opens Bryan');assert.equal(r.name,'브라이언');
-    assert.equal(await tabs('#modes button'),'free,tju,bd10','Bryan: backdash yes, wave and Mishima moves no');
+    assert.equal(await tabs('#modes button'),'free,tju,ju,bd10','Bryan: backdash yes, wave and Mishima moves no');
     assert.equal(await tabs('#boardTabs button'),'bd10,tju');
     assert.equal(await shown('.coach>.stats'),false,'no wave/EWGF tiles for a character without either');
     assert.equal(await shown('#histCard'),false);assert.equal(await shown('#waveCard'),false);
@@ -59,6 +59,21 @@ stageAssets(html,out);
     // a Jet Upper on its own: f 1f, n 1f, b+RP on one frame
     r=await play([['f',0],['-f',1],['b',2],['p',2],['-p',4],['-b',4]]);
     assert.equal(r.title,'최속 제트어퍼!',JSON.stringify(r));
+    // the 최속 제트어퍼 tab: the Jet Upper alone on a 15-frame axis, frame 1 = the 6; every RP is a try
+    await click('[data-mode="ju"]');
+    const jp=await b.evalJs(`({panel:!document.querySelector('#juPanel').hidden,timeline:!document.querySelector('#juTimeline').hidden,tj:!document.querySelector('#tjTimeline').hidden,btn:!document.querySelector('#tjChallengeBtn').hidden,cells:document.querySelectorAll('#juAxis .wsc-cell').length,cmd:document.querySelector('#juCommand').textContent})`);
+    assert.ok(jp.panel&&jp.timeline&&!jp.tj&&!jp.btn,'its own timeline and panel, no challenge '+JSON.stringify(jp));assert.equal(jp.cells,15);assert.equal(jp.cmd,'1f → · 2f ★ · 3f ←+RP');
+    const juAxis=()=>b.evalJs(`({result:document.querySelector('#juResult').textContent,rp:(document.querySelector('#juAxis .wsc-cell.rp')||{dataset:{}}).dataset.frame,marks:[1,2,3,4].map(f=>document.querySelector('#juAxis [data-frame="'+f+'"] b').textContent),top:Array.from(document.querySelectorAll('#juAxis .ju-band:not(.in)')).map(e=>e.className+' '+e.textContent),bar:(document.querySelector('#juAxis .ju-band.in:not(.lbl)')||{}).className})`);
+    r=await play([['f',0],['-f',1],['b',2],['p',2],['-p',4],['-b',4]]);
+    assert.equal(r.title,'최속 제트어퍼!',JSON.stringify(r));
+    let ax=await juAxis();
+    assert.equal(ax.result,'최속 제트어퍼');assert.equal(ax.rp,'3');assert.deepEqual(ax.marks,['→','★','←+RP','']);
+    assert.deepEqual(ax.top,['ju-band ok → 1f','ju-band ok ★ 1f']);assert.equal(ax.bar,'ju-band in ok','the input bar: 3f, green');
+    r=await play([['f',0],['-f',1],['b',3],['p',3],['-p',5],['-b',5]]);  // the neutral held two frames: a Jet Upper, not the fastest
+    assert.equal(r.title,'제트어퍼',JSON.stringify(r));ax=await juAxis();assert.equal(ax.rp,'4');assert.deepEqual(ax.top,['ju-band ok → 1f','ju-band no ★ 2f']);
+    r=await play([['b',0],['p',1],['-p',3],['-b',3]]);                    // no 6 before the RP: a miss with its reason
+    assert.equal(r.title,'제트어퍼가 나오지 않음',JSON.stringify(r));assert.equal(await b.evalJs(`document.querySelector('#juStats div').textContent`),'3평가 시도');
+    await click('[data-mode="tju"]');
     // the 10-try countdown
     await click('#tjChallengeBtn');await sleep(100);
     assert.match(await b.evalJs(`document.querySelector('#tjChallengeStatus').textContent`),/[0-9]/,'countdown shows');
@@ -88,6 +103,21 @@ stageAssets(html,out);
       assert.ok(layout.cancel>0.75&&layout.ignore<0.2,'the cancel window takes the width, the ignored frames stay narrow '+JSON.stringify(layout));
       await b.evalJs(`document.querySelector('#tjTimeline').scrollIntoView({block:'start'})`);await sleep(60);
       const shot=path.join(out,`${lang}-${width}.png`),cap=await b.send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(shot,Buffer.from(cap.result.data,'base64'));shots.push(shot);
+      await b.evalJs(`window.scrollTo(0,0)`);
+    }
+    // the 최속 제트어퍼 tab: the same widths and languages, a try on the axis
+    await b.send('Emulation.clearDeviceMetricsOverride',{});await click('[data-lang="ko"]');await click('[data-mode="ju"]');
+    r=await play([['f',0],['-f',1],['b',3],['p',4],['-p',6],['-b',6]]);  // N 2f and the 4 a frame early: every top band shows
+    for(const width of [390,1366])for(const lang of ['ko','en','ja']){
+      await b.send('Emulation.setDeviceMetricsOverride',{width,height:1100,deviceScaleFactor:1,mobile:width===390});
+      await click(`[data-lang="${lang}"]`);await sleep(150);
+      const layout=await b.evalJs(`(()=>{const over=e=>e.scrollWidth>e.clientWidth+1;
+        return {page:document.documentElement.scrollWidth<=innerWidth,ab:Array.from(document.querySelectorAll('#juAB>div')).every(e=>!over(e)),cmd:!over(document.querySelector('#juCommand')),
+          stats:Array.from(document.querySelectorAll('#juStats>div')).every(e=>!over(e)),bands:Array.from(document.querySelectorAll('#juAxis .ju-band')).filter(over).map(e=>e.textContent),
+          top:document.querySelectorAll('#juAxis .ju-band:not(.in)').length,timeline:document.querySelector('#juTimeline').getBoundingClientRect().width};})()`);
+      assert.ok(layout.page&&layout.ab&&layout.cmd&&layout.stats&&!layout.bands.length&&layout.top===3,JSON.stringify({width,lang,layout}));
+      await b.evalJs(`document.querySelector('#juTimeline').scrollIntoView({block:'start'})`);await sleep(60);
+      const shot=path.join(out,`ju-${lang}-${width}.png`),cap=await b.send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(shot,Buffer.from(cap.result.data,'base64'));shots.push(shot);
       await b.evalJs(`window.scrollTo(0,0)`);
     }
     await b.send('Emulation.clearDeviceMetricsOverride',{});

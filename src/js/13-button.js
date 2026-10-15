@@ -13,7 +13,7 @@ function buttonJudge(n,t){ // the judging half of onButton, also used when the �
 }
 // 기술 온오프 (결정 32(move-toggle)): 끈 기술은 없는 것처럼 다음 해석으로 넘어간다. 모드에 꼭 필요한 기술은 강제로 켠다.
 // 무족초는 초풍으로 가는 입력 경로라 초풍이 꺼지면 함께 꺼진다.
-const MOVE_FORCED = {ewgf20:['ewgf'], combo10:['ewgf'], giwon:['ewgf','giwon'], jfsr:['jfsr'], tju:['tju']};
+const MOVE_FORCED = {ewgf20:['ewgf'], combo10:['ewgf'], giwon:['ewgf','giwon'], jfsr:['jfsr'], tju:['tju'], ju:['tju']};
 // 결정 34(char-select): a move the current character does not own is off before any toggle — the same "next interpretation" rule.
 function moveOn(k){ return charHas(k) && (!!MOVE_FORCED[mode]?.includes(k) || (store.moves[charId()][k]!==0 && (k!=='mist' || moveOn('ewgf')))); }
 const movesOff = () => charOf().moves.filter(k => !moveOn(k));
