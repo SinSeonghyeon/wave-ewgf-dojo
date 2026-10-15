@@ -1,10 +1,12 @@
 /* ---------- button / EWGF ---------- */
 function onButton(n, t){
+  // 결정 35(button-chord): held attacks join the new press. A chord ('1+2') is another input, so no single-button move matches it.
+  const b = buttonChord(n);
   practiceInput();
   trialTick(t); tick(t);
-  pushHistory({t, btn:n}); gpInput({t, btn:n});
-  if(giwonRecovery(n,t)) return; // 기원권 경직 중에는 기술이 나가지 않는다 (결정 30(giwon))
-  buttonJudge(n,t);
+  pushHistory({t, btn:b}); gpInput({t, btn:b});
+  if(giwonRecovery(b,t)) return; // 기원권 경직 중에는 기술이 나가지 않는다 (결정 30(giwon))
+  buttonJudge(b,t);
 }
 function buttonJudge(n,t){ // the judging half of onButton, also used when the 기원권 recovery releases a buffered button
   if(challengeStatus(mode)==='countdown') return;
@@ -29,7 +31,7 @@ function commandButton(n,t){
     if(cd.state===3 && !cd.pending) cd.pending = {t, btn:4}; // resolved when df arrives; a pending 2 keeps priority; silent if df never comes (d+4 is another move)
     return;                                                   // states 0/1/2: ignored, as every non-2 button was
   }
-  if(n!==2){
+  if(n!==2){ // also every chord such as '1+2' (결정 35(button-chord))
     if(cd.state>=3 && (mode==='ewgf20'||mode==='combo10')) setCoach(['coach.wrongBtn', n]);
     return;
   }

@@ -36,6 +36,14 @@ const buttonForCode = code => {
   return 0;
 };
 const buttonHeld = n => held.has(store.keys['b'+n]) || (!!store.altKeys['b'+n] && held.has(store.altKeys['b'+n]));
+// 결정 35(button-chord): a new attack press is read together with every attack still held on any device (keyboard, pad, touch).
+// Holding RP and pressing LP is LP+RP ('1+2'), not LP; releasing one of a held 1+2 and pressing it again is 1+2 again.
+// A button input is a number (one attack) or the chord string '1+2' (ascending). Only these helpers build or split it.
+const heldAttacks = except => [1,2,3,4].filter(n => n!==except && (buttonHeld(n) || padBtn[n-1] || touchBtnHeld(n)));
+const buttonChord = n => { const h = heldAttacks(n); return h.length ? [...h, n].sort((a,b)=>a-b).join('+') : n; };
+const chordButtons = b => String(b).split('+').map(Number);
+// Timeline cell mark: LP, RP+LK… A break opportunity follows each '+' so a narrow frame cell stacks a chord instead of clipping it.
+const btnMark = b => chordButtons(b).map(n => ['','LP','RP','LK','RK'][n]).join('+\u200b');
 const MODAL_IDS = ['nickDlg','shareDlg','setDlg','donateDlg','fitDlg','noticeDlg','charDlg']; // every <dialog> in app.html (tests/modals.test.cjs checks the list)
 const modalOpen = () => MODAL_IDS.some(id => $(id).open); // any dialog pauses game input
 let listening = null; // key remap target: {slot, alt}
@@ -256,7 +264,10 @@ function pollPad(snapshotOnly=false){
   const pressed = ['b1','b2','b3','b4'].map(k=>inputs.includes(store.padKeys[k]) || inputs.includes(store.padAltKeys[k]));
   if(changed || pressed.some((p,i)=>p!==padBtn[i])) padLastT = t;
   if(changed) recomputeDir(t,'pad'); // Direction must precede buttons in the same sample for d/f+2.
-  pressed.forEach((p,i)=>{ if(p && !padBtn[i]){ unlockAudio(); onButton(i+1,t); } padBtn[i]=p; }); // Two physical buttons form one held logical attack.
+  // Two physical buttons form one held logical attack. Attacks newly pressed in the same sample are one chord (결정 35(button-chord)).
+  const fresh = pressed.map((p,i)=>p && !padBtn[i] ? i+1 : 0).filter(Boolean);
+  pressed.forEach((p,i)=>{ padBtn[i]=p; }); // before onButton: heldAttacks reads the other fresh attacks from padBtn
+  if(fresh.length){ unlockAudio(); onButton(fresh[fresh.length-1],t); }
   if(padBtn.some(Boolean) && lastSrc!=='pad') setSrc('pad');
 }
 setInterval(pollPad, 4);

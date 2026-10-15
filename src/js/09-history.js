@@ -33,7 +33,7 @@ function historyRows(now=performance.now()){
     let group=groups[groups.length-1];
     if(!group || group.slot!==slot){ group={slot,first:ev,dir:null,buttons:new Set()}; groups.push(group); }
     if(ev.dir){ group.firstDir ??= ev; group.dir=ev; }
-    if(ev.btn) group.buttons.add(ev.btn);
+    if(ev.btn) chordButtons(ev.btn).forEach(n => group.buttons.add(n)); // a chord '1+2' shows as 1+2
   }
   return groups.reverse().map(group => {
     const ev=group.dir, buttons=[...group.buttons].sort();

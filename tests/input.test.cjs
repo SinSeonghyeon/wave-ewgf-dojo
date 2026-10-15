@@ -2,7 +2,7 @@
 // Harness: tests/helpers/app.cjs (boot() runs the assembled app from src/).
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
-const {html, boot, samplePad} = require('./helpers/app.cjs');
+const {html, boot, samplePad, dash} = require('./helpers/app.cjs');
 test('idle pad polls after timestamp zero allow delayed device timestamps to recover',()=>{
   const a=boot();
   const sample=(now, timestamp, indices=[])=>{a.time(now);a.pads([{index:0,id:'pad',mapping:'standard',axes:[0,0],timestamp,
@@ -310,4 +310,50 @@ test('unchanged input history does not replace DOM on animation ticks',()=>{
   a.renderHistory(1200);a.renderHistory(1300);
   assert.equal(writes,0,'stopped hold frames are unchanged');
   a.setLang('ja');assert.ok(writes>0,'localized titles still update');
+});
+// 결정 35(button-chord): a new attack press joins every attack still held, and a chord is no single-button move.
+const key = (a, type, code, t) => a.events[type]({code, timeStamp:t, preventDefault(){}});
+test('a held LP joins the RP into LP+RP, which is not an EWGF',()=>{
+  let a=boot();dash(a,1000);a.onButton(2,1060);
+  assert.equal(a.session.tries,1,'control: a lone RP on the d/f is judged');
+  a=boot();key(a,'keydown','KeyU',900);dash(a,1000);key(a,'keydown','KeyI',1060);
+  assert.equal(a.session.tries,0,'LP held + RP = 1+2: no EWGF attempt');
+  assert.equal(a.historyRows(1100)[0].label,'↘+1+2','the ledger shows the chord in the d/f frame');
+});
+test('releasing one of a held 1+2 and pressing it again is 1+2 again',()=>{
+  const a=boot();
+  key(a,'keydown','KeyU',1000);key(a,'keydown','KeyI',1000);
+  key(a,'keyup','KeyU',1100);key(a,'keydown','KeyU',1200);
+  assert.equal(a.historyRows(1250)[0].label,'1+2');
+  key(a,'keyup','KeyU',1300);key(a,'keyup','KeyI',1300);dash(a,2000);key(a,'keydown','KeyI',2060);
+  assert.equal(a.session.tries,1,'once everything is released a lone RP is an RP again');
+});
+test('pad attacks pressed in one sample are one chord, and a held pad LP chords a keyboard RP',()=>{
+  let a=boot();dash(a,1000);samplePad(a,[2,3]);
+  assert.equal(a.session.tries,0,'LP+RP in one pad sample: no EWGF');
+  assert.equal(a.history.filter(e=>e.btn).length,1,'one chord input, not two presses');
+  a=boot();samplePad(a,[2]);dash(a,1000);key(a,'keydown','KeyI',1060);
+  assert.equal(a.session.tries,0,'devices share one held set');
+});
+test('a touch attack is held per finger: it chords until lifted, never behind a modal, and blur drops it',()=>{
+  const a=boot(), tb=a.get('tbtns');
+  const touch=(type,id,n,t)=>tb[type]({pointerId:id,timeStamp:t,preventDefault(){},
+    target:{closest:()=>({dataset:{btn:String(n)},classList:{add(){},remove(){}},setPointerCapture(){}})}});
+  touch('pointerdown',1,1,900);dash(a,1000);touch('pointerdown',2,2,1060);
+  assert.equal(a.session.tries,0,'touch LP held + touch RP = 1+2');
+  touch('pointerup',1,1,1100);touch('pointerup',2,2,1100);dash(a,2000);touch('pointerdown',3,2,2060);
+  assert.equal(a.session.tries,1,'the lifted finger no longer chords');
+  touch('pointerup',3,2,2100);
+  a.get('setDlg').showModal();touch('pointerdown',4,1,2900);a.get('setDlg').open=false;
+  dash(a,3000);touch('pointerdown',5,2,3060);
+  assert.equal(a.session.tries,2,'a press the modal swallowed is not held');
+  touch('pointerup',5,2,3100);
+  touch('pointerdown',6,1,3900);a.events.blur();dash(a,4000);touch('pointerdown',7,2,4060);
+  assert.equal(a.session.tries,3,'blur releases every held touch attack');
+});
+test('timeline marks name the chord and can wrap after its +',()=>{
+  const a=boot();
+  assert.equal(a.btnMark(2),'RP');
+  assert.equal(a.btnMark('1+2'),'LP+​RP');
+  assert.deepEqual([...a.chordButtons('3+4')],[3,4]);
 });

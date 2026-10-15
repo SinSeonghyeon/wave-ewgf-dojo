@@ -28,8 +28,8 @@
 | `src/js/04-i18n.js` | `LOCALE`, `I18N` 결합, `T()`·`msg()`·`displayFont()` |
 | `src/js/05-sound.js` | `SND`·`BGM_TRACKS`·`BGM_GAIN`(도구가 생성), 효과음 풀, BGM 셔플·Web Lock, 합성 차임·팡파르 |
 | `src/js/06-state.js` | `session`, `cd`(크라우치 대시 상태), `bd`(백대시 상태), `tapDetect`, `ui` 재렌더 보관 |
-| `src/js/07-input.js` | 키보드·게임패드 입력, 키 바인딩·패드 리맵 UI, `recomputeDir` |
-| `src/js/08-touch.js` | 터치 오버레이 |
+| `src/js/07-input.js` | 키보드·게임패드 입력, 키 바인딩·패드 리맵 UI, `recomputeDir`, 홀드 버튼 합성 `heldAttacks`·`buttonChord`·`chordButtons`·타임라인 표기 `btnMark`(결정 35) |
+| `src/js/08-touch.js` | 터치 오버레이(공격 버튼 홀드는 포인터별 `touchBtnPointers`) |
 | `src/js/09-history.js` | 입력 기록(씬뷰 왼쪽 세로 목록) |
 | `src/js/10-wsc.js` | 웨캔기어 인식·A/B·10회 도전 |
 | `src/js/11-crouch-dash.js` | `onDir` 진입점, 무족초(`mistDir`/`mistButton`), `commandDir` 상태 머신 |
@@ -96,7 +96,7 @@
 | 백대시·bd10 | `00-core`(`BD`) `06-state` `12-backdash` `12-bd-practice` `11-crouch-dash`(`backdashMotion`) `31-stage`(`bdEase`) | `backdash` `smoke-backdash` | 결정 17, `BACKDASH.md` |
 | 측정 모드·결과 | `20-trials` `18-hud` `21-charts` | `judging` `i18n-pages` | 결정 13·14 |
 | 순위·한마디 | `26-backend-config` `29-backend` `worker/` | `backend` `board` `smoke-chrome` | `worker/README.md`, 결정 16·18·19·22~24·26·31 |
-| 입력 장치·키 설정 | `07-input` `08-touch` `09-history` | `input` `smoke-bindings` | 결정 11·28·29 |
+| 입력 장치·키 설정 | `07-input` `08-touch` `09-history` `13-button`(`onButton`의 합성 입력) | `input` `smoke-bindings` | 결정 11·28·29·35 |
 | 소리 | `05-sound` | `sound` `smoke-sound` | 결정 8 |
 | 옷장·업적·보상 | `01-wardrobe-items` `28-rewards` `33-fighter` | `wardrobe-rewards` | 결정 15 |
 | 공지·후원 | `02-notices` `25-notices-ui` `27-donate` | `i18n-pages` `modals` | 결정 20·21 |
@@ -129,6 +129,7 @@
 
 | 순서 | 단계 | 소비하면 |
 |---|---|---|
+| 0 | 결정 35(button-chord): 홀드 중인 공격 버튼(`heldAttacks`, `07-input`)과 묶어 `'1+2'` 같은 입력 하나로 만든다(`buttonChord`. 값은 숫자 하나 또는 오름차순 `'1+2'` 문자열이고 만들기·나누기는 `buttonChord`·`chordButtons`만 한다). 이하 `n`은 그 값이며, 묶인 입력은 어떤 `n===2`·`n===4`·레시피 버튼과도 같지 않아 "다른 버튼"으로 흐른다 | — |
 | 1 | `practiceInput`·`trialTick`·`tick`, 입력 기록 | — |
 | 2 | 기원권 경직 중(`giwonRecovery`): 마지막 `BUFFER_F` 안이면 한 칸 버퍼(덮어쓰기), 그 전이면 버림 | 끝(해제 칸에 `buttonJudge`로 재전달) |
 | 3 | 도전 카운트다운 중 | 끝 |
@@ -183,9 +184,10 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
 세션      session{dashes,bestChain,bestDps,tries,hits,offsetSum,offsetCount,cycles,attempts,log}
 입력      keydown/keyup → held Set → kbVector()(`keys` 기본 키와 `altKeys` 보조 키를 같은 동작으로 합침. 둘을 함께 누른 뒤 하나만 떼도 다른 키가 눌려 있으면 방향 유지) → recomputeDir().
           버튼도 buttonForCode/buttonHeld로 논리 입력을 합쳐 기본·보조 키 중 하나가 이미 눌린 동안 다른 키의 keydown은 onButton을 다시 호출하지 않음 · pollPad() 4ms(판정 시각은 gamepad.timestamp, 실제 방향·버튼 변화에서만 padLastT 갱신) → padDir/padBtn · 터치 오버레이 → touchDir/touchPress (아래 "터치" 줄)
+          · 결정 35: onButton은 새 버튼에 키보드 held·padBtn·touchBtnPointers에서 홀드 중인 공격을 합친다(heldAttacks). 그래서 pollPad는 padBtn을 먼저 갱신한 뒤 그 샘플에 새로 눌린 공격들에 onButton을 **한 번**만 부르고, 터치는 누른 뒤에 포인터를 등록한다(모달에 막힌 누름은 등록하지 않음)
 터치      html.touch-ui(applyTouchUI: store.touch 'auto'|'on'|'off', auto = (pointer:coarse) && maxTouchPoints>0, 미디어 쿼리 change에 재적용) → #touch 오버레이(스테이지 하단 46%, 데스크톱은 display:none)
           · #tdirs 독립 버튼 3개(←·↓·→): 포인터별 touchPointers Map → touchKeys(keys,t), ↓+좌/우 동시 입력은 db/df, 좌+우는 N → touchDir → recomputeDir(t,'touch')(kbDir+padDir+touchDir 합) · #tbtns 2×2(1 2 / 3 4, 포인터 별도)
-          pointerdown → touchPress(n,t): modalOpen이면 무시, unlockAudio, onButton · resetInput()이 touchDir·포인터·눌림 표시를 지움(touchRelease) · 판정·상태 머신은 손대지 않음 · 시각은 e.timeStamp(키보드와 같은 클록)
+          pointerdown → touchPress(n,t): modalOpen이면 무시, unlockAudio, onButton · 공격 버튼도 setPointerCapture, pointerup/cancel까지 touchBtnPointers에 홀드(결정 35) · resetInput()이 touchDir·포인터·공격 홀드·눌림 표시를 지움(touchRelease) · 판정·상태 머신은 손대지 않음 · 시각은 e.timeStamp(키보드와 같은 클록)
           · store.touchSize(70~300%, 기본 100이고 실제 크기는 종전 140%)·touchX/touchY(0~100%, 기본 좌하단 0/0)를 설정 슬라이더로 저장, applyTouchLayout이 기본 100%만 공격 버튼 앞 폭에 맞춰 자동 축소하고 100% 이외의 선택 크기는 그대로 반영; 가로 위치는 공격 버튼과 무관하게 오버레이 안에서, 세로 위치는 노트 아래에서 제한하며 resize에도 재계산(결정 11)
           · 대기 배지는 touchOn이면 src.waitTouch · touch-ui면 frame()의 바닥 gy가 H*0.80 → H*0.46(발과 오버레이 사이 띠에 힌트 2줄이 들어갈 자리), .stage 비율 4/5(max-height 72vh, 가로 모드는 16/9), .hud-hint는 오버레이 바로 위 바닥 띠(bottom:calc(46% + 3px), 가로 모드는 한 줄 말줄임), #touch는 container-type:size ·
           문서 기본 태그(<!doctype html>·<html lang="ko">·charset·viewport)는 2026-09-12 터치 작업 때 추가(그 전엔 쿼크 모드, 폰에서 980px로 렌더)
@@ -211,7 +213,7 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
           bd10 기록은 bdv:BD_REC_V(2). 그 전 기록(1.0 m/백대시 척도)은 저장소에 남기되 trialRecs()가 최고 기록·개인 최고 판정에서 뺀다
           bd10 측정은 trial.dist/bdCount/bdTop/bestChain → renderBdHud(#hudScore "n.n m") · 구간 막대: bd.seg{tap,n,hold,db} → renderSeg(bd 변형, seg.namesBd 4·N·4홀드·1, 5번째 칸 접힘, 제목 #segTitle)
 경직      bdRec{until} — 모든 모드의 스테이지 기능(판정 아님): onDir에서 b,N,b가 나가면 until = t + RECOVER_F(판정이 그 백대시를 본 뒤 설정), 그 안의 b,N,b는 fx.backdash 없음, d/db/df/u/ub/uf가 until을 지우고 anim이 backdash면 이동 정지 + bdCrouch. frame()은 until 전엔 뒤 걷기만 막고, poseAt backdash는 BD_MOVE_MS 뒤에도 until까지 자세 유지(sweat). 연출 이동은 fx.backdash → moveChar(−BD.PX, BD_MOVE_MS, bdEase): 출력 뒤 e프레임 = bdDist(e+1)(판정 bdFrameNo와 같은 원점, 1·횡으로 멈춘 자리 = 판정 거리)을 프레임 사이 선형 보간, BD_MOVE_MS = (BD_LAST−1)×FRAME(anim.moveEase, 없으면 ease-out cubic)
-초풍 판정 onButton(n,t): n===4 → 나락(strike), n===2 → 초풍 판정, 그 외 → wrongBtn 코치
+초풍 판정 onButton(n,t): n===4 → 나락(strike), n===2 → 초풍 판정, 그 외(묶인 입력 `'1+2'` 포함, 결정 35) → wrongBtn 코치
           초풍: classify(off,t) → attempt(kind,off,t). frameSlot(t)=floor(t/FRAME+0.5), 대각과 RP의 슬롯 차이 0→ewgf / 양수→wgf / 음수→early. 원시 off는 보존, a.frameOff를 히스토그램에 사용(간격 반올림과 다름).
           상태 3(d 유지)에서 버튼이 먼저 오면 cd.pending={t,btn}, 3이 오면 음수 오프셋으로 판정, 120ms 안에 3이 없으면 no_df(btn 2만)
           attempt 종류: ewgf / combo_short(웨이브 초풍 모드에서 웨이브 3회 미만) / wgf / early / no_df / early_stage / no_cd
@@ -517,7 +519,7 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 - `renderBindings` / `renderKeys`: 설정 최상단 키보드·패드 탭, 기본/보조 키 라벨, 패드 개별 해제, 탭별 확인 후 복원. 대기/저장/충돌 메시지를 `bindingMessage` 번역 키 배열로 보존하고 모달 내 live region에 표시한다. Esc는 먼저 캡처 취소, 그다음 모달 닫기. 닫기/blur/hidden/패드 연결 해제 시 캡처 취소.
 - `node tests/smoke-bindings.js`: 모의 Gamepad API + 실제 DOM/키 이벤트로 상시 -1 축·십자키 중복 보고에서의 캡처·교환·해제·충돌·취소·새로고침 저장·복원·입력 복귀 검증. 320/390/1100px × ko/en/ja × 키보드/패드 18개 레이아웃 검증 및 `.sandbox/pad-settings/browser/` 스크린샷. 물리 패드별 입력 지연·비표준 축 배치는 별도 수동 확인.
 
-- 패드 보조 입력(2026-09-27 후속): `padBindingEntries()`가 기본/보조 칸을 함께 다룬다. 두 칸 사이 중복·자동 방향 충돌을 검증하고 호환되는 서로 다른 동작의 칸만 교환한다. 저장값이 없는 기존 사용자는 기본 배치를 보존하며 보조를 none으로 시작한다. 방향은 기본 입력과 보조 입력을 합치되 같은 방향을 두 번 더하지 않고, 공격은 OR 후 `padBtn`과 비교해 모두 해제되기 전까지 1회만 호출한다. 해제 대기·모달 복귀도 보조 입력을 포함한다.
+- 패드 보조 입력(2026-09-27 후속): `padBindingEntries()`가 기본/보조 칸을 함께 다룬다. 두 칸 사이 중복·자동 방향 충돌을 검증하고 호환되는 서로 다른 동작의 칸만 교환한다. 저장값이 없는 기존 사용자는 기본 배치를 보존하며 보조를 none으로 시작한다. 방향은 기본 입력과 보조 입력을 합치되 같은 방향을 두 번 더하지 않고, 공격은 OR 후 `padBtn`과 비교해 모두 해제되기 전까지 1회만 호출한다(한 샘플에 새로 눌린 공격이 여럿이면 묶인 입력 하나, 결정 35). 해제 대기·모달 복귀도 보조 입력을 포함한다.
   설정에는 키보드와 같은 2열 카드의 두 칸을 표시하고 선택한 칸을 공통 지우기로 해제하며 패드 기본값 복원 시 두 배치를 함께 초기화한다.
 
 - 입력 설정 UI·자동 장치 전환(2026-09-27 후속): 키보드와 패드가 `.keys`/`.key`/`.key-pair`/`.key-bind` 스타일을 공유한다. 패드의 상시 × 버튼과 전용 1열 스타일은 제거. `bindingClear`는 패드 지정/키보드 보조 지정 중에만 표시하며 `clearBinding()`으로 해당 칸만 비운다. 패드 표시는 B번호/A축부호로 줄이고 전체 이름은 aria-label/title/현재 입력 표시에 유지한다.

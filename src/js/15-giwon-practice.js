@@ -156,7 +156,7 @@ function renderGp(){
   const lastDir = new Map(); if(view) for(const e of view.events) if(e.dir) lastDir.set(frameSlot(e.t), e);
   for(const sg of segs){
     const ev = view ? view.events.filter(e=>{const c=gpCell(view,e.t); return c>=sg.a&&c<=sg.b && (!e.dir || lastDir.get(frameSlot(e.t))===e);}) : [];
-    const marks = ev.map(e=>e.btn?['','LP','RP','LK','RK'][e.btn]:glyph(e.dir));
+    const marks = ev.map(e=>e.btn?btnMark(e.btn):glyph(e.dir));
     if(!view&&sg.a===1) marks.push(glyph('df'));
     const cls=(sg.a===GP_HIT?' hit':'')+(sg.span?' span'+(sg.span==='rec'?' rec':''):'')
       +(sg.a>=GP_BUF_A&&sg.a<=GP_BUF_B?' buf':'')                    // 시작 6 선입력 창(47f는 빠진다)
