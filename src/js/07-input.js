@@ -36,6 +36,11 @@ const buttonForCode = code => {
   return 0;
 };
 const buttonHeld = n => held.has(store.keys['b'+n]) || (!!store.altKeys['b'+n] && held.has(store.altKeys['b'+n]));
+// The 1+3+4 key (bt): one press is LP, LK and RK on the same moment, like the game's LP+LK+RK hotkey for the taunt (결정 35(tju)).
+// It feeds the ordinary button path, so the input log shows one 1+3+4 row and every character reads it as those three buttons.
+const tauntCode = code => !!code && (code===store.keys.bt || code===store.altKeys.bt);
+const tauntHeld = () => [store.keys.bt, store.altKeys.bt].some(c => !!c && held.has(c));
+function pressTaunt(t){ if(charOf().tj) for(const n of TJ_TAUNT) onButton(n,t); } // only a character with a taunt (결정 35(tju)): for the others L/RB stay as inert as before (Kazuya's 4 would be 나락)
 const MODAL_IDS = ['nickDlg','shareDlg','setDlg','donateDlg','fitDlg','noticeDlg','charDlg']; // every <dialog> in app.html (tests/modals.test.cjs checks the list)
 const modalOpen = () => MODAL_IDS.some(id => $(id).open); // any dialog pauses game input
 let listening = null; // key remap target: {slot, alt}
@@ -122,10 +127,11 @@ addEventListener('keydown', e => {
   if(!mappedCodes().has(e.code)) return;
   e.preventDefault(); unlockAudio();
   if(e.repeat || held.has(e.code)) return;
-  const button = buttonForCode(e.code), alreadyPressed = button && buttonHeld(button);
+  const button = buttonForCode(e.code), alreadyPressed = button && buttonHeld(button), taunt = !button && tauntCode(e.code), tauntWas = taunt && tauntHeld();
   held.add(e.code);
   const t = e.timeStamp || performance.now();
   if(button){ if(!alreadyPressed) onButton(button,t); }
+  else if(taunt){ if(!tauntWas) pressTaunt(t); } // primary + alternate held together are one press, like the buttons
   else { kbVector(); recomputeDir(t,'kb'); }
   if(lastSrc!=='kb') setSrc('kb');
 });
@@ -138,7 +144,7 @@ addEventListener('keyup', e => {
 function resetInput(){
   historyStopT=performance.now();
   const openHistory=history.slice().reverse().find(e=>e.dir); if(openHistory && openHistory.endT==null) openHistory.endT=historyStopT;
-  wscCancel(); gpChallengeCancel(); jfChallengeCancel();
+  wscCancel(); gpChallengeCancel(); jfChallengeCancel(); tjChallengeCancel(); tjClear();
   held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); touchDir={x:0,y:0}; curDir='n'; heldDir='n'; prevDir='n'; heldDirT=0; touchRelease();
   clearCommand(); resetCombo(); resetTaps(); bdClear(); giwonClear(); updateHud(); renderWsc();
 }
@@ -253,10 +259,10 @@ function pollPad(snapshotOnly=false){
   const nx = clamp(x,-1,1), ny = clamp(y,-1,1);
   let changed = false;
   if(nx!==padDir.x || ny!==padDir.y){ padDir={x:nx,y:ny}; changed=true; }
-  const pressed = ['b1','b2','b3','b4'].map(k=>inputs.includes(store.padKeys[k]) || inputs.includes(store.padAltKeys[k]));
+  const pressed = ['b1','b2','b3','b4','bt'].map(k=>inputs.includes(store.padKeys[k]) || inputs.includes(store.padAltKeys[k])); // bt (index 4): the 1+3+4 button
   if(changed || pressed.some((p,i)=>p!==padBtn[i])) padLastT = t;
   if(changed) recomputeDir(t,'pad'); // Direction must precede buttons in the same sample for d/f+2.
-  pressed.forEach((p,i)=>{ if(p && !padBtn[i]){ unlockAudio(); onButton(i+1,t); } padBtn[i]=p; }); // Two physical buttons form one held logical attack.
+  pressed.forEach((p,i)=>{ if(p && !padBtn[i]){ unlockAudio(); if(i<4) onButton(i+1,t); else pressTaunt(t); } padBtn[i]=p; }); // Two physical buttons form one held logical attack.
   if(padBtn.some(Boolean) && lastSrc!=='pad') setSrc('pad');
 }
 setInterval(pollPad, 4);

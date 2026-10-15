@@ -33,7 +33,7 @@ function touchKeys(keys, t){                              // keys: physical left
   if(touchHeld.size && lastSrc!=='touch') setSrc('touch');
   return curDir;
 }
-function touchPress(n, t){ if(modalOpen()) return; unlockAudio(); onButton(n,t); if(lastSrc!=='touch') setSrc('touch'); }
+function touchPress(n, t){ if(modalOpen()) return; unlockAudio(); if(n==='t') pressTaunt(t); else onButton(n,t); if(lastSrc!=='touch') setSrc('touch'); } // 't': the 1+3+4 taunt button, shown only for a character with a taunt (renderCharUI)
 const tdirs = $('tdirs'), tbtns = $('tbtns');
 function touchRelease(){ touchPointers.clear(); touchKeys([],performance.now()); tbtns.querySelectorAll('button').forEach(b => b.classList.remove('on')); }
 const evT = e => e.timeStamp || performance.now();      // same clock as keydown; a pointermove can be delivered a frame late, its own timestamp is when it happened
@@ -41,7 +41,7 @@ tdirs.addEventListener('pointerdown', e => { const b=e.target.closest&&e.target.
 const tdirEnd=e => { if(!touchPointers.has(e.pointerId)) return; touchPointers.delete(e.pointerId); touchKeys(touchPointers.values(),evT(e)); };
 tdirs.addEventListener('pointerup',tdirEnd); tdirs.addEventListener('pointercancel',tdirEnd);
 const tbtnOf = e => e.target && e.target.closest ? e.target.closest('[data-btn]') : null;
-tbtns.addEventListener('pointerdown', e => { const b = tbtnOf(e); if(!b) return; e.preventDefault(); b.classList.add('on'); touchPress(+b.dataset.btn, evT(e)); });
+tbtns.addEventListener('pointerdown', e => { const b = tbtnOf(e); if(!b) return; e.preventDefault(); b.classList.add('on'); touchPress(b.dataset.btn==='t' ? 't' : +b.dataset.btn, evT(e)); });
 ['pointerup','pointercancel'].forEach(ev => tbtns.addEventListener(ev, e => { const b = tbtnOf(e); if(b) b.classList.remove('on'); }));
 $('touch').addEventListener('contextmenu', e => e.preventDefault()); // long-press menu would steal the finger
 

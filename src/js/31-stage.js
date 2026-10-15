@@ -65,6 +65,35 @@ const fx = {
     pop(electric ? (n>1 ? T('pop.jfStreak', n) : T('pop.jfsr')) : T('pop.sky'), color, electric ? L.size : 36, electric ? {lvl:clamp(n,1,6), glow:L.glow, rings:reduced?0:L.rings, core:L.core} : undefined);
     if(!world.dummy.type) tryHit(electric ? 'jfsr' : 'sky');
   },
+  // 도발 제트어퍼 (결정 35(tju)): the taunt pose is drawn frame by frame from the press (poseAt 'taunt', TJ_POSE); sound and contact follow the judged frames
+  taunt(t0){ startAnim('taunt'); anim.t0 = t0; anim.kneeFrom = 0; },
+  taunt2(){ pop(T('pop.tauntDouble'), cssVar('--gold','#F5C542'), 24, {y:-150}); },        // 더블 도발: the first press keeps its frames
+  tauntCut(kneeLanded){ // the first input cancels the taunt: back to guard unless a follow-up takes over; after the knee the head catches fire (실측 영상)
+    if(anim.kind!=='taunt') return;
+    anim.cutFrom = tjTauntPose((performance.now()-anim.t0)/FRAME+1, () => ({})); // the guard is reached from wherever the taunt was (arms spread, knee half up …)
+    anim.kneeFrom = kneeLanded ? 1 : 0; startAnim('tjCut');
+    if(kneeLanded) tjFlameUntil = performance.now() + TJ_FLAME_MS;
+  },
+  knee(until){ playSfx('tongbal'); puff(2, 1); if(!world.dummy.type && tryHit('knee', until)) pop('+'+TJ.ADV, cssVar('--gold','#F5C542'), 26, {x:world.dummyX, y:-128}); }, // 28f: the bag reels until the +16 runs out
+  tauntEnd(t0){ if(anim.t0===t0 && ['taunt','idle'].includes(anim.kind)) tjSteamUntil = performance.now() + TJ_STEAM_MS; }, // an uncancelled taunt ends in steam (its pose may already be back to idle: the reader closes 78f two frames late)
+  // a follow-up: how = 'win' (도발 제트어퍼) · 'hit' (a combo, or a move on its own) · 'guard' (too late, or no knee) · 'whiff' (unknown startup).
+  // at = when it lands (the judged frame): a guard shows then, after the knee's reel (44f) is over
+  tjMove(key, how, n=1, at=null){
+    if(key==='ju'){ playSfx('wsc'); startAnim('ju'); moveChar(18, 220); }
+    else if(key==='b+4'){ playSfx('tongbal'); startAnim('bknee'); moveChar(14, 160); }
+    else if(/[34]/.test(key.replace(/^[a-z]+\+/, ''))){ playSfx('tongbal'); startAnim('sky'); anim.electric = false; moveChar(20, 120); }
+    else { playSfx('tongbal'); startAnim('tongbal'); moveChar(30, 110); }
+    puff(3, 1);
+    const move = key==='ju' ? 'ju' : 'tjs';
+    if(how==='win'){
+      const L = streakStyle(n), color = cssVar('--gold','#F5C542');
+      pop(n>1 ? T('pop.tjuStreak', n) : T('pop.tju'), color, L.size, {lvl:clamp(n,1,6), glow:L.glow, rings:reduced?0:L.rings, core:L.core, life:1100});
+      if(store.fx && !reduced) shake = L.shake;
+    } else if(how==='hit' && key==='ju') pop(T('pop.ju'), cssVar('--warn','#F5A524'), 34);
+    if(world.dummy.type || how==='whiff') return;
+    if(how==='guard'){ dummyGuard(at ?? performance.now()+HIT_CONTACT_MS[move]); return; }
+    if(tryHit(move) && how==='win') world.dummy.power = 'link'; // the launch the 기원초 link uses: gold burst, big flight
+  },
   jab(){ startAnim('jab'); pop('?', '#E5484D', 30); },
   stumble(){ startAnim('stumble'); pop('MISS', '#E5484D', 30); },
   dash(short){ if(anim.kind==='ewgf' && performance.now()-anim.t0<260) return; startAnim('dash'); if(short) moveChar(24, 120); else moveChar(64, 150); puff(3, 1); }, // short: the wave restart dash (a full 64px per cycle would double wave travel)
@@ -87,9 +116,14 @@ const fx = {
 };
 function pop(text,color,size,opts){ pops.push({text,color,size,t0:performance.now(),x:world.charX+30*store.side, ...(opts||{})}); } // opts: lvl, glow, rings, core, life, x (world px), y (px above the floor, default −118)
 // Presentation contact points in milliseconds, tuned to each pose (not game frame data).
-const HIT_CONTACT_MS = {ewgf:180,wgf:180,tongbal:180,hellsweep:160,wsc:200,jfsr:190,sky:190,giwon:Math.round(GIWON.ACTIVE_F*FRAME)}; // giwon만 연출 튜닝값이 아니라 GIWON.ACTIVE_F(가정값)에서 파생된다
+const HIT_CONTACT_MS = {ewgf:180,wgf:180,tongbal:180,hellsweep:160,wsc:200,jfsr:190,sky:190,giwon:Math.round(GIWON.ACTIVE_F*FRAME),
+  knee:0, ju:Math.round((TJ.JU_F-1)*FRAME), tjs:180}; // giwon만 연출 튜닝값이 아니라 GIWON.ACTIVE_F(가정값)에서 파생된다. knee: fx.knee is called once 28f is read · ju: 14f from the 4+RP (TJ.JU_F)
+let tjFlameUntil = 0, tjSteamUntil = 0; // 도발 연출 (결정 35(tju)): flames on the head after a cancelled knee, steam after an uncancelled taunt
+const TJ_FLAME_MS = 30*FRAME, TJ_STEAM_MS = 700; // how long each lasts
+const parkPx = () => mode==='giwon' ? GP_DUMMY_PX : mode==='tju' ? TJ_DUMMY_PX : 0;
+function dummyGuard(at){ world.dummy.guardAt = at; } // the bag blocks: a ring and GUARD at that time, no knockback (updateDummy)
 const crumpling = (d, now) => d.crumpleUntil>0 && !d.launchAt && now<d.crumpleUntil; // 배잡기 경직: still standing, so a follow-up lands on a grounded opponent
-function tryHit(move){ // move: 'ewgf'|'wgf'|'tongbal'|'hellsweep'|'wsc'|'giwon'. Returns true when the dummy is knocked. Plain dummy: any move within reach; typed dummy: only HIT_TYPE[move]
+function tryHit(move, until){ // move: 'ewgf'|'wgf'|'tongbal'|'hellsweep'|'wsc'|'giwon'|'knee'|'ju'|'tjs'. Returns true when the dummy is knocked. Plain dummy: any move within reach; typed dummy: only HIT_TYPE[move]. until: knee only — when the reel ends
   const d = world.dummy, now = performance.now(); const dist = (world.dummyX - world.charX)*store.side;
   if(!d.alive || (d.hit && !crumpling(d, now)) || dist<10 || dist>130) return false;
   if(d.type && HIT_TYPE[move]!==d.type) return false; // giwon is in no HIT_TYPE, so rush30 targets always read it as a whiff
@@ -103,6 +137,8 @@ function tryHit(move){ // move: 'ewgf'|'wgf'|'tongbal'|'hellsweep'|'wsc'|'giwon'
   d.move = move; d.power = again ? 'weak' : null; // 기원초 링크가 판정되면 attempt가 'link' | 'weak'을 채운다 (아래 launch)
   // 기원권 카운터(연습 전제, GIWONCHO.md 3-4절): the bag does not fly — it folds in place until a follow-up lands or CRUMPLE_MS runs out.
   d.crumpleUntil = move==='giwon' && !d.type && !again ? d.launchAt + GIWON.CRUMPLE_MS : 0;
+  // 도발 무릎 (결정 35(tju)): the bag reels in place for the +16 and then stands back up (recover) — only a follow-up inside it launches it
+  d.recover = move==='knee' && !d.type; if(d.recover) d.crumpleUntil = Math.max(d.launchAt, until||0);
   d.respawn = (d.crumpleUntil || now) + 700; // rush30 timing: the next target comes 700ms after the hit, not after the bag lands
   d.vy = electric?-11:-6; d.vx=(electric?3.2:1.8)*store.side; d.rot=0;
   d.electric=electric;
@@ -111,6 +147,13 @@ function tryHit(move){ // move: 'ewgf'|'wgf'|'tongbal'|'hellsweep'|'wsc'|'giwon'
 function updateDummy(now){
   const d=world.dummy;
   if(d.type && d.respawn && now>=d.respawn){ rushSpawn(); return; }
+  if(d.guardAt && now>=d.guardAt){ // dummyGuard: blocked in place
+    d.guardAt = 0; const dist = (world.dummyX - world.charX)*store.side;
+    if(d.alive && dist>=10 && dist<=130){
+      if(store.fx && !reduced){ impacts.push({x:world.dummyX, y:-64, t0:now, color:cssVar('--accent','#4CC9FF')}); if(impacts.length>8) impacts.shift(); }
+      pop(T('pop.guard'), cssVar('--accent','#4CC9FF'), 24, {x:world.dummyX, y:-140});
+    }
+  }
   if(d.hit && now>=d.launchAt){
     if(d.launchAt){
       const electric=d.electric;
@@ -137,13 +180,14 @@ function updateDummy(now){
     }
     if(now < d.crumpleUntil){ d.rot = -0.22*store.side; return; } // folded forward over the attacker's fist, feet planted
     d.crumpleUntil=0;
+    if(d.recover){ d.recover=false; d.hit=0; d.rot=0; d.vx=0; d.vy=0; return; } // the knee's reel is over: back on its feet, ready to guard
     d.y += d.vy; d.vy += 0.45; world.dummyX += d.vx; d.rot += (d.spin||0.12)*store.side;
-    if(d.y>0){ d.y=0; d.hit=0; d.alive=false; if(!d.type) d.respawn=now+(mode==='giwon'?GP_DUMMY_MS:700); }
+    if(d.y>0){ d.y=0; d.hit=0; d.alive=false; if(!d.type) d.respawn=now+(parkPx()?GP_DUMMY_MS:700); }
   }
-  // 기원초 연습: one bag, always parked inside 기원권 range in front of the character, so every rep connects
-  const spawnDist = () => mode==='giwon' ? GP_DUMMY_PX : Math.min(300, W*0.5) + Math.random()*40;
+  // 기원초·도발 제트어퍼 연습: one bag, always parked inside the move's range in front of the character, so every rep connects
+  const park = parkPx(), spawnDist = () => park || Math.min(300, W*0.5) + Math.random()*40;
   if(!d.type && !d.alive && now>d.respawn){ d.alive=true; d.rot=0; d.y=0; world.dummyX = world.charX + spawnDist()*store.side; }
-  if(mode==='giwon' && !d.type && d.alive && !d.hit){ world.dummyX = world.charX + GP_DUMMY_PX*store.side; return; } // follows the small steps the moves take
+  if(park && !d.type && d.alive && !d.hit){ world.dummyX = world.charX + park*store.side; return; } // follows the small steps the moves take
   const ahead = (world.dummyX - world.charX)*store.side;
   if(!d.type && d.alive && !d.hit && (ahead<-40 || ahead>W*1.2)) world.dummyX = world.charX + spawnDist()*store.side;
 }

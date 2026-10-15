@@ -29,10 +29,10 @@ function topLevelNames(src){
   return names;
 }
 const APP_NAMES = topLevelNames(APP_SCRIPT);
-const BANNED = /데빌진|화랑|카즈야|헤이하치|진 카자마|Jin\b|Hwoarang|Kazuya|Heihachi|Devil Jin|仁|風間|カズヤ|平八|ファラン|デビル/; // official character names (design decision 3(no-official-ip)); 三島 alone is the app's own name (三島道場), so the item/bd tests add it themselves
+const BANNED = /데빌진|화랑|카즈야|브라이언|헤이하치|진 카자마|Jin\b|Hwoarang|Kazuya|Bryan|Heihachi|Devil Jin|仁|風間|カズヤ|平八|ファラン|ブライアン|デビル/; // official character names (design decision 3(no-official-ip)); 三島 alone is the app's own name (三島道場), so the item/bd tests add it themselves
 // 결정 3(no-official-ip) 2026-10-11 개정: the selectable characters' names may appear as text (character select, guides, notices).
 // offNames strips exactly those names, so any other official name still trips BANNED. The wardrobe keeps the full ban (결정 15(wardrobe)).
-const CHAR_NAMES = /카즈야|화랑|Kazuya|Hwoarang|一八|ファラン/g;
+const CHAR_NAMES = /카즈야|화랑|브라이언|Kazuya|Hwoarang|Bryan|一八|ファラン|ブライアン/g;
 const offNames = s => String(s).replace(CHAR_NAMES, '');
 function boot(saved,fetch,env={}){ // fetch: optional stub for the backend calls (default: none, every call fails inside its try/catch)
   let now=1000, pads=[];

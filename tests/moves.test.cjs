@@ -7,11 +7,11 @@ const off = (...ks) => ({moves:Object.fromEntries(ks.map(k=>[k,0]))});
 
 const plain = o => JSON.parse(JSON.stringify(o));
 test('stored move toggles load per character as 0/1 only, default on; the old flat format belonged to Kazuya',()=>{
-  assert.deepEqual(plain(boot().store.moves),{kazuya:{ewgf:1,mist:1,tongbal:1,hellsweep:1,giwon:1},hwoarang:{jfsr:1}});
+  assert.deepEqual(plain(boot().store.moves),{kazuya:{ewgf:1,mist:1,tongbal:1,hellsweep:1,giwon:1},hwoarang:{jfsr:1},bryan:{tju:1}});
   let a=boot({moves:{giwon:0,tongbal:'x',ewgf:2}});
-  assert.deepEqual(plain(a.store.moves),{kazuya:{ewgf:1,mist:1,tongbal:1,hellsweep:1,giwon:0},hwoarang:{jfsr:1}});
-  a=boot({moves:{kazuya:{tongbal:0},hwoarang:{jfsr:0,ewgf:0},nobody:{x:0}}});
-  assert.deepEqual(plain(a.store.moves),{kazuya:{ewgf:1,mist:1,tongbal:0,hellsweep:1,giwon:1},hwoarang:{jfsr:0}},'unknown characters and moves are dropped');
+  assert.deepEqual(plain(a.store.moves),{kazuya:{ewgf:1,mist:1,tongbal:1,hellsweep:1,giwon:0},hwoarang:{jfsr:1},bryan:{tju:1}});
+  a=boot({moves:{kazuya:{tongbal:0},hwoarang:{jfsr:0,ewgf:0},bryan:{tju:0,jfsr:0},nobody:{x:0}}});
+  assert.deepEqual(plain(a.store.moves),{kazuya:{ewgf:1,mist:1,tongbal:0,hellsweep:1,giwon:1},hwoarang:{jfsr:0},bryan:{tju:0}},'unknown characters and moves are dropped');
 });
 test('each character keeps its own toggles, and the settings row lists only its moves',()=>{
   const a=boot();a.setMove('giwon',false);

@@ -59,7 +59,7 @@ $('dataReset').addEventListener('click', () => { // wipes records, lifetime stat
   resetSession(); renderBests(); setCoach(['set.resetDone']); if($('fitDlg').open) renderFit();
 });
 renderSound();
-const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK'};
+const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK',bt:'1+3+4'}; // bt: LP·LK·RK in one press (결정 35(tju))
 const pretty = c => c.replace(/^Key|^Digit|^Numpad/, m=>m==='Numpad'?'Num':'').replace('Arrow','');
 function renderKeys(){
   renderBindings();
@@ -109,6 +109,7 @@ function resetSession(){
   wsc.session=wscStats(); wsc.challenge={status:'idle',stats:null}; wsc.last=null; wsc.notice='ready';
   gp.session=gpStats(); gp.challenge={status:'idle',stats:null}; gp.last=null; gp.run=null; gp.notice='ready';
   jfp.session=jfStats(); jfp.challenge={status:'idle',stats:null}; jfp.last=null; jfp.streak=0;
+  tjp.challenge={status:'idle',stats:null}; tjReset();
   clearShare(); renderWsc(); renderGp(); renderJf();
   Object.assign(session, sessionDefault()); history.length=0; lastInputT=performance.now();
   bdpReset(); // after the session: its stats tile reads session.bd.bestChain

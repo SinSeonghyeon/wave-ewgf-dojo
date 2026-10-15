@@ -37,10 +37,11 @@ export const BOARDS = {
   wsc:     CHALLENGE_10, // 웨캔기어 10회 (2026-09-19)
   giwon:   CHALLENGE_10, // 기원초 10회 (2026-09-30)
   jfsr:    CHALLENGE_10, // 초스카이 10회 (2026-10-11, 결정 33(jfsr))
+  tju:     CHALLENGE_10, // 도발 제트어퍼 10회 (2026-10-15, 결정 35(tju))
 };
 // 결정 34(char-select): every board mixes characters; detail.char says whose record a row is. Optional — older sites send none
 // and those rows read as the default character. Anything outside this list is dropped, never rejected.
-export const CHARS = ['kazuya', 'hwoarang'];
+export const CHARS = ['kazuya', 'hwoarang', 'bryan'];
 export const WINDOWS = [8, 12, 15];
 const LANGS = ['ko', 'en', 'ja'];
 // Characters that render blank or hijack layout: control (Cc), format (Cf: zero-width, bidi, soft hyphen, word joiner, BOM), private-use

@@ -116,7 +116,11 @@ function onDir(dir, t){
   trialTick(t); tick(t); // 판정 기한은 화면 주사율과 무관하게 입력 시각에 검사한다.
   if(dir!==heldDir){ prevDir = heldDir; heldDir = dir; heldDirT = t; }
   pushHistory({t, dir}); gpInput({t, dir});
+  // 결정 35(tju): the taunt's frame reader gets every direction, a countdown included, like the history — otherwise its last direction
+  // drifts from the stick and a 6 held from the countdown and released on 29f is no cancel in the challenge only (review 2026-10-15)
+  const tjSwallowed = tjDir(dir,t);
   if(challengeStatus(mode)==='countdown') return;
+  if(tjSwallowed) return; // 아무도 캔슬하지 않은 도발의 33~77f에는 입력이 무시된다 — 걷기·백대시도 나가지 않는다
   if(giwonRP){ // the other half of a ↘ in the same slot completes 기원권; anything else replays the RP's own failure
     const staged = giwonRP, same = frameSlot(t)===staged.slot;
     if(dir==='df' && same){ giwonRP = null; backdashMotion(dir,t); cd.gFault=null; strike('giwon', staged.t); return; }
@@ -154,6 +158,7 @@ function commandDir(dir,t,backdashDone=false){
   let bdOutNow = false; // this input completed a b,N,b outside the recovery
   { const wave = dir==='f' && cd.state===6; const dbl = giwonStiff(t) ? null : tapDetect(dir, t); if(dbl==='f'){ cd.dashT=t; cd.dashWave=wave; fx.dash(wave); } else if(dbl==='b' && t>=bdRec.until){ bdOutNow = true; fx.backdash(); } } // a b,N,b inside the recovery does nothing (stiff); nothing at all comes out inside a 기원권 recovery
   if(!backdashDone) backdashMotion(dir,t,bdOutNow); // staged directions already reached the independent backdash machine
+  if(!charCap('wave')) return; // 결정 34(char-select): no crouch dash, no wave, no 6→3 faults for a character without one (dashes and backdashes above still come out)
   switch(cd.state){
     case 0: if(dir==='f') startCD(t); break;
     case 1:

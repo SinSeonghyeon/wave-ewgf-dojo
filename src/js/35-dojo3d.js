@@ -178,7 +178,7 @@ function frame(now){
   // walking (visual only): hold f/b while nothing else is animating. Blocked just in front of a live dummy; backing away lets the dummy respawn off-screen.
   const dt = Math.min(50, now-(anim.lastT||now)); anim.lastT = now;
   { const dm = world.dummy, dAhead = (world.dummyX - world.charX)*store.side;
-    const canWalk = !anim.moveDur && (anim.kind==='idle'||anim.kind==='walk') && !giwonStiff(now) && (curDir==='f'||(curDir==='b' && now>=bdRec.until)); // backdash recovery: everything but going backwards. 기원권 경직: 아무것도 못 한다
+    const canWalk = !anim.moveDur && (anim.kind==='idle'||anim.kind==='walk'||anim.kind==='taunt') && !giwonStiff(now) && !tjBusy() && (curDir==='f'||(curDir==='b' && now>=bdRec.until)); // backdash recovery: everything but going backwards. 기원권 경직·도발 중: 아무것도 못 한다 (도발 자세인데 tjBusy가 아니면 끝난 도발의 힘준 자세 — 걷기가 끊는다)
     const blocked = curDir==='f' && dm.alive && !dm.hit && dAhead<DUMMY_STOP;
     if(canWalk && !blocked){ world.charX += (curDir==='f'?WALK_F:-WALK_B)*store.side*dt/1000; anim.kind='walk'; anim.walkDir=curDir; }
     else if(anim.kind==='walk') anim.kind='idle'; }
@@ -213,6 +213,20 @@ function frame(now){
   ctx.fillStyle='rgba(0,0,0,.45)'; ctx.beginPath(); ctx.ellipse(sx, gy+2, 26-(pose.jump||0)*0.2, 5, 0, 0, Math.PI*2); ctx.fill();
   // fighter
   const fist = drawFighter(ctx, sx, gy, pose, store.side, 1, null);
+  // 도발 연출 (결정 35(tju), 실측 영상): 77f(도발의 마지막 프레임)에 몸이 주황빛으로 달아올라 몇 프레임 뒤 김으로 바뀐다 · 무릎 뒤 캔슬하면 머리에 불꽃. 판정과 무관
+  if(store.fx && !reduced && fist.head){
+    const [hx, hy] = fist.head, tf = anim.kind==='taunt' ? (now-anim.t0)/FRAME+1 : 0;
+    if(tf>=TJ.END_F){ const k = clamp(1-(tf-TJ.END_F-3)/6, 0, 1)*(0.8+Math.random()*0.2), gl = ctx.createRadialGradient(hx, hy+34, 4, hx, hy+34, 60);
+      gl.addColorStop(0, 'rgba(255,140,60,'+(0.55*k).toFixed(3)+')'); gl.addColorStop(1, 'rgba(255,90,40,0)');
+      ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(hx, hy+34, 60, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
+    if(now<tjFlameUntil){ const k = clamp((tjFlameUntil-now)/TJ_FLAME_MS, 0, 1);
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      for(let i=0;i<5;i++){ const fx_ = hx+(Math.random()-0.5)*16, fy_ = hy-6-Math.random()*20, r = 6+Math.random()*9*k, gl = ctx.createRadialGradient(fx_, fy_, 1, fx_, fy_, r);
+        gl.addColorStop(0, 'rgba(255,226,140,'+(0.75*k).toFixed(3)+')'); gl.addColorStop(0.5, 'rgba(255,120,40,'+(0.45*k).toFixed(3)+')'); gl.addColorStop(1, 'rgba(220,40,20,0)');
+        ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(fx_, fy_, r, 0, Math.PI*2); ctx.fill(); }
+      ctx.restore(); }
+    if(now<tjSteamUntil && Math.random()<0.6) dust.push({x:world.charX+(Math.random()-0.5)*34, y:hy-gy+30+Math.random()*24, vx:(Math.random()-0.5)*0.5, vy:-1-Math.random()*0.9, r:4+Math.random()*4, t:1});
+  }
   // electricity: the EWGF fist, or the kicking foot of a 초스카이 (결정 33(jfsr))
   if(anim.kind==='sky' && anim.electric && fist.foot && now-anim.t0>70 && now-anim.t0<420){
     const [x,y] = fist.foot;

@@ -1,5 +1,5 @@
 /* ---------- boot ---------- */
-renderAll(); setMode('free'); renderHistory(); updateStats(); bumpVisitDay(); backendInit(); noticeAutoSchedule();
+renderAll(); if(!charCap('wave')) coachForChar(); setMode('free'); renderHistory(); updateStats(); bumpVisitDay(); backendInit(); noticeAutoSchedule();
 world.camX = world.charX - W*0.43;
 if(typeof location!=='undefined'&&/^https?:$/.test(location.protocol))bgmLoadTracks();
 requestAnimationFrame(frame);

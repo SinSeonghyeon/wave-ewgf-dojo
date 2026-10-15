@@ -14,7 +14,8 @@ function updateStats(){
   $('stMean').textContent = session.offsetCount? fmtF(session.offsetSum/session.offsetCount):'–';
 }
 function updateHud(){
-  const h = $('hudChain'), useBd = cd.chain===0 && bd.chain>0 && bdLoud(), n = useBd ? bd.chain : cd.chain; // the wave chain always wins the widget; backdash chain shows only while no wave is running
+  // the wave chain always wins the widget; backdash chain shows only while no wave is running — always for a character without a wave (결정 34(char-select))
+  const h = $('hudChain'), useBd = !charCap('wave') || (cd.chain===0 && bd.chain>0 && bdLoud()), n = useBd ? bd.chain : cd.chain;
   $('hudChainN').textContent = n; $('hudChainL').textContent = useBd ? 'BACKDASH' : 'WAVE'; h.classList.toggle('hot', n>=3);
 }
 function addLog(t, type, res, num, memo, cls){

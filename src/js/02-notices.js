@@ -2,6 +2,7 @@
 // Newest first. For each patch, add one entry and the matching notice.<id> strings to all three I18N dictionaries.
 // The latest id is the read marker saved in this browser; no backend or deployment-time request is involved.
 const NOTICES = [
+  {id:'2026-10-15-tju',date:'2026-10-15',kind:'notice.kind.update',title:'notice.20261015.title',summary:'notice.20261015.summary',items:['notice.20261015.1','notice.20261015.2','notice.20261015.3','notice.20261015.4']},
   {id:'2026-10-11-jfsr',date:'2026-10-11',kind:'notice.kind.update',title:'notice.20261011.title',summary:'notice.20261011.summary',items:['notice.20261011.1','notice.20261011.2','notice.20261011.3','notice.20261011.4']},
   {id:'2026-10-08-update',date:'2026-10-08',kind:'notice.kind.update',title:'notice.20261008.title',summary:'notice.20261008.summary',items:['notice.20261008.1','notice.20261008.2','notice.20261008.3','notice.20261008.4','notice.20261008.5','notice.20261008.6']},
   {id:'2026-10-04-backdash',date:'2026-10-04',kind:'notice.kind.update',title:'notice.20261004.title',summary:'notice.20261004.summary',items:['notice.20261004.1','notice.20261004.2','notice.20261004.3','notice.20261004.4']},

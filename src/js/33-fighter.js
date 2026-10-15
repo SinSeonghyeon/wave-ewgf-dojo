@@ -33,9 +33,12 @@ function drawFighter(g, px, py, p, dir, alpha, tint, look){ // look: slot → it
   g.lineWidth=LG.width||8; g.strokeStyle = tint||LG.pants;
   let lx = -spread - step*8, rx = spread + step*8, ly = -tuck*10 - Math.max(0,-step)*4, ry = -tuck*8 - Math.max(0,step)*4;
   if(p.kick){ const a = p.kick*2.5, L = legL+8; rx = spread*0.3 + Math.sin(a)*L; ry = -legL + Math.cos(a)*L; } // 초스카이: the front leg swings up from the hip (0 = planted, 1 = above the head)
+  // 무릎 (결정 35(tju) 도발·도발 뒷무릎): the front thigh swings up toward the horizontal and the shin hangs under the knee (0 = planted, 1 = thigh level)
+  let kx = null, ky = null;
+  if(p.knee){ const a = p.knee*1.42, half = (legL+3)/2, hx = spread*0.3; kx = hx + Math.sin(a)*half; ky = -legL + Math.cos(a)*half; rx = kx - Math.sin(p.knee*0.35)*half; ry = Math.min(0, ky + Math.cos(p.knee*0.35)*half); }
   g.beginPath(); g.moveTo(lx, ly); g.lineTo(-spread*0.35, -legL); g.stroke();
-  g.beginPath(); g.moveTo(rx, ry); g.lineTo(spread*0.3, -legL); g.stroke();
-  if(!tint && LG.deco) LG.deco(g, [[lx,ly,-spread*0.35,-legL],[rx,ry,spread*0.3,-legL]]);
+  g.beginPath(); g.moveTo(rx, ry); if(kx!=null) g.lineTo(kx, ky); g.lineTo(spread*0.3, -legL); g.stroke();
+  if(!tint && LG.deco) LG.deco(g, [[lx,ly,-spread*0.35,-legL],kx!=null ? [kx,ky,spread*0.3,-legL] : [rx,ry,spread*0.3,-legL]]);
   // shoes
   foot(lx-1, ly); foot(rx+2, ry);
   if(p.kick) kickFoot = fighterPoint(parentTransform, g.getTransform(), rx+2, ry);
@@ -64,6 +67,7 @@ function drawFighter(g, px, py, p, dir, alpha, tint, look){ // look: slot → it
   if(!tint){ g.strokeStyle=TP.line||C.skin2; g.lineWidth=1.5; g.beginPath(); g.moveTo(0,-T+8); g.lineTo(0,-6); g.stroke(); g.beginPath(); g.moveTo(-8,-T+7); g.quadraticCurveTo(0,-T+11,8,-T+7); g.stroke(); if(TP.front) TP.front(g,T,C); }
   // head
   const hy = -T-15;
+  const head = fighterPoint(parentTransform, g.getTransform(), 0, hy); // the head in the caller's canvas coordinates (도발 연출의 불꽃)
   g.fillStyle = tint||C.skin; g.beginPath(); g.arc(0,hy,19,0,Math.PI*2); g.fill();
   // hair (item-specific; ghosts keep the legacy silhouette)
   if(tint) hairBase(g,hy,tint); else HD.draw(g,hy,HD,C);
@@ -85,12 +89,65 @@ function drawFighter(g, px, py, p, dir, alpha, tint, look){ // look: slot → it
   // front arm
   const fist = arm(6, (p.armR==null?30:p.armR)*Math.PI/180, true, p.reach||0);
   g.restore();
-  fist.foot = kickFoot;
+  fist.foot = kickFoot; fist.head = head;
   return fist;
+}
+// 도발 자세 (결정 35(tju)). 실측 영상(taunt_full_L, 게임 입력 기록의 프레임 수로 맞춤)의 자세를 SD 인형 관절로 옮긴 것: [frame, pose].
+// 연출 전용 — 판정은 이 표를 읽지 않는다. frame 1 = 도발을 누른 프레임(16-tju.js와 같은 칸).
+// 1~9f 뒷팔을 가슴 앞으로 올렸다가 팔꿈치를 바깥으로, 앞발은 반 걸음 → 10~21f 두 팔을 앞뒤로 활짝 벌리고 앞 주먹을 머리 위로(실측 F11 손 들기)
+// → 22~28f 팔을 벌린 채 무릎이 천천히 올라와 28f에 맞는다 → 29~43f 무릎을 든 채 주먹은 가슴 앞 → 44~55f 무릎이 천천히 내려온다
+// → 뒷손은 허리에 얹고 앞팔을 상대 쪽으로 뻗었다가 → 75~77f 앞 주먹을 얼굴 앞에 세운다(77f 주황빛, 끝나면 김).
+const TJ_POSE = [
+  [1,  {crouch:0.05, lean:4,  armR:35,  armL:-30,  spread:0.3}],
+  [4,  {crouch:0,    lean:1,  armR:46,  armL:62,   spread:0.3}],               // 두 주먹을 가슴 앞으로 모았다가
+  [7,  {crouch:0,    lean:0,  armR:64,  armL:-30,  spread:0.3,  knee:0.12}],   // 뒷팔꿈치를 바깥으로, 앞발 반 걸음
+  [10, {crouch:0,    lean:-1, armR:86,  armL:-84,  spread:0.3,  knee:0.16, reach:2}],
+  [14, {crouch:0,    lean:-2, armR:104, armL:-98,  spread:0.3,  reach:4}],
+  [18, {crouch:0,    lean:-3, armR:120, armL:-104, spread:0.3,  reach:6}],     // 앞 주먹은 머리 옆으로
+  [22, {crouch:0,    lean:-4, armR:114, armL:-110, spread:0.3,  reach:5}],     // 팔을 벌린 채 무릎이 올라오기 시작
+  [25, {crouch:0,    lean:-6, armR:110, armL:-116, spread:0.3,  knee:0.5, reach:4}],
+  [28, {crouch:0,    lean:-8, armR:106, armL:-124, spread:0.3,  knee:0.98, reach:3}], // 무릎 명중: 팔이 가장 넓다
+  [30, {crouch:0,    lean:-8, armR:46,  armL:14,   spread:0.3,  knee:1}],      // 주먹을 가슴 앞으로
+  [43, {crouch:0,    lean:-6, armR:42,  armL:10,   spread:0.3,  knee:0.95}],
+  [47, {crouch:0,    lean:-4, armR:34,  armL:-4,   spread:0.3,  knee:0.8}],
+  [50, {crouch:0,    lean:-3, armR:28,  armL:-14,  spread:0.32, knee:0.55}],
+  [53, {crouch:0,    lean:-1, armR:22,  armL:-22,  spread:0.34, knee:0.22}],
+  [56, {crouch:0,    lean:0,  armR:18,  armL:-26,  spread:0.35}],              // 뒷손은 허리에
+  [62, {crouch:0,    lean:2,  armR:26,  armL:-26,  spread:0.35}],
+  [71, {crouch:0,    lean:6,  armR:56,  armL:-26,  spread:0.35, reach:3}],     // 앞팔을 상대 쪽으로
+  [74, {crouch:0,    lean:7,  armR:64,  armL:-26,  spread:0.35, reach:2}],
+  [TJ.END_F, {crouch:0, lean:10, armR:122, armL:-26, spread:0.35, reach:5}],   // 앞 주먹을 얼굴 앞에 세운다
+];
+const TJ_FLEX_F = 16, TJ_FLEX_BACK = 10; // after the taunt: the flex holds (glow · steam), then eases back to guard — walking or any move cuts it
+const TJ_CUT_F = 6;                       // a cancel eases from the taunt pose of that moment back to guard over this many frames (tjCut)
+const TJ_POSE_KEYS = [...new Set(TJ_POSE.flatMap(k => Object.keys(k[1])))];
+const TJ_POSE_M = TJ_POSE_KEYS.map(key => { // Fritsch–Carlson tangents: the curve passes every keyframe smoothly and never overshoots one
+  const x = TJ_POSE.map(k => k[0]), y = TJ_POSE.map(k => k[1][key]||0), n = x.length;
+  const d = x.slice(1).map((xi, i) => (y[i+1]-y[i])/(xi-x[i]));
+  const m = y.map((_, i) => i===0 ? d[0] : i===n-1 ? d[n-2] : d[i-1]*d[i]<=0 ? 0 : (d[i-1]+d[i])/2);
+  d.forEach((di, i) => {
+    if(!di){ m[i] = m[i+1] = 0; return; }
+    const a = m[i]/di, b = m[i+1]/di, s = a*a+b*b;
+    if(s>9){ const k = 3/Math.sqrt(s); m[i] = k*a*di; m[i+1] = k*b*di; }
+  });
+  return m;
+});
+function tjTauntPose(f, idle){ // f = taunt frame (1 = the press); idle() = the guard pose the tail eases back to
+  const P = TJ_POSE, last = P[P.length-1];
+  if(f>last[0]){
+    const k = clamp((f-last[0]-TJ_FLEX_F)/TJ_FLEX_BACK, 0, 1), to = idle(), out = {};
+    for(const key of new Set([...Object.keys(last[1]), ...Object.keys(to)])) out[key] = (last[1][key]||0) + ((to[key]||0)-(last[1][key]||0))*k*k*(3-2*k);
+    return out;
+  }
+  let i = 0; while(i<P.length-2 && f>=P[i+1][0]) i++;
+  const [x0, A] = P[i], [x1, B] = P[i+1], h = x1-x0, t = clamp((f-x0)/h, 0, 1), t2 = t*t, t3 = t2*t, out = {};
+  TJ_POSE_KEYS.forEach((key, j) => { const m = TJ_POSE_M[j]; out[key] = (2*t3-3*t2+1)*(A[key]||0) + (t3-2*t2+t)*h*m[i] + (3*t2-2*t3)*(B[key]||0) + (t3-t2)*h*m[i+1]; });
+  return out;
 }
 function poseAt(now){
   const t = now - anim.t0;
   const e = x => 1-Math.pow(1-x,3);
+  const idle = () => ({crouch:0, lean:4+Math.sin(now/420)*2, jump:Math.abs(Math.sin(now/420))*2.5, armR:35+Math.sin(now/420)*4, armL:-30, spread:0.25});
   switch(anim.kind){
     case 'cd': { if(t<300){ const c = t<160? 0.85 : Math.max(0, 0.85-(t-160)/140);
       return {crouch:c, lean:28*c, armR:-25+60*(1-c), armL:-45+15*(1-c), spread:0.8*c}; } break; }
@@ -135,11 +192,27 @@ function poseAt(now){
       if(t<540){ const k=(t-290)/250; return {crouch:0.26*(1-k), lean:20-16*k, armR:104-80*k, armL:-54+24*k, spread:0.56-0.31*k, step:0.44*(1-k), reach:9*(1-k)}; }
       if(giwonStiff(now)) return {crouch:0.06, lean:3, spread:0.3, step:0.1, armR:28, armL:-46, sweat:true}; // 경직이 남아 있다: 가드로 돌아왔지만 아직 행동 불가 (bdRec과 같은 처리)
       break; }
+    // 도발 제트어퍼 (결정 35(tju)): poses keyed to game frames (t/FRAME), so they line up with the judged frames
+    case 'taunt': { const f = t/FRAME+1; if(f<=TJ.END_F+TJ_FLEX_F+TJ_FLEX_BACK) return tjTauntPose(f, idle); break; } // TJ_POSE: 실측 영상의 도발 자세, 끝난 뒤 잠시 힘준 자세
+    case 'tjCut': { const f = t/FRAME; if(f<TJ_CUT_F){ const k = e(f/TJ_CUT_F), a = anim.cutFrom||{}, to = {crouch:0.1, lean:4, armR:35, armL:-30, spread:0.3, knee:0, reach:0}, out = {}; // cancelled: from the taunt pose back to guard
+      for(const key in to) out[key] = (a[key]??to[key]) + (to[key]-(a[key]??to[key]))*k; return out; } break; }
+    case 'ju': { // 제트어퍼: 넓게 주저앉아 버티다가(실측 영상 37~41f) 마지막 3f에 아래에서 크게 올려 친다 — 주먹이 TJ.JU_F(14f)에 닿는다
+      const f = t/FRAME+1, kf = anim.kneeFrom||0, up = TJ.JU_F-3;
+      if(f<=7){ const k = e(f/7); return {crouch:0.25+0.65*k, lean:6+14*k, armR:-15-25*k, armL:-35-15*k, spread:0.5+0.45*k, step:0.2*k, knee:kf*(1-k)}; }
+      if(f<=up){ const k = (f-7)/(up-7); return {crouch:0.9+0.05*k, lean:20+4*k, armR:-40-8*k, armL:-50, spread:0.95, step:0.2}; }
+      if(f<=TJ.JU_F){ const k = e((f-up)/(TJ.JU_F-up)); return {crouch:0.95*(1-k), lean:24-36*k, armR:-48+223*k, armL:-50+15*k, spread:0.95-0.55*k, jump:12*Math.sin(k*Math.PI/2), step:0.2+0.5*k, reach:5*k}; }
+      if(f<=TJ.JU_F+16){ const k = (f-TJ.JU_F)/16; return {crouch:0, lean:-12+14*k, armR:175-125*k, armL:-35, spread:0.4-0.1*k, jump:12*Math.cos(k*Math.PI/2), step:0.7*(1-k), reach:5*(1-k)}; }
+      break; }
+    case 'bknee': { // 도발 뒷무릎 (←+RK, 16f): 무릎을 곧게 올려 친다
+      const f = t/FRAME+1, su = TJ.STARTUP['b+4'];
+      if(f<=su){ const k = e(f/su); return {crouch:0.12*(1-k), lean:-4-9*k, armR:22-8*k, armL:-44-8*k, spread:0.3, knee:k, jump:7*k}; }
+      if(f<=su+14){ const k = (f-su)/14; return {crouch:0.06*k, lean:-13+15*k, armR:14+20*k, armL:-52+20*k, spread:0.3, knee:1-k, jump:7*(1-k)}; }
+      break; }
     case 'walk': { const s = Math.sin(now/150*Math.PI), fwd = anim.walkDir==='f'; // frame() keeps kind==='walk' while f/b is held and clears it otherwise
       return {crouch:0.05, lean:fwd?7:-5, spread:0.35, step:s, jump:Math.abs(s)*2, armR:30+s*8*(fwd?1:-1), armL:-30-s*8}; }
   }
   if(anim.kind!=='idle') anim.kind='idle';
-  return {crouch:0, lean:4+Math.sin(now/420)*2, jump:Math.abs(Math.sin(now/420))*2.5, armR:35+Math.sin(now/420)*4, armL:-30, spread:0.25};
+  return idle();
 }
 function drawBolt(g, x, y, len, ang, w, color){
   g.strokeStyle=color; g.lineWidth=w; g.lineCap='round'; g.beginPath(); g.moveTo(x,y);

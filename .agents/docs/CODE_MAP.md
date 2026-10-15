@@ -20,7 +20,7 @@
 | `src/app.html` | `<head>`(SEO·OG·JSON-LD·AdSense·폰트), 정적 마크업(모든 대화상자 포함), include 순서 |
 | `src/style.css` | 스타일 전부. 색 토큰은 `:root`에만(결정 5) |
 | `src/i18n/ko.js` · `en.js` · `ja.js` | `I18N_KO/EN/JA` 사전. 세 파일은 같은 키(테스트가 검사). 공지 문구 `notice.*`도 여기 |
-| `src/js/00-core.js` | `FRAME`, `$`, `clamp`, 판정·연출 공용 상수, 백대시 실측 모델 `BD`·`bdDist`·`bdPeriod`·`bdBestH`·`BD_NEXT_F`·`BD_MOVE_MS`, 프레임 원점 함수 `bdFrameNo`(몇 f째)·`bdF`(몇 f 동안), 가정값 `GIWON`·`GIWON_ZOOM` |
+| `src/js/00-core.js` | `FRAME`, `$`, `clamp`, 판정·연출 공용 상수, 백대시 실측 모델 `BD`·`bdDist`·`bdPeriod`·`bdBestH`·`BD_NEXT_F`·`BD_MOVE_MS`, 프레임 원점 함수 `bdFrameNo`(몇 f째)·`bdF`(몇 f 동안), 가정값 `GIWON`·`GIWON_ZOOM`, 도발 제트어퍼 실측 모델 `TJ`·`TJ_LAST`(44)·`TJ_GO`(31)·`TJ_SIX`(29, 목표 캔슬 = 무릎 다음 프레임)·`TJ_TAUNT` |
 | `src/js/01-wardrobe-items.js` | 옷장 슬롯·아이템(그리기 훅), 업적 정의, `TRIAL_MODES` |
 | `src/js/02-chars.js` | 캐릭터 데이터 `CHARS`(능력 플래그 `caps`·기술 `moves`·`legacy`·저스트 레시피 `jf`), `charId`·`charOf`·`charCap`·`charHas` (결정 34) |
 | `src/js/02-notices.js` | `NOTICES`(최신순 공지 데이터) |
@@ -39,8 +39,10 @@
 | `src/js/14-giwon.js` | 기원권 판정·경직·버퍼, 기원초 링크 판정 |
 | `src/js/15-giwon-practice.js` | 기원초 연습 모드: 타임라인·통계·10회 도전 |
 | `src/js/16-jfsr.js` | 초스카이(결정 33): `jfStaged`(무족 보류 경로의 결과)·`jfButton`·`jfPending`·`jfAttempt`, 초스카이 연습 패널·10회 도전(`jfp`) |
+| `src/js/16-tju.js` | 도발 제트어퍼 판정(결정 35, 모든 모드): 칸 리더 `tjEvent`·`tjAdvance`·`tjTime`·`tjRead`, 도발 진행 `tjStart`·`tjRun`·`tjFollow`·`tjVerdict`(`tjRow`·`tjCount`), 6N4+RP 리더 `tjTrack`·`tjMoveOf`, 단독 제트어퍼 `tjJu`, 결과 카드·고칠 점 `tjShow`·`tjFix`, 상태 `tjp`·`tjIn` |
 | `src/js/16-strikes.js` | `strike()`(통발·나락·기원권), `classify()`(초풍 슬롯 판정), `attempt()`(초풍 계열 기록·연출 분기) |
 | `src/js/17-coach.js` | 코치·경향 문구 |
+| `src/js/17-tju-practice.js` | 도발 제트어퍼 연습 모드: 10회 도전(`tjStartChallenge`·`tjChallengeTick`), 프레임 타임라인(`tjSegments`·`tjBands`·`renderTjLive`), 평가 패널 `renderTj` |
 | `src/js/18-hud.js` | 결과 카드·통계·HUD·로그 |
 | `src/js/19-tick.js` | `tick(now)`: 상태 타임아웃·체인 종료 |
 | `src/js/20-trials.js` | `MODES`·`CHALLENGES`·`BOARDS`, 모드 전환, 측정 모드(시작·카운트다운·종료), 기록 텍스트 |
@@ -56,12 +58,12 @@
 | `src/js/30-language.js` | `applyStatic`·`renderAll`·`setLang` |
 | `src/js/31-stage.js` | 스테이지 캔버스, 카메라 줌, 캐릭터 이동·팝, 더미 명중·반응 |
 | `src/js/32-rush.js` | 더미 격파 30초 |
-| `src/js/33-fighter.js` | SD 캐릭터·더미 그리기, 포즈 |
+| `src/js/33-fighter.js` | SD 캐릭터·더미 그리기, 포즈(도발 자세표 `TJ_POSE`·`tjTauntPose` 포함) |
 | `src/js/34-share-draw.js` | 공유 카드 캔버스 그리기(`drawCard`) |
 | `src/js/35-dojo3d.js` | WebGL 3D 도장·Canvas 대체, `frame()` 렌더 루프 |
 | `src/js/36-boot.js` | 부트 순서 |
 | `src/assets/room-atlas.webp` | 목재/회벽 재질 아틀라스(자체 생성) |
-| `src/assets/portrait-kazuya.webp` · `src/assets/portrait-hwoarang.webp` | 캐릭터 선택 초상(tekken.com 공식 fighter-select 이미지를 240×300 WebP로 자름, 2026-10-11 사용자 결정 — 결정 3 예외). `CHARS[id].portrait`에 data URI로 인라인 |
+| `src/assets/portrait-kazuya.webp` · `src/assets/portrait-hwoarang.webp` · `src/assets/portrait-bryan.webp` | 캐릭터 선택 초상(tekken.com 공식 fighter-select 이미지를 240×300 WebP로 자름, 2026-10-11 사용자 결정 — 결정 3 예외. 브라이언은 2026-10-15 같은 예외 적용, 확인 필요). `CHARS[id].portrait`에 data URI로 인라인 |
 | `src/pages/ko.js` · `en.js` · `ja.js` | 가이드·개인정보처리방침 원고(CommonJS, 앱에 포함되지 않음). 세 파일은 같은 slug 순서와 `ui` 키. 본문 링크 `href="@<slug>"`는 같은 언어 페이지, `@`만 쓰면 연습 화면 |
 | `src/pages/page.css` | 가이드·개인정보 페이지 스타일. 색 토큰은 빌드가 `src/style.css`의 `:root`를 복사해 붙인다 |
 
@@ -70,7 +72,7 @@
 | 파일 | 내용 |
 |---|---|
 | `tests/helpers/app.cjs` | 단위 테스트 하네스. `boot(saved, fetch, env)`가 조립한 앱을 vm에서 돌리고 **앱의 모든 최상위 이름**을 돌려준다(목록 관리 없음. `let`은 부트 직후 값의 스냅샷, 객체는 살아 있는 참조) |
-| `tests/<주제>.test.cjs` | chars(캐릭터 선택·초스카이) · judging · input · modals · i18n-pages · backend · sound · strikes-rush · moves · wardrobe-rewards · backdash · wsc · stage · giwon · giwon-practice · board(워커) · docs(문서 경로·결정 인용·파일 지도 검사) · source(`src/` include·파싱·조립 결과 검사) |
+| `tests/<주제>.test.cjs` | chars(캐릭터 선택·초스카이) · tju(브라이언·도발 제트어퍼) · judging · input · modals · i18n-pages · backend · sound · strikes-rush · moves · wardrobe-rewards · backdash · wsc · stage · giwon · giwon-practice · board(워커) · docs(문서 경로·결정 인용·파일 지도 검사) · source(`src/` include·파싱·조립 결과 검사) |
 | `tests/smoke-*.js` | 헤드리스 Chrome/Edge 브라우저 검사. 조립한 페이지를 `.sandbox/`나 임시 폴더에 쓰고 `stageAssets()`로 자원을 복사 |
 | `tests/fake-d1.js` | node:sqlite 인메모리 가짜 D1 |
 | `tools/assemble.js` | `src/` → 한 페이지. `sourceFileContaining()`은 생성 상수를 고치는 도구가 대상 파일을 찾는 데 쓴다 |
@@ -91,6 +93,7 @@
 | 기술 온오프 | `02-chars`(`CHARS[id].moves` = 그 캐릭터의 스위치 목록, `movesDefault`) `03-store`(`store.moves[캐릭터][기술]`, 옛 평평한 형식 → 카즈야) `13-button`(`moveOn`·`MOVE_FORCED`) `23-settings-ui`(`renderMoveSel`이 지금 캐릭터의 버튼·안내를 그림) `20-trials`(`renderMode` 표시) | `moves` | 결정 32 |
 | 캐릭터 선택 | `02-chars` `03-store`(`store.char`·`?c=`) `13-button`(`moveOn`·`legacy` 분기) `20-trials`(`MODES.needs`·`modeAvailFor`·`renderCharUI`·`renderCharTiles`·`setChar`) `23-settings-ui`(`#charOpen`→`#charDlg` 타일 창) `29-backend`(`detail.char`·행 태그) `10-wsc`·`12-backdash`(능력 가드) | `chars` | 결정 34 |
 | 초스카이 | `16-jfsr` `11-crouch-dash`(`mistBtn`·`mistArmJf`) `31-stage`(`fx.sky`) `33-fighter`(`sky` 포즈·`kick`) `35-dojo3d`(발끝 번개) | `chars` `smoke-jfsr` | 결정 33, `JFSR.md` |
+| 도발 제트어퍼·브라이언 | `00-core`(`TJ`·`TJ_SIX`) `16-tju`(판정) `17-tju-practice`(연습 모드) `07-input`(`pressTaunt`·`bt` 키) `08-touch`(`t` 버튼) `03-store`(`bt` 기본값·옛 저장값) `11-crouch-dash`(`tjDir`, `wave` 없으면 `commandDir` 생략) `13-button`(`tjButton`) `19-tick`(`tjTick`·`tjChallengeTick`·`renderTjLive`) `17-coach`(`renderSeg` tj) `20-trials`(`renderCharUI`의 `no-wave`) `31-stage`(`fx.taunt`·`knee`·`tjMove`·`dummyGuard`) `33-fighter`(`TJ_POSE`·`tjTauntPose`, `taunt`·`tjCut`·`ju`·`bknee` 포즈, `knee` 관절) `35-dojo3d`(빛·불꽃·김) | `tju` `smoke-tju` | 결정 35, `TJU.md` |
 | 기원권·기원초 | `00-core`(`GIWON`) `14-giwon` `15-giwon-practice` `16-strikes` `31-stage` | `giwon` `giwon-practice` `smoke-giwon` | `GIWONCHO.md` |
 | 웨캔기어 | `10-wsc` `20-trials`(`CHALLENGES`) | `wsc` `smoke-wsc` | `WSC_PRACTICE.md` |
 | 백대시·bd10 | `00-core`(`BD`) `06-state` `12-backdash` `12-bd-practice` `11-crouch-dash`(`backdashMotion`) `31-stage`(`bdEase`) | `backdash` `smoke-backdash` | 결정 17, `BACKDASH.md` |
@@ -117,11 +120,13 @@
 | 순서 | 단계 | 소비하면 |
 |---|---|---|
 | 1 | `practiceInput`·`trialTick`·`tick`, `heldDir` 갱신, 입력 기록·기원초 타임라인 기록 | — (항상 실행) |
+| 1½ | 도발 레시피가 있는 캐릭터(결정 35): `tjDir`가 칸 리더에 넣는다 — 카운트다운 중에도(리더의 마지막 방향 `tjIn.dir`이 스틱과 어긋나지 않게). 캔슬하지 않은 도발의 33~77f(`tjLocked`)인지 기억 | — (항상 실행) |
 | 2 | 도전 카운트다운 중(`challengeStatus(mode)==='countdown'`) | 끝 |
+| 2½ | 1½에서 잠금(도발 33~77f)이었으면 소비 — 걷기·백대시 없음 | 잠금이면 끝 |
 | 3 | 보류된 기원권 RP(`giwonRP`)가 있으면: 같은 칸 `↘`는 기원권 `strike`, 아니면 보류한 실패를 기록 | 기원권이면 끝 |
 | 4 | 기원권 경직 중(`giwonStiff`)이면 시작 6(`f`) 말고는 버린다 | 끝 |
 | 5 | 무족초 같은 칸 보류(`mistDir`). 보류 버튼은 `mistBtn()`(카즈야 RP, 초스카이 캐릭터는 레시피 버튼), 시작 자리는 카즈야 `mistStart()`(새 시작 6만), 초스카이 캐릭터는 `commandDir` 뒤의 `mistArmJf`(모든 6) | 끝 |
-| 6 | `commandDir`: 보류한 `f_before_d` 실패 → `wscDir` → 더블 탭(대시·백대시 연출, `bd` 머신은 `backdashMotion`) → `cd` 상태 머신 `switch` | — |
+| 6 | `commandDir`: 보류한 `f_before_d` 실패 → `wscDir` → 더블 탭(대시·백대시 연출, `bd` 머신은 `backdashMotion`) → `cd` 상태 머신 `switch`(`wave`가 없는 캐릭터는 `switch` 전에 끝) | — |
 
 기술 온오프(결정 32): 끈 기술은 아래 표에서 **그 줄만 건너뛴다**(`moveOn(k)`). 초풍은 `attempt()` 첫 줄에서 막으므로 초풍 계열 결과가 전부 사라지고, 기원권은 `giwonReady`·`giwonStage`·6→↘ 보류(`cd.gFault`), 무족초는 `mistDir`의 시작, 통발·나락은 `commandButton`의 해당 분기에서 막는다.
 
@@ -134,7 +139,7 @@
 | 3 | 도전 카운트다운 중 | 끝 |
 | 4 | 무족초 후보(`mistButton`). 초스카이 캐릭터는 `mistFinish` → `jfStaged` | 끝 |
 | 5 | 웨캔기어 뒤 입력이 열려 있으면(`wsc.active.back`) `wscButton` | 끝 |
-| 5½ | `legacy`가 아닌 캐릭터(결정 34): `jfButton` — 대시 중 4 = 일반 스카이, 상태 3이면 `cd.pending`(`jfPending`), ↘ 유지 + 4 = 3+4. 아래 6~10은 카즈야 전용 | 끝 |
+| 5½ | `legacy`가 아닌 캐릭터(결정 34): 도발 레시피(`tj`)가 있으면 `tjButton`(모든 버튼을 칸 리더로), 아니면 `jfButton` — 대시 중 4 = 일반 스카이, 상태 3이면 `cd.pending`(`jfPending`), ↘ 유지 + 4 = 3+4. 아래 6~10은 카즈야 전용 | 끝 |
 | 6 | `4`: 크라우치 대시 중이면 나락, 상태 3이면 `cd.pending`, 그 외 무시 | 끝 |
 | 7 | `2` 외 버튼: 초풍 측정 모드면 잘못된 버튼 코치 | 끝 |
 | 8 | `2`: 대시 중·캔슬 창·같은 칸 대각 → 초풍 판정 `classify` | 끝 |
@@ -219,7 +224,7 @@ i18n      LANGS, LOCALE, I18N{ko,en,ja} · T(key,...args) · msg(v): 문자열|[
           dash = 대초(res 'dash_ewgf', 제목 a.dashEwgf.title, r-kind 'DASH ELECTRIC WIND GOD FIST'). 판정·통계·차트·순위는 kind만 보므로 영향 없음
 통발·나락 strike(kind,t) kind: tongbal(f,f+2 중단)/hellsweep(6N23+4 하단, 저스트 없음)/hellsweepEarly(4가 3보다 이름)/giwon(↘+RP 중단, 저스트 없음 — 결정 30). 끝에 endCommand()(rush30이면 clearCommand 대신 chain 유지, 그 외엔 clearCommand). attempt가 아니라 session.tries/hits·히스토그램·combo에 안 잡힘.
           통발=상태 1/2 + cd.dashT===cd.tF + 2가 두 번째 6 후 FF_MS(250) 안. 나락=상태 4/7 또는 캔슬 6 후 250ms의 4, 상태 3은 cd.pending.btn=4로 df 대기(resolvePending: btn 4는 off≥−window면 hellsweep, 이르면 hellsweepEarly, df 안 오면 조용). rushStrike로 더미 격파 점수. 저스트가 아니라 라벨에 "!"·연속 없음
-코치      setCoach(m) · setTrend(m) · coachWaveLive(cyc): 5구간 중 가장 긴 구간 조언 · coachTrend(): 최근 10회 평균·편차
+코치      setCoach(m) · setTrend(m) · coachWaveLive(cyc): 5구간 중 가장 긴 구간 조언 · coachTrend(): 최근 10회 평균·편차 · coachForChar(): 캐릭터의 빈 코치 칸(부트·setChar)
 기록      addLog(t,typeKey,resMsg,num,memoMsg,cls) → session.log[12] · renderLog() 시각은 LOCALE[store.lang]
           store.records[mode][30]: wave10 {score(dps),dashes,chain} · ewgf20/combo10 {score(%),hits,target,mean} · rush30 {score(점수),kills,whiffs,dashPts} · bd10 {score(m),dashes,top,chain}
           label/sub 문자열도 같이 저장(구버전 호환). recText()가 숫자 필드 우선으로 현재 언어로 다시 만든다
@@ -298,6 +303,19 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
           modalOpen()에 포함, renderAll이 열려 있으면 다시 그림
 부트      renderAll(); setMode('free'); renderHistory(); updateStats(); bumpVisitDay(); backendInit(); requestAnimationFrame(frame)
 ```
+
+## 도발 제트어퍼 (2026-10-15, 결정 35)
+
+근거·설계 이유는 `TJU.md`. 프레임 1 = 도발(1+3+4)을 누른 칸.
+
+- **칸 리더**(`tjIn`): `tjButton`·`tjDir`가 `tjEvent({t, btn|dir})`로 넣으면 그 60Hz 칸(`frameSlot`)의 `open` 칸에 마지막 방향과 버튼 집합이 모인다. 다음 칸의 입력이 오거나 틱(`tjTick` → `tjAdvance(frameSlot(now)-2)`, 바로 앞 칸 하나는 유예)이 지나가면 `tjRead`가 한 칸을 읽는다(`fr = {slot, dir, changed, btns, taunt}`). `tjDir`는 도전 카운트다운 중에도 불린다(`onDir` 1½ — 리더의 마지막 방향 `tjIn.dir`이 스틱을 따라가야 카운트다운부터 쥔 6을 놓는 것도 캔슬이다). 이미 읽은 칸(`tjIn.read`)은 다시 쓰지 않는다. 시계는 따로 없고 `tjTime(slot)`(무릎·잠금·끝·후속기 대기·묵은 6N4 정리)은 앞으로만 가므로 지난 칸으로 다시 불러도 그대로다.
+- **도발**(`tjp.run`, `phase`: `pre` → 첫 입력이면 `follow`, 32f가 지나면 `lock`): `tjStart`(칸에 1·3·4가 모두 있으면) → `tjRun`. `tjRun`은 시계가 세운 `phase`·`knee`가 아니라 **읽는 칸의 번호**로 정한다(늦게 도착한 입력도 제 칸): 28f까지의 두 번째 1+3+4는 더블 도발(`double`), 그 밖의 첫 입력(방향이 바뀐 칸·버튼)은 캔슬(`cancel`·`cancelSlot`, `knee = f>28`) → `tjFollow`. 33~77f의 입력은 `ign` 표시와 판정 `late`, 78f 칸이나 시계가 77f를 넘기면 `tjEnd`(김 연출은 `fx.tauntEnd(t0)`가 그 도발의 `anim.t0`로 확인).
+- **후속기**: `tjTrack`이 6 → N → 첫 4의 칸(`fS`·`nS`·`bS`, 마지막 단계 `at`)을 적고 `tjMoveOf`가 버튼 칸의 기술을 기술한다(`key` = 1P 방향+버튼, 6N4+RP면 `ju`·`fF`·`nF`·`early`·`total`, N 없음 `b+2`(`why:'noN'`), RP 먼저 `2`(`why:'rpFirst'`), 발동 `su`, 명중 `hit = f+su-1`). 판정 종류는 `tjFollowKind(knee, mv)`(순수 함수): `tju`·`combo`·`guard`·`unknown`(발동 미상)·`early`(무릎 전 캔슬). 그 밖에 `cancel`(무릎 뒤 캔슬만)·`late`(33f 이후)·`none`(캔슬 안 함). 후속기 기한은 캔슬 뒤 `TJ.WAIT_F`인데, 6N4를 넣는 중이면 그 마지막 단계부터 센다(`tjWaitFrom` — 느린 제트어퍼도 가드로 판정, 버리지 않음). 한 도발에 판정 하나(`tjVerdict`): 행 `tjRow`(순수) → 세션·도전·`store.life.tju`·무대 연속(`tjCount`·`tjRecord`) → 결과 카드·코치·로그(`tjShow`), 고칠 점(`tjFix`). "29f"는 모두 `TJ_SIX`(목표 캔슬 = 제트어퍼의 6, 통계 `six`·CANCEL 카드·첫 입력 타일·고칠 점)이고, "무릎 다음 프레임"(+16 띠·후속기 창)은 `KNEE_F+1` — 둘이 같다는 것을 테스트가 지킨다.
+- **도발 밖**(`tjFree`): 새 도발, 1·3·4가 3칸 안에 나뉘면 `tjSplit`(시도 아님), 6N4+RP면 `tjJu`(단독 제트어퍼, `tjp.ju`, 세션 `juTries`·`juFast`).
+- **화면**(`17-tju-practice.js`): `renderTj`(모드 `tju`일 때만) — `tjSegments`(1 · 2~12 · 13~34 · 35~77 = `TJ_CELLS` 25칸, `TJ_FROM`은 칸 수에서 계산, 칸 폭 `w`. 접힌 칸에 걸친 띠는 그 프레임 위치에서 `margin`으로 끊김(`tjBands`), 44f는 접힌 칸의 `last` 눈금 `--hit`), 띠 `tj-band` 4줄(`cancel`·`ignore` / 칸 / `adv` / `cmd`·`su ok|no` — 후속기 글자는 막대를 넘어 `lbl`로), 6칸 평가(`#tjAB`), 고칠 점, 단독 줄, 도전·통계·최근 표. `renderTjLive(now)`는 틱마다 진행 문구와 접힌 칸의 진행 막대(`--p`). 10회 도전 `tjStartChallenge`·`tjChallengeCancel`·카운트다운 `tjChallengeTick`(`19-tick`).
+- **연출**(판정 불변, 결정 9): `fx.taunt(t0)`가 `anim.kind='taunt'`를 도발 누른 시각에 고정해 `poseAt`이 `tjTauntPose(f, idle)`(`33-fighter`의 TJ_POSE 키프레임 단조 3차 보간 `TJ_POSE_M`, 77f 뒤 `TJ_FLEX_F` 유지 → `TJ_FLEX_BACK` 동안 가드로)를 그린다. 끝난 도발의 힘준 자세는 걷기가 끊는다(`35-dojo3d` canWalk — 도발 자세인데 `tjBusy()`가 아니면 힘준 자세). 무릎은 `tjKneeFx` → `fx.knee(until)`(통발음, `tryHit('knee')`로 더미가 44f까지 휘청, `+16` 팝). 캔슬은 `fx.tauntCut`(`tjCut` 포즈: 캔슬 순간의 도발 자세 `anim.cutFrom`에서 `TJ_CUT_F`(6f)에 가드로, 무릎을 맞혔으면 머리 불꽃 `tjFlameUntil`·`TJ_FLAME_MS`), 후속기는 `fx.tjMove(key, win|hit|whiff|guard, n, at)`(제트어퍼 = 웨캔기어음·`ju` 포즈, 뒷무릎 = `bknee`, 그 외 기존 포즈, 콤보만 더미에 닿고 나머지는 `dummyGuard(at)` — `at` = 판정한 명중 프레임 시각이라 가드는 무릎 휘청(44f)이 끝난 뒤에 뜬다), 끝까지 한 도발은 `fx.tauntEnd`(김 `tjSteamUntil`·`TJ_STEAM_MS`). 77f 주황빛은 `35-dojo3d`가 그린다. 연습 모드에서 더미는 `TJ_DUMMY_PX`(무릎 거리)에 선다(`parkPx`).
+- **입력 장치**: `bt` 동작(1+3+4 한 번에) = 키 `KeyL`·패드 `b5` 기본, `pressTaunt(t)`가 같은 시각에 `onButton` 1·3·4(도발 레시피가 있는 캐릭터만, 그 밖에는 아무 일 없음). 옛 저장값이 그 키·버튼을 기본·보조 입력으로 이미 쓰면 `bt`는 비운다(`03-store` 로드, `padBtTaken`·`keyBtTaken` — 저장된 기본 입력이 거부돼 기본값으로 돌아가도 적용). 비운 채 저장된 `bt`(키보드 `''`·패드 `'none'`)는 그 키가 다시 비어도 사용자가 지정할 때까지 그대로다. 터치는 `data-btn="t"`(브라이언일 때만 보임, `#tbtns.has-bt`가 둥근 버튼 크기·글자에서 그 줄 높이를 뺀다). 웨이브가 없는 캐릭터의 무대 연속 카운터(`updateHud`)는 BACKDASH.
+- **코치 칸**: `coachForChar()`(`17-coach`) — 웨이브 없는 도발 캐릭터는 부트(`36-boot`)와 `setChar` 전환 때 `tj.c.intro`와 빈 도발 막대(`TJ_SEG_IDLE`, `renderSeg({tj})`)로 시작하고, 웨이브 캐릭터로 돌아가면 `coach.intro`·대시 막대. 카즈야↔화랑 전환은 마지막 조언을 그대로 둔다.
 
 ## 무족초 (2026-09-20)
 

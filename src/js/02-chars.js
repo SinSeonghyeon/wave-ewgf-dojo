@@ -6,11 +6,14 @@
    character shares BD.CURVE, 2026-10-11 user decision) · wsc = 웨캔기어 · giwon = 기원권 recovery and the 기원초 link.
    legacy: the existing button path (commandButton) stays byte-for-byte, so the default character never regresses.
    jf: {move, btn} — a 6N3 + btn same-60Hz-frame just frame judged through the staged 6N3 path (결정 33(jfsr)).
+   tj: {move} — the taunt (1+3+4) whose knee is cancelled into a follow-up, judged slot by slot in 16-tju.js against the TJ
+   model (결정 35(tju)); the Jet Upper 6 N 4+RP is read by the same parser with or without a taunt in front.
    portrait: the character-select image (official tekken.com fighter-select art, 2026-10-11 user decision — 결정 3(no-official-ip)
    exception, inlined from src/assets by tools/assemble.js); the player's SD doll and outfit are untouched. */
 const CHARS = {
   kazuya:   {caps:{wave:true, kbd:true, wsc:true,  giwon:true},  moves:['ewgf','mist','tongbal','hellsweep','giwon'], legacy:true, portrait:'@@DATA_URI:assets/portrait-kazuya.webp@@'},
   hwoarang: {caps:{wave:true, kbd:true, wsc:false, giwon:false}, moves:['jfsr'], jf:{move:'jfsr', btn:4}, portrait:'@@DATA_URI:assets/portrait-hwoarang.webp@@'},
+  bryan:    {caps:{wave:false, kbd:true, wsc:false, giwon:false}, moves:['tju'], tj:{move:'tju'}, portrait:'@@DATA_URI:assets/portrait-bryan.webp@@'}, // 2026-10-15: backdash yes, no wave and no Mishima move
 };
 const CHAR_IDS = Object.keys(CHARS), CHAR_DEFAULT = 'kazuya';
 const charId = () => CHARS[store.char] ? store.char : CHAR_DEFAULT;
