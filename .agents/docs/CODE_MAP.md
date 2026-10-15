@@ -44,7 +44,7 @@
 | `src/js/20-trials.js` | `MODES`·`CHALLENGES`·`BOARDS`, 모드 전환, 측정 모드(시작·카운트다운·종료), 기록 텍스트 |
 | `src/js/21-charts.js` | 히스토그램·웨이브 차트(SVG 문자열) |
 | `src/js/22-share-model.js` | 공유 카드 순수 모델 `buildCard`·`buildOgCard` |
-| `src/js/23-settings-ui.js` | 설정 대화상자 |
+| `src/js/23-settings-ui.js` | 설정 대화상자, 컨트롤러 설정 하위 화면(`ctlView`), 바인딩 카드(`bindingCards`·`btnDots`·`padGlyph`) |
 | `src/js/24-share-dialog.js` | 공유 카드 대화상자·복사·다운로드 |
 | `src/js/25-notices-ui.js` | 공지 대화상자·NEW 배지·자동 열기 |
 | `src/js/26-backend-config.js` | `BOARD_URL`(비우면 백엔드 UI 전체 숨김) |
@@ -91,7 +91,7 @@
 | 백대시·bd10 | `00-core`(`BD`) `06-state` `12-backdash` `12-bd-practice` `11-crouch-dash`(`backdashMotion`) `31-stage`(`bdEase`) | `backdash` `smoke-backdash` | 결정 17, `BACKDASH.md` |
 | 측정 모드·결과 | `20-trials` `18-hud` `21-charts` | `judging` `i18n-pages` | 결정 13·14 |
 | 순위·한마디 | `26-backend-config` `29-backend` `worker/` | `backend` `board` `smoke-chrome` | `worker/README.md`, 결정 16·18·19·22~24·26·31 |
-| 입력 장치·키 설정 | `07-input` `08-touch` `09-history` | `input` `smoke-bindings` | 결정 11·28·29 |
+| 입력 장치·키 설정·핫키 | `03-store`(`HOTKEYS`) `07-input` `08-touch` `09-history` `23-settings-ui` | `input` `smoke-bindings` | 결정 11·28·29·33 |
 | 소리 | `05-sound` | `sound` `smoke-sound` | 결정 8 |
 | 옷장·업적·보상 | `01-wardrobe-items` `28-rewards` `33-fighter` | `wardrobe-rewards` | 결정 15 |
 | 공지·후원 | `02-notices` `25-notices-ui` `27-donate` | `i18n-pages` `modals` | 결정 20·21 |
@@ -158,7 +158,7 @@ Worker·DB·도메인은 변경하지 않는다. 절차는 [LOCALIZED_PAGES.md](
 단위 테스트는 각 언어 사전의 원본 키 중복을 검사하고, 언어별 브라우저 검사는 최신 공지만이 아니라 과거 공지와 강조 상자까지 언어 전환 후 확인한다.
 
 ```
-설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,touch,touchSize,touchX,touchY,sound,bgm,bgmVol,sfxVol,keys,altKeys,padKeys,padAltKeys,records,nick,noticeSeen,…,life,ach,pendingRewards,fit,donateResultDay,donateNudgeDay,donatePlayDay,donatePlayMs} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save().
+설정 저장  STORE='wave-ewgf-dojo-v1' · store{v,lang,window,side,fx,touch,touchSize,touchX,touchY,sound,bgm,bgmVol,sfxVol,keys,altKeys,padKeys,padAltKeys,hotKeys,padHotKeys,records,nick,noticeSeen,…,life,ach,pendingRewards,fit,donateResultDay,donateNudgeDay,donatePlayDay,donatePlayMs} · 로드 시 타입·허용값 검증 후 기본값으로 대체 · save().
           `keys`는 기존 기본 키, `altKeys`는 동작별 보조 키 1개(빈 문자열=미설정)라 옛 저장값과 호환
 소리      SND{wave,ewgf,wsc,hellsweep,tongbal,hit,backdash,giwon,giwonCh} 파일명 · snd{ok(typeof Audio),unlocked,bgm,pool,idx,lock,release} · 부트 때는 아무것도 만들지 않음(테스트 vm·og 생성이 미디어를 안 건드림)
           unlockAudio(): 첫 keydown/pointerdown/패드 버튼에서 1회 → 모든 효과음 풀(이름당 Audio 3개, 라운드로빈) 생성 + bgmSync()
@@ -516,6 +516,8 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 - 입력 설정 UI·자동 장치 전환(2026-09-27 후속): 키보드와 패드가 `.keys`/`.key`/`.key-pair`/`.key-bind` 스타일을 공유한다. 패드의 상시 × 버튼과 전용 1열 스타일은 제거. `bindingClear`는 패드 지정/키보드 보조 지정 중에만 표시하며 `clearBinding()`으로 해당 칸만 비운다. 패드 표시는 B번호/A축부호로 줄이고 전체 이름은 aria-label/title/현재 입력 표시에 유지한다.
 - `setBindingDevice(device,automatic)`는 기존 캡처를 취소하고 탭/메시지/포커스를 갱신한다. 설정 중 일반 키 keydown은 키보드로, `bindingPadPrevious{index,id,inputs}` 대비 새 패드 입력은 패드로 전환한다. 최초 장치 감지에서는 버튼만 전환 신호로 인정하고 축은 기준값으로 기록한다. 설정 열기와 지정 시작의 `pollPad(true)`는 현재 누른 입력을 기준으로만 기록하므로 화면을 열자마자 탭이 뒤집히지 않는다.
   유지/해제된 입력과 고정 축은 전환하지 않고, 키 반복·수정키·Tab/Esc·버튼의 Enter/Space·폼 입력은 키보드 자동 전환에서 제외한다. 기존 연습 판정은 동일하며 자동 전환을 일으킨 입력을 설정값으로 저장하지 않는다.
+
+- 핫키·컨트롤러 설정(2026-10-16, 결정 33(hotkeys)): `HOTKEYS`(`h13`…`h1234`, 철권 메뉴 순서)·`hotkeyButtons`는 `03-store`. 키보드 `store.hotKeys`(''=미지정), 패드 `store.padHotKeys`('none'=미지정, `padAttackSlot`이라 버튼만). `keyField`/`padField`(07-input)가 슬롯·보조 여부로 저장 필드를 고른다. 키보드는 `buttonsForCode`(키 → 버튼 배열)로 아직 눌리지 않은 버튼마다 같은 t로 `onButton`, 패드는 `pollPad`의 `hot`이 `pressed[]`에 합쳐진다. `padBindingEntries`에 `padHotKeys`가 들어가 교환·해제·`padNeedsRelease`가 그대로 적용된다. 설정 UI는 `#setMain`/`#setCtl` 두 화면(`ctlView`, 창 close에 주 화면 복귀), `bindingCards`가 이동·공격·핫키 절과 `btnDots` 4점 아이콘을 그리고 핫키 카드는 칸 하나다. `padGlyph`는 `ui.padStd`(standard 매핑)일 때 버튼 0~11을 Xbox/PS 기호(`ui.padPS`, `padIsPS`)로, 그 밖은 `padBindingShort` 번호로 표시. `notePad`가 연결 시 이 값들을 갱신한다.
 
 - 키 확인(2026-09-27): `bindingCheck`는 비영속 토글, `bindingCheckHeld`/`bindingCheckPad`는 설정 확인 전용 입력 상태다. 키보드 keydown/keyup과 패드 폴링으로 정확히 일치하는 기본/보조 칸을 `bindingChecked`로 조회하고, `.checked`를 칸과 동작 카드에 적용한다. 키보드 고정 방향키는 지정 칸과 별개로 방향 카드도 강조한다.
   `renderBindingCheck`는 입력 서명이 같으면 DOM 작업을 생략하고 `renderKeys`로 DOM을 교체했을 때만 강제 적용한다. 확인 중 버튼 지정·지우기·기본값 복원은 UI와 함수 가드로 차단하고 연습 입력/통계/저장값은 변경하지 않는다. 기존 자동 탭 전환 유지, 설정 close는 확인 모드 종료, blur/hidden/disconnect는 눌림 표시 정리.

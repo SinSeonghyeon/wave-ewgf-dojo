@@ -311,3 +311,30 @@ test('unchanged input history does not replace DOM on animation ticks',()=>{
   assert.equal(writes,0,'stopped hold frames are unchanged');
   a.setLang('ja');assert.ok(writes>0,'localized titles still update');
 });
+test('hotkeys (결정 33(hotkeys)): one key or pad button presses its attack buttons at one timestamp and merges with held buttons',()=>{
+  const ev=(code,timeStamp=1000)=>({code,timeStamp,target:{tagName:'DIV'},preventDefault(){}});
+  const btns=a=>JSON.stringify(a.history.filter(e=>e.btn).map(e=>[e.btn,e.t]));
+  const a=boot({hotKeys:{h12:'KeyL',h13:'KeyU',h1234:'ArrowUp'},padHotKeys:{h34:'b4',h24:'b2',h12:'b12'}});
+  assert.equal(a.store.hotKeys.h12,'KeyL');
+  assert.equal(a.store.hotKeys.h13,'','a key already bound to an action is dropped');assert.equal(a.store.hotKeys.h1234,'','arrow keys stay directions');
+  assert.equal(a.store.padHotKeys.h34,'b4');assert.equal(a.store.padHotKeys.h24,'none','a pad button already bound to 1 is dropped');
+  assert.equal(a.store.padHotKeys.h12,'none','the d-pad stays direction while up is automatic');
+  a.events.keydown(ev('KeyL',1000));assert.equal(btns(a),'[[1,1000],[2,1000]]');
+  a.events.keydown(ev('KeyI',1010));assert.equal(btns(a),'[[1,1000],[2,1000]]','2 is already held through the hotkey');
+  a.events.keyup(ev('KeyL',1020));a.events.keydown(ev('KeyL',1030));assert.equal(btns(a),'[[1,1000],[2,1000],[1,1030]]','only the released 1 is pressed again');
+  a.events.keyup(ev('KeyL',1040));a.events.keyup(ev('KeyI',1040));
+  const b=boot({padHotKeys:{h34:'b4'}});b.time(2000);samplePad(b,[4]);
+  assert.equal(btns(b),'[[3,2000],[4,2000]]');
+  b.time(2010);samplePad(b,[4,0]);assert.equal(b.history.filter(e=>e.btn).length,2,'3 stays held through the hotkey');
+});
+test('hotkeys are assigned, cleared and reset in the controller settings like the other bindings',()=>{
+  const a=boot();a.get('setDlg').open=true;
+  a.get('ctlOpen').click();
+  assert.equal(a.get('setCtl').hidden,false);assert.equal(a.get('setMain').hidden,true); // keyboard capture runs through the real DOM in smoke-bindings
+  a.beginPadBinding('h12');samplePad(a);samplePad(a,[5]);assert.equal(a.store.padHotKeys.h12,'b5');
+  samplePad(a);a.beginPadBinding('h34');samplePad(a);samplePad(a,[3]);
+  assert.equal(a.store.padHotKeys.h34,'b3');assert.equal(a.store.padKeys.b2,'none','the displaced action takes the hotkey\'s old (empty) slot');
+  a.setBindingCheck(true);samplePad(a,[5]);assert.equal(a.bindingChecked('pad','h12',false),true);a.setBindingCheck(false);
+  a.setBindingDevice('pad');a.get('bindingReset').click();
+  assert.equal(a.store.padHotKeys.h12,'none');assert.equal(a.store.padKeys.b2,'b3');
+});

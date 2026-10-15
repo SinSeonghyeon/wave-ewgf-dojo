@@ -18,7 +18,7 @@ segSel('langSel','lang', v => { setLang(v); });
 $('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDlg'); if(!d.open){ donateNudgeDefer(); endTrial(true); resetInput(); bindingPadPrevious=null; d.showModal(); pollPad(true); jackpotPause(); } });
 $('setClose').addEventListener('click', () => { setBindingCheck(false); cancelBinding(); padNeedsRelease=true; $('setDlg').close(); });
 $('setDlg').addEventListener('cancel', e => { if(listening || padCapture){ e.preventDefault(); cancelBinding(); } });
-$('setDlg').addEventListener('close', () => { setBindingCheck(false); cancelBinding(); padNeedsRelease=true; });
+$('setDlg').addEventListener('close', () => { setBindingCheck(false); cancelBinding(); padNeedsRelease=true; $('setMain').hidden=false; $('setCtl').hidden=true; });
 // 기술 온오프 (결정 32(move-toggle)): 버튼마다 따로 켜고 끈다. 무족초는 초풍이 꺼지면 누를 수 없다.
 function renderMoveSel(){ $('moveSel').querySelectorAll('button').forEach(b => { const k=b.dataset.move; b.disabled = k==='mist' && store.moves.ewgf===0; b.setAttribute('aria-pressed', String(store.moves[k]!==0 && !b.disabled)); }); }
 function setMove(k, on){ store.moves[k]=on?1:0; save(); resetInput(); renderMoveSel(); renderMode(); }
@@ -54,30 +54,58 @@ $('dataReset').addEventListener('click', () => { // wipes records, lifetime stat
   resetSession(); renderBests(); setCoach(['set.resetDone']); if($('fitDlg').open) renderFit();
 });
 renderSound();
-const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK'};
+const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',b1:'1 LP',b2:'2 RP',b3:'3 LK',b4:'4 RK',...Object.fromEntries(HOTKEYS.map(h=>[h,hotkeyButtons(h).join('+')]))};
+const BTN_EN = ['','LP','RP','LK','RK'];
 const pretty = c => c.replace(/^Key|^Digit|^Numpad/, m=>m==='Numpad'?'Num':'').replace('Arrow','');
+// 결정 33(hotkeys): 철권 버튼 설정처럼 동작마다 4점 버튼 아이콘(LP RP 위, LK RK 아래, 눌리는 버튼만 밝게)과 표준 매핑 패드의 Xbox/PlayStation 기호
+function btnDots(btns){
+  const P = {1:[7,5],2:[16,5],3:[5,14],4:[14,14]};
+  return `<svg class="dots" viewBox="0 0 21 19" aria-hidden="true">${[1,2,3,4].map(n => `<circle cx="${P[n][0]}" cy="${P[n][1]}" r="3.6"${btns.includes(n)?' class="on"':''}/>`).join('')}</svg>`;
+}
+const PAD_GLYPH = {xb:['A','B','X','Y','LB','RB','LT','RT','View','Menu','LS','RS'], ps:['✕','○','□','△','L1','R1','L2','R2','Create','Options','L3','R3']};
+function padGlyph(code){ // standard-mapping buttons 0-11 get the controller's own symbol; everything else keeps the numbered label
+  const i = /^b\d+$/.test(code) ? +code.slice(1) : -1;
+  return ui.padStd && i>=0 && i<12 ? `<i class="pg ${i<4?'face':i<8?'sh':i<10?'sys':'stick'}">${PAD_GLYPH[ui.padPS?'ps':'xb'][i]}</i>` : escapeHTML(padBindingShort(code));
+}
+function actionLabel(k){
+  if(k[0]==='h'){ const b=hotkeyButtons(k); return `${btnDots(b)}<span>${b.join('+')}<em>${b.map(n=>BTN_EN[n]).join('+')}</em></span>`; }
+  return k[0]==='b' ? `${btnDots([+k[1]])}<span>${KEYLABEL[k]}</span>` : `<span>${KEYLABEL[k]}</span>`;
+}
+function bindingCards(id, slot){ // movement, attacks, then hotkeys (one input each, no alternate)
+  const card = k => `<div class="key${k[0]==='h'?' hot':''}" data-action="${k}"><small>${actionLabel(k)}</small><div class="key-pair">${slot(k,false)}${k[0]==='h'?'':slot(k,true)}</div></div>`;
+  const sec = key => `<div class="key-sec">${escapeHTML(T(key))}</div>`;
+  $(id).innerHTML = sec('set.secMove') + ['up','down','left','right'].map(card).join('') + sec('set.secAtk') + ['b1','b2','b3','b4'].map(card).join('') + sec('set.secHot') + HOTKEYS.map(card).join('');
+}
 function renderKeys(){
   renderBindings();
   const active = (k,alt) => listening && listening.slot===k && listening.alt===alt;
-  const bind = (k,alt) => { const code=store[alt?'altKeys':'keys'][k], on=active(k,alt), name=KEYLABEL[k]+' · '+T(alt?'set.keyAlt':'set.keyPrimary'); return `<button type="button" class="key-bind${alt?' alt':''}${!code?' empty':''}${on?' listen':''}" data-k="${k}" data-alt="${alt?1:0}" aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"><span>${escapeHTML(T(alt?'set.keyAlt':'set.keyPrimary'))}</span><b>${on?escapeHTML(T('set.keyListen')):code?pretty(code):escapeHTML(T('set.keyAdd'))}</b></button>`; };
-  $('keys').innerHTML = Object.keys(KEYLABEL).map(k => `<div class="key" data-action="${k}"><small>${KEYLABEL[k]}</small><div class="key-pair">${bind(k,false)}${bind(k,true)}</div></div>`).join('');
+  const bind = (k,alt) => { const code=store[keyField(k,alt)][k], on=active(k,alt), label=T(k[0]==='h'?'set.hotKey':alt?'set.keyAlt':'set.keyPrimary'), name=KEYLABEL[k]+' · '+label; return `<button type="button" class="key-bind${alt?' alt':''}${!code?' empty':''}${on?' listen':''}" data-k="${k}" data-alt="${alt?1:0}" aria-label="${escapeHTML(name)}" title="${escapeHTML(name)}"><span>${escapeHTML(label)}</span><b>${on?escapeHTML(T('set.keyListen')):code?pretty(code):k[0]==='h'?'—':escapeHTML(T('set.keyAdd'))}</b></button>`; };
+  bindingCards('keys', bind);
   $('keys').querySelectorAll('.key-bind').forEach(b => b.addEventListener('click', () => { if(bindingCheck) return; padCapture=null; listening = {slot:b.dataset.k,alt:b.dataset.alt==='1'}; bindingFeedback('set.bindListen'); renderKeys(); $('keys').querySelector('[data-k="'+b.dataset.k+'"][data-alt="'+b.dataset.alt+'"]')?.focus(); }));
   renderBindingCheck(true);
 }
 function renderBindings(){
   $('keyboardBindings').hidden=bindingDevice!=='kb'; $('padBindings').hidden=bindingDevice!=='pad';
   $('bindingTabs').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.device===bindingDevice)));
-  $('bindingMessage').textContent=T(...bindingMessage); $('bindingCancel').hidden=!(listening || padCapture); $('bindingClear').hidden=!(padCapture || listening?.alt);
+  $('bindingMessage').textContent=T(...bindingMessage); $('bindingCancel').hidden=!(listening || padCapture); $('bindingClear').hidden=!(padCapture || listening?.alt || listening?.slot[0]==='h');
   const padSlot=(k,alt)=>{
-    const field=alt?'padAltKeys':'padKeys', code=store[field][k], active=padCapture?.slot===k && padCapture.field===field;
-    const label=T(alt?'set.keyAlt':'set.keyPrimary'), name=KEYLABEL[k]+' · '+label;
-    return `<button type="button" class="key-bind${alt?' alt':''}${code==='none'?' empty':''}${active?' listen':''}" data-pad="${k}" data-pad-alt="${alt?1:0}" aria-label="${escapeHTML(name+' · '+padBindingName(code))}" title="${escapeHTML(name+' · '+padBindingName(code))}"><span>${escapeHTML(label)}</span><b>${escapeHTML(active?T('set.bindListen'):alt && code==='none'?T('set.keyAdd'):padBindingShort(code))}</b></button>`;
+    const field=padField(k,alt), code=store[field][k], active=padCapture?.slot===k && padCapture.field===field;
+    const label=T(k[0]==='h'?'set.hotKey':alt?'set.keyAlt':'set.keyPrimary'), name=KEYLABEL[k]+' · '+label;
+    return `<button type="button" class="key-bind${alt?' alt':''}${code==='none'?' empty':''}${active?' listen':''}" data-pad="${k}" data-pad-alt="${alt?1:0}" aria-label="${escapeHTML(name+' · '+padBindingName(code))}" title="${escapeHTML(name+' · '+padBindingName(code))}"><span>${escapeHTML(label)}</span><b>${active?escapeHTML(T('set.bindListen')):alt && code==='none'?escapeHTML(T('set.keyAdd')):padGlyph(code)}</b></button>`;
   };
-  $('padKeys').innerHTML=Object.keys(KEYLABEL).map(k=>`<div class="key" data-action="${k}"><small>${KEYLABEL[k]}</small><div class="key-pair">${padSlot(k,false)}${padSlot(k,true)}</div></div>`).join('');
+  bindingCards('padKeys', padSlot);
   const focusPad=(k,alt)=>$('padKeys').querySelector('[data-pad="'+k+'"][data-pad-alt="'+alt+'"]')?.focus();
 
   $('padKeys').querySelectorAll('[data-pad]').forEach(b=>b.addEventListener('click',()=>{ beginPadBinding(b.dataset.pad,b.dataset.padAlt==='1'); focusPad(b.dataset.pad,b.dataset.padAlt); }));
 }
+// 컨트롤러 설정 하위 화면: 설정 창 안에서 주 화면과 전환하고, 창을 닫으면 주 화면으로 돌아온다
+function ctlView(on){
+  setBindingCheck(false); cancelBinding();
+  $('setMain').hidden=on; $('setCtl').hidden=!on;
+  if(on) $('ctlBack').focus?.(); else $('ctlOpen').focus?.();
+}
+$('ctlOpen').addEventListener('click',()=>ctlView(true));
+$('ctlBack').addEventListener('click',()=>ctlView(false));
 $('bindingTabs').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>setBindingDevice(b.dataset.device)));
 $('bindingClear').addEventListener('click',clearBinding);
 $('bindingCheck').addEventListener('click',()=>setBindingCheck(!bindingCheck));
@@ -86,8 +114,8 @@ $('bindingReset').addEventListener('click',()=>{
   if(bindingCheck) return;
   if(typeof confirm==='function' && !confirm(T('set.bindConfirm'))) return;
   cancelBinding();
-  if(bindingDevice==='pad'){ store.padKeys={...DEFAULT_PAD}; store.padAltKeys=emptyPadAlt(); }
-  else { store.keys={...DEFAULT_KEYS}; store.altKeys=Object.fromEntries(Object.keys(DEFAULT_KEYS).map(k=>[k,''])); }
+  if(bindingDevice==='pad'){ store.padKeys={...DEFAULT_PAD}; store.padAltKeys=emptyPadAlt(); store.padHotKeys=emptyPadHotKeys(); }
+  else { store.keys={...DEFAULT_KEYS}; store.altKeys=Object.fromEntries(Object.keys(DEFAULT_KEYS).map(k=>[k,''])); store.hotKeys=emptyHotKeys(); }
   padNeedsRelease=true; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys();
 });
 $('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { setMode(b.dataset.mode); if(b.scrollIntoView) b.scrollIntoView({block:'nearest', inline:'nearest'}); })); // a half-hidden tab slides fully into the scrolling list

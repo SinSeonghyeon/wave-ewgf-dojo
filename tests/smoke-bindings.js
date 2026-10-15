@@ -7,7 +7,7 @@ fs.mkdirSync(out,{recursive:true});
 const source=assemble()
   .replace(/<script async src="https:\/\/pagead2[^>]*><\/script>/,'') // Keep third-party ad diagnostics out of the local input fixture.
   .replace(/const BOARD_URL = '[^']*';/,"const BOARD_URL = '';")
-  .replace(/\}\)\(\);\s*<\/script>/,'window.bindTest={store,session,pollPad,setLang};})();</script>');
+  .replace(/\}\)\(\);\s*<\/script>/,'window.bindTest={store,session,pollPad,setLang,history};})();</script>');
 fs.writeFileSync(path.join(out,'index.html'),source);
 stageAssets(source,out);
 (async()=>{
@@ -24,7 +24,7 @@ stageAssets(source,out);
   await click('[data-pad="b2"]');await sample();await sample([7]);
   assert.equal(await b.evalJs('bindTest.store.padKeys.b2'),'b7',JSON.stringify(await b.evalJs(`({focus:document.hasFocus(),hidden:document.hidden,dialog:document.querySelector('#setDlg').open,message:document.querySelector('#bindingMessage').textContent,live:document.querySelector('#padLive').textContent})`)));
   assert.equal(await b.evalJs('bindTest.session.tries'),0);
-  assert.match(await b.evalJs(`document.querySelector('[data-pad="b2"]').textContent`),/7/);
+  assert.match(await b.evalJs(`document.querySelector('[data-pad="b2"]').title`),/7/);assert.match(await b.evalJs(`document.querySelector('[data-pad="b2"]').textContent`),/RT/,'standard-mapping buttons show the controller symbol (결정 33(hotkeys))');
   await sample();await click('[data-pad="b1"]');await sample();await sample([7]);
   assert.deepEqual(await b.evalJs('[bindTest.store.padKeys.b1,bindTest.store.padKeys.b2]'),['b7','b2']);
   await click('[data-pad="up"]');await sample();await key('Escape');await sample([6]);
@@ -45,6 +45,17 @@ stageAssets(source,out);
   assert.equal(await b.evalJs('bindTest.store.altKeys.b2'),'KeyP');
   await click('[data-k="b1"][data-alt="1"]');await key('KeyP');
   assert.match(await b.evalJs(`document.querySelector('#bindingMessage').textContent`),/사용 중/);
+  // 결정 33(hotkeys): the controller sub-view holds the editor; a hotkey key presses 1+2 together after closing
+  await click('#ctlOpen');assert.equal(await b.evalJs(`[document.querySelector('#setMain').hidden,document.querySelector('#setCtl').hidden].join()`),'true,false');
+  await click('#bindingCancel');await click('[data-k="h12"]');await key('KeyL');
+  assert.equal(await b.evalJs('bindTest.store.hotKeys.h12'),'KeyL');assert.match(await b.evalJs(`document.querySelector('[data-k="h12"]').textContent`),/L/);
+  assert.equal(await b.evalJs(`document.querySelectorAll('#keys [data-action="h12"] .dots circle.on').length`),2,'the 1+2 row shows a two-dot icon');
+  await click('[data-k="h13"]');await key('KeyL');assert.match(await b.evalJs(`document.querySelector('#bindingMessage').textContent`),/사용 중/);await click('#bindingCancel');
+  await click('#setClose');await sleep(50);assert.equal(await b.evalJs(`document.querySelector('#setMain').hidden`),false,'closing returns to the main settings');
+  await b.send('Input.dispatchKeyEvent',{type:'keyDown',code:'KeyL',key:'l'});await b.send('Input.dispatchKeyEvent',{type:'keyUp',code:'KeyL',key:'l'});
+  assert.equal(await b.evalJs(`JSON.stringify(bindTest.history.filter(e=>e.btn).slice(-2).map(e=>e.btn))`),'[1,2]');
+  await click('#setOpen');await click('#ctlOpen');await click('[data-k="h12"]');await key('Delete');assert.equal(await b.evalJs('bindTest.store.hotKeys.h12'),'');
+  await click('#setClose');await click('#setOpen');
   await click('#bindingCancel');await click('#setClose');
   await sample([2]);assert.equal(await b.evalJs('bindTest.session.tries'),0,'release gate prevents accidental RP after closing');
   await sample();await sample([2]);await sleep(100); // a lone RP waits out its own 60Hz slot (it may be the first of RP, ↓, →)
@@ -86,6 +97,7 @@ stageAssets(source,out);
   await click('#bindingCheck');assert.equal(await b.evalJs(`document.querySelector('#bindingCheck').getAttribute('aria-pressed')`),'false');
   await click('#bindingCheck');await key('Escape');await sleep(60);await click('#setOpen');
   assert.equal(await b.evalJs(`document.querySelector('#bindingCheck').getAttribute('aria-pressed')`),'false','closing settings exits check mode');
+  await click('#ctlOpen'); // the editor lives in the controller sub-view (결정 33(hotkeys))
   for(const lang of ['ko','en','ja']){
    await b.evalJs(`bindTest.setLang('${lang}')`);
    for(const width of [1100,390,320]){

@@ -202,7 +202,27 @@
       </div>
       <dialog class="share settings" id="setDlg" aria-labelledby="setTitle">
         <div class="set-head"><h2 id="setTitle" data-i18n="set.title">입력 · 판정 설정</h2><button class="btn ghost" id="setClose" type="button" data-i18n="share.close">닫기</button></div>
-        <div class="set">
+        <div class="set" id="setMain">
+          <div class="row"><label class="t" data-i18n="set.ctl">컨트롤러 설정</label><button class="btn ghost" id="ctlOpen" type="button" data-i18n="set.ctlOpen">키·패드·핫키·터치 ›</button></div>
+          <p class="note" data-i18n="ewgf.gridNote"></p>
+          <div class="row"><label class="t" data-i18n="set.moves">기술 켜기·끄기</label>
+            <div class="segc moves" id="moveSel" role="group" data-i18n-aria="set.moves"><button type="button" data-move="ewgf" aria-pressed="true" data-i18n="move.ewgf"></button><button type="button" data-move="mist" aria-pressed="true" data-i18n="move.mist"></button><button type="button" data-move="tongbal" aria-pressed="true" data-i18n="move.tongbal"></button><button type="button" data-move="hellsweep" aria-pressed="true" data-i18n="move.hellsweep"></button><button type="button" data-move="giwon" aria-pressed="true" data-i18n="move.giwon"></button></div></div>
+          <p class="note" data-i18n="set.movesNote"></p>
+          <div class="row"><label class="t" data-i18n="set.fx">연출 (흔들림·플래시)</label>
+            <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" data-i18n="set.sound">소리</label>
+            <div class="segc" id="soundSel"><button data-sound="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-sound="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" data-i18n="set.bgm">배경음</label><div class="segc" id="bgmSel"><button data-bgm="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-bgm="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
+          <div class="row"><label class="t" for="bgmVol" data-i18n="set.bgmVol">배경음 볼륨</label>
+            <div class="range"><input type="range" id="bgmVol" min="0" max="100" step="5" value="100"><output id="bgmVolOut">100%</output></div></div>
+          <div class="row"><label class="t" for="sfxVol" data-i18n="set.sfxVol">효과음 볼륨</label>
+            <div class="range"><input type="range" id="sfxVol" min="0" max="100" step="5" value="100"><output id="sfxVolOut">100%</output></div></div>
+          <p class="note" data-i18n="set.soundNote">배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).</p>
+          <div class="row"><label class="t" data-i18n="set.reset">기록·업적 초기화</label><button class="btn ghost" id="dataReset" type="button" data-i18n="set.resetBtn">초기화…</button></div>
+          <p class="note" data-i18n="set.resetNote">모드별 최고 기록, 누적 통계, 업적, 복장을 지웁니다. 닉네임과 설정은 남습니다.</p>
+        </div>
+        <div class="set" id="setCtl" hidden>
+          <div class="ctl-nav"><button class="btn ghost" id="ctlBack" type="button" data-i18n="set.ctlBack">‹ 설정으로</button><h3 data-i18n="set.ctl">컨트롤러 설정</h3></div>
           <section class="binding-editor">
             <div class="binding-toolbar"><div class="segc" id="bindingTabs" role="group" data-i18n-aria="set.controls"><button type="button" data-device="kb" aria-pressed="true" data-i18n="set.keyboard"></button><button type="button" data-device="pad" aria-pressed="false" data-i18n="set.pad"></button></div><div class="binding-actions"><button class="btn ghost" id="bindingCheck" type="button" aria-pressed="false" data-i18n="set.bindCheck"></button><button class="btn ghost" id="bindingReset" type="button" data-i18n="set.bindReset"></button></div></div>
             <p class="note"><span data-i18n="set.bindHelp"></span><br><span data-i18n="set.autoHelp"></span></p>
@@ -219,13 +239,9 @@
             </div>
             <div class="binding-feedback"><p id="bindingMessage" role="status" aria-live="polite"></p><button class="btn ghost" id="bindingClear" type="button" hidden data-i18n="set.bindClear"></button><button class="btn ghost" id="bindingCancel" type="button" hidden data-i18n="set.bindCancel"></button></div>
           </section>
-          <p class="note" data-i18n="ewgf.gridNote"></p>
-          <div class="row"><label class="t" data-i18n="set.moves">기술 켜기·끄기</label>
-            <div class="segc moves" id="moveSel" role="group" data-i18n-aria="set.moves"><button type="button" data-move="ewgf" aria-pressed="true" data-i18n="move.ewgf"></button><button type="button" data-move="mist" aria-pressed="true" data-i18n="move.mist"></button><button type="button" data-move="tongbal" aria-pressed="true" data-i18n="move.tongbal"></button><button type="button" data-move="hellsweep" aria-pressed="true" data-i18n="move.hellsweep"></button><button type="button" data-move="giwon" aria-pressed="true" data-i18n="move.giwon"></button></div></div>
-          <p class="note" data-i18n="set.movesNote"></p>
-          <div class="row"><label class="t" data-i18n="set.fx">연출 (흔들림·플래시)</label>
-            <div class="segc" id="fxSel"><button data-fx="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-fx="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
-          <div class="row"><label class="t" data-i18n="set.touch">터치 컨트롤</label>
+          <p class="note" data-i18n="set.hotNote"></p>
+          <h3 class="ctl-sub" data-i18n="set.touch">터치 컨트롤</h3>
+          <div class="row"><label class="t" data-i18n="set.touchShow">표시</label>
             <div class="segc" id="touchSel"><button data-touch="auto" aria-pressed="true" data-i18n="set.touchAuto">자동 (터치 기기)</button><button data-touch="on" aria-pressed="false" data-i18n="set.on">켜기</button><button data-touch="off" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
           <div class="row"><label class="t" for="touchSize" data-i18n="set.touchSize">방향 버튼 크기</label>
             <div class="range"><input type="range" id="touchSize" min="70" max="300" step="5" value="100"><output id="touchSizeOut">100%</output></div></div>
@@ -233,16 +249,6 @@
             <div class="range"><input type="range" id="touchX" min="0" max="100" step="5" value="0"><output id="touchXOut">0%</output></div></div>
           <div class="row"><label class="t" for="touchY" data-i18n="set.touchY">방향 버튼 세로 위치</label>
             <div class="range"><input type="range" id="touchY" min="0" max="100" step="5" value="0"><output id="touchYOut">0%</output></div></div>
-          <div class="row"><label class="t" data-i18n="set.sound">소리</label>
-            <div class="segc" id="soundSel"><button data-sound="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-sound="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
-          <div class="row"><label class="t" data-i18n="set.bgm">배경음</label><div class="segc" id="bgmSel"><button data-bgm="1" aria-pressed="true" data-i18n="set.on">켜기</button><button data-bgm="0" aria-pressed="false" data-i18n="set.off">끄기</button></div></div>
-          <div class="row"><label class="t" for="bgmVol" data-i18n="set.bgmVol">배경음 볼륨</label>
-            <div class="range"><input type="range" id="bgmVol" min="0" max="100" step="5" value="100"><output id="bgmVolOut">100%</output></div></div>
-          <div class="row"><label class="t" for="sfxVol" data-i18n="set.sfxVol">효과음 볼륨</label>
-            <div class="range"><input type="range" id="sfxVol" min="0" max="100" step="5" value="100"><output id="sfxVolOut">100%</output></div></div>
-          <p class="note" data-i18n="set.soundNote">배경음은 첫 키 입력이나 클릭 뒤에 시작됩니다 (브라우저 자동재생 제한).</p>
-          <div class="row"><label class="t" data-i18n="set.reset">기록·업적 초기화</label><button class="btn ghost" id="dataReset" type="button" data-i18n="set.resetBtn">초기화…</button></div>
-          <p class="note" data-i18n="set.resetNote">모드별 최고 기록, 누적 통계, 업적, 복장을 지웁니다. 닉네임과 설정은 남습니다.</p>
         </div>
       </dialog>
     </aside>

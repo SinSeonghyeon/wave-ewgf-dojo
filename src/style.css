@@ -224,6 +224,7 @@
     background:rgba(20,26,35,.75);border:1px solid var(--line2);color:var(--ink2);padding:0;backdrop-filter:blur(2px);transition:color .15s,border-color .15s,transform .2s}
   .hud-gear:hover,.hud-gear:focus-visible{color:var(--accent);border-color:var(--accent);transform:rotate(30deg);outline:none}
   .set{display:flex;flex-direction:column;gap:10px;padding-bottom:14px}
+  .set[hidden]{display:none}
   .set .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
   .set label.t{color:var(--muted);font-size:12.5px}
   .segc{display:inline-flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden}
@@ -267,6 +268,23 @@
   #bindingCheck[aria-pressed="true"],.binding-editor .key.checked{border-color:var(--accent);background:var(--accent-soft)}
   .binding-editor .key-bind.checked{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
   .binding-editor .key-bind:disabled{opacity:1;cursor:default}
+  /* controller settings sub-view + Tekken-style button icons and pad glyphs (결정 33(hotkeys)) */
+  .ctl-nav{display:flex;align-items:center;gap:10px}
+  .ctl-nav h3,.ctl-sub{margin:0;font-size:15px;color:var(--ink)}
+  .ctl-sub{margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
+  .binding-editor .key-sec{grid-column:1/-1;font-size:12px;font-weight:700;color:var(--gold);padding-bottom:3px;border-bottom:1px solid var(--line);margin-top:4px}
+  .binding-editor .key small{display:flex;align-items:center;justify-content:center;gap:7px}
+  .binding-editor .key small em{display:block;font:normal 10.5px var(--mono);color:var(--muted)}
+  .binding-editor .key.hot small span{text-align:left;line-height:1.2}
+  .dots{width:21px;height:19px;flex:none}
+  .dots circle{fill:var(--line2)}
+  .dots circle.on{fill:var(--ink)}
+  .binding-editor .key.checked .dots circle.on{fill:var(--accent)}
+  .pg{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;font:normal 700 11px var(--mono);color:var(--bg);background:var(--ink);border-radius:11px;vertical-align:middle}
+  .pg.face{width:22px;padding:0;font-size:12px}
+  .pg.sh{border-radius:4px 4px 9px 9px}
+  .pg.sys{border-radius:4px;font-size:9.5px;background:var(--ink2)}
+  .pg.stick{width:22px;padding:0;background:transparent;color:var(--ink);border:2px solid var(--ink)}
   @keyframes blink{50%{opacity:.5}}
   .note{font-size:12px;color:var(--muted);line-height:1.5}
   .note code{font-family:var(--mono);color:var(--ink2);font-size:11.5px}
