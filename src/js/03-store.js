@@ -8,9 +8,11 @@ const detectLang = () => { const l = (typeof navigator!=='undefined' && navigato
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // Legacy saved values / unchanged Worker contract; not used by the current EWGF judge
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
 const nickOk = n => { const len = [...n].length; return len>=2 && len<=12 && !NICK_BAD.test(n); };
-const DEFAULT_KEYS = {up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK'};
+// bt: one key/button that presses 1+3+4 together — the game's own LP+LK+RK hotkey for the taunt (결정 37(tju)). Added 2026-10-15,
+// so a save from before has no bt: it takes the default only when that key/button is still free (see the load below).
+const DEFAULT_KEYS = {up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',b1:'KeyU',b2:'KeyI',b3:'KeyJ',b4:'KeyK',bt:'KeyL'};
 const PAD_AUTO_INPUTS={up:['b12','a1-','hu'],down:['b13','a1+','hd'],left:['b14','a0-','hl'],right:['b15','a0+','hr']};
-const DEFAULT_PAD = {up:'auto',down:'auto',left:'auto',right:'auto',b1:'b2',b2:'b3',b3:'b0',b4:'b1'};
+const DEFAULT_PAD = {up:'auto',down:'auto',left:'auto',right:'auto',b1:'b2',b2:'b3',b3:'b0',b4:'b1',bt:'b5'};
 function padAutoConflict(keys,slot,code){
   return Object.entries(keys).some(([k,v])=>k!==slot && v==='auto' && PAD_AUTO_INPUTS[k]?.includes(code));
 }
@@ -23,7 +25,7 @@ function validPadBinding(k,v){ return typeof v==='string' && (v==='none' || (v==
 const emptyHotKeys = () => Object.fromEntries(HOTKEYS.map(h=>[h,'']));
 const emptyPadHotKeys = () => Object.fromEntries(HOTKEYS.map(h=>[h,'none']));
 const emptyPadAlt = () => Object.fromEntries(Object.keys(DEFAULT_PAD).map(k=>[k,'none']));
-let store = {padAltKeys:emptyPadAlt(),padKeys:{...DEFAULT_PAD},hotKeys:emptyHotKeys(),padHotKeys:emptyPadHotKeys(),v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', touchSize:100, touchX:0, touchY:0, sound:1, bgm:1, bgmLast:-1, bgmVol:100, sfxVol:100, keys:{...DEFAULT_KEYS}, altKeys:{up:'',down:'',left:'',right:'',b1:'',b2:'',b3:'',b4:''}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault(), moves:movesDefault(), donateResultDay:'', donateNudgeDay:'', donatePlayDay:'', donatePlayMs:0, char:CHAR_DEFAULT};
+let store = {padAltKeys:emptyPadAlt(),padKeys:{...DEFAULT_PAD},hotKeys:emptyHotKeys(),padHotKeys:emptyPadHotKeys(),v:4, lang:detectLang(), window:WINDOW_DEFAULT, side:1, fx:1, touch:'auto', touchSize:100, touchX:0, touchY:0, sound:1, bgm:1, bgmLast:-1, bgmVol:100, sfxVol:100, keys:{...DEFAULT_KEYS}, altKeys:{up:'',down:'',left:'',right:'',b1:'',b2:'',b3:'',b4:'',bt:''}, records:perTrial(() => []), nick:'', nickToken:'', visitDay:'', noticeSeen:'', votes:{}, life:lifeDefault(), ach:{}, pendingRewards:[], fit:fitDefault(), moves:movesDefault(), donateResultDay:'', donateNudgeDay:'', donatePlayDay:'', donatePlayMs:0, char:CHAR_DEFAULT};
 const owned = id => id==='base' || !!store.ach[id]; // store.ach = unlock record (achievement items and daily gifts alike): id → time
 const pendingReward = id => store.pendingRewards.some(j => j.id===id);
 const earned = id => owned(id) || pendingReward(id);
@@ -63,8 +65,14 @@ try{
     if(Number.isFinite(s.donatePlayMs) && s.donatePlayMs>=0) store.donatePlayMs=Math.min(s.donatePlayMs, 10*60*1000);
     if(store.nick && s.votes && typeof s.votes==='object') for(const id of Object.keys(s.votes)) if(/^\d{1,12}$/.test(id) && [1,-1].includes(s.votes[id])) store.votes[id]=s.votes[id]; // my like(1)/dislike(-1) per post id: render-only cache (the server enforces one vote per nick); votes belong to the nickname, so none without one
     const padKeys = {...DEFAULT_PAD,...s.padKeys};
+    // A save from before the 1+3+4 button (bt) keeps every binding it had: bt takes its default only if no saved binding uses that button
+    // (checked again after the saved set: when it is refused the defaults stand, and a saved alternate on that button must still win).
+    // A bt saved as 'none' stays unbound like any other saved binding
+    const padBtTaken = !Object.hasOwn(Object(s.padKeys),'bt') && [...Object.values(Object(s.padKeys)),...Object.values(Object(s.padAltKeys))].includes(DEFAULT_PAD.bt);
+    if(padBtTaken) padKeys.bt='none';
     const customPads = Object.values(padKeys).filter(v=>v!=='auto' && v!=='none');
-    if(Object.keys(padKeys).length===8 && Object.keys(DEFAULT_PAD).every(k=>validPadBinding(k,padKeys[k]) && !padAutoConflict(padKeys,k,padKeys[k])) && new Set(customPads).size===customPads.length) store.padKeys=padKeys;
+    if(Object.keys(padKeys).length===Object.keys(DEFAULT_PAD).length && Object.keys(DEFAULT_PAD).every(k=>validPadBinding(k,padKeys[k]) && !padAutoConflict(padKeys,k,padKeys[k])) && new Set(customPads).size===customPads.length) store.padKeys=padKeys;
+    if(padBtTaken) store.padKeys.bt='none';
     const usedPadInputs=new Set(Object.values(store.padKeys).filter(v=>v!=='none' && v!=='auto'));
     for(const k of Object.keys(DEFAULT_PAD)){
       const code=s.padAltKeys?.[k];
@@ -77,7 +85,14 @@ try{
     }
     const keys = {...store.keys};
     for(const k of Object.keys(keys)) if(validKey(k,s.keys?.[k])) keys[k]=s.keys[k];
-    if(new Set(Object.values(keys)).size===Object.keys(keys).length) store.keys=keys;
+    // Same for the keyboard: an older save that already uses the default 1+3+4 key leaves bt unbound ('' — the only primary that may be empty)
+    // instead of failing the duplicate check below, which would throw every saved key back to the defaults. A bt saved unbound stays so
+    // until the user binds it — also once that key is free again — like the pad's saved 'none' (review 2026-10-15)
+    const keyBtTaken = s.keys?.bt==='' || (!validKey('bt',s.keys?.bt) && [...Object.entries(keys).filter(([k])=>k!=='bt').map(([,v])=>v),...Object.values(Object(s.altKeys))].includes(DEFAULT_KEYS.bt));
+    if(keyBtTaken) keys.bt='';
+    const bound = Object.values(keys).filter(Boolean);
+    if(new Set(bound).size===bound.length && Object.keys(keys).every(k => keys[k] || k==='bt')) store.keys=keys;
+    if(keyBtTaken) store.keys.bt=''; // also when the saved keys are refused and the defaults stand: a saved alternate on that key still wins
     const usedKeys = new Set(Object.values(store.keys));
     for(const k of Object.keys(store.altKeys)){
       const code = s.altKeys?.[k];

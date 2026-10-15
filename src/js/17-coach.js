@@ -1,6 +1,13 @@
 /* ---------- coach text ---------- */
 function setCoach(m){ ui.coach = m; $('coachMsg').innerHTML = msg(m); }
 function setTrend(m){ ui.trend = m; $('coachTrend').textContent = msg(m); }
+// The idle coach box follows the character (결정 37(tju)): the crouch dash intro and the dash bar mean nothing without a wave,
+// so a character with a taunt starts on its rhythm and an empty taunt bar. Called at boot and on a switch to or from such a character.
+const TJ_SEG_IDLE = {tj:true, c:null, f:null, n:null, rp:null, hit:null};
+function coachForChar(){
+  const tj = !charCap('wave') && !!charOf().tj;
+  setCoach([tj ? 'tj.c.intro' : 'coach.intro']); setTrend(['trend.intro']); renderSeg(tj ? TJ_SEG_IDLE : null);
+}
 const SEGKEYS = ['f','n','d','df','c'];
 function coachWaveLive(cyc){
   const vals = [cyc.fHold, cyc.nGap, cyc.dHold, cyc.dfHold, cyc.cancelGap];
@@ -23,7 +30,13 @@ function coachTrend(){
 }
 function renderSeg(cyc){
   ui.seg = cyc;
-  const legend=$('segBar').nextElementSibling; if(legend) legend.hidden=!!(cyc&&(cyc.mist||cyc.giwon));
+  const legend=$('segBar').nextElementSibling; if(legend) legend.hidden=!!(cyc&&(cyc.mist||cyc.giwon||cyc.tj));
+  if(cyc&&cyc.tj){ // 도발 제트어퍼 (결정 37(tju)): 캔슬 프레임 · 앞 · 중립 · 4가 RP보다 먼저 · 명중 프레임. 없는 값은 —
+    $('segTitle').textContent=T('tj.segTitle');
+    const names=T('tj.segNames'), vals=[cyc.c,cyc.f,cyc.n,cyc.rp,cyc.hit];
+    [...$('segBar').children].forEach((el,i)=>{el.style.flex=1;el.textContent=names[i]+' '+(vals[i]==null?'—':vals[i]+'f');el.title=el.textContent;});
+    return;
+  }
   if(cyc&&cyc.giwon){ // 기원초: 발동 칸이 판정값이고 나지는 참고다. 루트에 따라 없는 값은 —로 그린다
     $('segTitle').textContent=T('link.segTitle');
     const names=T('link.segNames'), vals=[cyc.cell,cyc.nOff,cyc.fOff,cyc.rp];

@@ -49,6 +49,7 @@ module.exports = {
 <li><a href="@guide/backdash/">Korean backdash guide</a><p>Retreating fast with 414 N, cancel timing and the sidestep-cancel mistake.</p></li>
 <li><a href="@guide/giwon-link/">d/f+2 → EWGF link guide</a><p>Neutral on frame 48 and EWGF by frame 49 after d/f+2 recovers.</p></li>
 <li><a href="@guide/jfsr/">JF Sky Rocket guide</a><p>Hwoarang f,n,df:4: d/f and 4 on one frame, and why a normal Sky Rocket or d/f+4 comes out instead.</p></li>
+<li><a href="@guide/tju/">Taunt Jet Upper guide</a><p>Bryan's taunt (1+3+4): the knee on 28, then f on 29 · n on 30 · b+2 on 31. The cancel window and why it gets blocked.</p></li>
 <li><a href="@guide/frames/">Frames and input judging</a><p>The 60Hz grid, why a browser is not the game, and device timing errors.</p></li>
 </ul>
 
@@ -360,6 +361,73 @@ module.exports = {
 <li>On the <strong>JF Sky Rocket</strong> tab every input shows the forward and neutral frames and the d/f ↔ 4 gap. A single <code>↘+4</code> row in the input log means one frame.</li>
 <li>When the rate climbs, run the <strong>10-try challenge</strong>. With a nickname the result goes to the "JF Sky Rocket ×10" leaderboard.</li>
 <li>Hwoarang can also play Wavedash 10s and Backdash 10s; those records share Kazuya\'s leaderboards with a character tag.</li>
+</ol>
+`,
+    },
+    {
+      slug: 'guide/tju/',
+      updated: '2026-10-16',
+      title: 'Taunt Jet Upper guide — Bryan\'s taunt cancel on frame 29',
+      description: 'A frame-by-frame guide to Bryan\'s Taunt Jet Upper (TJU) in Tekken: the unblockable knee on frame 28, the f on 29 · n on 30 · b+2 on 31 order, the cancel window, why it gets blocked, and how to practice it with the timeline.',
+      lead: 'The Taunt Jet Upper lands the knee of Bryan\'s taunt (1+3+4), cancels the taunt and links a Jet Upper into a combo. Pick Bryan in Mishima Dojo\'s character selector to practice it.',
+      body: `
+<h2>What it is</h2>
+<p>Bryan\'s taunt (<code>1+3+4</code>) has a knee in the middle of it. The knee hits on <strong>frame 28</strong> and <strong>cannot be blocked</strong>. It leaves the opponent stuck for a moment; cancel the taunt in that moment and a Jet Upper (<code>f,n,b+2</code>, 14 frames) combos. That is the Taunt Jet Upper.</p>
+<p>The catch is that there is no slack at all. The knee is +16 on hit, so only a move that lands <strong>by frame 44</strong> combos. A 14-frame Jet Upper lands on 44 only when b+2 is on frame 31, and the f and n in front of it get one frame each: <strong>f on 29 · n on 30 · b+2 on 31</strong> is the only order that works.</p>
+<p class="note">The frames in this guide were measured by the operator in Tekken 8 Ver.3.02.02 practice mode, from the input history and the combo counter. The frame the taunt is pressed on is frame 1. Patches can change them.</p>
+
+<h2>The taunt, frame by frame</h2>
+<div class="table"><table>
+<tr><th>Frame</th><th>What happens</th></tr>
+<tr><td>1</td><td>1+3+4 pressed on one frame: the taunt starts</td></tr>
+<tr><td>1–28</td><td>the first input cancels the taunt, but before the knee comes out, so the knee never hits</td></tr>
+<tr><td>28</td><td>the knee hits (unblockable, active 28–31)</td></tr>
+<tr><td>29–32</td><td>the first input cancels the taunt after the knee hit and its move comes out</td></tr>
+<tr><td>33–77</td><td>inputs are ignored and the taunt plays out (−34 when never cancelled)</td></tr>
+<tr><td>29–44</td><td>the knee\'s +16: a move that lands by 44 combos</td></tr>
+</table></div>
+<p>Other fast moves combo too. In the measurements, 10–13 frame moves combo when pressed on 29–32, 14 frames on 29–31, 15 frames on 29–30, and 16 frames (the taunt\'s <code>b+4</code> knee) only on 29. It is always the same rule: land by frame 44. A 17-frame move does not combo even on 29.</p>
+
+<h2>Inputs and how they are judged</h2>
+<div class="table"><table>
+<tr><th>Input after the taunt</th><th>Mishima Dojo verdict</th><th>In the game</th></tr>
+<tr><td>f 29 · n 30 · b+2 31</td><td>Taunt Jet Upper (lands 44)</td><td>combo</td></tr>
+<tr><td>f on 30 or later</td><td>Guarded (lands 45 or later)</td><td>blocked</td></tr>
+<tr><td>f on 28 or earlier</td><td>Cancelled before the knee</td><td>no knee, so the Jet Upper is blocked</td></tr>
+<tr><td>f or n held 2 frames or more</td><td>Guarded</td><td>blocked</td></tr>
+<tr><td>f → b+2 with no n</td><td>b+2 (17 frames)</td><td>b+2 comes out</td></tr>
+<tr><td>2 before the b</td><td>RP first (10 frames)</td><td>a different move comes out</td></tr>
+<tr><td>b 1–3 frames before the 2</td><td>starts that much later</td><td>the Jet Upper is late and blocked</td></tr>
+<tr><td>first input on 33 or later</td><td>Input ignored</td><td>the taunt plays out</td></tr>
+</table></div>
+<p>The judge counts one cell of the <a href="@guide/frames/">shared 60Hz grid</a> as one frame, like the EWGF. As in the game, a frame reads only one direction, so f → n → b inside one cell never had its n. On a keyboard, adding b while f is still held gives a frame with both, which reads as neutral (n); the game did the same on a keyboard.</p>
+<p>A Jet Upper on its own is far more lenient: measured, f for 1–5 frames, n for 1–6 frames, and b up to 3 frames before the 2 all still give the 14-frame Jet Upper. Mishima Dojo judges a <code>f,n,b+2</code> without a taunt as well and shows its f and n frames; f 1 · n 1 · b+2 together is the <strong>fastest Jet Upper</strong>, landing 16 frames after the f.</p>
+<p class="note">A double taunt (a second 1+3+4 before frame 28) kept the first press\'s frames in the measurements, so it is judged the same way. A success means the input condition was met; it does not reproduce a real hit or the opponent\'s situation (tech roll, wall).</p>
+
+<h2>Reading the timeline</h2>
+<p>The timeline on the <strong>Taunt Jet Upper</strong> tab draws one taunt with the press as frame 1. Frames 13–34 get one cell each, so the count to the knee and the cancel window are wide; 2–12 and the ignored 35–77 are folded into one cell each.</p>
+<ul>
+<li><strong>Top row</strong>: where an input cancels (up to 32) and where it is ignored (33–77).</li>
+<li><strong>Frame cells</strong>: the input read on each frame. Red 28 is the knee, gold 29 · 30 · 31 are the targets (→ · ★ · ←+RP), green 44 is the last frame that combos (a green tick inside the folded 35–77 cell).</li>
+<li><strong>+16 bar</strong>: the knee\'s advantage over frames 29–44.</li>
+<li><strong>Bottom bars</strong>: the move you actually pressed, its command and its startup. Green when it lands by 44 (combo), red when it runs past (blocked).</li>
+</ul>
+
+<h2>Common mistakes</h2>
+<ul>
+<li><strong>The f one frame late</strong>: f on 30 makes the Jet Upper land on 45 and it is blocked. Waiting to see the knee is too late; count the beat from the taunt press.</li>
+<li><strong>The f too early</strong>: an input on 28 or earlier cancels the taunt before the knee comes out.</li>
+<li><strong>Losing the neutral</strong>: going straight from f to b gives b+2. Let go for one frame, or on a keyboard add b while still holding f.</li>
+<li><strong>Splitting 1, 3 and 4</strong>: all three buttons must land on one frame for the taunt. As in the game, the settings can put 1+3+4 on one key (keyboard L and gamepad RB/R1 by default).</li>
+</ul>
+
+<h2>How to practice</h2>
+<ol>
+<li>On the <a href="@">practice screen</a>, press the <strong>Character</strong> button left of the mode tabs and pick <strong>Bryan</strong>.</li>
+<li>Start on the <strong>Fastest Jet Upper</strong> tab with the Jet Upper alone, no taunt. The f is frame 1 and a 15-frame timeline draws your input; f 1 · n 1 · b+2 together (a 3-frame input) is the fastest. When no Jet Upper comes out it tells you why (no f, a diagonal in between, too slow).</li>
+<li>On the <strong>Taunt Jet Upper</strong> tab, press the taunt and line the f up with frame 29 using the timeline and the first-input (cancel) frame.</li>
+<li>When it sticks, run the <strong>10-try challenge</strong>. With a nickname the result goes to the "Taunt Jet Upper ×10" leaderboard.</li>
+<li>Bryan has no wavedash and no Mishima moves like the EWGF, so those modes are hidden; Backdash 10s is still there.</li>
 </ol>
 `,
     },

@@ -360,15 +360,15 @@ test('timeline marks name the chord and can wrap after its +',()=>{
 test('hotkeys (결정 36(hotkeys)): one key or pad button presses its attack buttons as one chord (결정 35(button-chord)) and merges with held buttons',()=>{
   const ev=(code,timeStamp=1000)=>({code,timeStamp,target:{tagName:'DIV'},preventDefault(){}});
   const btns=a=>JSON.stringify(a.history.filter(e=>e.btn).map(e=>[e.btn,e.t]));
-  const a=boot({hotKeys:{h12:'KeyL',h13:'KeyU',h1234:'ArrowUp'},padHotKeys:{h34:'b4',h24:'b2',h12:'b12'}});
-  assert.equal(a.store.hotKeys.h12,'KeyL');
+  const a=boot({hotKeys:{h12:'KeyO',h13:'KeyU',h1234:'ArrowUp',h14:'KeyL'},padHotKeys:{h34:'b4',h24:'b2',h12:'b12'}});
+  assert.equal(a.store.hotKeys.h12,'KeyO');assert.equal(a.store.hotKeys.h14,'','L is the 1+3+4 key (결정 37(tju)) by default');
   assert.equal(a.store.hotKeys.h13,'','a key already bound to an action is dropped');assert.equal(a.store.hotKeys.h1234,'','arrow keys stay directions');
   assert.equal(a.store.padHotKeys.h34,'b4');assert.equal(a.store.padHotKeys.h24,'none','a pad button already bound to 1 is dropped');
   assert.equal(a.store.padHotKeys.h12,'none','the d-pad stays direction while up is automatic');
-  a.events.keydown(ev('KeyL',1000));assert.equal(btns(a),'[["1+2",1000]]');
+  a.events.keydown(ev('KeyO',1000));assert.equal(btns(a),'[["1+2",1000]]');
   a.events.keydown(ev('KeyI',1010));assert.equal(btns(a),'[["1+2",1000]]','2 is already held through the hotkey');
-  a.events.keyup(ev('KeyL',1020));a.events.keydown(ev('KeyL',1030));assert.equal(btns(a),'[["1+2",1000],["1+2",1030]]','only the released 1 is pressed again, chorded with the held 2');
-  a.events.keyup(ev('KeyL',1040));a.events.keyup(ev('KeyI',1040));
+  a.events.keyup(ev('KeyO',1020));a.events.keydown(ev('KeyO',1030));assert.equal(btns(a),'[["1+2",1000],["1+2",1030]]','only the released 1 is pressed again, chorded with the held 2');
+  a.events.keyup(ev('KeyO',1040));a.events.keyup(ev('KeyI',1040));
   const b=boot({padHotKeys:{h34:'b4'}});b.time(2000);samplePad(b,[4]);
   assert.equal(btns(b),'[["3+4",2000]]');
   b.time(2010);samplePad(b,[4,0]);assert.equal(b.history.filter(e=>e.btn).length,1,'3 stays held through the hotkey');

@@ -49,12 +49,12 @@ stageAssets(source,out);
   await click('[data-k="b1"][data-alt="1"]');await key('KeyP');
   assert.match(await b.evalJs(`document.querySelector('#bindingMessage').textContent`),/사용 중/);
   // 결정 36(hotkeys): a hotkey key presses 1+3 together after closing, as one chord input. No RP in it: a lone RP becomes a try once its 60Hz slot passes and would leak into the release-gate count below
-  await click('#bindingCancel');await click('[data-k="h13"]');await key('KeyL');
-  assert.equal(await b.evalJs('bindTest.store.hotKeys.h13'),'KeyL');assert.match(await b.evalJs(`document.querySelector('[data-k="h13"]').textContent`),/L/);
+  await click('#bindingCancel');await click('[data-k="h13"]');await key('KeyY');
+  assert.equal(await b.evalJs('bindTest.store.hotKeys.h13'),'KeyY');assert.match(await b.evalJs(`document.querySelector('[data-k="h13"]').textContent`),/Y/);
   assert.equal(await b.evalJs(`document.querySelectorAll('#keys [data-action="h13"] .dots circle.on').length`),2,'the 1+3 row shows a two-dot icon');
-  await click('[data-k="h12"]');await key('KeyL');assert.match(await b.evalJs(`document.querySelector('#bindingMessage').textContent`),/사용 중/);await click('#bindingCancel');
+  await click('[data-k="h12"]');await key('KeyY');assert.match(await b.evalJs(`document.querySelector('#bindingMessage').textContent`),/사용 중/);await click('#bindingCancel');
   await click('#setClose');await sleep(50);assert.equal(await b.evalJs(`document.querySelector('#setMain').hidden`),false,'closing returns to the main settings');
-  await b.send('Input.dispatchKeyEvent',{type:'keyDown',code:'KeyL',key:'l'});await b.send('Input.dispatchKeyEvent',{type:'keyUp',code:'KeyL',key:'l'});
+  await b.send('Input.dispatchKeyEvent',{type:'keyDown',code:'KeyY',key:'y'});await b.send('Input.dispatchKeyEvent',{type:'keyUp',code:'KeyY',key:'y'});
   assert.equal(await b.evalJs(`JSON.stringify(bindTest.history.filter(e=>e.btn).slice(-1).map(e=>e.btn))`),'["1+3"]','one chord input (결정 35(button-chord))');
   await click('#setOpen');await click('#ctlOpen');await click('[data-k="h13"]');
   assert.deepEqual(await b.evalJs(`[document.querySelector('#bindingClear').hidden,getComputedStyle(document.querySelector('.binding-feedback')).position]`),[false,'sticky'],'a hotkey slot can be cleared and the prompt stays pinned while capturing');

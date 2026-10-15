@@ -60,7 +60,7 @@ $('dataReset').addEventListener('click', () => { // wipes records, lifetime stat
 });
 renderSound();
 const BTN_EN = ['','LP','RP','LK','RK']; // attack button n's Tekken name
-const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',...Object.fromEntries([1,2,3,4].map(n=>['b'+n,n+' '+BTN_EN[n]])),...Object.fromEntries(HOTKEYS.map(h=>[h,hotkeyButtons(h).join('+')]))};
+const KEYLABEL = {up:'↑',down:'↓',left:'←',right:'→',...Object.fromEntries([1,2,3,4].map(n=>['b'+n,n+' '+BTN_EN[n]])),bt:'1+3+4',...Object.fromEntries(HOTKEYS.map(h=>[h,hotkeyButtons(h).join('+')]))}; // bt: LP·LK·RK in one press (결정 37(tju))
 const slotLabel = (k,alt) => T(isHotkey(k)?'set.hotKey':alt?'set.keyAlt':'set.keyPrimary'); // the caption inside a binding slot, shared by both devices
 const pretty = c => c.replace(/^Key|^Digit|^Numpad/, m=>m==='Numpad'?'Num':'').replace('Arrow','');
 // 결정 36(hotkeys): 철권 버튼 설정처럼 동작마다 4점 버튼 아이콘(LP RP 위, LK RK 아래, 눌리는 버튼만 밝게)과 표준 매핑 패드의 Xbox/PlayStation 기호
@@ -75,12 +75,12 @@ function padGlyph(code){ // standard-mapping buttons 0-11 get the controller's o
 }
 function actionLabel(k){
   if(isHotkey(k)){ const b=hotkeyButtons(k); return `${btnDots(b)}<span>${b.join('+')}<em>${b.map(n=>BTN_EN[n]).join('+')}</em></span>`; }
-  return k[0]==='b' ? `${btnDots([+k[1]])}<span>${KEYLABEL[k]}</span>` : `<span>${KEYLABEL[k]}</span>`;
+  return k[0]==='b' ? `${btnDots(k==='bt' ? TJ_TAUNT : [+k[1]])}<span>${KEYLABEL[k]}</span>` : `<span>${KEYLABEL[k]}</span>`;
 }
 function bindingCards(id, slot){ // movement, attacks, then hotkeys (one input each, no alternate)
   const card = k => `<div class="key${isHotkey(k)?' hot':''}" data-action="${k}"><small>${actionLabel(k)}</small><div class="key-pair">${slot(k,false)}${isHotkey(k)?'':slot(k,true)}</div></div>`;
   const sec = key => `<div class="key-sec">${escapeHTML(T(key))}</div>`;
-  $(id).innerHTML = sec('set.secMove') + ['up','down','left','right'].map(card).join('') + sec('set.secAtk') + ['b1','b2','b3','b4'].map(card).join('') + sec('set.secHot') + HOTKEYS.map(card).join('');
+  $(id).innerHTML = sec('set.secMove') + ['up','down','left','right'].map(card).join('') + sec('set.secAtk') + ['b1','b2','b3','b4','bt'].map(card).join('') + sec('set.secHot') + HOTKEYS.map(card).join('');
 }
 function renderKeys(){
   renderBindings();
@@ -139,6 +139,7 @@ function resetSession(){
   wsc.session=wscStats(); wsc.challenge={status:'idle',stats:null}; wsc.last=null; wsc.notice='ready';
   gp.session=gpStats(); gp.challenge={status:'idle',stats:null}; gp.last=null; gp.run=null; gp.notice='ready';
   jfp.session=jfStats(); jfp.challenge={status:'idle',stats:null}; jfp.last=null; jfp.streak=0;
+  tjp.challenge={status:'idle',stats:null}; tjReset(); juReset();
   clearShare(); renderWsc(); renderGp(); renderJf();
   Object.assign(session, sessionDefault()); history.length=0; lastInputT=performance.now();
   bdpReset(); // after the session: its stats tile reads session.bd.bestChain

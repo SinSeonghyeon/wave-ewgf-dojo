@@ -26,7 +26,8 @@ function applyTouchUI(){
 if(touchMQ && touchMQ.addEventListener) touchMQ.addEventListener('change', () => { if(store.touch==='auto') applyTouchUI(); });
 const touchHeld=new Set(), touchPointers=new Map();
 const touchBtnPointers = new Map(); // pointerId → attack button that finger still holds (결정 35(button-chord): it joins the next press)
-const touchBtnHeld = n => [...touchBtnPointers.values()].includes(n);
+// A finger on the 1+3+4 button ('t', 결정 37(tju)) holds LP, LK and RK for a character with a taunt
+const touchBtnHeld = n => [...touchBtnPointers.values()].some(v => v===n || (v==='t' && charOf().tj && TJ_TAUNT.includes(n)));
 function touchKeys(keys, t){                              // keys: physical left/down/right held at once; down+side produces a diagonal
   touchHeld.clear(); for(const k of keys) if(['left','down','right'].includes(k)) touchHeld.add(k);
   const nx=(touchHeld.has('right')?1:0)-(touchHeld.has('left')?1:0), ny=touchHeld.has('down')?-1:0;
@@ -35,7 +36,7 @@ function touchKeys(keys, t){                              // keys: physical left
   if(touchHeld.size && lastSrc!=='touch') setSrc('touch');
   return curDir;
 }
-function touchPress(n, t){ if(modalOpen()) return; unlockAudio(); onButton(n,t); if(lastSrc!=='touch') setSrc('touch'); }
+function touchPress(n, t){ if(modalOpen()) return; unlockAudio(); if(n!=='t') onButton(n,t); else if(charOf().tj) onButton(TJ_TAUNT[TJ_TAUNT.length-1],t); if(lastSrc!=='touch') setSrc('touch'); } // 't': the 1+3+4 taunt button, shown only for a character with a taunt (renderCharUI)
 const tdirs = $('tdirs'), tbtns = $('tbtns');
 function touchRelease(){ touchPointers.clear(); touchBtnPointers.clear(); touchKeys([],performance.now()); tbtns.querySelectorAll('button').forEach(b => b.classList.remove('on')); }
 const evT = e => e.timeStamp || performance.now();      // same clock as keydown; a pointermove can be delivered a frame late, its own timestamp is when it happened
@@ -43,7 +44,9 @@ tdirs.addEventListener('pointerdown', e => { const b=e.target.closest&&e.target.
 const tdirEnd=e => { if(!touchPointers.has(e.pointerId)) return; touchPointers.delete(e.pointerId); touchKeys(touchPointers.values(),evT(e)); };
 tdirs.addEventListener('pointerup',tdirEnd); tdirs.addEventListener('pointercancel',tdirEnd);
 const tbtnOf = e => e.target && e.target.closest ? e.target.closest('[data-btn]') : null;
-tbtns.addEventListener('pointerdown', e => { const b = tbtnOf(e); if(!b) return; e.preventDefault(); try{ b.setPointerCapture(e.pointerId); }catch(x){} b.classList.add('on'); const n = +b.dataset.btn; touchPress(n, evT(e)); if(!modalOpen()) touchBtnPointers.set(e.pointerId, n); }); // held only once pressed: not behind a modal, nor when the press itself opened one
+tbtns.addEventListener('pointerdown', e => { const b = tbtnOf(e); if(!b) return; e.preventDefault(); try{ b.setPointerCapture(e.pointerId); }catch(x){} b.classList.add('on'); const n = b.dataset.btn==='t' ? 't' : +b.dataset.btn;
+  if(n==='t' && !modalOpen()) touchBtnPointers.set(e.pointerId, n); // the taunt button holds 1·3 before its press so onButton reads one 1+3+4 chord
+  touchPress(n, evT(e)); if(modalOpen()) touchBtnPointers.delete(e.pointerId); else touchBtnPointers.set(e.pointerId, n); }); // held only once pressed: not behind a modal, nor when the press itself opened one
 ['pointerup','pointercancel'].forEach(ev => tbtns.addEventListener(ev, e => { touchBtnPointers.delete(e.pointerId); const b = tbtnOf(e); if(b) b.classList.remove('on'); }));
 $('touch').addEventListener('contextmenu', e => e.preventDefault()); // long-press menu would steal the finger
 

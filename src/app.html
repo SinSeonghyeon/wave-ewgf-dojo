@@ -53,6 +53,8 @@
       <button role="tab" data-mode="wsc" aria-selected="false" data-i18n="mode.wsc.name">웨캔기어 연습</button>
       <button role="tab" data-mode="giwon" aria-selected="false" data-i18n="mode.giwon.name">기원초 연습</button>
       <button role="tab" data-mode="jfsr" aria-selected="false" data-i18n="mode.jfsr.name" hidden>초스카이 연습</button>
+      <button role="tab" data-mode="tju" aria-selected="false" data-i18n="mode.tju.name" hidden>도발 제트어퍼 연습</button>
+      <button role="tab" data-mode="ju" aria-selected="false" data-i18n="mode.ju.name" hidden>최속 제트어퍼 연습</button>
       <button role="tab" data-mode="wave10" aria-selected="false" data-i18n="mode.wave10.name">웨이브 10초</button>
       <button role="tab" data-mode="ewgf20" aria-selected="false" data-i18n="mode.ewgf20.name">초풍 20회</button>
       <button role="tab" data-mode="combo10" aria-selected="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button>
@@ -90,6 +92,7 @@
           <button class="btn" id="wscChallengeBtn" type="button" hidden></button>
           <button class="btn" id="gpChallengeBtn" type="button" hidden></button>
           <button class="btn" id="jfChallengeBtn" type="button" hidden></button>
+          <button class="btn" id="tjChallengeBtn" type="button" hidden></button>
         </div>
         <div class="hud">
           <div class="hud-chain" id="hudChain"><span id="hudChainN">0</span><small id="hudChainL">WAVE</small></div>
@@ -112,7 +115,7 @@
         <div class="touch" id="touch" data-i18n-aria="touch.aria" aria-label="터치 컨트롤">
           <p class="touch-note" data-i18n="touch.note">터치는 키보드보다 판정 정밀도가 낮습니다 (경향 파악용)</p>
           <div class="tdirs" id="tdirs" role="group" data-i18n-aria="touch.padAria" aria-label="방향 버튼 — 아래와 좌우를 함께 눌러 대각선 입력"><button type="button" data-dir="left" data-i18n-aria="touch.left" aria-label="왼쪽">←</button><button type="button" data-dir="down" data-i18n-aria="touch.down" aria-label="아래">↓</button><button type="button" data-dir="right" data-i18n-aria="touch.right" aria-label="오른쪽">→</button></div>
-          <div class="tbtns" id="tbtns"><button type="button" class="b1" data-btn="1">1<small>LP</small></button><button type="button" class="b2" data-btn="2">2<small>RP</small></button><button type="button" class="b3" data-btn="3">3<small>LK</small></button><button type="button" class="b4" data-btn="4">4<small>RK</small></button></div>
+          <div class="tbtns" id="tbtns"><button type="button" class="b1" data-btn="1">1<small>LP</small></button><button type="button" class="b2" data-btn="2">2<small>RP</small></button><button type="button" class="b3" data-btn="3">3<small>LK</small></button><button type="button" class="b4" data-btn="4">4<small>RK</small></button><button type="button" class="bt" data-btn="t" hidden>1+3+4<small data-i18n="touch.taunt">도발</small></button></div>
         </div>
       </div>
       <div class="trial">
@@ -185,6 +188,46 @@
         <details><summary data-i18n="jf.recent"></summary><table><thead><tr><th data-i18n="wsc.result"></th><th data-i18n="jf.fnCol"></th><th data-i18n="jf.rkCol"></th><th data-i18n="wsc.reason"></th></tr></thead><tbody id="jfRows"></tbody></table></details>
         <details><summary data-i18n="jf.help"></summary><p class="note" data-i18n="jf.note"></p></details>
       </section>
+      <section class="wsc-panel wsc-timeline" id="tjTimeline" hidden aria-labelledby="tjCommand">
+        <div class="wsc-command" id="tjCommand"></div>
+        <div class="wsc-live" id="tjLive" role="timer" aria-live="off"></div>
+        <div class="wsc-scroll" tabindex="0" role="region" data-i18n-aria="tj.timeline" aria-label="도발 프레임 타임라인"><div class="wsc-axis" id="tjAxis"></div></div>
+        <p class="note" id="tjLegend"></p>
+        <p class="note" id="tjGuide"></p>
+      </section>
+      <section class="wsc-panel" id="tjPanel" hidden aria-labelledby="tjTitle">
+        <h2 id="tjTitle" data-i18n="tj.evaluation"></h2>
+        <div class="wsc-result" id="tjResult" role="status" aria-live="polite"></div>
+        <div class="wsc-ab" id="tjAB"></div>
+        <p class="note" id="tjDetail"></p>
+        <p class="note" id="tjJu"></p>
+        <div class="wsc-challenge">
+          <p class="note" id="tjChallengeStatus" role="status" aria-live="polite"></p>
+        </div>
+        <h3 class="note" data-i18n="stats.aria"></h3>
+        <div class="wsc-stats" id="tjStats"></div>
+        <p class="note" id="tjCounts"></p>
+        <details><summary data-i18n="tj.recent"></summary><table><thead><tr><th data-i18n="wsc.result"></th><th data-i18n="tj.cancelCol"></th><th data-i18n="tj.moveCol"></th><th data-i18n="wsc.reason"></th></tr></thead><tbody id="tjRows"></tbody></table></details>
+        <details><summary data-i18n="tj.help"></summary><p class="note" id="tjNote"></p></details>
+      </section>
+      <section class="wsc-panel wsc-timeline" id="juTimeline" hidden aria-labelledby="juCommand">
+        <div class="wsc-command" id="juCommand"></div>
+        <div class="wsc-live" id="juLive" role="timer" aria-live="off"></div>
+        <div class="wsc-scroll" tabindex="0" role="region" data-i18n-aria="ju.timeline" aria-label="제트어퍼 프레임 타임라인"><div class="wsc-axis" id="juAxis"></div></div>
+        <p class="note" id="juLegend"></p>
+        <p class="note" id="juGuide"></p>
+      </section>
+      <section class="wsc-panel" id="juPanel" hidden aria-labelledby="juTitle">
+        <h2 id="juTitle" data-i18n="ju.evaluation"></h2>
+        <div class="wsc-result" id="juResult" role="status" aria-live="polite"></div>
+        <div class="wsc-ab" id="juAB"></div>
+        <p class="note" id="juDetail"></p>
+        <h3 class="note" data-i18n="stats.aria"></h3>
+        <div class="wsc-stats" id="juStats"></div>
+        <p class="note" id="juCounts"></p>
+        <details><summary data-i18n="ju.recent"></summary><table><thead><tr><th data-i18n="wsc.result"></th><th data-i18n="jf.fnCol"></th><th data-i18n="tj.rpLabel"></th><th data-i18n="ju.inCol"></th></tr></thead><tbody id="juRows"></tbody></table></details>
+        <details><summary data-i18n="ju.help"></summary><p class="note" id="juNote"></p></details>
+      </section>
       <section class="wsc-panel wsc-timeline" id="bdpTimeline" hidden aria-labelledby="bdpCommand">
         <div class="wsc-command" id="bdpCommand"></div>
         <div class="wsc-live" id="bdpLive" role="timer" aria-live="off"></div>
@@ -246,7 +289,7 @@
           <div class="ctl-nav"><button class="btn ghost" id="ctlBack" type="button" data-i18n="set.ctlBack">‹ 설정으로</button><h3 data-i18n="set.ctl">컨트롤러 설정</h3></div>
           <section class="binding-editor">
             <div class="binding-toolbar"><div class="segc" id="bindingTabs" role="group" data-i18n-aria="set.controls"><button type="button" data-device="kb" aria-pressed="true" data-i18n="set.keyboard"></button><button type="button" data-device="pad" aria-pressed="false" data-i18n="set.pad"></button></div><div class="binding-actions"><button class="btn ghost" id="bindingCheck" type="button" aria-pressed="false" data-i18n="set.bindCheck"></button><button class="btn ghost" id="bindingReset" type="button" data-i18n="set.bindReset"></button></div></div>
-            <p class="note"><span data-i18n="set.bindHelp"></span><br><span data-i18n="set.autoHelp"></span></p>
+            <p class="note"><span data-i18n="set.bindHelp"></span><br><span data-i18n="set.autoHelp"></span><br><span data-i18n="set.tauntHelp"></span></p>
             <div id="keyboardBindings">
             <label class="t" data-i18n="set.keys">키 설정 — 동작마다 기본·보조 키를 하나씩 지정 (방향키 ↑↓←→ 는 항상 사용 가능)</label>
             <div class="keys" id="keys"></div>
@@ -344,7 +387,7 @@
     <div class="fit-ach" id="fitAch" hidden></div>
   </dialog>
 
-  <nav class="section-links" data-i18n-aria="view.sections"><a href="#histCard" data-i18n="view.analysis">연습 분석</a><a href="#boardCard" data-i18n="board.title">순위</a><a href="#postsCard" data-i18n="posts.title">한마디</a></nav>
+  <nav class="section-links" data-i18n-aria="view.sections"><a href="#histCard" id="analysisLink" data-i18n="view.analysis">연습 분석</a><a href="#boardCard" data-i18n="board.title">순위</a><a href="#postsCard" data-i18n="posts.title">한마디</a></nav>
   <section class="records" data-i18n-aria="records.aria" aria-label="기록">
     <div class="card chart" id="histCard">
       <h2 data-i18n="hist.title">초풍 버튼 타이밍 분포</h2>
@@ -359,7 +402,7 @@
       <div id="waveChart"></div>
       <div class="tip" id="waveTip"></div>
     </div>
-    <div class="card">
+    <div class="card" id="bestsCard">
       <h2 data-i18n="best.title">모드별 최고 기록</h2>
       <p class="sub" data-i18n="best.sub">이 브라우저에 저장됩니다</p>
       <div class="bests" id="bests"></div>
@@ -372,7 +415,7 @@
     <div class="card board-card" id="boardCard" hidden>
       <h2 data-i18n="board.title">순위</h2>
       <p class="sub" data-i18n="board.note">상위 10명 · 닉네임당 최고 기록 1건 · 초기화 없이 계속 쌓입니다 · 닉네임과 기록만 저장됩니다</p>
-      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button><button data-board="rush30" aria-pressed="false" data-i18n="mode.rush30.name">더미 격파 30초</button><button data-board="bd10" aria-pressed="false" data-i18n="mode.bd10.name">백대시 10초</button><button data-board="wsc" aria-pressed="false" data-i18n="wsc.rankTitle">웨캔기어 10회</button><button data-board="giwon" aria-pressed="false" data-i18n="gp.rankTitle">기원초 10회</button><button data-board="jfsr" aria-pressed="false" data-i18n="jf.rankTitle" hidden>초스카이 10회</button></div>
+      <div class="segc board-tabs" id="boardTabs" role="group" data-i18n-aria="board.tabsAria" aria-label="순위표 선택"><button data-board="wave10" aria-pressed="true" data-i18n="mode.wave10.name">웨이브 10초</button><button data-board="ewgf20" aria-pressed="false" data-i18n="mode.ewgf20.name">초풍 20회</button><button data-board="combo10" aria-pressed="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button><button data-board="rush30" aria-pressed="false" data-i18n="mode.rush30.name">더미 격파 30초</button><button data-board="bd10" aria-pressed="false" data-i18n="mode.bd10.name">백대시 10초</button><button data-board="wsc" aria-pressed="false" data-i18n="wsc.rankTitle">웨캔기어 10회</button><button data-board="giwon" aria-pressed="false" data-i18n="gp.rankTitle">기원초 10회</button><button data-board="jfsr" aria-pressed="false" data-i18n="jf.rankTitle" hidden>초스카이 10회</button><button data-board="tju" aria-pressed="false" data-i18n="tj.rankTitle" hidden>도발 제트어퍼 10회</button></div>
       <div class="board-info" id="boardInfo"></div>
       <div class="board-me" id="boardMe"></div>
       <div class="tbl board-list" id="boardList"></div>
@@ -438,7 +481,10 @@
 @@include js/15-giwon-practice.js
 @@include js/16-jfsr.js
 @@include js/16-strikes.js
+@@include js/16-tju.js
 @@include js/17-coach.js
+@@include js/17-ju-practice.js
+@@include js/17-tju-practice.js
 @@include js/18-hud.js
 @@include js/19-tick.js
 @@include js/20-trials.js

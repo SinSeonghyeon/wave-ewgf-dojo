@@ -1,6 +1,6 @@
 /* ---------- input layer ---------- */
 const held = new Set();               // keyboard codes
-let padDir = {x:0,y:0}, padBtn = [false,false,false,false,false];
+let padDir = {x:0,y:0}, padBtn = [false,false,false,false];
 let touchDir = {x:0,y:0};              // on-screen pad (touch controls); merged like padDir
 let kbDir = {x:0,y:0};
 let curDir = 'n';
@@ -34,7 +34,7 @@ const mappedCodes = () => new Set([...Object.values(store.keys),...Object.values
 const buttonsForCode = code => { // attack buttons one key presses: its own button, or every button of a hotkey (결정 36(hotkeys))
   for(let n=1;n<=4;n++) if(code===store.keys['b'+n] || code===store.altKeys['b'+n]) return [n];
   const h = HOTKEYS.find(h => store.hotKeys[h]===code);
-  return h ? hotkeyButtons(h) : [];
+  return h ? hotkeyButtons(h) : tauntCode(code) && charOf().tj ? TJ_TAUNT : [];
 };
 const buttonHeld = n => [...held].some(code => buttonsForCode(code).includes(n)); // primary, alternate and hotkeys merge into one held logical button
 const keyField = (slot,alt) => isHotkey(slot) ? 'hotKeys' : alt ? 'altKeys' : 'keys'; // a hotkey has one input, so alt never applies to it
@@ -48,6 +48,9 @@ const buttonChord = n => { const h = heldAttacks(n); return h.length ? [...h, n]
 const chordButtons = b => String(b).split('+').map(Number);
 // Timeline cell mark: LP, RP+LK… A break opportunity follows each '+' so a narrow frame cell stacks a chord instead of clipping it.
 const btnMark = b => chordButtons(b).map(n => ['','LP','RP','LK','RK'][n]).join('+\u200b');
+// The 1+3+4 key (bt): one press holds LP, LK and RK at once, like the game's LP+LK+RK hotkey for the taunt (결정 37(tju)). Only a character
+// with a taunt reads it (for the others L/RB stay inert: Kazuya's 4 would be 나락); it joins the held set, so a press is one chord '1+3+4' (결정 35(button-chord)).
+const tauntCode = code => !!code && (code===store.keys.bt || code===store.altKeys.bt);
 const MODAL_IDS = ['nickDlg','shareDlg','setDlg','donateDlg','fitDlg','noticeDlg','charDlg']; // every <dialog> in app.html (tests/modals.test.cjs checks the list)
 const modalOpen = () => MODAL_IDS.some(id => $(id).open); // any dialog pauses game input
 let listening = null; // key remap target: {slot, alt}
@@ -137,7 +140,7 @@ addEventListener('keydown', e => {
   held.add(e.code);
   const t = e.timeStamp || performance.now();
   if(buttons.length){ if(fresh.length) onButton(fresh[fresh.length-1],t); } // one key, one timestamp: a hotkey's buttons are all held now, so onButton reads them as one chord (결정 35(button-chord))
-  else { kbVector(); recomputeDir(t,'kb'); }
+  else if(!tauntCode(e.code)){ kbVector(); recomputeDir(t,'kb'); }
   if(lastSrc!=='kb') setSrc('kb');
 });
 addEventListener('keyup', e => {
@@ -149,7 +152,7 @@ addEventListener('keyup', e => {
 function resetInput(){
   historyStopT=performance.now();
   const openHistory=history.slice().reverse().find(e=>e.dir); if(openHistory && openHistory.endT==null) openHistory.endT=historyStopT;
-  wscCancel(); gpChallengeCancel(); jfChallengeCancel();
+  wscCancel(); gpChallengeCancel(); jfChallengeCancel(); tjChallengeCancel(); tjClear();
   held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); touchDir={x:0,y:0}; curDir='n'; heldDir='n'; prevDir='n'; heldDirT=0; touchRelease();
   clearCommand(); resetCombo(); resetTaps(); bdClear(); giwonClear(); updateHud(); renderWsc();
 }
@@ -266,7 +269,8 @@ function pollPad(snapshotOnly=false){
   const nx = clamp(x,-1,1), ny = clamp(y,-1,1);
   let changed = false;
   if(nx!==padDir.x || ny!==padDir.y){ padDir={x:nx,y:ny}; changed=true; }
-  const hot = HOTKEYS.filter(h=>inputs.includes(store.padHotKeys[h])).flatMap(hotkeyButtons); // 결정 36(hotkeys): one pad button, several attacks in the same sample
+  const btPad = inputs.includes(store.padKeys.bt) || inputs.includes(store.padAltKeys.bt); // the 1+3+4 button (결정 37(tju)), read only for a character with a taunt
+  const hot = HOTKEYS.filter(h=>inputs.includes(store.padHotKeys[h])).flatMap(hotkeyButtons).concat(btPad && charOf().tj ? TJ_TAUNT : []); // 결정 36(hotkeys): one pad button, several attacks in the same sample
   const pressed = ['b1','b2','b3','b4'].map((k,i)=>inputs.includes(store.padKeys[k]) || inputs.includes(store.padAltKeys[k]) || hot.includes(i+1));
   if(changed || pressed.some((p,i)=>p!==padBtn[i])) padLastT = t;
   if(changed) recomputeDir(t,'pad'); // Direction must precede buttons in the same sample for d/f+2.
