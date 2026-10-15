@@ -590,7 +590,7 @@
   #gpTimeline .wsc-cell.a{border:2px solid var(--accent);background:var(--accent-soft);color:var(--accent)}
   #gpTimeline .wsc-cell.b i,#gpTimeline .wsc-cell.a i{font-weight:700}
   #gpTimeline .wsc-cell.mark{background:var(--accent-soft)}
-  #gpTimeline .wsc-cell b{font-size:13px;min-height:30px}
+  #gpTimeline .wsc-cell b{font-size:13px;min-height:30px;overflow-wrap:anywhere} /* a chord mark (LP+RP) wider than a 1-frame cell stacks rather than clips */
   #gpTimeline .wsc-cell i{font-style:normal;display:block}
   #gpTimeline .wsc-cell.span{border-style:dashed;opacity:.6;background-image:
     linear-gradient(to right,var(--accent-soft) 0 calc(var(--p,0)*100%),transparent calc(var(--p,0)*100%)),

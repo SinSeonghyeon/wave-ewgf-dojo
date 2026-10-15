@@ -165,7 +165,7 @@ function renderWsc(){
   // Only the final d/f and later inputs are timed. The preceding wave is a single command label.
   for(let f=1;f<=15;f++){
     const ev=events.filter(e=>df!=null&&e.t>=df&&wscA(e.t-df)===f);
-    const marks=ev.map(e=>e.btn?['','LP','RP','LK','RK'][e.btn]:glyph(e.dir));
+    const marks=ev.map(e=>e.btn?btnMark(e.btn):glyph(e.dir));
     if(df==null&&f===1) marks.push(glyph('df'));
     const cls=(f>=8&&f<=10?' a':'')+(valid&&f>A&&f<=A+A-7?' b':'')+(marks.length?' mark':'');
     cells.push(`<div class="wsc-cell${cls}" data-frame="${f}"><b>${escapeHTML(marks.join('\n'))}</b>${f}f</div>`);

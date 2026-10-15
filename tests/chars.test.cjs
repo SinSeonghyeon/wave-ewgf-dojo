@@ -128,3 +128,7 @@ test('the worker accepts exactly the app characters',async()=>{
   const w=await import(pathToFileURL(path.join(__dirname,'../worker/index.js')).href);
   assert.deepEqual([...hw().CHAR_IDS],w.CHARS,'worker/index.js CHARS and src/js/02-chars.js CHARS must list the same ids');
 });
+test('결정 35(button-chord): a held LK turns the Sky Rocket RK into 3+4, which is not a Sky Rocket',()=>{
+  const a=hw();a.events.keydown({code:'KeyJ',timeStamp:900,preventDefault(){}});
+  assert.equal(jf(a),null,'no attempt from a chord');
+});
