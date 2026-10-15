@@ -37,8 +37,9 @@ const buttonsForCode = code => { // attack buttons one key presses: its own butt
   return h ? hotkeyButtons(h) : [];
 };
 const buttonHeld = n => [...held].some(code => buttonsForCode(code).includes(n)); // primary, alternate and hotkeys merge into one held logical button
-const keyField = (slot,alt) => alt ? 'altKeys' : slot[0]==='h' ? 'hotKeys' : 'keys';
-const padField = (slot,alt) => alt ? 'padAltKeys' : slot[0]==='h' ? 'padHotKeys' : 'padKeys';
+const keyField = (slot,alt) => isHotkey(slot) ? 'hotKeys' : alt ? 'altKeys' : 'keys'; // a hotkey has one input, so alt never applies to it
+const padField = (slot,alt) => isHotkey(slot) ? 'padHotKeys' : alt ? 'padAltKeys' : 'padKeys';
+const keyClearable = target => !!target && keyField(target.slot,target.alt)!=='keys'; // alternates and hotkeys can be emptied; primary keys always stay bound
 const modalOpen = () => $('nickDlg').open || $('shareDlg').open || $('setDlg').open || $('donateDlg').open || $('fitDlg').open || $('noticeDlg').open; // any dialog pauses game input (called at pad-poll rate, so no DOM query)
 let listening = null; // key remap target: {slot, alt}
 let bindingDevice='kb', bindingMessage=['set.bindIdle'], padCapture=null, padNeedsRelease=false, bindingPadPrevious=null;
@@ -54,7 +55,7 @@ function setBindingDevice(device,automatic=false){
 function clearBinding(){
   if(bindingCheck) return;
   if(padCapture) store[padCapture.field][padCapture.slot]='none';
-  else if(listening?.alt || listening?.slot[0]==='h') store[keyField(listening.slot,listening.alt)][listening.slot]='';
+  else if(keyClearable(listening)) store[keyField(listening.slot,listening.alt)][listening.slot]='';
   else return;
   listening=null; padCapture=null; padNeedsRelease=true; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys();
 }
@@ -110,10 +111,8 @@ addEventListener('keydown', e => {
     e.preventDefault();
     if(e.code==='Escape'){ cancelBinding(); return; }
     if(e.repeat) return;
+    if(keyClearable(listening) && (e.code==='Delete' || e.code==='Backspace')){ clearBinding(); return; }
     const field = keyField(listening.slot,listening.alt);
-    if(field!=='keys' && (e.code==='Delete' || e.code==='Backspace')){ // alternates and hotkeys can be emptied; primary keys always stay bound
-      store[field][listening.slot]=''; listening=null; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys(); return;
-    }
     const taken = ['keys','altKeys','hotKeys'].some(f => Object.entries(store[f]).some(([slot,code]) => code===e.code && (slot!==listening.slot || f!==field)));
     if(!validKey(listening.slot,e.code) || taken){
       bindingFeedback('set.keyConflict'); return;

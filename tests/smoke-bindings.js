@@ -19,7 +19,10 @@ stageAssets(source,out);
   const click=selector=>b.evalJs(`document.querySelector(${JSON.stringify(selector)}).click()`);
   const sample=(indices=[],axes=[0,0,0,0,-1])=>b.evalJs(`testPad.buttons.forEach((v,i)=>{v.pressed=${JSON.stringify(indices)}.includes(i);v.value=v.pressed?1:0;});testPad.axes=${JSON.stringify(axes)};bindTest.pollPad();`);
   const key=async code=>{await b.send('Input.dispatchKeyEvent',{type:'keyDown',windowsVirtualKeyCode:code==='Escape'?27:undefined,key:code==='Escape'?'Escape':code.slice(3),code});await b.send('Input.dispatchKeyEvent',{type:'keyUp',windowsVirtualKeyCode:code==='Escape'?27:undefined,key:code==='Escape'?'Escape':code.slice(3),code});};
-  await click('#setOpen');await click('#bindingTabs [data-device="pad"]');
+  await click('#setOpen');await click('#ctlOpen'); // the editor lives in the controller sub-view (결정 33(hotkeys))
+  assert.equal(await b.evalJs(`[document.querySelector('#setMain').hidden,document.querySelector('#setCtl').hidden].join()`),'true,false');
+  assert.match(await b.evalJs(`document.querySelector('#bindingMessage').textContent`),/선택하세요/,'entering shows the idle prompt, not a cancel');
+  await click('#bindingTabs [data-device="pad"]');
   assert.equal(await b.evalJs(`document.querySelector('#padBindings').hidden`),false);
   await click('[data-pad="b2"]');await sample();await sample([7]);
   assert.equal(await b.evalJs('bindTest.store.padKeys.b2'),'b7',JSON.stringify(await b.evalJs(`({focus:document.hasFocus(),hidden:document.hidden,dialog:document.querySelector('#setDlg').open,message:document.querySelector('#bindingMessage').textContent,live:document.querySelector('#padLive').textContent})`)));
@@ -45,18 +48,19 @@ stageAssets(source,out);
   assert.equal(await b.evalJs('bindTest.store.altKeys.b2'),'KeyP');
   await click('[data-k="b1"][data-alt="1"]');await key('KeyP');
   assert.match(await b.evalJs(`document.querySelector('#bindingMessage').textContent`),/사용 중/);
-  // 결정 33(hotkeys): the controller sub-view holds the editor; a hotkey key presses 1+2 together after closing
-  await click('#ctlOpen');assert.equal(await b.evalJs(`[document.querySelector('#setMain').hidden,document.querySelector('#setCtl').hidden].join()`),'true,false');
-  await click('#bindingCancel');await click('[data-k="h12"]');await key('KeyL');
-  assert.equal(await b.evalJs('bindTest.store.hotKeys.h12'),'KeyL');assert.match(await b.evalJs(`document.querySelector('[data-k="h12"]').textContent`),/L/);
-  assert.equal(await b.evalJs(`document.querySelectorAll('#keys [data-action="h12"] .dots circle.on').length`),2,'the 1+2 row shows a two-dot icon');
-  await click('[data-k="h13"]');await key('KeyL');assert.match(await b.evalJs(`document.querySelector('#bindingMessage').textContent`),/사용 중/);await click('#bindingCancel');
+  // 결정 33(hotkeys): a hotkey key presses 1+3 together after closing. No RP in it: a lone RP becomes a try once its 60Hz slot passes and would leak into the release-gate count below
+  await click('#bindingCancel');await click('[data-k="h13"]');await key('KeyL');
+  assert.equal(await b.evalJs('bindTest.store.hotKeys.h13'),'KeyL');assert.match(await b.evalJs(`document.querySelector('[data-k="h13"]').textContent`),/L/);
+  assert.equal(await b.evalJs(`document.querySelectorAll('#keys [data-action="h13"] .dots circle.on').length`),2,'the 1+3 row shows a two-dot icon');
+  await click('[data-k="h12"]');await key('KeyL');assert.match(await b.evalJs(`document.querySelector('#bindingMessage').textContent`),/사용 중/);await click('#bindingCancel');
   await click('#setClose');await sleep(50);assert.equal(await b.evalJs(`document.querySelector('#setMain').hidden`),false,'closing returns to the main settings');
   await b.send('Input.dispatchKeyEvent',{type:'keyDown',code:'KeyL',key:'l'});await b.send('Input.dispatchKeyEvent',{type:'keyUp',code:'KeyL',key:'l'});
-  assert.equal(await b.evalJs(`JSON.stringify(bindTest.history.filter(e=>e.btn).slice(-2).map(e=>e.btn))`),'[1,2]');
-  await click('#setOpen');await click('#ctlOpen');await click('[data-k="h12"]');await key('Delete');assert.equal(await b.evalJs('bindTest.store.hotKeys.h12'),'');
-  await click('#setClose');await click('#setOpen');
-  await click('#bindingCancel');await click('#setClose');
+  assert.equal(await b.evalJs(`JSON.stringify(bindTest.history.filter(e=>e.btn).slice(-2).map(e=>e.btn))`),'[1,3]');
+  await click('#setOpen');await click('#ctlOpen');await click('[data-k="h13"]');
+  assert.deepEqual(await b.evalJs(`[document.querySelector('#bindingClear').hidden,getComputedStyle(document.querySelector('.binding-feedback')).position]`),[false,'sticky'],'a hotkey slot can be cleared and the prompt stays pinned while capturing');
+  await key('Delete');assert.equal(await b.evalJs('bindTest.store.hotKeys.h13'),'');
+  assert.equal(await b.evalJs(`getComputedStyle(document.querySelector('.binding-feedback')).position`),'static');
+  await click('#setClose');
   await sample([2]);assert.equal(await b.evalJs('bindTest.session.tries'),0,'release gate prevents accidental RP after closing');
   await sample();await sample([2]);await sleep(100); // a lone RP waits out its own 60Hz slot (it may be the first of RP, ↓, →)
   assert.equal(await b.evalJs('bindTest.session.tries'),1);
@@ -65,7 +69,7 @@ stageAssets(source,out);
   await b.navigate(fileUrl(path.join(out,'index.html')));
   assert.deepEqual(await b.evalJs('[bindTest.store.padKeys.b2,bindTest.store.padKeys.up,bindTest.store.altKeys.b2]'),['b2','a2-','KeyP']);
   assert.equal(await b.evalJs('bindTest.store.padAltKeys.b2'),'b8');
-  await click('#setOpen');
+  await click('#setOpen');await click('#ctlOpen');
   await sample();await click('#bindingTabs [data-device="kb"]');await click('[data-k="b1"][data-alt="1"]');
   await sample([9]);assert.equal(await b.evalJs(`document.querySelector('#padBindings').hidden`),false);
   assert.equal(await b.evalJs('bindTest.store.altKeys.b1'),'','device switch cancels keyboard capture');
@@ -112,6 +116,11 @@ stageAssets(source,out);
    }
   }
   await b.evalJs("bindTest.setLang('ko')");await b.send('Emulation.setDeviceMetricsOverride',{width:390,height:1000,deviceScaleFactor:1,mobile:true});
+  await b.evalJs("document.querySelector('#setDlg').scrollTop=0");await click('[data-pad="up"]');await sleep(60); // the top slot: Clear sits below nineteen cards unless the feedback row is pinned
+  const clearBox=await b.evalJs(`(()=>{const d=document.querySelector('#setDlg').getBoundingClientRect(),c=document.querySelector('#bindingClear').getBoundingClientRect();return {top:c.top,bottom:c.bottom,dialogTop:d.top,dialogBottom:d.bottom};})()`);
+  assert.ok(clearBox.top>=clearBox.dialogTop && clearBox.bottom<=clearBox.dialogBottom,'Clear stays on screen while capturing '+JSON.stringify(clearBox));
+  const captureShot=await b.send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(out,'capture-pad-390.png'),Buffer.from(captureShot.result.data,'base64'));
+  await click('#bindingCancel');
   await click('#bindingCheck');await sample([2,8]);await b.evalJs("document.querySelector('#setDlg').scrollTop=0");
   const checkShot=await b.send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(out,'check-pad-390.png'),Buffer.from(checkShot.result.data,'base64'));
   await sample();await click('#bindingCheck');await click('#bindingTabs [data-device="pad"]');

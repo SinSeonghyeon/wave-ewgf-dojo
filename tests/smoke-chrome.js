@@ -124,7 +124,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await evalJs(`document.querySelector('#bgmBtn').click()`);
   out.sound.headerOn = await soundSnap();
   await evalJs(`document.querySelector('#setOpen').click()`);
-  await evalJs(`document.querySelector('#bgmSel button[data-bgm="0"]').click()`);
+  await evalJs(`document.querySelector('#bgmSel button[data-bgm="0"]').click(); document.querySelector('#ctlOpen').click()`); // key slots live in the controller sub-view (결정 33(hotkeys))
   await evalJs(`(() => { const b=document.querySelector('#keys .key-bind[data-k="right"][data-alt="1"]'); if(!b) throw new Error('alternate key slot missing: '+document.querySelector('#keys').innerHTML); b.click(); })()`);
   await tap('KeyO');
   out.altKey = await evalJs(`({text:document.querySelector('#keys .key-bind[data-k="right"][data-alt="1"] b').textContent,stored:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).altKeys.right})`);

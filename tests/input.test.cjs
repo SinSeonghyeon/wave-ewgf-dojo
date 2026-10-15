@@ -331,6 +331,11 @@ test('hotkeys are assigned, cleared and reset in the controller settings like th
   const a=boot();a.get('setDlg').open=true;
   a.get('ctlOpen').click();
   assert.equal(a.get('setCtl').hidden,false);assert.equal(a.get('setMain').hidden,true); // keyboard capture runs through the real DOM in smoke-bindings
+  assert.equal(a.get('bindingMessage').textContent,a.T('set.bindIdle'),'entering the sub-view shows the idle prompt, not a cancel');
+  a.beginPadBinding('h13');samplePad(a);a.get('ctlBack').click();samplePad(a,[6]);
+  assert.equal(a.store.padHotKeys.h13,'none','leaving the sub-view drops the capture');assert.equal(a.get('setMain').hidden,false);
+  assert.equal(a.get('bindingMessage').textContent,a.T('set.bindIdle'));
+  a.get('ctlOpen').click();samplePad(a);
   a.beginPadBinding('h12');samplePad(a);samplePad(a,[5]);assert.equal(a.store.padHotKeys.h12,'b5');
   samplePad(a);a.beginPadBinding('h34');samplePad(a);samplePad(a,[3]);
   assert.equal(a.store.padHotKeys.h34,'b3');assert.equal(a.store.padKeys.b2,'none','the displaced action takes the hotkey\'s old (empty) slot');

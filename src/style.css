@@ -256,12 +256,13 @@
   .binding-actions{display:flex;gap:8px}
   .binding-editor .keys{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:10px}
   .binding-editor .key{padding:10px;min-width:0}
-  .binding-editor .key small{font-size:13px;color:var(--ink2)}
+  .binding-editor .key small{display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;color:var(--ink2)}
   .binding-editor .key-bind{min-height:44px;overflow-wrap:anywhere}
   .binding-editor .key-bind span{display:block;font:10px var(--body);color:var(--muted)}
   .binding-editor .key-bind:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .binding-feedback{min-height:44px;color:var(--accent);font-size:12px}
   .binding-feedback p{margin:0;flex:1;min-width:130px}
+  .binding-feedback:has(#bindingCancel:not([hidden])){position:sticky;bottom:0;z-index:1;background:var(--panel);border-top:1px solid var(--line2)} /* while capturing, the prompt and Clear/Cancel stay on screen below the long card list (결정 33(hotkeys)) */
   #padStatus{overflow-wrap:anywhere;min-width:0}
   #padLive{min-height:2em;overflow-wrap:anywhere}
   .binding-editor [hidden]{display:none}
@@ -270,10 +271,19 @@
   .binding-editor .key-bind:disabled{opacity:1;cursor:default}
   /* controller settings sub-view + Tekken-style button icons and pad glyphs (결정 33(hotkeys)) */
   .ctl-nav{display:flex;align-items:center;gap:10px}
+  .ctl-entry{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;text-align:left;color:var(--ink);background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;transition:background .15s,transform .15s}
+  .ctl-entry:hover,.ctl-entry:focus-visible{background:var(--panel2);outline:none;transform:translateY(-1px)}
+  .ctl-entry:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+  .ctl-entry-ico{width:44px;height:30px;flex:none;fill:var(--accent)}
+  .ctl-entry-ico .cut{fill:none;stroke:var(--bg);stroke-width:2.6;stroke-linecap:round}
+  .ctl-entry-ico circle.cut{fill:var(--bg);stroke:none}
+  .ctl-entry-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .ctl-entry-txt b{font-size:16px}
+  .ctl-entry-txt small{font-size:12px;color:var(--muted);line-height:1.4}
+  .ctl-entry-go{font-size:26px;line-height:1;color:var(--accent)}
   .ctl-nav h3,.ctl-sub{margin:0;font-size:15px;color:var(--ink)}
   .ctl-sub{margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
   .binding-editor .key-sec{grid-column:1/-1;font-size:12px;font-weight:700;color:var(--gold);padding-bottom:3px;border-bottom:1px solid var(--line);margin-top:4px}
-  .binding-editor .key small{display:flex;align-items:center;justify-content:center;gap:7px}
   .binding-editor .key small em{display:block;font:normal 10.5px var(--mono);color:var(--muted)}
   .binding-editor .key.hot small span{text-align:left;line-height:1.2}
   .dots{width:21px;height:19px;flex:none}

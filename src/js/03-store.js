@@ -14,11 +14,12 @@ const DEFAULT_PAD = {up:'auto',down:'auto',left:'auto',right:'auto',b1:'b2',b2:'
 function padAutoConflict(keys,slot,code){
   return Object.entries(keys).some(([k,v])=>k!==slot && v==='auto' && PAD_AUTO_INPUTS[k]?.includes(code));
 }
-const padAttackSlot = k => k[0]==='b' || k[0]==='h'; // attack buttons and hotkeys take pad buttons only; directions may also take axes, the hat or 'auto'
-function validPadBinding(k,v){ return typeof v==='string' && (v==='none' || (v==='auto' && !padAttackSlot(k)) || /^b(?:[0-9]|[1-9][0-9]|1[01][0-9]|12[0-7])$/.test(v) || (!padAttackSlot(k) && /^(?:a(?:[0-9]|[12][0-9]|3[01])[+-]|h[udlr])$/.test(v))); }
 // 핫키 (결정 33(hotkeys)): 공격 버튼 1~4 조합을 키 하나·패드 버튼 하나에 묶는다. 철권 버튼 설정의 메뉴 순서
 const HOTKEYS = ['h13','h24','h12','h34','h14','h23','h123','h124','h134','h234','h1234'];
+const isHotkey = slot => HOTKEYS.includes(slot); // the one hotkey-slot test: pad input codes also start with 'h' (hat 'hu'…), so never test slot[0]==='h'
 const hotkeyButtons = slot => [...slot.slice(1)].map(Number); // 'h13' → [1,3]
+const padAttackSlot = k => k[0]==='b' || isHotkey(k); // attack buttons and hotkeys take pad buttons only; directions may also take axes, the hat or 'auto'
+function validPadBinding(k,v){ return typeof v==='string' && (v==='none' || (v==='auto' && !padAttackSlot(k)) || /^b(?:[0-9]|[1-9][0-9]|1[01][0-9]|12[0-7])$/.test(v) || (!padAttackSlot(k) && /^(?:a(?:[0-9]|[12][0-9]|3[01])[+-]|h[udlr])$/.test(v))); }
 const emptyHotKeys = () => Object.fromEntries(HOTKEYS.map(h=>[h,'']));
 const emptyPadHotKeys = () => Object.fromEntries(HOTKEYS.map(h=>[h,'none']));
 const MOVE_IDS = ['ewgf','mist','tongbal','hellsweep','giwon']; // 설정의 기술 온오프 (결정 32(move-toggle)). 1 = 켜짐
