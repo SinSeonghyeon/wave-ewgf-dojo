@@ -4,7 +4,8 @@
    Inputs are first gathered per frame — the direction held at the end of the frame and the buttons pressed in it — because the
    game reads one direction a frame: a 6 → N → 4 inside one frame never had its N. A complete frame then drives
    · the taunt: its knee lands on 28f; the first input up to 32f cancels it (up to 28f: before the knee comes out), inputs from
-     33f to 77f are ignored. A second 1+3+4 up to 28f is a double taunt and keeps the first press's frames (measured)
+     33f to 77f are ignored. A second 1+3+4 up to 32f is no cancel and no second taunt: the first taunt plays on as a double taunt
+     with its frames (measured F9; user 2026-10-16)
    · the follow-up: its startup (TJ.STARTUP) counts from the frame of its button; it combos when it lands by TJ_LAST (44f)
    · the Jet Upper: 6 → N → 4+RP. With no N it is b+2, an RP before the 4 is 2, a 4 up to 3f before the RP delays it.
    Nothing here touches the EWGF statistics: the attempts live in tjp and store.life.tju only.
@@ -44,8 +45,10 @@ function tjDir(dir, t){
 }
 function tjTick(now){
   if(tjOn()) tjAdvance(frameSlot(now)-2);                  // frames before the previous one are over: one frame of grace for an input delivered after the frame it belongs to
-  const r = tjp.run, kneeSlot = r ? r.s0+TJ.KNEE_F-1 : 0;   // the knee is drawn on 28f itself, not when 28f is read (the judging still waits for it)
-  if(r && r.phase==='pre' && !r.kneeFx && frameSlot(now)>=kneeSlot && !(tjIn.open && tjIn.open.slot<=kneeSlot)) tjKneeFx(r);
+  // The knee hits on 28f, but its hit effect shows when 29f begins (user 2026-10-16): by then 28f is over, so a cancel on 28f
+  // (before the knee) never shows a hit. A 28f input still open at that moment holds the effect until the frame is read.
+  const r = tjp.run, kneeSlot = r ? r.s0+TJ.KNEE_F-1 : 0;
+  if(r && r.phase==='pre' && !r.kneeFx && frameSlot(now)>kneeSlot && !(tjIn.open && tjIn.open.slot<=kneeSlot)) tjKneeFx(r);
 }
 function tjClear(){ // resetInput: a mode change, a modal, blur or a challenge start ends the taunt and the reading
   tjp.run = null; tjIn.open = null; tjIn.read = -1e9; tjIn.dir = 'n'; tjIn.recent = []; tjIn.hist = [];
@@ -146,9 +149,14 @@ function tjRun(r, fr){
     if(r.ignored==null){ r.ignored = f; tjVerdict(r, 'late'); }
     return;
   }
-  const dbl = fr.taunt && f<=TJ.KNEE_F;                    // 더블 도발: 첫 도발의 프레임을 그대로 쓴다 (실측 F9)
-  if(dbl && r.double==null){ r.double = f; fx.taunt2(); }
-  if(!fr.changed && !(fr.btns.length && !dbl)) return;
+  // 더블 도발 (실측 F9, 사용자 2026-10-16): 캔슬 구간에 1+3+4를 다시 누르면 도발이 다시 나가지 않는다 — 첫 도발이 그대로 이어지고
+  // 기술만 더블 도발로 바뀐다. 그 누름은 캔슬이 아니다. 같은 칸에 방향이 바뀌었으면 그 방향만 첫 입력(캔슬)이다.
+  if(fr.taunt){
+    if(r.double==null){ r.double = f; fx.taunt2(); }
+    if(!fr.changed) return;
+    fr = Object.assign({}, fr, {btns:[], taunt:false});
+  }
+  if(!fr.changed && !fr.btns.length) return;
   r.knee = f>TJ.KNEE_F; if(r.knee) tjKneeFx(r);             // the first input cancels the taunt — up to 28f before the knee came out
   r.phase = 'follow'; r.cancel = f; r.cancelSlot = fr.slot;
   fx.tauntCut(r.knee);
@@ -198,7 +206,9 @@ function tjJu(mv, fr, P){
   setCoach(tjJuFix(ju));
   addLog(fr.t, 'log.tJu', ['tj.res.'+kind+(fast ? 'Fast' : '')], frames, '', kind==='ju' ? 'ok' : kind==='slow' ? 'wg' : 'no');
   renderSeg({tj:true, c:null, f:ju.fF, n:ju.nF??null, rp:ju.early??null, hit:ju.total??null});
-  fx.tjMove(mv.key, 'hit');                                // alone it is just the move: it hits whatever stands in range
+  // alone it is just the move: it hits whatever stands in range · fast = the 최속 연출. Its run (×n) is the 최속 제트어퍼 mode's session
+  // streak, read before juAttempt counts this try; no other mode counts one (jup.session keeps its streak across a mode change)
+  fx.tjMove(mv.key, 'hit', fast && mode==='ju' ? jup.session.streak+1 : 1, null, fast);
   juAttempt(ju, P, fr);                                    // the 최속 제트어퍼 mode's try (its axis and session)
   if(mode==='tju') renderTj();
 }

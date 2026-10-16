@@ -66,6 +66,7 @@ function stageAssets(html, dir, {bgm=true}={}){
     fs.mkdirSync(path.dirname(path.join(dir,f)), {recursive:true});
     fs.copyFileSync(path.join(root,f), path.join(dir,f));
   }
+  fs.cpSync(path.join(root,'sprites'), path.join(dir,'sprites'), {recursive:true}); // stage sprite sheets (CHARS[id].tj.sprite)
   if(bgm) fs.cpSync(path.join(root,'bgm'), path.join(dir,'bgm'), {recursive:true});
 }
 module.exports = {launch, fileUrl, sleep, sfxFiles, stageAssets};

@@ -13,7 +13,7 @@
 const CHARS = {
   kazuya:   {caps:{wave:true, kbd:true, wsc:true,  giwon:true},  moves:['ewgf','mist','tongbal','hellsweep','giwon'], legacy:true, portrait:'@@DATA_URI:assets/portrait-kazuya.webp@@'},
   hwoarang: {caps:{wave:true, kbd:true, wsc:false, giwon:false}, moves:['jfsr'], jf:{move:'jfsr', btn:4}, portrait:'@@DATA_URI:assets/portrait-hwoarang.webp@@'},
-  bryan:    {caps:{wave:false, kbd:true, wsc:false, giwon:false}, moves:['tju'], tj:{move:'tju'}, portrait:'@@DATA_URI:assets/portrait-bryan.webp@@'}, // 2026-10-15: backdash yes, no wave and no Mishima move
+  bryan:    {caps:{wave:false, kbd:true, wsc:false, giwon:false}, moves:['tju'], tj:{move:'tju', sprite:{src:'sprites/bryan-taunt.webp', w:168, h:200, cols:11, n:77, footX:0.265, ground:0.979}}, portrait:'@@DATA_URI:assets/portrait-bryan.webp@@'}, // 2026-10-15: backdash yes, no wave and no Mishima move
 };
 const CHAR_IDS = Object.keys(CHARS), CHAR_DEFAULT = 'kazuya';
 const charId = () => CHARS[store.char] ? store.char : CHAR_DEFAULT;

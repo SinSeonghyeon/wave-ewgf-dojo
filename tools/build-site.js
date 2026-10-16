@@ -219,6 +219,8 @@ function buildSite(outDir=path.join(ROOT,'_site')){
     const data=fs.readFileSync(path.join(ROOT,'sfx',f));
     write('sfx/'+f,data); write('sfx-'+f,data);
   }
+  // Sprite sheets the stage draws (CHARS[id].tj.sprite): every WebP directly in sprites/, fetched by the app only when needed.
+  for(const f of fs.readdirSync(path.join(ROOT,'sprites')).filter(f=>/\.webp$/i.test(f))) write('sprites/'+f,fs.readFileSync(path.join(ROOT,'sprites',f)));
   const tracks=tracksAt(path.join(ROOT,'bgm'));
   write('bgm/playlist.json',JSON.stringify(tracks,null,2)+'\n');
   for(const track of tracks)fs.copyFileSync(path.join(ROOT,track),path.join(output,track));

@@ -11,6 +11,7 @@ const DUMMY_TYPES = ['high','mid','low'];
 const DUMMY_STOP = 36; // px the fighter keeps in front of a live dummy (walking, and every move in rush30)
 const anim = { kind:'idle', t0:0, from:0, to:0, moveT0:0, moveFrom:0, moveTo:0 };
 const ghosts = [], pops = [], sparks = [], dust = [], bolts = [], impacts = [];
+const juTrail = []; // 최속 제트어퍼: the fist's recent path in world px {x, y, t} (35-dojo3d.js draws it)
 let flash = 0, shake = 0, flashGold = false; // flashGold: jackpot flashes gold instead of the EWGF blue
 // 기원권 카운터 줌 (11-4절). Presentation only: one factor drives the 3D room camera and the 2D layer,
 // anchored on (화면 가운데, 바닥선), so the fighter's feet stay on the projected floor (결정 5(theme-layout)) and the
@@ -74,12 +75,13 @@ const fx = {
     anim.kneeFrom = kneeLanded ? 1 : 0; startAnim('tjCut');
     if(kneeLanded) tjFlameUntil = performance.now() + TJ_FLAME_MS;
   },
-  knee(until){ playSfx('tongbal'); puff(2, 1); if(!world.dummy.type && tryHit('knee', until)) pop('+'+TJ.ADV, cssVar('--gold','#F5C542'), 26, {x:world.dummyX, y:-128}); }, // 28f: the bag reels until the +16 runs out
+  knee(until){ puff(2, 1); if(!world.dummy.type && tryHit('knee', until)) pop('+'+TJ.ADV, cssVar('--gold','#F5C542'), 26, {x:world.dummyX, y:-128}); }, // 28f: the bag reels until the +16 runs out
   tauntEnd(t0){ if(anim.t0===t0 && ['taunt','idle'].includes(anim.kind)) tjSteamUntil = performance.now() + TJ_STEAM_MS; }, // an uncancelled taunt ends in steam (its pose may already be back to idle: the reader closes 78f two frames late)
   // a follow-up: how = 'win' (도발 제트어퍼) · 'hit' (a combo, or a move on its own) · 'guard' (too late, or no knee) · 'whiff' (unknown startup).
   // at = when it lands (the judged frame): a guard shows then, after the knee's reel (44f) is over
-  tjMove(key, how, n=1, at=null){
-    if(key==='ju'){ playSfx('wsc'); startAnim('ju'); moveChar(18, 220); }
+  // fast: a 최속 제트어퍼 (6·N 1f each, 4+RP together) — an arc trail on the fist, an upward burst on the bag, its own pop. Visual only (결정 9(visual-only-motion))
+  tjMove(key, how, n=1, at=null, fast=false){
+    if(key==='ju'){ playSfx('wsc'); startAnim('ju'); anim.fast = fast; juTrail.length = 0; moveChar(18, 220); }
     else if(key==='b+4'){ playSfx('tongbal'); startAnim('bknee'); moveChar(14, 160); }
     else if(/[34]/.test(key.replace(/^[a-z]+\+/, ''))){ playSfx('tongbal'); startAnim('sky'); anim.electric = false; moveChar(20, 120); }
     else { playSfx('tongbal'); startAnim('tongbal'); moveChar(30, 110); }
@@ -89,10 +91,13 @@ const fx = {
       const L = streakStyle(n), color = cssVar('--gold','#F5C542');
       pop(n>1 ? T('pop.tjuStreak', n) : T('pop.tju'), color, L.size, {lvl:clamp(n,1,6), glow:L.glow, rings:reduced?0:L.rings, core:L.core, life:1100});
       if(store.fx && !reduced) shake = L.shake;
+    } else if(how==='hit' && key==='ju' && fast){
+      const L = streakStyle(n);
+      pop(n>1 ? T('pop.juFastStreak', n) : T('pop.juFast'), cssVar('--warn','#F5A524'), L.size, {lvl:clamp(n,1,6), glow:L.glow, rings:reduced?0:L.rings, core:L.core, life:1000});
     } else if(how==='hit' && key==='ju') pop(T('pop.ju'), cssVar('--warn','#F5A524'), 34);
     if(world.dummy.type || how==='whiff') return;
     if(how==='guard'){ dummyGuard(at ?? performance.now()+HIT_CONTACT_MS[move]); return; }
-    if(tryHit(move) && how==='win') world.dummy.power = 'link'; // the launch the 기원초 link uses: gold burst, big flight
+    if(tryHit(move) && (how==='win' || fast)) world.dummy.power = how==='win' ? 'link' : 'jet'; // link: the launch the 기원초 link uses (gold burst, big flight) · jet: the 최속 burst
   },
   jab(){ startAnim('jab'); pop('?', '#E5484D', 30); },
   stumble(){ startAnim('stumble'); pop('MISS', '#E5484D', 30); },
@@ -163,6 +168,7 @@ function updateDummy(now){
       // 늦은 초풍은 거의 뜨지 않고 픽 쓰러진다. 판정·좌표에는 영향이 없는 연출 전용 배율이다.
       const big = d.power==='link', soft = d.power==='weak';
       if(big){ d.vy*=1.55; d.vx*=1.7; d.spin=0.30; }
+      else if(d.power==='jet'){ d.vy*=1.5; d.vx*=0.9; d.spin=0.2; } // 최속: higher, more straight up
       else if(soft){ d.vy*=0.34; d.vx*=0.22; d.spin=0.09; }
       if(store.fx&&!reduced){
         const look=d.type?DUMMY_LOOK[d.type]:null, y=look?look.top+look.h/2:-64;
@@ -171,6 +177,12 @@ function updateDummy(now){
         const n = big?42:soft?4:electric?18:9, spread = big?16:soft?4:9, lift = big?13:soft?3:8;
         for(let i=0;i<n;i++) sparks.push({x:world.dummyX,y,vx:(Math.random()-0.5)*spread,vy:-Math.random()*lift-1,t:1,
                                           c: big && i%3 ? (i%3===1?cssVar('--gold','#F5C542'):'#FFFFFF') : color});
+        if(d.power==='jet'){ // 최속 제트어퍼: 위로 솟는 주황·흰 불꽃과 두 겹 고리, 짧은 흔들림
+          const hot = cssVar('--warn','#F5A524');
+          impacts.push({x:world.dummyX,y,t0:now,color:hot}, {x:world.dummyX,y,t0:now+60,color:'#FFFFFF'}); while(impacts.length>8) impacts.shift();
+          for(let i=0;i<26;i++) sparks.push({x:world.dummyX+(Math.random()-0.5)*14, y, vx:(Math.random()-0.5)*6+1.2*store.side, vy:-Math.random()*12-5, t:1, c:i%3 ? hot : '#FFFFFF'});
+          shake=Math.max(shake,7);
+        }
         if(big){ // 두 번째 고리와 화면 전체의 금빛 섬광으로 한 번 더 터뜨린다
           impacts.push({x:world.dummyX,y,t0:now+70,color:cssVar('--gold','#F5C542')}); if(impacts.length>8) impacts.shift();
           flash=1; flashGold=true; shake=Math.max(shake,11);

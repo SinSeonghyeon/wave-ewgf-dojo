@@ -402,7 +402,7 @@ module.exports = {
 </table></div>
 <p>The judge counts one cell of the <a href="@guide/frames/">shared 60Hz grid</a> as one frame, like the EWGF. As in the game, a frame reads only one direction, so f → n → b inside one cell never had its n. On a keyboard, adding b while f is still held gives a frame with both, which reads as neutral (n); the game did the same on a keyboard.</p>
 <p>A Jet Upper on its own is far more lenient: measured, f for 1–5 frames, n for 1–6 frames, and b up to 3 frames before the 2 all still give the 14-frame Jet Upper. Mishima Dojo judges a <code>f,n,b+2</code> without a taunt as well and shows its f and n frames; f 1 · n 1 · b+2 together is the <strong>fastest Jet Upper</strong>, landing 16 frames after the f.</p>
-<p class="note">A double taunt (a second 1+3+4 before frame 28) kept the first press\'s frames in the measurements, so it is judged the same way. A success means the input condition was met; it does not reproduce a real hit or the opponent\'s situation (tech roll, wall).</p>
+<p class="note">A double taunt (a second 1+3+4 inside the cancel window, up to frame 32) is not a second taunt: the first one plays on and only the move becomes the double taunt. It kept the first press\'s frames in the measurements, so it is judged the same way. A success means the input condition was met; it does not reproduce a real hit or the opponent\'s situation (tech roll, wall).</p>
 
 <h2>Reading the timeline</h2>
 <p>The timeline on the <strong>Taunt Jet Upper</strong> tab draws one taunt with the press as frame 1. Frames 13–34 get one cell each, so the count to the knee and the cancel window are wide; 2–12 and the ignored 35–77 are folded into one cell each.</p>

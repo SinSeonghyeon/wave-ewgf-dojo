@@ -121,12 +121,14 @@ test('an uncancelled taunt plays out to 77f: inputs from 33f are ignored, the ru
   assert.deepEqual(pick(a.tjp.last,['kind','ignored','cancel']),{kind:'late',ignored:33,cancel:null});assert.equal(a.tjBusy(),true,'the taunt plays on');
   a.tick(at(600,80));assert.equal(a.tjp.run,null);assert.equal(a.tjLocked(at(600,80)),false);
 });
-test('a double taunt keeps the first press; a taunt after the cancel starts a new one; 1·3·4 over two frames is no taunt',()=>{
+test('a double taunt keeps the first press up to 32f; a taunt after the cancel starts a new one; 1·3·4 over two frames is no taunt',()=>{
   let a=br();taunt(a,600);taunt(a,609);
   a.onDir('f',at(600,29));a.onDir('n',at(600,30));a.onDir('b',at(600,31));a.onButton(2,at(600,31));a.tick(at(600,40));
   assert.deepEqual(pick(a.tjp.last,['kind','double']),{kind:'tju',double:10});
-  a=br();taunt(a,600);taunt(a,628);a.tick(at(600,40));
-  assert.deepEqual(pick(a.tjp.last,['kind','cancel','again']),{kind:'cancel',cancel:29,again:true});assert.equal(a.tjp.run.s0,628,'the cancel drill');
+  a=br();taunt(a,600);taunt(a,628);a.tick(at(600,40));          // a second taunt inside the cancel window (29f): no cancel, no second taunt (user 2026-10-16)
+  assert.equal(a.tjp.run.s0,600,'the first taunt plays on');assert.equal(a.tjp.run.double,29);assert.equal(a.tjp.run.cancel,null);
+  a=br();taunt(a,600);a.onDir('f',at(600,29));taunt(a,632);a.tick(at(600,45));
+  assert.deepEqual(pick(a.tjp.last,['kind','cancel','again']),{kind:'cancel',cancel:29,again:true});assert.equal(a.tjp.run.s0,632,'after a real cancel a taunt is a new one (the cancel drill)');
   a=br();const t=600*F;a.onButton(1,t);a.onButton(3,t+F);a.onButton(4,t+F);a.tick(t+5*F);
   assert.equal(a.tjp.run,null);assert.equal(a.tjp.session.tries,0);assert.equal(a.get('rKind').textContent,'MISS');
 });
@@ -369,4 +371,29 @@ test('keyboard: 6, 6+4 (neutral) and 4+RP on three frames is the fastest; the st
   assert.equal(a.get('juCounts').textContent,a.T('ju.avg','1.0f','1.3f','3.3f'));
   assert.ok(a.get('juStats').innerHTML.includes('<b>67%</b>'+a.T('ju.rate')));assert.equal(a.get('juRows').innerHTML.split('<tr>').length-1,3);
   a.resetSession();assert.equal(a.jup.last,null);assert.equal(a.jup.session.tries,0);
+});
+test('the taunt knee has no move sound: only the hit sound when it connects (user 2026-10-16)',()=>{
+  const {AudioStub}=require('./helpers/app.cjs');
+  const a=boot({char:'bryan'},undefined,{Audio:AudioStub});a.unlockAudio();
+  a.fx.knee(performance.now()+500);
+  assert.ok(!(a.snd.pool.tongbal||[]).some(v=>!v.paused),'no 통발 (move) sound on the knee');
+});
+test('mashing the taunt never starts it again while it plays: the next one only after 77f (user report 2026-10-16)',()=>{
+  const a=br();a.setMode('tju');const starts=[];let prev=null;
+  for(let f=1;f<=200;f+=3){ key(a,'keydown','KeyL',at(600,f));key(a,'keyup','KeyL',at(600,f+1));a.tick(at(600,f+1));
+    const r=a.tjp.run; if(r && r!==prev){ starts.push(r.s0-600+1); prev=r; } }
+  assert.deepEqual(starts,[1,79,157]);assert.equal(a.tjp.view.double!=null,true);
+});
+test('the knee hits on 28f but its effect shows on 29f: a 28f cancel never shows a hit (user 2026-10-16)',()=>{
+  const run=c=>{ const a=br();a.setMode('tju');a.onButton('1+3+4',at(600,1));let first=null;
+    for(let f=2;f<=34;f++){ if(f===c) a.onDir('f',at(600,f)); a.tick(at(600,f)); if(first==null && a.tjp.run && a.tjp.run.kneeFx) first=f; }
+    return [first,a.tjp.view.knee]; };
+  assert.deepEqual(run(null),[29,true]);assert.deepEqual(run(28),[null,false]);assert.deepEqual(run(29),[29,true]);
+});
+test('the 최속 pop counts its run only in the 최속 제트어퍼 tab: another mode never shows a stale ×n (review 2026-10-16)',()=>{
+  const a=br();a.setMode('ju');const texts=()=>Array.from(a.pops.splice(0),p=>p.text); // an array of this realm (the app runs in its own vm context)
+  ju6(a,600);assert.deepEqual(texts(),[a.T('pop.juFast')]);ju6(a,700);ju6(a,800);assert.deepEqual(texts().slice(-1),[a.T('pop.juFastStreak',3)]);
+  a.setMode('free');assert.equal(a.jup.session.streak,3,'the tab keeps its session');
+  ju6(a,900);ju6(a,1000);assert.deepEqual(texts(),[a.T('pop.juFast'),a.T('pop.juFast')]);
+  ju6(a,1100,{f:2});assert.deepEqual(texts(),[a.T('pop.ju')],'a Jet Upper that is not the fastest keeps the plain pop');
 });
