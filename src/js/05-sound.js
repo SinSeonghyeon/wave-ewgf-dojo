@@ -125,9 +125,9 @@ function playFanfare(){
     return () => bus.disconnect();
   }catch(e){}
 }
-function unlockAudio(){ dailyGift(); /* first gesture reserves the daily gift */ if(!snd.ok || snd.unlocked) return; snd.unlocked=true; Object.keys(SND).filter(name=>name!=='bgm').forEach(sfxPool); bgmSync(); }
+function unlockAudio(){ if(REPLAY) return; dailyGift(); /* first gesture reserves the daily gift */ if(!snd.ok || snd.unlocked) return; snd.unlocked=true; Object.keys(SND).filter(name=>name!=='bgm').forEach(sfxPool); bgmSync(); }
 addEventListener('pointerdown', unlockAudio);
-addEventListener('visibilitychange', () => { if(document.hidden) { resetInput(); endTrial(true); } bgmSync(); });
+addEventListener('visibilitychange', () => { if(document.hidden && !REPLAY) { resetInput(); endTrial(true); } bgmSync(); }); // a hidden replay just catches up when it is shown again
 addEventListener('focus', bgmSync);
 addEventListener('pagehide', () => {
   if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }

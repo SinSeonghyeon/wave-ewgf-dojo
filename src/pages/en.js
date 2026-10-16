@@ -56,8 +56,8 @@ module.exports = {
 <h2>Suggested order</h2>
 <ol>
 <li>Read <strong>frames</strong> first. Once “the same frame” makes sense, everything else is easier.</li>
-<li>Practise a standing <strong>EWGF</strong>. Use EWGF ×20 to see your success rate and button-timing histogram.</li>
-<li>Practise the <strong>wave dash</strong> in Wave 10s, then join both in Wave EWGF ×10 once the chain holds.</li>
+<li>Practise a standing <strong>EWGF</strong> in free practice, and check your EWGF rate and button-timing histogram under “Practice analysis”.</li>
+<li>Practise the <strong>wave dash</strong> in free practice; once the chain holds, time it in Challenge Mode’s Wave 10s and join it to an EWGF in Dummy Rush 30s.</li>
 <li>Move on to the <strong>backdash</strong> and the <strong>d/f+2 link</strong> when you are comfortable.</li>
 </ol>
 
@@ -92,7 +92,7 @@ module.exports = {
 <li><strong>Button in a later cell</strong>: WGF. This is the most common miss, usually from pressing the button after d/f is “fully in”.</li>
 <li><strong>Button in an earlier cell</strong>: the button came before d/f and the attempt is shown as a miss.</li>
 </ul>
-<p>The ms value in the result shows how far the button was from d/f. If it is always positive (late), press earlier; if negative, a touch later. EWGF ×20 charts these values as a histogram so you can see which way your misses lean.</p>
+<p>The ms value in the result shows how far the button was from d/f. If it is always positive (late), press earlier; if negative, a touch later. The “EWGF button timing” chart under “Practice analysis” collects these values as a histogram so you can see which way your misses lean.</p>
 
 <h3>Turning it into a feel</h3>
 <ul>
@@ -111,8 +111,8 @@ module.exports = {
 <h2>Practice plan</h2>
 <ol>
 <li>Repeat a standing EWGF in <strong>free practice</strong>. When d/f and +2 appear on one line of the input log, they were in the same frame.</li>
-<li>Record your rate and average offset in <strong>EWGF ×20</strong>. Move on once you pass about 80%.</li>
-<li>After the wave dash, use <strong>Wave EWGF ×10</strong> to finish a dash with an EWGF. A lower rate than standing is normal.</li>
+<li>Keep going and watch your <strong>EWGF rate</strong> and average button offset under “Practice analysis”. Move on once you pass about 80%.</li>
+<li>After the wave dash, finish a dash with an EWGF. The high dummies in Challenge Mode’s <strong>Dummy Rush 30s</strong> train exactly this. A lower rate than standing is normal.</li>
 <li>In matches you will often dash forward (<code>6 N</code>) straight into an EWGF to close distance. The app labels this as a dash EWGF.</li>
 </ol>
 
@@ -162,7 +162,7 @@ module.exports = {
 <li><strong>Accuracy first</strong>: in free practice, get ten dashes in a row without a break. When it breaks, read the named cause.</li>
 <li><strong>Rhythm</strong>: count three beats, “dash – cancel – release”. The input log shows how many frames each direction was held, so check you are not sitting on any direction.</li>
 <li><strong>Wave 10s</strong>: counts crouch dashes over ten seconds and records dashes per second and your best chain. Check the speed chart for slowing down near the end.</li>
-<li><strong>Wave EWGF ×10</strong>: three or more wave dashes finished with an EWGF, the match-like test of speed and timing together.</li>
+<li><strong>Dummy Rush 30s</strong>: wave in and hit high dummies with an EWGF, mids with f,f+2 and lows with hell sweep, the match-like test of speed and timing together.</li>
 </ol>
 
 <h2>Device tips</h2>
@@ -251,7 +251,7 @@ module.exports = {
 <li><strong>Too late</strong>: the next backdash waits for the recovery to end, wasting time.</li>
 </ul>
 <p>Mishima Dojo shows how many frames after the backdash your 1 arrived, how long you held 1 and how long the 4 N 4 took, in the “last backdash” bar.</p>
-<p class="note">Distance follows a community-measured Tekken 8 curve averaged over five Mishima-style characters; a full backdash travels 0.638 m. Characters and versions may differ, and the uncancelled 26f recovery still needs further in-game verification. Use the Backdash 10s timeline and set evaluation to compare cancel and hand-input times.</p>
+<p class="note">Distance follows a community-measured Tekken 8 curve averaged over five Mishima-style characters; a full backdash travels 0.638 m. Characters and versions may differ, and the uncancelled 26f recovery still needs further in-game verification. Use the timeline and set evaluation in the Backdash practice tab (or Backdash 10s in Challenge Mode) to compare cancel and hand-input times.</p>
 
 <h2>Common mistakes</h2>
 <h3>Neutral after 1</h3>
@@ -274,7 +274,7 @@ module.exports = {
 <h2>Practice plan</h2>
 <ol>
 <li>In <strong>free practice</strong>, repeat <code>4 N 4</code> until the backdash comes out every time. No verdict appears until your first 1 cancel.</li>
-<li>Add the 1 cancel and aim for a steady “OK” grade or better.</li>
+<li>In <strong>Backdash practice</strong>, add the 1 cancel and aim for a steady “OK” grade or better. There is no time limit, and the timeline below shows your cancel frame.</li>
 <li>Use <strong>Backdash 10s</strong> to record how far you retreat in ten seconds (m). Ties on the leaderboard go to the player with more “Very fast” sets.</li>
 </ol>
 `,
@@ -482,16 +482,13 @@ module.exports = {
       body: `
 <h2>What is Mishima Dojo?</h2>
 <p>Mishima Dojo (미시마 도장, 三島道場) is a free browser tool for practising the core inputs of the Mishima-style characters in Tekken: the EWGF (<code>f,N,d,d/f+2</code>), the wave dash (<code>6N23 6 N …</code>), the Korean backdash (<code>414 N …</code>), the wave-cancel while-standing upper and the d/f+2 → EWGF link. There is nothing to install and no sign-up. It works with a keyboard, a gamepad or a leverless (hitbox) controller, and phones get on-screen touch buttons.</p>
-<p>Besides unlimited <strong>Free practice</strong>, there are measured modes that test you under fixed conditions:</p>
+<p>Besides unlimited <strong>Free practice</strong> and the practice modes (wave, wave-cancel upper, d/f+2 link, dummy rush, backdash and more), <strong>Challenge Mode</strong> tests you under fixed conditions:</p>
 <ul>
 <li><strong>Wave 10s</strong>: how many crouch dashes you chain in ten seconds, and how fast</li>
-<li><strong>EWGF ×20</strong>: success rate and button-timing spread over twenty standing EWGFs</li>
-<li><strong>Wave EWGF ×10</strong>: a wave dash finished with an EWGF, the way you use it in a match</li>
 <li><strong>Dummy Rush 30s</strong>: hit high, mid and low dummies with EWGF, f,f+2 and hell sweep for points</li>
 <li><strong>Backdash 10s</strong>: distance covered in ten seconds, and your cancel timing</li>
-<li><strong>Wave-cancel upper · 10 tries</strong> and <strong>d/f+2 link · 10 tries</strong>: ten-try challenges in their own practice modes</li>
 </ul>
-<p>Pick a nickname and your results go on the leaderboards, so you can compare with other players. Every result card can be saved as an image and shared.</p>
+<p>Pick a nickname and your challenge results go on the leaderboards, so you can compare with other players. Every result card can be saved as an image and shared, and the top 10 runs on each leaderboard can be watched as replays with their input log.</p>
 
 <h2>Why it exists</h2>
 <p>You cannot play a Mishima without the EWGF and the wave dash, but practising them means booting the game, entering training mode and checking one attempt at a time. When an attempt fails, you are usually left with a vague “too late” feeling: it is hard to tell how many milliseconds late the button was, or which input broke the wave.</p>

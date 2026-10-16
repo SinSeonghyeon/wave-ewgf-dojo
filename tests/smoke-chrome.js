@@ -2,7 +2,7 @@
 // Launches headless Chrome over CDP (tools/cdp.js, no npm deps), loads index.html, feeds a 6N23+2 via keyboard,
 // switches ko/en/ja, runs a wave10 trial in ja, opens the share card, then exercises the backend UI against the real worker/index.js
 // handler served over local http with tests/fake-d1.js (first-run nickname gate incl. a taken name, auto-submit + result card with the
-// tier banner after each trial, shoutbox post/reply/reaction, nickname change, visit counter, ko re-render) and fails if any JS error was logged.
+// tier banner after each trial, shoutbox post/reply/reaction, own edit/delete and crowns, nickname change, visit counter, ko re-render) and fails if any JS error was logged.
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -202,13 +202,13 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.moves = {tongbal: await evalJs(`${q('#rTitle')}.textContent`)};
   await sleep(400); await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(40); await key('KeyK'); await sleep(20); await key('KeyK','keyup'); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(300);
   out.moves.sweep = await evalJs(`({title:${q('#rTitle')}.textContent, log:${q('#logBody')}.textContent.slice(0,60)})`);
-  await evalJs(`${q('#modes button[data-mode="rush30"]')}.click(); ${q('#dStart')}.click()`); await sleep(3300);
+  await evalJs(`${q('#challengeOpen')}.click(); ${q('#challengeList [data-mode="rush30"]')}.click(); ${q('#dStart')}.click()`); await sleep(3300);
   await tap('KeyD',20); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(40); await key('KeyD','keyup'); await key('KeyS','keyup'); await sleep(400);
   out.moves.rush = await evalJs(`({score:${q('#hudScore')}.textContent, prog:${q('#dProg')}.textContent, timer:${q('#hudTimer')}.textContent, hint:${q('#hudHint')}.textContent, modes:[...document.querySelectorAll('#modes button')].filter(b=>!b.hidden).length})`);
   await evalJs(`${q('#modes button[data-mode="free"]')}.click()`); await sleep(200);
   out.moves.left = await evalJs(`({score:${q('#hudScore')}.textContent, records:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.rush30.length})`);
   // backdash 10s (2026-09-13): 4 N 4, 1 cancel near 10f, roll 1→4 N 4 → distance on the HUD and a graded ×2 set on the card; leaving the mode clears it without a record
-  await evalJs(`${q('#modes button[data-mode="bd10"]')}.click(); ${q('#dStart')}.click()`); await sleep(3300);
+  await evalJs(`${q('#challengeOpen')}.click(); ${q('#challengeList [data-mode="bd10"]')}.click(); ${q('#dStart')}.click()`); await sleep(3300);
   await tap('KeyA',20); await sleep(30); await key('KeyA'); await sleep(170); await key('KeyS'); await sleep(30); await key('KeyS','keyup'); await sleep(30); await key('KeyA','keyup'); await sleep(30); await key('KeyA'); await sleep(120);
   out.moves.bd = await evalJs(`({score:${q('#hudScore')}.textContent, title:${q('#rTitle')}.textContent, kind:${q('#rKind')}.textContent, chain:${q('#hudChainL')}.textContent})`);
   await key('KeyA','keyup'); await sleep(300);
@@ -218,7 +218,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   if(!/^\d\.\d m$/.test(out.moves.bd.score) || out.moves.bd.kind!=='BACKDASH' || !/×2/.test(out.moves.bd.title) || out.moves.bd.chain!=='BACKDASH' || !/^\d\.\d m$/.test(out.moves.bdEnd.score) || parseFloat(out.moves.bdEnd.score)<=parseFloat(out.moves.bd.score)
      || !/^\d+\.\d$/.test(out.moves.bdEnd.timer) || out.moves.bdLeft.score!=='' || out.moves.bdLeft.records!==0) errors.push('bd10 check failed: '+JSON.stringify({bd:out.moves.bd, bdEnd:out.moves.bdEnd, bdLeft:out.moves.bdLeft}));
   if(!/f,f\+2|통발|66\+2/.test(out.moves.tongbal) || !/Hell Sweep|나락|奈落/.test(out.moves.sweep.title) || !/Move/.test(out.moves.sweep.log) || out.moves.rush.score!=='1 PTS' || !/^1 /.test(out.moves.rush.prog) || !/^\d+\.\d$/.test(out.moves.rush.timer)
-     || !/6N23\+4/.test(out.moves.rush.hint) || out.moves.rush.modes!==8 || out.moves.left.score!=='' || out.moves.left.records!==0) errors.push('f,f+2 / hell sweep / rush30 check failed: '+JSON.stringify(out.moves));
+     || !/6N23\+4/.test(out.moves.rush.hint) || out.moves.rush.modes!==7 || out.moves.left.score!=='' || out.moves.left.records!==0) errors.push('f,f+2 / hell sweep / rush30 check failed: '+JSON.stringify(out.moves));
   if(out.altKey.text!=='O' || out.altKey.stored!=='KeyO' || out.altUse!=='→★→★') errors.push('alternate key binding failed: '+JSON.stringify({altKey:out.altKey,use:out.altUse}));
   if(out.sound.off.on!=='0' || out.sound.off.stSound!==0 || out.sound.off.stSfx!==30 || !out.sound.off.disabled || out.sound.on.on!=='1' || out.sound.on.disabled) errors.push('sound settings check failed: '+JSON.stringify(out.sound));
   for(const l of ['en','ja','ko']){
@@ -237,7 +237,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.donate.cancel = [];
   for(const [lang,delay] of [['en',200],['ja',3300]]){
     const recordsBefore=await evalJs(`JSON.stringify(JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.wave10)`);
-    await evalJs(`document.querySelector('#langSel button[data-lang="${lang}"]').click(); document.querySelector('#modes button[data-mode="wave10"]').click(); document.querySelector('#dStart').click()`);
+    await evalJs(`document.querySelector('#langSel button[data-lang="${lang}"]').click(); document.querySelector('#challengeOpen').click(); document.querySelector('#challengeList [data-mode="wave10"]').click(); document.querySelector('#dStart').click()`);
     await sleep(delay);
     await evalJs(`document.querySelector('#donateTop').click()`);
     await sleep(14500); // beyond both the original countdown and the measurement deadline
@@ -247,9 +247,21 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
     if(!state.open || state.resultOpen || state.startDisabled || !state.shareHidden || recordsAfter!==recordsBefore || state.scores) errors.push('donate trial cancellation failed: '+JSON.stringify({lang,...state}));
     await evalJs(`document.querySelector('#donateClose').click()`);
   }
+  // 결정 38(challenge-mode): the start button sits at the stage top center; once started, 취소 takes the old start spot and drops the run
+  await evalJs(`document.querySelector('#langSel button[data-lang="ko"]').click(); document.querySelector('#challengeOpen').click(); document.querySelector('#challengeList [data-mode="wave10"]').click()`); await sleep(200);
+  const startBox = await evalJs(`(()=>{const r=document.querySelector('#dStart').getBoundingClientRect(),s=document.querySelector('#stageBox').getBoundingClientRect();return {center:Math.round((r.left+r.right-s.left-s.right)/2), top:Math.round(r.top-s.top), cancel:getComputedStyle(document.querySelector('#dCancel')).display, mode:document.querySelector('#dStartMode').textContent};})()`);
+  const recs0 = await evalJs(`JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.wave10.length`), subs0 = db.rows.length;
+  await evalJs(`document.querySelector('#dStart').click()`); await sleep(1500);
+  const started = await evalJs(`({start:getComputedStyle(document.querySelector('#dStart')).display, cancel:getComputedStyle(document.querySelector('#dCancel')).display})`);
+  await sleep(2500); await evalJs(`document.querySelector('#dCancel').click()`); await sleep(300);
+  const cancelled = await evalJs(`({start:getComputedStyle(document.querySelector('#dStart')).display, cancel:getComputedStyle(document.querySelector('#dCancel')).display, prog:document.querySelector('#dProg').textContent, timer:document.querySelector('#hudTimer').textContent, recs:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.wave10.length})`);
+  await sleep(11000); cancelled.later = {recs:await evalJs(`JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).records.wave10.length`), subs:db.rows.length, share:await evalJs(`document.querySelector('#shareDlg').open`)};
+  out.cancel = {startBox, started, cancelled};
+  if(Math.abs(startBox.center)>2 || startBox.top>20 || startBox.cancel!=='none' || startBox.mode!=='웨이브 10초' || started.start!=='none' || started.cancel==='none' || cancelled.start==='none' || cancelled.cancel!=='none'
+     || cancelled.prog!=='도전을 취소했습니다. 기록되지 않습니다.' || cancelled.timer!=='' || cancelled.recs!==recs0 || cancelled.later.recs!==recs0 || cancelled.later.subs!==subs0 || cancelled.later.share) errors.push('challenge start / cancel check failed: '+JSON.stringify(out.cancel));
   // trial flow in ja: wave10 start → wait → end record text
   await evalJs(`document.querySelector('#langSel button[data-lang="ja"]').click()`);
-  await evalJs(`document.querySelector('#modes button[data-mode="wave10"]').click(); document.querySelector('#dStart').click()`);
+  await evalJs(`document.querySelector('#challengeOpen').click(); document.querySelector('#challengeList [data-mode="wave10"]').click(); document.querySelector('#dStart').click()`);
   await sleep(3300); await tap('KeyD'); await sleep(20); await key('KeyS'); await sleep(20); await key('KeyD'); await sleep(30); await key('KeyS','keyup'); await key('KeyD','keyup'); await sleep(200);
   out.trialJa = await evalJs(`({prog:document.querySelector('#dProg').textContent, dName:document.querySelector('#dName').textContent, hint:document.querySelector('#hudHint').textContent})`);
   // share card: wait for the 10s trial to end, open the card, try copy (must not throw even where the clipboard is unavailable), close
@@ -286,8 +298,8 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await evalJs(`(() => { window.confirm=()=>true; const b=${q('#boardList .board-delete')}; if(!b) throw new Error('owner delete button did not appear'); b.click(); })()`); await sleep(800);
   out.board.deleted = await evalJs(`({msg:${q('#boardMsg')}.textContent, me:${q('#boardMe')}.textContent, rows:document.querySelectorAll('#boardList tbody tr').length, button:!!${q('#boardList .board-delete')}})`);
   out.board.deleted.db = db.rows.length;
-  await evalJs(`${q('#boardTabs button[data-board="ewgf20"]')}.click()`); await sleep(800);
-  out.board.ewgfTab = await evalJs(`({empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, pressed:${q('#boardTabs button[data-board="ewgf20"]')}.getAttribute('aria-pressed')})`);
+  await evalJs(`${q('#boardTabs button[data-board="rush30"]')}.click()`); await sleep(800);
+  out.board.ewgfTab = await evalJs(`({empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, pressed:${q('#boardTabs button[data-board="rush30"]')}.getAttribute('aria-pressed')})`); // an empty board (the rush30 run was left)
   // shoutbox: empty → post one line under the claimed nickname → shows; change the nickname through the header button → label follows
   out.posts = {empty:await evalJs(`${q('#postList .empty')}?.textContent`)};
   await evalJs(`${q('#postText')}.value='  스모크   테스트 글 '; ${q('#postSend')}.click()`); await waitForSelector('#postList .vote[data-v="1"]');
@@ -301,6 +313,24 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   await evalJs(`${q('#postList .reply-open')}.click()`); await waitForSelector('#postList .reply-form input');
   await evalJs(`${q('#postList .reply-form input')}.value='  스모크   답글 '; ${q('#postList .reply-form')}.requestSubmit()`); await waitForSelector('#postList .reply');
   out.posts.reply = await evalJs(`({msg:${q('#postMsg')}.textContent, count:${q('#postList .reply-open')}.textContent, replies:[...document.querySelectorAll('#postList .reply')].map(r=>[r.querySelector('b').textContent,r.querySelector('p').textContent]), form:!!${q('#postList .reply-form')}})`);
+  // 결정 41(crown) · 40(post-edit): another player ranked on wave10 replies (crowned, 1st); my post is edited, my reply deleted,
+  // then my post deleted under their reply → a "deleted" placeholder keeps the thread
+  { const w = await import(pathToFileURL(path.join(__dirname,'../worker/index.js')).href), env = {DB:db, ALLOWED_ORIGINS:'*'};
+    const call = (p, body) => w.handle(new Request('http://x'+p, {method:'POST', body:JSON.stringify(body)}), env).then(r => r.json());
+    const other = await call('/nick', {nick:'왕관러'});
+    await call('/submit', {board:'wave10', nick:'왕관러', token:other.token, score:4.2, tie:12, win:12, lang:'ko', detail:{dashes:42, chain:12}});
+    await call('/reply', {nick:'왕관러', token:other.token, id:1, text:'다른 사람 답글'}); }
+  const thread = () => evalJs(`[...document.querySelectorAll('#postList .post, #postList .reply')].map(e=>[e.className, e.querySelector(':scope > b')?.textContent||'', e.querySelector(':scope > p')?.textContent||'',
+    /edited/.test(e.querySelector(':scope > time')?.textContent||''), e.querySelector(':scope > .crown')?.className||'', e.querySelector(':scope > .crown')?.getAttribute('title')||'', e.querySelectorAll(':scope > .own-tools button').length])`);
+  await evalJs(`${q('#postsRefresh')}.click()`); await waitFor(`document.querySelectorAll('#postList .reply').length===2`);
+  out.posts.crowned = await thread();
+  await evalJs(`${q('#postList .post > .own-tools .own-edit')}.click()`); await waitForSelector('#postList .edit-form input');
+  await evalJs(`${q('#postList .edit-form input')}.value='  고친   글 '; ${q('#postList .edit-form')}.requestSubmit()`);
+  await waitFor(`!document.querySelector('#postList .edit-form') && document.querySelector('#postList .post > p')?.textContent==='고친 글'`);
+  out.posts.edited = await thread();
+  await evalJs(`window.confirm=()=>true; ${q('#postList .reply > .own-tools .own-delete')}.click()`); await waitFor(`document.querySelectorAll('#postList .reply').length===1`);
+  await evalJs(`${q('#postList .post > .own-tools .own-delete')}.click()`); await waitForSelector('#postList .post.deleted');
+  out.posts.gone = await thread();
   await evalJs(`${q('#nickBtn')}.click()`); await sleep(150);
   out.nick2 = {open:await evalJs(`${q('#nickDlg')}.open`), closeHidden:await evalJs(`${q('#nickClose')}.hidden`), prefilled:await evalJs(`${q('#nickInput')}.value`)};
   await evalJs(`${q('#nickInput')}.value='스모크2'; ${q('#nickSubmit')}.click()`); await sleep(800);
@@ -309,7 +339,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.ko2 = await evalJs(`({title:${q('#boardCard h2')}.textContent, empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, rank:${q('#dRank')}.textContent, visits:${q('#visits')}.textContent, postsTitle:${q('#postsCard h2')}.textContent, nickBtn:${q('#nickBtn')}.textContent})`);
   out.db = {scores:db.rows.map(r => ({board:r.board, nick:r.nick, score:r.score, tie:r.tie, win:r.win, week:r.week})), posts:db.posts.map(p => [p.nick, p.text]), replies:db.replies.map(r => [r.post_id,r.nick,r.text]), visits:db.visits, nicks:db.db.prepare('SELECT key,nick FROM nicks ORDER BY key').all().map(r => [r.key, r.nick])};
   const bd = out.board, auto = bd.auto;
-  if(bd.tabs.length!==7 || !/Wave-cancel upper/.test(bd.tabs[5]||'') || !/d\/f\+2 link/.test(bd.tabs[6]||'') || !/rush30|Dummy Rush/.test(bd.tabs[3]||'') || !/bd10|Backdash/.test(bd.tabs[4]||'')) errors.push('leaderboard tabs check failed: '+JSON.stringify(bd.tabs));
+  if(bd.tabs.length!==3 || !/Wave 10s/.test(bd.tabs[0]||'') || !/rush30|Dummy Rush/.test(bd.tabs[1]||'') || !/bd10|Backdash/.test(bd.tabs[2]||'')) errors.push('leaderboard tabs check failed (the 도전 모드 boards only, 결정 38(challenge-mode)): '+JSON.stringify(bd.tabs));
   if(bd.cardHidden || bd.postsHidden || !/rank 1 of 1 · top 100%/.test(bd.rank) || !bd.retryHidden || bd.info!=='1 entries' || !/rank 1 of 1 · top 100%/.test(bd.me) || !bd.meRow || bd.rows.length!==1 || bd.rows[0][1]!=='스모크 테스트' || bd.tag!=='Kazuya' || bd.rows[0][0]!=='1' || !/^Today 1 · total 1 visits$/.test(bd.visits)) errors.push('leaderboard check failed: '+JSON.stringify(bd));
   if(!auto || auto.during.rank!=='' || auto.during.open || !/best stands · rank 1 of 1/.test(auto.after.rank) || auto.after.rows!==1 || !auto.after.open || !/best stands/.test(auto.after.line) || auto.after.tier!=='S') errors.push('leaderboard auto-submit check failed: '+JSON.stringify(auto));
   if(!bd.deleted || bd.deleted.msg!=='Your result was deleted.' || !/No entry from you/.test(bd.deleted.me) || bd.deleted.rows!==0 || bd.deleted.button || bd.deleted.db!==0) errors.push('leaderboard self-delete check failed: '+JSON.stringify(bd.deleted));
@@ -318,33 +348,22 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   const votes = {like:JSON.stringify(out.posts.like), unlike:JSON.stringify(out.posts.unlike), dislike:JSON.stringify(out.posts.dislike)};
   if(votes.like!==JSON.stringify({ui:['👍 1:true','👎 0:false'], db:[[1,'스모크 테스트',1]]}) || votes.unlike!==JSON.stringify({ui:['👍 0:false','👎 0:false'], db:0}) || votes.dislike!==JSON.stringify({ui:['👍 0:false','👎 1:true'], db:[[1,'스모크 테스트',-1]], msg:''})) errors.push('post votes check failed: '+JSON.stringify(votes));
   if(out.posts.reply.msg!=='' || !/Replies 1/.test(out.posts.reply.count) || JSON.stringify(out.posts.reply.replies)!==JSON.stringify([['스모크 테스트','스모크 답글']]) || out.posts.reply.form) errors.push('post reply check failed: '+JSON.stringify(out.posts.reply));
+  const crownTip = 'Top 10 in Challenge Mode · Wave 10s #1';
+  if(JSON.stringify(out.posts.crowned)!==JSON.stringify([['post','스모크 테스트','스모크 테스트 글',false,'','',2],['reply','스모크 테스트','스모크 답글',false,'','',2],['reply','왕관러','다른 사람 답글',false,'crown c1 first',crownTip,0]])) errors.push('crown / own tools check failed: '+JSON.stringify(out.posts.crowned));
+  if(JSON.stringify(out.posts.edited[0])!==JSON.stringify(['post','스모크 테스트','고친 글',true,'','',2])) errors.push('own post edit check failed: '+JSON.stringify(out.posts.edited));
+  if(JSON.stringify(out.posts.gone)!==JSON.stringify([['post deleted','','This post was deleted.',false,'','',0],['reply','왕관러','다른 사람 답글',false,'crown c1 first',crownTip,0]])) errors.push('own delete / placeholder check failed: '+JSON.stringify(out.posts.gone));
   if(!out.nick2.open || out.nick2.closeHidden || out.nick2.prefilled!=='스모크 테스트' || out.nick2.after.open || !/스모크2/.test(out.nick2.after.btn) || out.nick2.after.postNick!=='스모크2' || !/No entry from you/.test(out.nick2.after.me)) errors.push('nickname change check failed: '+JSON.stringify(out.nick2));
   if(out.ko2.title!=='순위' || !/아직 기록이 없습니다/.test(out.ko2.empty||'') || !/등록한 기록이 없습니다/.test(out.ko2.me) || !/최고 기록 유지 · 1위 \/ 1명 · 상위 100%/.test(out.ko2.rank) || !/^오늘 방문 1 · 누적 1$/.test(out.ko2.visits) || out.ko2.postsTitle!=='한마디' || out.ko2.nickBtn!=='닉네임 · 스모크2') errors.push('backend ko re-render check failed: '+JSON.stringify(out.ko2));
-  if(out.db.scores.length!==0 || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','스모크 테스트 글']]) || JSON.stringify(out.db.replies)!==JSON.stringify([[1,'스모크 테스트','스모크 답글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
-     || JSON.stringify(out.db.nicks)!==JSON.stringify([['스모크 테스트','스모크 테스트'],['스모크2','스모크2'],['점유됨','점유됨']])) errors.push('backend storage check failed: '+JSON.stringify(out.db));
+  if(JSON.stringify(out.db.scores.map(s => s.nick))!==JSON.stringify(['왕관러']) || JSON.stringify(out.db.posts)!==JSON.stringify([['스모크 테스트','']]) || JSON.stringify(out.db.replies)!==JSON.stringify([[1,'왕관러','다른 사람 답글']]) || out.db.visits.length!==1 || out.db.visits[0].n!==1
+     || JSON.stringify(out.db.nicks)!==JSON.stringify([['스모크 테스트','스모크 테스트'],['스모크2','스모크2'],['왕관러','왕관러'],['점유됨','점유됨']])) errors.push('backend storage check failed: '+JSON.stringify(out.db));
   for(const s of JSON.stringify([out.gate, bd, out.posts, out.nick2, out.ko2, out.trialEnd]).match(/\b(board|mode|share|rec|posts|nick|tier)\.[a-zA-Z0-9.]+/g)||[]) errors.push('raw i18n key leaked into backend UI: '+s);
-  // Complete the separate WSC challenge through keyboard events and verify real Worker registration.
-  console.log('Smoke: WSC challenge leaderboard');
-  await evalJs(`document.querySelector('[data-mode="wsc"]').click();document.querySelector('#wscChallengeBtn').click()`);await sleep(3300);
-  for(let attempt=0;attempt<10;attempt++){
-    await sleep(600);
-    await evalJs(`(()=>{const waves=1,F=1000/60;let t=performance.now()-550;
-      const key=(code,at,up=false)=>{const e=new KeyboardEvent(up?'keyup':'keydown',{code,bubbles:true,cancelable:true});Object.defineProperty(e,'timeStamp',{value:at});window.dispatchEvent(e);};
-      for(let wave=0;wave<waves;wave++){key('KeyD',t);key('KeyD',t+10,true);key('KeyS',t+20);key('KeyD',t+30);if(wave+1<waves){key('KeyS',t+40,true);key('KeyD',t+50,true);t+=80;}}
-      key('KeyS',t+40,true);key('KeyD',t+50,true);key('KeyA',t+30+7*F);key('KeyI',t+30+8*F);key('KeyI',t+31+8*F,true);key('KeyA',t+32+8*F,true);
-    })()`);
-  }
-  try{
-    await waitFor(`document.querySelector('#boardTabs [data-board="wsc"]').getAttribute('aria-pressed')==='true' && /1위/.test(document.querySelector('#dRank').textContent)`);
-  }catch(err){
-    const state=await evalJs(`({status:document.querySelector('#wscChallengeStatus').textContent,rank:document.querySelector('#dRank').textContent,board:document.querySelector('#boardMsg').textContent,tab:document.querySelector('#boardTabs [aria-pressed="true"]')?.dataset.board,dialogs:[...document.querySelectorAll('dialog[open]')].map(d=>d.id)})`);
-    throw new Error(err.message+'; WSC state='+JSON.stringify(state)+'; rows='+JSON.stringify(db.rows.filter(r=>r.board==='wsc')));
-  }
-  out.wscBoard=await evalJs(`({status:document.querySelector('#wscChallengeStatus').textContent,rank:document.querySelector('#dRank').textContent,row:document.querySelector('#boardList .me').textContent,shown:getComputedStyle(document.querySelector('.records')).display})`);
-  if(!/10\/10/.test(out.wscBoard.status)||!/10 \/ 10/.test(out.wscBoard.row)||!/최고 10연속/.test(out.wscBoard.row)||out.wscBoard.shown==='none')errors.push('WSC challenge board failed: '+JSON.stringify(out.wscBoard));
-  const wscRow=db.rows.find(r=>r.board==='wsc');if(!wscRow||wscRow.score!==10||wscRow.tie!==10)errors.push('WSC persisted score mismatch');
-  await evalJs(`document.querySelector('#boardList .board-delete').click()`);await waitFor(`!document.querySelector('#boardList .me')`);
-  if(db.rows.some(r=>r.board==='wsc'))errors.push('WSC owner deletion failed');
+  // 결정 38(challenge-mode): the WSC practice stays, its 10-try challenge and board are switched off (code kept)
+  console.log('Smoke: switched-off challenges stay out of reach');
+  await evalJs(`document.querySelector('[data-mode="wsc"]').click()`); await sleep(200);
+  out.wscOff = await evalJs(`({btn:document.querySelector('#wscChallengeBtn').hidden, status:document.querySelector('#wscChallengeStatus').hidden, tab:document.querySelector('#boardTabs [data-board="wsc"]').hidden,
+    list:(document.querySelector('#challengeOpen').click(), [...document.querySelectorAll('#challengeList [data-mode]')].map(b=>b.dataset.mode).join(','))})`);
+  await evalJs(`document.querySelector('#challengeClose').click()`);
+  if(!out.wscOff.btn || !out.wscOff.status || !out.wscOff.tab || out.wscOff.list!=='wave10,rush30,bd10') errors.push('switched-off WSC challenge check failed: '+JSON.stringify(out.wscOff));
   await evalJs(`document.querySelector('[data-mode="free"]').click()`);
   // touch controls: three direction buttons feed the normal path; down+right forms d/f
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});

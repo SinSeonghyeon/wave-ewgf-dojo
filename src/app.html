@@ -50,16 +50,15 @@
     <button class="char-open" id="charOpen" type="button" aria-haspopup="dialog" data-i18n-title="char.open"><img id="charOpenFace" width="80" height="80" alt="" draggable="false"><span class="char-open-text"><small data-i18n="char.label">캐릭터</small><b id="charOpenName">카즈야</b></span><span class="char-open-caret" aria-hidden="true">▾</span></button>
     <nav class="modes" role="tablist" data-i18n-aria="modes.aria" aria-label="연습 모드" id="modes">
       <button role="tab" data-mode="free" aria-selected="true" data-i18n="mode.free.name">자유 연습</button>
+      <button role="tab" data-mode="wave" aria-selected="false" data-i18n="mode.wave.name">웨이브 연습</button>
       <button role="tab" data-mode="wsc" aria-selected="false" data-i18n="mode.wsc.name">웨캔기어 연습</button>
       <button role="tab" data-mode="giwon" aria-selected="false" data-i18n="mode.giwon.name">기원초 연습</button>
       <button role="tab" data-mode="jfsr" aria-selected="false" data-i18n="mode.jfsr.name" hidden>초스카이 연습</button>
       <button role="tab" data-mode="tju" aria-selected="false" data-i18n="mode.tju.name" hidden>도발 제트어퍼 연습</button>
       <button role="tab" data-mode="ju" aria-selected="false" data-i18n="mode.ju.name" hidden>최속 제트어퍼 연습</button>
-      <button role="tab" data-mode="wave10" aria-selected="false" data-i18n="mode.wave10.name">웨이브 10초</button>
-      <button role="tab" data-mode="ewgf20" aria-selected="false" data-i18n="mode.ewgf20.name">초풍 20회</button>
-      <button role="tab" data-mode="combo10" aria-selected="false" data-i18n="mode.combo10.name">웨이브 초풍 10회</button>
-      <button role="tab" data-mode="rush30" aria-selected="false" data-i18n="mode.rush30.name">더미 격파 30초</button>
-      <button role="tab" data-mode="bd10" aria-selected="false" data-i18n="mode.bd10.name">백대시 10초</button>
+      <button role="tab" data-mode="rush" aria-selected="false" data-i18n="mode.rush.name">더미 격파 연습</button>
+      <button role="tab" data-mode="backdash" aria-selected="false" data-i18n="mode.backdash.name">백대시 연습</button>
+      <button role="tab" class="challenge-tab" id="challengeOpen" type="button" aria-selected="false" aria-haspopup="dialog"><svg class="challenge-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l11 11M12.5 17.5l5-5M15 15l4.5 4.5M20 4 9 15M6.5 12.5l5 5M9 15l-4.5 4.5"/></svg><span class="challenge-tab-name" data-i18n="challenge.tab">도전 모드</span><small id="challengeTabMode"></small></button>
     </nav>
     </div>
     <div class="top-right">
@@ -88,7 +87,7 @@
           <div class="inputs" id="inputs" data-i18n-aria="inputs.aria" aria-label="입력 기록"></div>
         </div>
         <div class="stage-actions">
-        <button class="btn" id="dStart" hidden data-i18n="trial.start">시작</button>
+          <button class="btn ghost stage-cancel" id="dCancel" type="button" hidden data-i18n-aria="trial.cancelAria" aria-label="도전 취소"><span aria-hidden="true">✕</span><span data-i18n="trial.cancel">취소</span></button>
           <button class="btn" id="wscChallengeBtn" type="button" hidden></button>
           <button class="btn" id="gpChallengeBtn" type="button" hidden></button>
           <button class="btn" id="jfChallengeBtn" type="button" hidden></button>
@@ -99,6 +98,7 @@
           <div class="hud-score" id="hudScore"></div>
           <div class="hud-timer" id="hudTimer"></div>
           <div class="hud-center" id="hudCenter"></div>
+          <div class="stage-start"><button class="challenge-start" id="dStart" type="button" hidden><small id="dStartMode"></small><span data-i18n="trial.start">도전 시작</span></button></div>
           <div class="hud-hint" id="hudHint"></div>
           <div class="segc hud-side" id="sideSel" role="group" data-i18n-aria="set.side" aria-label="캐릭터 방향"><button type="button" data-side="1" aria-pressed="true" data-i18n="set.side1Short" data-i18n-aria="set.side1" aria-label="1P (→ 가 앞)">1P</button><button type="button" data-side="-1" aria-pressed="false" data-i18n="set.side2Short" data-i18n-aria="set.side2" aria-label="2P (← 가 앞)">2P</button></div>
           <button class="hud-gear" id="setOpen" type="button" data-i18n-aria="set.title" aria-label="입력 · 판정 설정" title="⚙"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.7 7.7 0 0 0-1.7-1L15 3h-4l-.4 2.7a7.7 7.7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.7 7.7 0 0 0 1.7 1L11 21h4l.4-2.7a7.7 7.7 0 0 0 1.7-1l2.5 1 2-3.5L19.4 13zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></button>
@@ -331,6 +331,20 @@
     <div class="char-tiles" id="charTiles" role="group" data-i18n-aria="char.aria"></div>
   </dialog>
 
+  <dialog class="share challenge-dlg" id="challengeDlg" aria-labelledby="challengeTitle">
+    <div class="set-head"><h2 id="challengeTitle">도전 모드</h2><button class="btn ghost" id="challengeClose" type="button" data-i18n="share.close">닫기</button></div>
+    <p class="note" data-i18n="challenge.sub">순위표에 오르는 기록 도전입니다. 각 순위표 상위 10명의 도전은 다시보기로 남습니다.</p>
+    <div class="challenge-list" id="challengeList" role="group" data-i18n-aria="challenge.tab"></div>
+  </dialog>
+
+  <dialog class="share replay-dlg" id="replayDlg" aria-labelledby="replayTitle">
+    <div class="set-head"><h2 id="replayTitle" data-i18n="replay.title">다시보기</h2><div class="replay-actions"><button class="btn ghost" id="replayRestart" type="button" data-i18n="replay.restart">처음부터</button><button class="btn ghost" id="replayClose" type="button" data-i18n="share.close">닫기</button></div></div>
+    <p class="replay-who" id="replayWho"></p>
+    <div class="replay-frame" id="replayFrame"></div>
+    <p class="note" id="replayMsg" role="status" aria-live="polite"></p>
+    <p class="note" data-i18n="replay.note">기록된 입력을 같은 판정으로 다시 재생합니다. 내 기록·통계·업적에는 영향이 없습니다.</p>
+  </dialog>
+
   <dialog class="share notices" id="noticeDlg" aria-labelledby="noticeTitle">
     <div class="set-head"><h2 id="noticeTitle" data-i18n="notice.title">공지사항</h2><button class="btn ghost" id="noticeClose" type="button" data-i18n="share.close">닫기</button></div>
     <p class="note" data-i18n="notice.sub">미시마 도장의 업데이트와 패치 노트입니다.</p>
@@ -432,8 +446,8 @@
       <p data-i18n="about.what.p">미시마 도장은 철권(철권8) 미시마류의 핵심 입력인 초풍신권(EWGF, 6N23+2)과 웨이브 대시(풍신 스텝 연속, 6N23 6 N 6N23 6 N …)를 브라우저에서 연습하는 무료 도구입니다. 설치 없이 키보드·게임패드·레버리스(히트박스)로 바로 쓸 수 있고, 게임을 켜지 않아도 입력만으로 판정합니다. 비공식 팬 제작이며, 게임 자체를 건드리는 매크로나 치트가 아닙니다.</p>
       <h3 data-i18n="about.judge.h">판정 방식</h3>
       <p data-i18n="about.judge.p">초풍은 각 입력 시각을 공통 60Hz 프레임 칸에 반올림해 3(d/f)과 버튼 2(RP)가 같은 칸이면 성공, RP가 뒤 칸이면 풍신권, 앞 칸이면 실패로 표시합니다. 웨이브는 6 → N → 2 → 3 또는 중립을 생략한 6 → 2 → 3을 인정하며 캔슬 6과 다음 시작 6은 별도로 필요합니다. 웨캔기어는 전용 모드에서 대각을 1f로 센 뒤 8·9·10f에 따라 RP 1·1~2·1~3f를 연습합니다. 브라우저의 60Hz 기준은 실제 게임 프레임과 동기화되지 않으며 입력 장치마다 오차가 있습니다.</p>
-      <h3 data-i18n="about.modes.h">측정 모드와 순위</h3>
-      <p data-i18n="about.modes.p">자유 연습 외에 웨이브 10초, 초풍 20회, 웨이브 초풍 10회, 더미 격파 30초, 백대시 10초 측정 모드가 있습니다. 결과는 초풍 버튼 타이밍 분포와 웨이브 속도 추이로 그려지고, 닉네임을 정하면 순위에 올려 다른 플레이어와 비교하고 상위 %에 따른 등급(SS~D)을 받습니다. 결과 카드는 이미지로 저장해 공유할 수 있습니다.</p>
+      <h3 data-i18n="about.modes.h">도전 모드와 순위</h3>
+      <p data-i18n="about.modes.p">자유 연습과 기술별 연습 외에 순위표에 오르는 도전 모드(웨이브 10초, 더미 격파 30초, 백대시 10초)가 있습니다. 결과는 초풍 버튼 타이밍 분포와 웨이브 속도 추이로 그려지고, 닉네임을 정하면 순위에 올려 다른 플레이어와 비교하고 상위 %에 따른 등급(SS~D)을 받습니다. 각 순위표 상위 10명의 도전은 다시보기로 볼 수 있습니다. 결과 카드는 이미지로 저장해 공유할 수 있습니다.</p>
       <h3 data-i18n="about.faq.h">자주 묻는 질문</h3>
       <dl>
         <dt data-i18n="about.q1">초풍이 자꾸 풍신권으로 나가요.</dt><dd data-i18n="about.a1">버튼 2가 3(d/f)보다 늦은 경우입니다. 결과에 표시되는 ms 값을 보면서, 3을 다 넣고 누르는 게 아니라 2(d)에서 3(d/f)으로 굴리는 순간에 버튼 2를 누른다고 생각하세요.</dd>
@@ -503,6 +517,7 @@
 @@include js/33-fighter.js
 @@include js/34-share-draw.js
 @@include js/35-dojo3d.js
+@@include js/35-replay.js
 @@include js/36-boot.js
 })();
 </script>

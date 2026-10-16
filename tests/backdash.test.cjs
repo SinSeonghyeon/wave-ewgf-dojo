@@ -155,7 +155,8 @@ test('bd10: countdown, distance on the HUD, record, share card, board entry agai
   const rec=a.store.records.bd10[1];assert.equal(rec.score,+total.toFixed(2));assert.equal(rec.dashes,3);assert.equal(rec.top,2);assert.equal(rec.chain,3);assert.equal(rec.bdv,a.BD_REC_V);
   assert.equal(a.trial.result.personalBest,true,'the old 40.7 m does not block a personal best');assert.equal(a.get('hudCenter').textContent,total.toFixed(1)+' m');
   assert.equal(a.get('dProg').textContent,a.T('trial.bdEnd',total.toFixed(1),3));assert.equal(a.store.life.trials.bd10,1);
-  const e=JSON.parse(JSON.stringify(a.boardEntry(a.trial.result,'bd10')));assert.deepEqual(e,{board:'bd10',win:a.store.window,lang:'en',score:+total.toFixed(2),tie:2,detail:{dashes:3,top:2,chain:3,char:'kazuya'}});
+  const {replay,...e}=JSON.parse(JSON.stringify(a.boardEntry(a.trial.result,'bd10')));assert.deepEqual(e,{board:'bd10',win:a.store.window,lang:'en',score:+total.toFixed(2),tie:2,detail:{dashes:3,top:2,chain:3,char:'kazuya'}});
+  assert.ok(w.cleanReplay(replay,'bd10'),'the run carries a replay the worker accepts (결정 39(replay))');
   assert.equal(w.validate({...e,nick:'smoke'}).error,undefined);
   const card=a.buildCard({kind:'trial',mode:'bd10',rec,attempts:[],cycles:[],window:a.store.window});assert.equal(card.hero.value,total.toFixed(1)+' m');assert.equal(card.chart,null);
   assert.doesNotMatch(JSON.stringify(card),/NaN|undefined|(^|[\s"])(card|rec|trial|mode|bd)\.[a-zA-Z0-9]+/);
@@ -278,4 +279,15 @@ test('bd10 timeline review fixes (2026-10-03): a cancel past the axis stays on i
   a.resetSession();assert.equal(a.bdp.session.sets,0);assert.equal(a.bdp.row,null);assert.equal(a.bdp.last,null);
   assert.equal(a.get('bdpResult').textContent,a.T('bdp.ready'));assert.equal(a.get('bdpRows').innerHTML,'');assert.equal(a.get('bdpDetail').textContent,'');
   assert.match(a.get('bdpStats').innerHTML,/<b>0<\/b>/,'best chain tile reads the fresh session');
+});
+test('백대시 연습 (결정 38(challenge-mode)): the bd10 timeline, panel and set grading with no start, clock, record or board',()=>{
+  const a=boot({v:4,lang:'ko'});const H=a.bdBestH(6);
+  a.setMode('backdash');assert.equal(a.get('bdpTimeline').hidden,false);assert.equal(a.get('bdpPanel').hidden,false);assert.equal(a.get('dStart').hidden,true);
+  assert.equal(a.get('dName').textContent,'백대시 연습');assert.equal(a.get('dGuide').dataset.page,'guide/backdash/');assert.equal(a.bdActive(),true);assert.equal(a.bdLoud(),true,'loud from the first backdash, like bd10');
+  const o=bdOut(a,1000);assert.ok(a.bdp.run,'a set starts on the timeline');
+  const c=bdAt(o,H);a.onDir('db',c);a.onDir('b',c+fr(2));a.onDir('n',c+fr(4));a.onDir('b',c+fr(6));
+  assert.equal(a.bdp.last.row.h,H);assert.equal(a.bdp.last.row.g,'top');assert.equal(a.bdp.session.sets,1);assert.equal(a.session.bd.count>0,true);
+  assert.equal(a.get('hudScore').textContent,'');assert.equal(a.get('hudTimer').textContent,'');
+  a.time(c+20000);a.tick(c+20000);a.trialTick(c+20000);assert.equal(a.store.records.bd10.length,0,'no clock ever ends it into a record');assert.equal(a.store.life.trials.bd10,0);
+  a.setMode('free');assert.equal(a.get('bdpTimeline').hidden,true);assert.equal(a.get('bdpPanel').hidden,true);
 });

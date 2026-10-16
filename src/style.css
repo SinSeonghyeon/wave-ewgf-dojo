@@ -750,3 +750,79 @@
 
   body.wsc-mode .records{display:grid}
   body.wsc-mode .records>.card:not(#boardCard){display:none}
+
+  /* 도전 모드 (결정 38(challenge-mode)): the tab that opens the window, and the window's list */
+  .modes .challenge-tab{display:inline-flex;align-items:baseline;gap:6px}
+  .modes .challenge-tab small{font-size:11px;font-weight:500;color:inherit;opacity:.8}
+  .modes .challenge-tab small:empty{display:none}
+  dialog.challenge-dlg{width:min(560px,calc(100vw - 32px))}
+  .challenge-list{display:grid;gap:8px;margin-top:14px}
+  .challenge-item{display:grid;grid-template-columns:1fr auto;grid-template-areas:"name best" "sub sub";align-items:baseline;gap:2px 12px;text-align:left;padding:12px 14px;background:var(--bg);border:1px solid var(--line2);border-radius:6px;color:var(--ink);font:inherit;cursor:pointer}
+  .challenge-item:hover,.challenge-item:focus-visible{border-color:var(--accent);outline:none}
+  .challenge-item[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .challenge-item b{grid-area:name;font-size:16px}
+  .challenge-item small{grid-area:sub;color:var(--muted);font-size:12px}
+  .challenge-item em{grid-area:best;font-style:normal;font-family:var(--mono);font-size:12px;color:var(--gold)}
+
+  /* 다시보기 (결정 39(replay)): the dialog on the live page and the stripped page inside its frame */
+  dialog.replay-dlg{width:min(1180px,calc(100vw - 24px));max-height:calc(100vh - 24px);padding:12px 14px}
+  .replay-actions{display:flex;gap:6px;margin-left:auto}
+  .replay-who{margin:0 0 8px;font-family:var(--mono);font-size:13px;color:var(--ink2);overflow-wrap:anywhere}
+  .replay-frame{position:relative;height:min(72vh,720px);background:var(--bg);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .replay-frame iframe{display:block;width:100%;height:100%;border:0}
+  .board-replay{background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:3px 9px;margin-right:4px;font-size:11px;line-height:1.2;cursor:pointer}
+  .board-replay:hover,.board-replay:focus-visible{background:var(--accent-soft);outline:none}
+  body.replay-view{padding:8px;overflow-x:hidden}
+  body.replay-view .wrap>header.top,body.replay-view .section-links,body.replay-view .records,body.replay-view .about,body.replay-view footer,body.replay-view #postsCard,
+  body.replay-view .stage-actions,body.replay-view .touch,body.replay-view .hud-gear,body.replay-view #sideSel,body.replay-view .reward-toast,body.replay-view .jackpot,
+  body.replay-view .d-guide,body.replay-view #dShare,body.replay-view #dRank,body.replay-view #dRankRetry,body.replay-view #dStart,body.replay-view .coach-box{display:none!important}
+  body.replay-view .stage::after{content:attr(data-badge);position:absolute;right:12px;top:10px;z-index:4;padding:2px 8px;border:1px solid var(--accent);border-radius:3px;color:var(--accent);background:var(--overlay);font:700 11px/1.4 var(--mono);letter-spacing:1px;pointer-events:none}
+  body.replay-view .input-ledger{width:170px}
+  body.replay-view .input-ledger .inputs{max-height:none}
+
+  /* 한마디: own edit/delete (결정 40(post-edit)) and crowns (결정 41(crown)) */
+  .own-tools{display:inline-flex;gap:4px;margin-left:8px;vertical-align:1px}
+  .own-tools button{background:transparent;color:var(--faint);border:0;padding:0 2px;font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  .own-tools button:hover,.own-tools button:focus-visible{color:var(--ink2);outline:none}.own-tools button:disabled{opacity:.45;cursor:default}
+  .edit-form{display:flex;gap:6px;margin:6px 0 2px}
+  .edit-form input{min-width:0;flex:1;background:var(--bg);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:6px 9px;font-size:13px}
+  .edit-form .btn{padding:5px 10px;font-size:12px}
+  .post.deleted .post-gone{color:var(--faint);font-style:italic}
+  .crown{display:inline-flex;align-items:center;gap:1px;margin-left:4px;vertical-align:-1px;color:var(--gold)}
+  .crown svg{width:13px;height:10px;fill:currentColor;display:block}
+  .crown .gem{fill:var(--bg)}
+  .crown.first .gem{fill:var(--red)}
+  .crown b{font:700 10px/1 var(--mono);color:var(--gold)}
+  .crown.c2 svg{width:16px;height:12px}
+  .crown.c3 svg{width:18px;height:13px;filter:drop-shadow(0 0 3px var(--gold))}
+  .crown.c3{animation:crownGlow 2.4s ease-in-out infinite}
+  @keyframes crownGlow{50%{filter:brightness(1.35)}}
+  @media (prefers-reduced-motion:reduce){.crown.c3{animation:none}}
+  /* 도전 모드 (결정 38(challenge-mode)): the challenge tab and the start button look like a bout, not a practice tab */
+  .modes .challenge-tab{align-items:center;position:sticky;right:0;z-index:1} /* right after the practice tabs; when the strip scrolls on a narrow screen it stays pinned at the right edge */
+  .top .modes .challenge-tab{margin:7px 0 7px 8px;padding:7px 14px 7px 11px;border:1px solid var(--gold);border-radius:3px;background:var(--panel2);color:var(--gold);font:400 15px/1.1 var(--display);letter-spacing:.6px;box-shadow:-14px 0 12px -6px var(--bg)}
+  .top .modes .challenge-tab:hover:not([aria-selected="true"]){background:var(--accent-soft);border-color:var(--gold);color:var(--ink)}
+  .top .modes .challenge-tab[aria-selected="true"]{background:var(--accent-deep);border-color:var(--gold);color:var(--ink);box-shadow:-14px 0 12px -6px var(--bg),inset 0 -3px 0 var(--gold)}
+  .modes .challenge-tab .challenge-ico{flex:none}
+  .modes .challenge-tab small{font-family:var(--body);color:var(--ink2)}
+  .modes .challenge-tab[aria-selected="true"] small{color:var(--ink)}
+  .stage-start{position:absolute;top:10px;left:50%;transform:translateX(-50%);pointer-events:auto;z-index:3}
+  .hud-center:not(:empty)~.stage-start{visibility:hidden} /* the result flash (or GO!) owns the stage top until it clears */
+  .challenge-start{display:inline-flex;flex-direction:column;align-items:center;gap:2px;min-width:168px;padding:6px 30px 8px;border:2px solid var(--gold);border-radius:3px;
+    background:linear-gradient(180deg,var(--accent) 0,var(--accent-deep) 42%,var(--accent-deep) 100%);color:var(--ink);font:400 23px/1 var(--display);letter-spacing:1.5px;text-shadow:0 2px 0 var(--on-accent);
+    box-shadow:0 4px 0 var(--on-accent),0 8px 22px var(--overlay);transform:skewX(-9deg);cursor:pointer;animation:startGlow 2s ease-in-out infinite}
+  .challenge-start>*{transform:skewX(9deg)}
+  .challenge-start small{font:700 10px/1.2 var(--mono);letter-spacing:2px;color:var(--gold);text-shadow:none}
+  .challenge-start small:empty{display:none}
+  .challenge-start:hover{filter:brightness(1.12)}
+  .challenge-start:active{transform:skewX(-9deg) translateY(3px);box-shadow:0 1px 0 var(--on-accent),0 4px 12px var(--overlay)}
+  .challenge-start:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+  .challenge-start[hidden],.challenge-start:disabled{display:none}
+  @keyframes startGlow{50%{box-shadow:0 4px 0 var(--on-accent),0 8px 22px var(--overlay),0 0 0 4px var(--accent-soft),0 0 26px var(--accent)}}
+  @media (prefers-reduced-motion:reduce){.challenge-start{animation:none}}
+  .stage-actions .stage-cancel{display:inline-flex;align-items:center;gap:6px;background:var(--overlay);color:var(--ink);border:1px solid var(--line2)}
+  .stage-actions .stage-cancel:hover,.stage-actions .stage-cancel:focus-visible{border-color:var(--accent);color:var(--accent)}
+  .stage-actions .stage-cancel[hidden]{display:none}
+  @media(max-width:750px){.stage-start{top:50px}.challenge-start{min-width:128px;padding:4px 20px 6px;font-size:17px}.challenge-start small{font-size:9px;letter-spacing:1.5px}
+    .top .modes .challenge-tab{font-size:13px;padding:6px 10px 6px 8px;gap:4px}.top .modes .challenge-tab small{display:none}}
+  body.replay-view .stage-start{display:none!important}

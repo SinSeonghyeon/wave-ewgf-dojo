@@ -128,10 +128,11 @@ const TJ_FLAME_MS = 30*FRAME, TJ_STEAM_MS = 700; // how long each lasts
 const parkPx = () => mode==='giwon' ? GP_DUMMY_PX : mode==='tju' || mode==='ju' ? TJ_DUMMY_PX : 0; // ju: the Jet Upper reaches the bag from the knee's distance too
 function dummyGuard(at){ world.dummy.guardAt = at; } // the bag blocks: a ring and GUARD at that time, no knockback (updateDummy)
 const crumpling = (d, now) => d.crumpleUntil>0 && !d.launchAt && now<d.crumpleUntil; // 배잡기 경직: still standing, so a follow-up lands on a grounded opponent
-function tryHit(move, until){ // move: 'ewgf'|'wgf'|'tongbal'|'hellsweep'|'wsc'|'giwon'|'knee'|'ju'|'tjs'. Returns true when the dummy is knocked. Plain dummy: any move within reach; typed dummy: only HIT_TYPE[move]. until: knee only — when the reel ends
+function tryHit(move, until, force){ // move: 'ewgf'|'wgf'|'tongbal'|'hellsweep'|'wsc'|'giwon'|'knee'|'ju'|'tjs'. Returns true when the dummy is knocked. Plain dummy: any move within reach; typed dummy: only HIT_TYPE[move]. until: knee only — when the reel ends
   const d = world.dummy, now = performance.now(); const dist = (world.dummyX - world.charX)*store.side;
-  if(!d.alive || (d.hit && !crumpling(d, now)) || dist<10 || dist>130) return false;
-  if(d.type && HIT_TYPE[move]!==d.type) return false; // giwon is in no HIT_TYPE, so rush30 targets always read it as a whiff
+  if(force){ if(!d.alive){ d.alive = true; d.y = 0; d.rot = 0; } if(dist<10 || dist>130) world.dummyX = world.charX + 60*store.side; } // 결정 39(replay): the recorded hit
+  else if(!d.alive || (d.hit && !crumpling(d, now)) || dist<10 || dist>130) return false;
+  if(!force && d.type && HIT_TYPE[move]!==d.type) return false; // giwon is in no HIT_TYPE, so rush30 targets always read it as a whiff
   const electric = move==='ewgf' || move==='jfsr';
   // 같은 더미를 기원권으로 두 번 치면 연결에 실패한 것이다(사용자 확인 2026-09-27): 배잡기를 풀고
   // 늦은 초풍과 같은 약한 반응으로 살살 날려 보낸다. 새 기원권 자체는 그대로 나가고 링크도 다시 걸린다.

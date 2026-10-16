@@ -15,7 +15,8 @@ stageAssets(html,out);
     await b.send('Page.addScriptToEvaluateOnNewDocument',{source:`if(!sessionStorage.getItem('seeded')){sessionStorage.setItem('seeded','1');localStorage.setItem('wave-ewgf-dojo-v1',JSON.stringify({v:4,lang:'ko',sound:0,fx:0,noticeSeen:${JSON.stringify(notice)},visitDay:new Date(Date.now()+9*3600e3).toISOString().slice(0,10)}));}`});
     await b.navigate(fileUrl(page)+'?c=hwoarang');
     const click=sel=>b.evalJs(`document.querySelector(${JSON.stringify(sel)}).click()`);
-    const tabs=()=>b.evalJs(`Array.from(document.querySelectorAll('#modes button')).filter(x=>!x.hidden).map(x=>x.dataset.mode).join(',')`);
+    const tabs=()=>b.evalJs(`Array.from(document.querySelectorAll('#modes button')).filter(x=>!x.hidden).map(x=>x.dataset.mode||x.id).join(',')`);
+    const challenges=async()=>{await click('#challengeOpen');const list=await b.evalJs(`[...document.querySelectorAll('#challengeList [data-mode]')].map(x=>x.dataset.mode).join(',')`);await click('#challengeClose');return list;};
     const read=()=>b.evalJs(`({title:document.querySelector('#rTitle').textContent,sub:document.querySelector('#rOff').textContent,char:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).char,name:document.querySelector('#charOpenName').textContent,url:location.search,tries:+document.querySelector('#stTry').textContent})`);
     // seq: [part, frame] with part 'f' | 'd' | 'k' (RK) and '-x' for a release; frames are from a 60Hz-aligned origin
     const play=async seq=>{
@@ -29,7 +30,7 @@ stageAssets(html,out);
     };
     let r=await read();
     assert.equal(r.char,'hwoarang','?c=hwoarang opens Hwoarang');assert.equal(r.name,'화랑','the character button shows who is selected');
-    assert.equal(await tabs(),'free,jfsr,wave10,bd10');
+    assert.equal(await tabs(),'free,wave,jfsr,backdash,challengeOpen');assert.equal(await challenges(),'wave10,bd10','Hwoarang: the 도전 모드 window lists what he can play (결정 38(challenge-mode))');
     // 6 N 3+4: forward 1f, neutral 1f, then down+forward and RK on one frame
     r=await play([['f',0],['-f',1],['d',2],['f',2],['k',2],['-k',4],['-d',4],['-f',4]]);
     assert.equal(r.title,'최속 초스카이!',JSON.stringify(r));assert.equal(r.tries,0,'the EWGF stats stay untouched');
@@ -39,15 +40,13 @@ stageAssets(html,out);
     // the 4 one frame late → 3RK
     r=await play([['f',0],['-f',1],['d',2],['f',2],['k',3],['-k',5],['-d',5],['-f',5]]);
     assert.equal(r.title,'4가 늦음 (3RK)',JSON.stringify(r));
-    // the practice tab: panel, challenge button, countdown
+    // the practice tab: panel and timeline; its 10-try challenge is switched off (결정 38(challenge-mode))
     await click('[data-mode="jfsr"]');
     const panel=await b.evalJs(`({panel:!document.querySelector('#jfPanel').hidden,timeline:!document.querySelector('#jfTimeline').hidden,btn:!document.querySelector('#jfChallengeBtn').hidden,cmd:document.querySelector('#jfCommand').textContent})`);
-    assert.ok(panel.panel&&panel.timeline&&panel.btn,JSON.stringify(panel));assert.match(panel.cmd,/RK/);
+    assert.ok(panel.panel&&panel.timeline&&!panel.btn,JSON.stringify(panel));assert.match(panel.cmd,/RK/);
     r=await play([['f',0],['-f',1],['d',2],['f',2],['k',2],['-k',4],['-d',4],['-f',4]]);
     assert.match(await b.evalJs(`document.querySelector('#jfResult').textContent`),/초스카이/);
-    await click('#jfChallengeBtn');await sleep(100);
-    assert.match(await b.evalJs(`document.querySelector('#jfChallengeStatus').textContent`),/[0-9]/,'countdown shows');
-    await click('#jfChallengeBtn'); // cancel
+    assert.equal(await b.evalJs(`document.querySelector('#boardTabs [data-board="jfsr"]').hidden`),true,'no jfsr board tab');
     // back to Kazuya: every Mishima tab returns, the address drops ?c=
     const pick=async id=>{ await click('#charOpen'); await sleep(150);
       const dlg=await b.evalJs(`({open:document.querySelector('#charDlg').open,tiles:[...document.querySelectorAll('#charTiles button[data-char]')].map(x=>x.dataset.char+':'+x.getAttribute('aria-pressed')).join(','),soon:!!document.querySelector('#charTiles .soon')})`);
@@ -56,7 +55,7 @@ stageAssets(html,out);
       assert.equal(await b.evalJs(`document.querySelector('#charDlg').open`),false,'a tile picks and closes');
     };
     await pick('kazuya');
-    assert.equal(await tabs(),'free,wsc,giwon,wave10,ewgf20,combo10,rush30,bd10');
+    assert.equal(await tabs(),'free,wave,wsc,giwon,rush,backdash,challengeOpen');assert.equal(await challenges(),'wave10,rush30,bd10');
     r=await read();assert.equal(r.char,'kazuya');assert.equal(r.url,'');
     await pick('hwoarang');r=await read();assert.equal(r.url,'?c=hwoarang');
     // layout: no sideways overflow, the selector stays on screen

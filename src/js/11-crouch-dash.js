@@ -109,9 +109,10 @@ function clearCommand(){
   mist=null; mistRelease=false;
   Object.assign(cd,{state:0,tF:0,tN:0,tD:0,tDF:0,tC:0,tRel:0,lastDF:-1e9,cancelled:true,chain:0,chainCycles:[],pending:null,dashT:-1e9,dashWave:false,omittedNeutral:false,gFault:null});
 }
-// rush30: reset the command after a finisher (초풍·통발·나락) but keep the wave chain, so a kill does not drop the dash-point streak (a 700ms pause still ends it via endChain). cancelled=true so the next crouch dash links.
-function endCommand(){ mist=null; if(trial.running && mode==='rush30'){ Object.assign(cd,{state:0,tF:0,tN:0,tD:0,tDF:0,tC:0,tRel:0,cancelled:true,pending:null,dashT:-1e9,dashWave:false,omittedNeutral:false,gFault:null}); } else clearCommand(); }
+// rush30 and 더미 격파 연습: reset the command after a finisher (초풍·통발·나락) but keep the wave chain, so a kill does not drop the dash-point streak (a 700ms pause still ends it via endChain). cancelled=true so the next crouch dash links.
+function endCommand(){ mist=null; if((trial.running && mode==='rush30') || practiceOf('rush30')){ Object.assign(cd,{state:0,tF:0,tN:0,tD:0,tDF:0,tC:0,tRel:0,cancelled:true,pending:null,dashT:-1e9,dashWave:false,omittedNeutral:false,gFault:null}); } else clearCommand(); }
 function onDir(dir, t){
+  recDir(dir, t); // 결정 39(replay)
   practiceInput();
   trialTick(t); tick(t); // 판정 기한은 화면 주사율과 무관하게 입력 시각에 검사한다.
   if(dir!==heldDir){ prevDir = heldDir; heldDir = dir; heldDirT = t; }

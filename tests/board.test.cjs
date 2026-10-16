@@ -30,10 +30,10 @@ test('leaderboard ban lookup uses indexed nickname searches instead of scanning 
   assert.ok(!plan.some(d=>/^SCAN n(?:\s|$)/.test(d)),plan.join('\n'));
 });
 
-test('season key is the constant "all" (the board never resets); the KST week and day helpers still flip at 15:00 UTC', async () => {
+test('season key is the constant "s2" (no scheduled reset; one new season with replays, 결정 19(cumulative-ranking)); the KST week and day helpers still flip at 15:00 UTC', async () => {
   const w = await worker();
-  assert.equal(w.SEASON, 'all');
-  for (const t of [0, NOW, Date.UTC(2026, 8, 13, 15, 0), Date.UTC(2030, 0, 1)]) assert.equal(w.seasonKey(t), 'all', String(t));
+  assert.equal(w.SEASON, 's2');
+  for (const t of [0, NOW, Date.UTC(2026, 8, 13, 15, 0), Date.UTC(2030, 0, 1)]) assert.equal(w.seasonKey(t), 's2', String(t));
   assert.equal(w.weekKey(Date.UTC(2026, 8, 13, 14, 59)), '2026-09-07');
   assert.equal(w.weekKey(Date.UTC(2026, 8, 13, 15, 0)), '2026-09-14');
   assert.equal(w.weekKey(Date.UTC(2026, 8, 6, 15, 0)), '2026-09-07');
@@ -41,6 +41,19 @@ test('season key is the constant "all" (the board never resets); the KST week an
   assert.equal(w.dayKey(Date.UTC(2026, 8, 12, 14, 59)), '2026-09-12'); assert.equal(w.dayKey(Date.UTC(2026, 8, 12, 15, 0)), '2026-09-13');
 });
 
+test('new season s2 (2026-10-16, 결정 19(cumulative-ranking)): the old season\'s rows stay in the table but leave /top, ranks, cut10 and crowns; the same nick enters afresh', async () => {
+  const w = await worker(), env = {DB: fakeD1(), ALLOWED_ORIGINS: '*'}, me = owned(w, env);
+  const old = env.DB.db.prepare("INSERT INTO scores (week, board, nick, score, tie, win, lang, detail, created_at) VALUES ('all', 'wave10', ?, ?, 0, 12, 'ko', '{}', 1)");
+  old.run('alpha', 9.9); old.run('oldtimer', 9.5);
+  const empty = await (await w.handle(new Request('http://x/top?board=wave10'), env, NOW)).json();
+  assert.deepEqual([empty.total, empty.rows.length, empty.cut10], [0, 0, null], 'the old season is not listed');
+  const out = await (await me.submit(entry({nick: 'alpha', score: 4.2}), NOW)).json();
+  assert.equal(out.ok, true); assert.equal(out.rank, 1); assert.equal(out.total, 1); assert.equal(out.improved, true, 'a lower score than the old season\'s best still enters the new one');
+  assert.deepEqual(env.DB.rows.map(r => [r.week, r.nick, r.score]), [['all', 'alpha', 9.9], ['all', 'oldtimer', 9.5], ['s2', 'alpha', 4.2]], 'old rows are kept, not deleted');
+  await me.post({nick: 'oldtimer', text: 'hello'});
+  const posts = await (await w.handle(new Request('http://x/posts'), env, NOW)).json();
+  assert.equal(posts.crowns.oldtimer, undefined, 'no crown from the old season');
+});
 test('migration 2026-09-14: weekly rows collapse to one best per nick per board under the season key "all", idempotently', async () => {
   const w = await worker(); const env = {DB: fakeD1()};
   const ins = (week, board, nick, score, tie, at) => env.DB.db.prepare('INSERT INTO scores (week,board,nick,score,tie,detail,win,lang,created_at) VALUES (?,?,?,?,?,?,?,?,?)').run(week, board, nick, score, tie, '{}', 12, 'ko', at);
@@ -53,8 +66,8 @@ test('migration 2026-09-14: weekly rows collapse to one best per nick per board 
   env.DB.db.exec(sql); env.DB.db.exec(sql);
   assert.deepEqual(env.DB.rows.map(r => [r.id, r.week, r.board, r.nick, r.score]),
     [[2, 'all', 'wave10', 'alpha', 5], [3, 'all', 'wave10', 'bravo', 6], [5, 'all', 'wave10', 'charlie', 5], [7, 'all', 'ewgf20', 'alpha', 90], [8, 'all', 'wave10', 'delta', 7]]);
-  const top = await (await w.handle(req('/top?board=wave10&nick=alpha'), env, NOW)).json();
-  assert.deepEqual(top.rows.map(r => [r.rank, r.nick]), [[1, 'delta'], [2, 'bravo'], [3, 'alpha'], [3, 'charlie']]); assert.equal(top.me.rank, 3); assert.equal(top.total, 4);
+  // these 'all' rows were the board until 2026-10-16; since season s2 they stay in the table unlisted (the new-season test above)
+  assert.equal((await (await w.handle(req('/top?board=wave10&nick=alpha'), env, NOW)).json()).total, 0);
 });
 
 test('validate normalises the nickname and rejects out-of-range or malformed entries', async () => {
@@ -109,7 +122,7 @@ test('nick: claim once, case/width-insensitive uniqueness, token proves ownershi
 test('submit keeps one row per nick per board: better results replace, worse ones are ignored, ranks share on exact ties', async () => {
   const w = await worker(); const env = {DB: fakeD1()}; const me = owned(w, env);
   const r1 = await (await me.submit({nick: 'alpha', score: 4.2, tie: 12})).json();
-  assert.equal(r1.ok, true); assert.equal(r1.rank, 1); assert.equal(r1.total, 1); assert.equal(r1.season, 'all'); assert.equal(r1.id, 1); assert.equal(r1.improved, true);
+  assert.equal(r1.ok, true); assert.equal(r1.rank, 1); assert.equal(r1.total, 1); assert.equal(r1.season, 's2'); assert.equal(r1.id, 1); assert.equal(r1.improved, true);
   assert.equal(r1.me.id, 1); assert.equal(r1.me.rank, 1); assert.deepEqual(r1.me.detail, {dashes: 42, chain: 12});
   const r2 = await (await me.submit({nick: 'bravo', score: 4.5, tie: 3})).json();
   assert.equal(r2.rank, 1); assert.equal(r2.total, 2);
@@ -130,11 +143,11 @@ test('submit keeps one row per nick per board: better results replace, worse one
   const later = await (await me.submit({nick: 'alpha', score: 9}, NOW + 7 * 86400e3)).json();
   assert.equal(later.improved, true); assert.equal(later.id, 1); assert.equal(later.rank, 1); assert.equal(later.total, 4);
   const top = await (await w.handle(req('/top?board=wave10'), env, NOW + 60 * 86400e3)).json();
-  assert.equal(top.season, 'all'); assert.equal(top.total, 4); assert.equal(top.rows.length, 4); assert.equal(top.rows[0].nick, 'alpha'); assert.equal(top.me, null);
+  assert.equal(top.season, 's2'); assert.equal(top.total, 4); assert.equal(top.rows.length, 4); assert.equal(top.rows[0].nick, 'alpha'); assert.equal(top.me, null);
   assert.equal(top.week, undefined); assert.equal(top.start, undefined); assert.equal(top.end, undefined);
   const ewgf = await (await w.handle(req('/top?board=ewgf20&nick=alpha'), env, NOW)).json();
   assert.deepEqual(ewgf.rows.map(r => r.nick), ['alpha']); assert.equal(ewgf.me.rank, 1);
-  assert.equal(env.DB.rows.length, 5); assert.ok(env.DB.rows.every(r => r.week === 'all'), 'every row sits under the season key');
+  assert.equal(env.DB.rows.length, 5); assert.ok(env.DB.rows.every(r => r.week === w.SEASON), 'every row sits under the season key');
 });
 
 test('score delete authenticates the nickname owner and can remove only that owner\'s row on the selected board', async () => {
@@ -190,7 +203,7 @@ test('visits: POST counts one visit for the KST day, GET only reads, total sums 
 
 test('posts: newest first, capped at 50, validated, rate-limited per IP when the binding exists, admin delete', async () => {
   const w = await worker(); const env = {DB: fakeD1()}; const me = owned(w, env);
-  assert.deepEqual(await (await w.handle(req('/posts'), env, NOW)).json(), {rows: []});
+  assert.deepEqual(await (await w.handle(req('/posts'), env, NOW)).json(), {rows: [], crowns: {}});
   const p1 = await (await me.post({nick: 'alpha', text: ' 웨이브  판정이\n너무 빡세요 '})).json();
   assert.equal(p1.ok, true); assert.equal(p1.id, 1); assert.deepEqual(p1.rows.map(r => [r.nick, r.text, r.created_at]), [['alpha', '웨이브 판정이 너무 빡세요', NOW]]);
   const tok = me.tokens.alpha;
@@ -255,7 +268,7 @@ test('replies: listing uses the fetched parent ids when a newer post arrives bet
   assert.equal((await me.reply({nick: 'alpha', id: 2, text: 'edge reply'}, NOW + 100)).status, 200);
   let slipped = false;
   const racing = {DB: {prepare(sql) {
-    if (!slipped && sql.startsWith('SELECT id,post_id,nick,text,created_at FROM replies')) {
+    if (!slipped && sql.startsWith('SELECT id,post_id,nick,text,created_at,edited_at FROM replies')) {
       slipped = true; insert.run('alpha', 'post 52', NOW + 52);
     }
     return db.prepare(sql);
@@ -352,7 +365,7 @@ test('shadow ban: banned nicks vanish from the list, total and cut10 for others 
   assert.equal((await (await w.handle(req('/top?board=wave10'), env, NOW)).json()).total, 3, 'everyone else still gets the filtered board');
   // GET /scores shows the whole board with ids, the ban mark and the public rank
   const all = await (await adminReq('/scores?board=wave10')).json();
-  assert.equal(all.season, 'all'); assert.deepEqual(all.rows.map(x => [x.nick, x.banned, x.rank]), [['macro', 1, undefined], ['alpha', 0, 1], ['bravo', 0, 2], ['charlie', 0, 3]]);
+  assert.equal(all.season, 's2'); assert.deepEqual(all.rows.map(x => [x.nick, x.banned, x.rank]), [['macro', 1, undefined], ['alpha', 0, 1], ['bravo', 0, 2], ['charlie', 0, 3]]);
   assert.equal((await adminReq('/scores?board=nope')).status, 400);
   assert.deepEqual(await (await adminReq('/scores/' + all.rows[3].id, {method: 'DELETE'})).json(), {ok: true, deleted: 1});
   assert.deepEqual(await (await adminReq('/scores/' + all.rows[3].id, {method: 'DELETE'})).json(), {ok: true, deleted: 0});
@@ -378,7 +391,7 @@ test('http surface: CORS preflight, health, 400/404/413 and 500 without leaking 
   const pre = await w.handle(req('/submit', {method: 'OPTIONS'}), env, NOW);
   assert.equal(pre.status, 204); assert.equal(pre.headers.get('access-control-allow-origin'), ORIGIN, 'echoes the allowed origin, never *');
   assert.match(pre.headers.get('access-control-allow-headers'), /content-type/); assert.match(pre.headers.get('access-control-allow-methods'), /DELETE/);
-  const health = await w.handle(req('/'), env, NOW); assert.equal(health.status, 200); assert.equal((await health.json()).season, 'all');
+  const health = await w.handle(req('/'), env, NOW); assert.equal(health.status, 200); assert.equal((await health.json()).season, 's2');
   assert.equal((await w.handle(req('/top'), env, NOW)).status, 400);
   assert.equal((await w.handle(req('/top?board=free'), env, NOW)).status, 400);
   for (const b of ['constructor', '__proto__', 'toString']) {
@@ -390,7 +403,8 @@ test('http surface: CORS preflight, health, 400/404/413 and 500 without leaking 
   assert.equal((await w.handle(req('/visits', {method: 'DELETE'}), env, NOW)).status, 404);
   const badJson = await submit('{oops')(w, env); assert.equal(badJson.status, 400); assert.deepEqual(await badJson.json(), {error: 'json'});
   const badNick = await submit(entry({nick: 'x'}))(w, env); assert.equal(badNick.status, 400); assert.deepEqual(await badNick.json(), {error: 'nick'});
-  assert.equal((await submit('x'.repeat(2001))(w, env)).status, 413);
+  assert.equal((await submit('x'.repeat(w.SUBMIT_MAX + 1))(w, env)).status, 413, 'a submit may carry a replay (결정 39(replay)), so its cap is higher');
+  assert.equal((await submit('x'.repeat(2001))(w, env)).status, 400);
   assert.equal((await post('/posts', 'x'.repeat(2001))(w, env)).status, 413);
   assert.equal((await submit(entry())(w, env)).status, 403, 'valid shape but no token');
   assert.equal(env.DB.rows.length, 0, 'rejected submissions are never stored'); assert.equal(env.DB.posts.length, 0);
@@ -446,4 +460,177 @@ for(const B of ['wsc','giwon'])test(B+' leaderboard validates completed counts, 
   for(const over of [{score:11},{score:8.5},{tie:9},{detail:{hits:7,target:10,best:3}},{detail:{hits:8,target:9,best:3}}])assert.ok(w.validate(entry({...score('alpha',8,3),...over})).error);
   const denied=await w.handle(req('/score',{method:'DELETE',body:JSON.stringify({board:B,nick:'alpha',token:api.tokens.bravo})}),env,NOW);assert.equal(denied.status,403);
   const removed=await w.handle(req('/score',{method:'DELETE',body:JSON.stringify({board:B,nick:'alpha',token:api.tokens.alpha})}),env,NOW);assert.equal(removed.status,200);assert.equal((await removed.json()).total,2);
+});
+
+/* ---------- 결정 39(replay): replays stay only with the public top 10 ---------- */
+const rp = (board = 'wave10', n = 1) => ({v: 1, board, char: 'kazuya', win: 12, init: 0, ev: [0, 33, ...Array.from({length: n}, (_, i) => [16667, i % 2 ? 0 : 1]).flat()]});
+const getReplay = async (w, env, id, now = NOW) => w.handle(req('/replay?id=' + id), env, now);
+test('replay: kept with a top-10 best, replaced on improvement, dropped when the best changes without one or falls out of the top 10', async () => {
+  const w = await worker(), env = {DB: fakeD1()}, me = owned(w, env);
+  const a = await (await me.submit({nick: 'alpha', score: 5, tie: 1, replay: rp('wave10', 3)})).json();
+  assert.equal(a.improved, true); assert.equal(a.me.replay, true); assert.equal(a.rows[0].replay, true);
+  const got = await (await getReplay(w, env, a.id)).json();
+  assert.equal(got.nick, 'alpha'); assert.equal(got.score, 5); assert.deepEqual(got.replay.ev, rp('wave10', 3).ev); assert.equal(got.replay.board, 'wave10');
+  // a worse run keeps the stored best and its replay
+  const worse = await (await me.submit({nick: 'alpha', score: 4, tie: 1, replay: rp('wave10', 1)}, NOW + 1)).json(); // improved = the row's created_at is this request's time
+  assert.equal(worse.improved, false); assert.deepEqual((await (await getReplay(w, env, a.id)).json()).replay.ev, rp('wave10', 3).ev);
+  // a better run replaces it; a better run without one drops the old replay (it showed another run)
+  await me.submit({nick: 'alpha', score: 6, tie: 1, replay: rp('wave10', 5)}, NOW + 2);
+  assert.deepEqual((await (await getReplay(w, env, a.id)).json()).replay.ev, rp('wave10', 5).ev);
+  const bare = await (await me.submit({nick: 'alpha', score: 7, tie: 1}, NOW + 3)).json();
+  assert.equal(bare.me.replay, false); assert.equal((await getReplay(w, env, a.id)).status, 404);
+  // ten better players push a replay out of the top 10 and the table forgets it
+  await me.submit({nick: 'alpha', score: 7.5, tie: 1, replay: rp()}, NOW + 4);
+  const flags = o => [...o.rows.map(r => [r.nick, r.replay]), ['me', o.me && o.me.replay]];
+  for (let i = 0; i < 10; i++) {
+    const ans = await (await me.submit({nick: 'p' + i + 'x', score: 8 + i, tie: 0, replay: i === 4 ? undefined : rp()}, NOW + 5 + i)).json();
+    const fresh = await (await w.handle(req('/top?board=wave10&nick=p' + i + 'x'), env, NOW + 5 + i)).json();
+    assert.deepEqual(flags(ans), flags(fresh), 'the submit answer carries the replay flags the table now holds, without a second scan: ' + i);
+  }
+  assert.equal((await getReplay(w, env, a.id)).status, 404, 'eleventh place keeps no replay');
+  assert.equal(env.DB.db.prepare("SELECT COUNT(*) AS n FROM replays WHERE board='wave10'").get().n, 9, 'p4x sent none');
+  const out = await (await me.submit({nick: 'late', score: 1, tie: 0, replay: rp()}, NOW + 20)).json();
+  assert.equal(out.me.replay, false, 'a run outside the top 10 is never stored');
+});
+test('replay: malformed replays are dropped but the score counts; boards are kept apart; deletes and bans take the replay along', async () => {
+  const w = await worker(), env = {DB: fakeD1(), ADMIN_TOKEN: 's3cret'}, me = owned(w, env);
+  for (const bad of [{...rp(), board: 'rush30'}, {...rp(), v: 2}, {...rp(), ev: [0]}, {...rp(), ev: [0, 99]}, {...rp(), ev: [0.5, 1]}, {...rp(), char: 'nobody'}, {...rp(), hits: '10x'}, {...rp(), moves: {ewgf: 2}}, {...rp(), init: 81}, {...rp(), init: -1}, {...rp(), init: 1.5}, 'text', [1, 2]]) {
+    assert.equal(w.cleanReplay(bad, 'wave10'), undefined, JSON.stringify(bad));
+  }
+  assert.equal(w.cleanReplay(null, 'wave10'), null);
+  assert.equal(JSON.parse(w.cleanReplay({...rp(), init: 8 * 9 + 8}, 'wave10')).init, 80, 'init = held direction*9 + previous direction, both up to 8');
+  assert.equal(JSON.parse(w.cleanReplay({...rp('rush30'), seed: 1760000000000, hits: '0110', moves: {ewgf: 1, giwon: 0}, extra: 'x'}, 'rush30')).extra, undefined, 'unknown fields are not stored');
+  assert.equal(w.cleanReplay({...rp(), ev: Array(w.REPLAY_EVENTS * 2 + 2).fill(1)}, 'wave10'), undefined, 'too many events');
+  const bad = await (await me.submit({nick: 'alpha', replay: {...rp(), board: 'rush30'}})).json();
+  assert.equal(bad.ok, true); assert.equal(bad.me.replay, false);
+  const big = await me.submit({nick: 'bravo', score: 9, replay: rp('wave10', 3000)}); // ~6000 numbers: over the old 2000-char body cap, under SUBMIT_MAX
+  assert.equal(big.status, 200); assert.equal((await big.json()).me.replay, true);
+  const bd = await (await me.submit({nick: 'alpha', board: 'bd10', score: 12, tie: 3, detail: {dashes: 20, top: 3, chain: 5}, replay: rp('bd10')})).json();
+  assert.equal(bd.me.replay, true);
+  const wave = (await (await w.handle(req('/top?board=wave10'), env, NOW)).json()).rows.find(r => r.nick === 'alpha');
+  assert.equal(wave.replay, false, 'the bd10 replay is not the wave10 one');
+  // own delete
+  const del = await (await w.handle(req('/score', {method: 'DELETE', body: JSON.stringify({board: 'bd10', nick: 'alpha', token: me.tokens.alpha})}), env, NOW)).json();
+  assert.equal(del.deleted, 1); assert.equal((await getReplay(w, env, bd.id)).status, 404);
+  // a ban hides the replay from everyone; an admin delete removes it
+  const bravo = (await (await w.handle(req('/top?board=wave10'), env, NOW)).json()).rows.find(r => r.nick === 'bravo');
+  const auth = {authorization: 'Bearer s3cret'};
+  await w.handle(req('/ban', {method: 'POST', headers: auth, body: JSON.stringify({nick: 'bravo'})}), env, NOW);
+  assert.equal((await getReplay(w, env, bravo.id)).status, 404);
+  await w.handle(req('/ban?nick=bravo', {method: 'DELETE', headers: auth}), env, NOW);
+  assert.equal((await getReplay(w, env, bravo.id)).status, 200);
+  await w.handle(req('/scores/' + bravo.id, {method: 'DELETE', headers: auth}), env, NOW);
+  assert.equal(env.DB.db.prepare('SELECT COUNT(*) AS n FROM replays WHERE score_id=?').get(bravo.id).n, 0);
+  assert.equal((await getReplay(w, env, 'x')).status, 400);
+});
+test('replay: a banned player never stores one, and its run does not push a visible replay out', async () => {
+  const w = await worker(), env = {DB: fakeD1(), ADMIN_TOKEN: 's3cret'}, me = owned(w, env);
+  for (let i = 0; i < 10; i++) await me.submit({nick: 'p' + i + 'x', score: 1 + i, tie: 0, replay: rp()});
+  me.tokens.cheat = (await claim(w, env, 'cheat')).token;
+  await w.handle(req('/ban', {method: 'POST', headers: {authorization: 'Bearer s3cret'}, body: JSON.stringify({nick: 'cheat'})}), env, NOW);
+  const r = await (await me.submit({nick: 'cheat', score: 19, tie: 0, replay: rp()})).json();
+  assert.equal(r.me.replay, false);
+  assert.equal(env.DB.db.prepare("SELECT COUNT(*) AS n FROM replays WHERE board='wave10'").get().n, 10, 'the 10th visible player keeps theirs');
+});
+
+/* ---------- 결정 41(crown): crowns over the Challenge Mode top 10 ---------- */
+test('crowns: /posts lists [board, rank] for nicknames in a crown board top 10 (shared places, bans skipped, cache cleared by this isolate)', async () => {
+  const w = await worker(), env = {DB: fakeD1(), ADMIN_TOKEN: 's3cret'}, me = owned(w, env);
+  await me.submit({nick: 'alpha', score: 9, tie: 1});
+  await me.submit({nick: 'bravo', score: 9, tie: 1});
+  await me.submit({nick: 'alpha', board: 'bd10', score: 12, tie: 3, detail: {dashes: 20, top: 3, chain: 5}});
+  await me.submit({nick: 'charlie', board: 'ewgf20', score: 100, tie: 0, detail: {hits: 20, target: 20, mean: 0}}); // a switched-off board: no crown
+  for (const nick of ['alpha', 'bravo', 'charlie']) await me.post({nick, text: 'hi ' + nick}, NOW + 1);
+  let res = await (await w.handle(req('/posts'), env, NOW + 2)).json();
+  assert.deepEqual(res.crowns, {alpha: [['wave10', 1], ['bd10', 1]], bravo: [['wave10', 1]]});
+  // a new submit in this isolate refreshes the crowns at once
+  await me.submit({nick: 'charlie', score: 10, tie: 0}, NOW + 3);
+  res = await (await w.handle(req('/posts'), env, NOW + 4)).json();
+  assert.deepEqual(res.crowns.charlie, [['wave10', 1]]); assert.deepEqual(res.crowns.alpha, [['wave10', 2], ['bd10', 1]]);
+  // a ban takes the crown away
+  await w.handle(req('/ban', {method: 'POST', headers: {authorization: 'Bearer s3cret'}, body: JSON.stringify({nick: 'charlie'})}), env, NOW + 5);
+  res = await (await w.handle(req('/posts'), env, NOW + 6)).json();
+  assert.equal(res.crowns.charlie, undefined); assert.deepEqual(res.crowns.alpha, [['wave10', 1], ['bd10', 1]]);
+  // reads are cached for a few minutes: another isolate's change shows after the TTL
+  env.DB.db.prepare("DELETE FROM scores WHERE nick='bravo'").run();
+  assert.deepEqual((await (await w.handle(req('/posts'), env, NOW + 7)).json()).crowns.bravo, [['wave10', 1]]);
+  assert.equal((await (await w.handle(req('/posts'), env, NOW + 7 + 5 * 60e3)).json()).crowns.bravo, undefined);
+});
+
+/* ---------- 결정 40(post-edit): own edits and deletes ---------- */
+test('post edit/delete: only the author, text rules kept, edited_at set, placeholder while others replied, votes and replies follow', async () => {
+  const w = await worker(), env = {DB: fakeD1()}, me = owned(w, env);
+  const id = (await (await me.post({nick: 'alpha', text: 'first'})).json()).id;
+  const lone = (await (await me.post({nick: 'alpha', text: 'lonely'})).json()).id;
+  await me.reply({nick: 'bravo', id, text: 'bravo reply'});
+  const call = (method, p, body, now = NOW + 10) => w.handle(req(p, {method, body: JSON.stringify(body)}), env, now);
+  const edit = (nick, body, now) => call('POST', '/edit', {nick, token: me.tokens[nick], ...body}, now);
+  const remove = (nick, body, now) => call('DELETE', '/post', {nick, token: me.tokens[nick], ...body}, now);
+  assert.equal((await edit('bravo', {kind: 'post', id, text: 'hijack'})).status, 403);
+  assert.deepEqual(await (await edit('bravo', {kind: 'post', id, text: 'hijack'})).json(), {error: 'owner'});
+  assert.equal((await edit('alpha', {kind: 'post', id, text: ' '})).status, 400);
+  assert.equal((await edit('alpha', {kind: 'note', id, text: 'x'})).status, 400);
+  assert.equal((await edit('alpha', {kind: 'post', id: 999, text: 'x'})).status, 404);
+  assert.equal((await call('POST', '/edit', {nick: 'alpha', token: 'nope', kind: 'post', id, text: 'x'})).status, 403);
+  const ok = await (await edit('alpha', {kind: 'post', id, text: '  second\nversion '}, NOW + 20)).json();
+  const row = ok.rows.find(p => p.id === id);
+  assert.equal(row.text, 'second version'); assert.equal(row.edited_at, NOW + 20);
+  const replyId = row.replies[0].id;
+  assert.equal((await edit('alpha', {kind: 'reply', id: replyId, text: 'not mine'})).status, 403);
+  const re = await (await edit('bravo', {kind: 'reply', id: replyId, text: 'bravo edited'}, NOW + 30)).json();
+  assert.equal(re.rows.find(p => p.id === id).replies[0].edited_at, NOW + 30);
+  // a vote, then the author deletes: placeholder with the reply, no nick/text/votes, no new replies or votes
+  await post('/vote', {nick: 'bravo', token: me.tokens.bravo, id, v: 1})(w, env);
+  const gone = await (await remove('alpha', {kind: 'post', id})).json();
+  const ph = gone.rows.find(p => p.id === id);
+  assert.deepEqual([ph.deleted, ph.nick, ph.text, ph.up, ph.replies.length], [1, '', '', 0, 1]);
+  assert.equal(env.DB.votes.length, 0);
+  assert.equal((await me.reply({nick: 'bravo', id, text: 'late'})).status, 404);
+  assert.equal((await post('/vote', {nick: 'bravo', token: me.tokens.bravo, id, v: 1})(w, env)).status, 404);
+  assert.equal((await edit('alpha', {kind: 'post', id, text: 'undo'})).status, 404, 'a placeholder is not editable');
+  // a post nobody replied to goes for good; the last reply leaving takes the placeholder along
+  const l = await (await remove('alpha', {kind: 'post', id: lone})).json();
+  assert.equal(l.rows.some(p => p.id === lone), false);
+  const last = await (await remove('bravo', {kind: 'reply', id: replyId})).json();
+  assert.equal(last.rows.some(p => p.id === id), false); assert.equal(env.DB.posts.length, 0);
+  assert.equal((await w.handle(req('/post', {method: 'DELETE', headers: {origin: 'https://evil.example'}, body: '{}'}), env, NOW)).status, 403, 'origin gate');
+});
+test('own post delete: a reply, a vote or the last reply leaving between its statements leaves no orphan reply, stray vote or empty placeholder', async () => {
+  // Another request's single statement (the same SQL /reply, /vote and a reply delete run) lands right after the k-th statement of the delete.
+  const others = {
+    reply: db => db.prepare("INSERT INTO replies (post_id,nick,text,created_at) SELECT 1,'charlie','late',1 WHERE EXISTS (SELECT 1 FROM posts WHERE id=1 AND deleted=0)").run(),
+    vote: db => db.prepare("INSERT INTO votes (post_id,key,v,created_at) SELECT 1,'charlie',1,1 WHERE EXISTS (SELECT 1 FROM posts WHERE id=1 AND deleted=0) ON CONFLICT(post_id,key) DO UPDATE SET v=excluded.v").run(),
+    unreply: db => { db.prepare('DELETE FROM replies WHERE post_id=1').run(); db.prepare('DELETE FROM posts WHERE id=1 AND deleted=1 AND NOT EXISTS (SELECT 1 FROM replies WHERE post_id=1)').run(); },
+  };
+  for (const [name, other] of Object.entries(others)) for (let k = 0; k < 14; k++) {
+    const w = await worker(), d1 = fakeD1(), env = {DB: d1}, me = owned(w, env);
+    await me.post({nick: 'alpha', text: 'first'});
+    if (name === 'unreply') await me.reply({nick: 'bravo', id: 1, text: 'hi'});
+    let n = 0;
+    env.DB = {prepare(sql) { const st = d1.prepare(sql), after = f => async (...a) => { const r = await f(...a); if (n++ === k) other(d1.db); return r; };
+      const w2 = {bind(...a) { st.bind(...a); return w2; }, run: after(st.run), all: after(st.all), first: after(st.first)}; return w2; }};
+    const res = await w.handle(req('/post', {method: 'DELETE', body: JSON.stringify({kind: 'post', id: 1, nick: 'alpha', token: me.tokens.alpha})}), env, NOW + 10);
+    assert.equal(res.status, 200, name + ' at ' + k);
+    const count = sql => d1.db.prepare(sql).get().n;
+    assert.equal(count('SELECT COUNT(*) AS n FROM replies r WHERE NOT EXISTS (SELECT 1 FROM posts p WHERE p.id=r.post_id)'), 0, 'orphan reply: ' + name + ' at ' + k);
+    assert.equal(count('SELECT COUNT(*) AS n FROM votes v WHERE NOT EXISTS (SELECT 1 FROM posts p WHERE p.id=v.post_id AND p.deleted=0)'), 0, 'stray vote: ' + name + ' at ' + k);
+    assert.equal(count('SELECT COUNT(*) AS n FROM posts p WHERE p.deleted=1 AND NOT EXISTS (SELECT 1 FROM replies r WHERE r.post_id=p.id)'), 0, 'empty placeholder: ' + name + ' at ' + k);
+    assert.equal(count('SELECT COUNT(*) AS n FROM posts WHERE id=1 AND deleted=0'), 0, 'the post is gone or a placeholder: ' + name + ' at ' + k);
+  }
+  // 결정 40(post-edit): any reply keeps the thread, the author's own reply too
+  const w = await worker(), env = {DB: fakeD1()}, me = owned(w, env);
+  await me.post({nick: 'alpha', text: 'first'}); await me.reply({nick: 'alpha', id: 1, text: 'my own reply'});
+  await w.handle(req('/post', {method: 'DELETE', body: JSON.stringify({kind: 'post', id: 1, nick: 'alpha', token: me.tokens.alpha})}), env, NOW + 10);
+  assert.deepEqual(env.DB.posts.map(p => [p.id, p.deleted]), [[1, 1]]); assert.equal(env.DB.replies.length, 1);
+});
+test('migration 2026-10-16: an existing posts/replies table gets edited_at and deleted', async () => {
+  const {DatabaseSync} = require('node:sqlite');
+  const db = new DatabaseSync(':memory:');
+  db.exec('CREATE TABLE posts (id INTEGER PRIMARY KEY AUTOINCREMENT, nick TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL); CREATE TABLE replies (id INTEGER PRIMARY KEY AUTOINCREMENT, post_id INTEGER NOT NULL, nick TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL)');
+  db.prepare('INSERT INTO posts (nick,text,created_at) VALUES (?,?,?)').run('alpha', 'old', 1);
+  db.exec(fs.readFileSync(path.join(__dirname, '../worker/migrate-2026-10-16-post-edit.sql'), 'utf8'));
+  assert.deepEqual({...db.prepare('SELECT * FROM posts').get()}, {id: 1, nick: 'alpha', text: 'old', created_at: 1, edited_at: null, deleted: 0});
+  assert.ok(db.prepare('PRAGMA table_info(replies)').all().some(c => c.name === 'edited_at'));
+  db.exec(fs.readFileSync(path.join(__dirname, '../worker/schema.sql'), 'utf8')); // schema.sql stays safe to re-run on the migrated database (creates replays)
+  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE name='replays'").get());
 });

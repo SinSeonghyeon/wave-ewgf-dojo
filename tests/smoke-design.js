@@ -53,9 +53,7 @@ stageAssets(source,out);
      else assert.ok(layout.posts.top>=layout.stage.bottom,'community below stage on smaller screens');
      if(mode==='wsc'){
        assert.ok(layout.panel.top>=layout.stage.bottom,'WSC evaluation below play');
-       const side=await b.evalJs(`document.querySelector('#sideSel').getBoundingClientRect().toJSON()`);
-       assert.ok(layout.start.right<=side.left&&side.left-layout.start.right<20,'challenge start beside side buttons');
-       assert.ok(layout.start.top>=layout.stage.top&&layout.start.bottom<layout.stage.top+100,'challenge start at stage top');
+       assert.equal(layout.start.width,0,'the WSC 10-try challenge is switched off (결정 38(challenge-mode)): no start button');
      }
      const r=await bounds();assert.ok(r.scroll<=r.width,`${width}/${lang}/${mode}: no horizontal overflow`);
      assert.ok(r.ledger.left>=r.stage.left&&r.ledger.right<=r.stage.right&&r.ledger.bottom<=r.stage.bottom,`${width}/${lang}/${mode}: ledger inside stage`);
@@ -70,7 +68,7 @@ stageAssets(source,out);
     await b.send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<500});
     await b.send('Emulation.setTouchEmulationEnabled',{enabled:width<500,maxTouchPoints:5});
     await b.evalJs(`document.querySelector('[data-lang="ko"]').click()`);
-    await b.evalJs(`document.querySelector('[data-mode="wave10"]').click();document.querySelector('#dStart').click()`);
+    await b.evalJs(`document.querySelector('#challengeOpen').click();document.querySelector('#challengeList [data-mode="wave10"]').click();document.querySelector('#dStart').click()`);
     const clock=async id=>b.evalJs(`(()=>{const r=document.getElementById('${id}').getBoundingClientRect(),s=document.querySelector('#stageBox').getBoundingClientRect();return {center:(r.left+r.right-s.left-s.right)/2,top:r.top-s.top,text:document.getElementById('${id}').textContent};})()`);
     const countdown=await clock('hudCenter');assert.ok(Math.abs(countdown.center)<2);assert.ok(countdown.top<80);assert.match(countdown.text,/3/);
     await sleep(3550);const running=await clock('hudTimer');assert.ok(Math.abs(running.center)<2);assert.ok(running.top<80);assert.match(running.text,/\d+\.\d/);

@@ -80,8 +80,8 @@ let browser, server;
   for(const lang of ['ja','ko','en','ja','ko']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${lang}"]').click()`);
     const notice=await evalJs(`(()=>{const list=document.querySelector('#noticeList'),first=list.querySelector('.notice-item');return {lang:document.documentElement.lang,count:list.querySelectorAll('.notice-item').length,title:first.querySelector('h3').textContent,highlight:list.querySelector('.notice-highlight h4').textContent,items:first.querySelectorAll(':scope > ul > li').length,text:list.textContent}})()`);
-    assert.equal(notice.lang,lang);assert.equal(notice.count,8);assert.equal(notice.items,7);
-    assert.equal(notice.title,dict[lang]['notice.20261016.title']);
+    assert.equal(notice.lang,lang);assert.equal(notice.count,8);assert.equal(notice.items,14);
+    assert.equal(notice.title,dict[lang]['notice.20261017.title']);
     assert.equal(notice.highlight,dict[lang]['notice.wedding.title']);
     if(lang!=='ja')assert.doesNotMatch(notice.text,/[\u3040-\u30ff]/,lang+' must not show Japanese notice text');
     for(const width of [320,390,1280]){
@@ -101,11 +101,11 @@ let browser, server;
   await evalJs(`document.querySelector('#bgmNext').click()`);await sleep(500);
   assert.ok(new Set(seen.filter(p=>p.startsWith('/bgm/')&&p.endsWith('.mp3'))).size>=2,'current and next BGM use root assets');
   assert.ok(seen.includes('/bgm/playlist.json'));assert.ok(seen.includes('/sfx/wave.mp3'));
-  const guides={free:'guide/',wsc:'guide/wsc/',giwon:'guide/giwon-link/',wave10:'guide/wave-dash/',ewgf20:'guide/ewgf/',combo10:'guide/wave-dash/',rush30:'guide/ewgf/',bd10:'guide/backdash/'};
+  const guides={free:'guide/',wave:'guide/wave-dash/',wsc:'guide/wsc/',giwon:'guide/giwon-link/',rush:'guide/ewgf/',backdash:'guide/backdash/',wave10:'guide/wave-dash/',rush30:'guide/ewgf/',bd10:'guide/backdash/'}; // ewgf20·combo10 are switched off; a name with a digit is a challenge, picked in the 도전 모드 window (결정 38(challenge-mode))
   for(const lang of ['ko','en','ja']){
     await evalJs(`document.querySelector('#langSel button[data-lang="${lang}"]').click()`);
     for(const [mode,slug] of Object.entries(guides)){
-      await evalJs(`document.querySelector('[data-mode="${mode}"]').click()`);
+      await evalJs(!/\d/.test(mode)?`document.querySelector('[data-mode="${mode}"]').click()`:`document.querySelector('#challengeOpen').click();document.querySelector('#challengeList [data-mode="${mode}"]').click()`);
       assert.equal(await evalJs('document.querySelector("#dGuide").href'),base+'/'+lang+'/'+slug);
     }
     const links=await evalJs('[...document.querySelectorAll("[data-page]")].map(a=>({href:a.href,slug:a.dataset.page}))');

@@ -74,8 +74,9 @@ test('rush30: typed dummies, wave points by chain, 10 for the right move, 5 for 
   a.trialTick(4000+30000);assert.equal(a.trial.running,false);assert.equal(a.world.dummy.type,null,'plain dummy is back');
   const rec=a.store.records.rush30[0];assert.equal(rec.score,46);assert.equal(rec.kills,3);assert.equal(rec.whiffs,4);assert.equal(rec.dashPts,21,'15 from the chain + 1 per single dash');
   assert.equal(rec.label,'46 pts');assert.equal(rec.sub,'3 destroyed · 4 whiffs · wave 21 pts');assert.ok(a.get('bests').innerHTML.includes('46 pts'));
-  const e=JSON.parse(JSON.stringify(a.boardEntry(a.trial.result,'rush30')));
-  assert.deepEqual(e,{board:'rush30',win:12,lang:'en',score:46,tie:3,detail:{kills:3,whiffs:4,dashPts:21,char:'kazuya'}});assert.equal(w.validate({...e,nick:'smoke'}).error,undefined);
+  const {replay,...e}=JSON.parse(JSON.stringify(a.boardEntry(a.trial.result,'rush30')));
+  assert.deepEqual(e,{board:'rush30',win:12,lang:'en',score:46,tie:3,detail:{kills:3,whiffs:4,dashPts:21,char:'kazuya'}});
+  assert.equal(replay.hits.length,7,'one hit bit per strike: 3 kills + 4 whiffs (결정 39(replay))');assert.equal([...replay.hits].filter(b=>b==='1').length,3);assert.ok(Number.isSafeInteger(replay.seed));assert.ok(w.cleanReplay(replay,'rush30'));assert.equal(w.validate({...e,nick:'smoke'}).error,undefined);
   assert.equal(a.boardRowText('rush30',{score:46,detail:e.detail}).sub,'3 destroyed · 4 whiffs · wave 21 pts');
   const card=a.buildCard(a.shareSource());assert.equal(card.hero.value,'46');assert.equal(card.hero.label,'Points');assert.equal(card.metrics[0].value,'3');assert.ok(card.sub.includes('46 pts'));
   assert.doesNotMatch(JSON.stringify(card),/(^|[\s"])(card|rec|trial|mode)\.[a-zA-Z0-9]+/);
@@ -122,4 +123,23 @@ test('rush30: all moves respawn on the first frame at or after 700ms at every re
   }
   const a=boot();a.rushSpawn();a.world.dummy.type='high';a.world.dummyX=a.world.charX+60;a.tryHit('ewgf');
   a.updateDummy(1700);assert.equal(a.world.dummy.hit,0,'deadline wins even if no launch frame ran');
+});
+test('더미 격파 연습 (결정 38(challenge-mode)): typed dummies keep coming with no clock, points, record or board; a cancel keeps them, another tab gets the plain bag',()=>{
+  const a=boot({v:4,lang:'en'}), d=a.world.dummy;assert.equal(d.type,null);
+  a.setMode('rush');assert.ok(a.DUMMY_TYPES.includes(d.type),'a typed dummy at once, with no 시작');assert.equal(a.trial.running,false);
+  const near=type=>{d.type=type;a.world.dummyX=a.world.charX+60;d.alive=true;d.hit=0;d.respawn=0;};
+  const tongbal=t=>{a.time(t);a.onDir('f',t);a.onDir('n',t+10);a.onDir('f',t+20);a.onButton(2,t+20);a.onDir('n',t+30);};
+  near('mid');tongbal(1000);assert.equal(d.hit,1,'the right move knocks it');assert.equal(a.get('hudScore').textContent,'','no points');
+  const due=d.respawn;a.time(due);a.updateDummy(due);assert.ok(a.DUMMY_TYPES.includes(d.type));assert.equal(d.hit,0);assert.equal(d.alive,true,'the next dummy 700ms after the hit');
+  near('low');const whiffs=()=>a.pops.filter(p=>p.text===a.T('pop.whiff')).length, w0=whiffs();
+  tongbal(due+500);assert.equal(d.hit,0,'the wrong move does not knock it');assert.equal(whiffs(),w0+1,'and says so');
+  near('high');dash(a,3000);for(const t of [3100,3300]){a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}
+  assert.equal(a.cd.chain,3);a.onButton(2,3400);assert.equal(d.hit,1,'EWGF on the high dummy');assert.equal(a.cd.chain,3,'the wave chain survives the kill, as in the challenge');
+  assert.equal(a.store.records.rush30.length,0);assert.equal(a.store.life.trials.rush30,0);assert.equal(a.get('dProg').textContent,'');
+  for(const cancel of [a=>a.resetSession(),a=>a.events.blur(),a=>a.endTrial(true)]){cancel(a);assert.ok(a.DUMMY_TYPES.includes(a.world.dummy.type),'a cancel keeps the practice targets');}
+  near('high');a.setSide(-1);assert.ok(a.DUMMY_TYPES.includes(d.type));assert.ok((a.world.dummyX-a.world.charX)*a.store.side>=140,'1P/2P puts a fresh target in front, so the stage never pushes the character past it (review 2026-10-17)');
+  a.setSide(1);assert.ok((a.world.dummyX-a.world.charX)*a.store.side>=140);
+  a.setMode('free');assert.equal(d.type,null,'another tab gets the plain bag');
+  a.setMode('rush');assert.ok(d.type);a.setMode('rush30');assert.equal(d.type,null,'the challenge waits for GO with the plain bag');
+  a.setMode('rush');assert.ok(d.type);a.setChar('bryan');assert.equal(a.get('dName').textContent,a.T('mode.free.name'));assert.equal(d.type,null,'a character without the moves leaves the tab and its dummies');
 });

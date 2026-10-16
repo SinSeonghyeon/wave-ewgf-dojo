@@ -1,5 +1,5 @@
 /* ---------- 백대시 10초 타임라인: one set (backdash out → 1 cancel → 4 N 4 → next backdash) drawn frame by frame ----------
-   bdDir/bdOut/bdBreak hand it what they judged; it never changes judging (결정 17(backdash)). Shown in the bd10 mode, between trials and during them.
+   bdDir/bdOut/bdBreak hand it what they judged; it never changes judging (결정 17(backdash)). Shown in the bd10 mode, between trials and during them, and in 백대시 연습 (bdMode).
    Frame 1 is the backdash coming out (the second 4, counted like startup frames — bdFrameNo); the bar in each cell is how far the backdash has travelled by then (BD.CURVE). */
 const BDP_AXIS = BD_NEXT_F;                          // frames 1..BD_NEXT_F: an uncancelled backdash fits whole (the next one can come out on the last cell), and every set faster than that ends inside it
 const bdpStats = () => ({sets:0, sum:0, best:0, sumH:0, sumHand:0, rows:[]});
@@ -7,27 +7,27 @@ const bdp = {run:null, last:null, row:null, session:bdpStats()}; // run: the set
 const bdpCell = (r, t) => bdFrameNo(t-r.t0);          // the same frame number as the judged cancel frame h (the output is 1f)
 const bdpView = () => bdp.run && bdp.run.events.length>1 ? bdp.run : (bdp.last || bdp.run);
 function bdpStop(t0, t){ // a sidestep/crouch can stop even a released, provisionally full backdash
-  if(mode!=='bd10') return;
+  if(!bdMode()) return;
   const r = [bdp.run, bdp.last].find(r => r && r.t0===t0);
   if(r){ r.stop = bdpCell(r, t); renderBdp(); }
 }
-function bdpClear(){ bdp.run = null; if(mode==='bd10') renderBdp(); }
+function bdpClear(){ bdp.run = null; if(bdMode()) renderBdp(); }
 function bdpReset(){ Object.assign(bdp, {run:null, last:null, row:null, session:bdpStats()}); renderBdp(); } // session reset: the panel's stats and last set go with the rest of the session
 function bdpInput(dir, t){
-  const r = bdp.run; if(!r || mode!=='bd10') return;
+  const r = bdp.run; if(!r || !bdMode()) return;
   r.events.push({dir, t}); if(r.events.length>40) r.events.shift();
   if(dir==='db' && r.h==null) r.h = bdpCell(r, t);
   renderBdp();
 }
 function bdpOut(t, row){ // a backdash came out: the set before it (if any) is complete, a new one starts at this frame 1
-  if(mode!=='bd10') return;
+  if(!bdMode()) return;
   const r = bdp.run;
   if(r){ r.end = t; r.row = row; if(row){ bdpRecord(bdp.session, row); bdp.row = row; } bdp.last = r; }
   bdp.run = {t0:t, events:[{dir:'b', t}], h:null};
   renderBdp();
 }
 function bdpBreak(why){ // the chain broke before the next backdash: keep the set on the axis with the reason
-  const r = bdp.run; if(!r || mode!=='bd10') return;
+  const r = bdp.run; if(!r || !bdMode()) return;
   r.fail = why; bdp.last = r; bdp.run = null; renderBdp();
 }
 function bdpRecord(st, row){
@@ -35,7 +35,7 @@ function bdpRecord(st, row){
   st.rows.unshift(row); if(st.rows.length>12) st.rows.pop();
 }
 function renderBdpLive(now){
-  if(mode!=='bd10') return;
+  if(!bdMode()) return;
   const r = bdp.run, f = r ? bdpCell(r, now) : null;
   const text = !r ? T(bdp.last ? 'bdp.liveDone' : 'bdp.liveReady')
     : r.h==null ? T(f>BD_LAST ? 'bdp.liveStill' : 'bdp.liveDash', f, bdDist(f).toFixed(2))
@@ -45,7 +45,7 @@ function renderBdpLive(now){
   for(const c of $('bdpAxis').querySelectorAll('.wsc-cell')) c.classList.toggle('current', !!r && Math.min(f, BDP_AXIS)===Number(c.dataset.frame));
 }
 function renderBdp(){
-  if(mode!=='bd10') return;
+  if(!bdMode()) return;
   const g = d => glyphFor(d), st = bdp.session;
   // 진행 중인 세트를 따라가되, 1을 누르기 전에는 직전 세트를 그대로 둔다 (기원초 타임라인과 같은 규칙)
   const view = bdpView();

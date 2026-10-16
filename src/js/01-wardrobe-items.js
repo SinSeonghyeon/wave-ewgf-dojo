@@ -87,16 +87,16 @@ const lifeDefault = () => ({dashes:0, ewgf:0, tries:0, tongbal:0, hellsweep:0, g
 const fitDefault = () => Object.fromEntries(SLOTS.map(s => [s,'base']));
 // achievements: id = the item it unlocks. stat(life) is the current value, done when stat >= target. Records-based ones read store.records (best of the last 30).
 const bestRec = (m, f) => (store.records[m]||[]).reduce((b,r) => Math.max(b, f(r)||0), 0);
-const ewgf20Hits = r => Number.isFinite(r.hits) ? r.hits : Math.round(r.score/5); // score is the % rate of 20 attempts
+// 결정 38(challenge-mode), 2026-10-16: master_shoes and devil_legs read the EWGF streak (7 · 20) since 초풍 20회 is switched off — unlocked items stay unlocked (store.ach)
 const ACH = {
   red_head:{target:10, stat:l=>l.dashes}, red_top:{target:1, stat:l=>l.ewgf}, red_arms:{target:1, stat:l=>Math.min(l.tongbal,l.hellsweep)},
   red_legs:{target:5, stat:l=>l.maxChain}, red_shoes:{target:1, stat:l=>l.trials.rush30}, red_skin:{target:3, stat:l=>l.days},
   thunder_head:{target:500, stat:l=>l.dashes}, thunder_top:{target:50, stat:l=>l.ewgf}, thunder_arms:{target:3, stat:l=>l.maxStreak},
   thunder_legs:{target:15, stat:()=>bestRec('wave10', r=>r.dashes)}, thunder_shoes:{target:100, stat:()=>bestRec('rush30', r=>r.score)}, thunder_skin:{target:30, stat:l=>Math.min(l.tongbal,l.hellsweep)},
   master_head:{target:3000, stat:l=>l.dashes}, master_top:{target:300, stat:l=>l.ewgf}, master_arms:{target:5, stat:l=>l.maxStreak},
-  master_legs:{target:20, stat:l=>l.maxChain}, master_shoes:{target:16, stat:()=>bestRec('ewgf20', ewgf20Hits)}, master_skin:{target:10, stat:l=>l.tightEwgf},
+  master_legs:{target:20, stat:l=>l.maxChain}, master_shoes:{target:7, stat:l=>l.maxStreak}, master_skin:{target:10, stat:l=>l.tightEwgf},
   devil_head:{target:10000, stat:l=>l.dashes}, devil_top:{target:1000, stat:l=>l.ewgf}, devil_arms:{target:10, stat:l=>l.maxStreak},
-  devil_legs:{target:20, stat:()=>bestRec('ewgf20', ewgf20Hits)}, devil_shoes:{target:200, stat:()=>bestRec('rush30', r=>r.score)}, devil_skin:{target:30, stat:l=>l.days},
+  devil_legs:{target:20, stat:l=>l.maxStreak}, devil_shoes:{target:200, stat:()=>bestRec('rush30', r=>r.score)}, devil_skin:{target:30, stat:l=>l.days},
   bowl_head:{target:1, stat:l=>l.donate}, // opened the donate window (pressing the button is enough; a real donation cannot be seen)
 };
 let lookCache = null; // slot → item objects for store.fit; rebuilt when the outfit changes

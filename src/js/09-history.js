@@ -5,6 +5,7 @@ const glyphFor = d => { // convert to facing-aware arrow for display
   return {n:'★',f:'←',b:'→',d:'↓',u:'↑',df:'↙',db:'↘',uf:'↖',ub:'↗'}[d];
 };
 let historyStopT=-Infinity, historyPaintT=0, historyMarkup=null;
+const HISTORY_REPLAY = 2000; // 결정 39(replay): a replay keeps every row of the run so it can be scrolled back after it ends
 function pushHistory(ev){
   historyStopT=-Infinity;
   // Device timestamps can arrive out of order across keyboard, touch and pad.
@@ -19,7 +20,7 @@ function pushHistory(ev){
   for(let i=history.length-1;i>=0;i--){
     const current=frameSlot(history[i].t);
     if(current!==slot){ slot=current; groups++; }
-    if(groups>40){ history.splice(0,i+1); break; }
+    if(groups>(REPLAY ? HISTORY_REPLAY : 40)){ history.splice(0,i+1); break; }
   }
   // An already expired sample must not rewrite the oldest retained row's gap.
   if(following && history.includes(ev)) following.gap=following.t-ev.t;

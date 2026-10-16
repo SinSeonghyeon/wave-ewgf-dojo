@@ -249,6 +249,7 @@ function drawTauntSprite(g, sx, gy, now){
 }
 const JU_TRAIL_MS = 220; // how long a point of the 최속 제트어퍼 arc stays
 function frame(now){
+  replayFrame(now); // 결정 39(replay): note the tick time (live) or play the due entries (replay window)
   tick(now); trialTick(now);
   if(now-historyPaintT>80){renderHistory(now);historyPaintT=now;}
   // walking (visual only): hold f/b while nothing else is animating. Blocked just in front of a live dummy; backing away lets the dummy respawn off-screen.

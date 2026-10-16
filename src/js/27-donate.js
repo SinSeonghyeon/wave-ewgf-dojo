@@ -37,6 +37,7 @@ function donateNudgeMaybe(day=KST_DAY()){
   donateNudgeTimer=setTimeout(donateNudgeClear,8000); return true;
 }
 function practiceInput(){
+  if(REPLAY) return; // a replay is not practice time
   const day=KST_DAY(); if(store.donatePlayDay!==day){ store.donatePlayDay=day; store.donatePlayMs=0; practiceSavedMs=0; saveSoon(); }
   practiceLastAt=performance.now();
 }

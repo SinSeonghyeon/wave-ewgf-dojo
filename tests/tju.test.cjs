@@ -21,7 +21,7 @@ const key = (a, type, code, t) => a.events[type]({code, timeStamp:t, target:{tag
 
 test('Bryan: the backdash yes, no wave and none of the Mishima moves; the tju tab and its board',()=>{
   const a=br();
-  assert.deepEqual(Object.keys(a.MODES).filter(a.modeAvail),['free','tju','ju','bd10']);
+  assert.deepEqual(Object.keys(a.MODES).filter(a.modeAvail),['free','tju','ju','backdash','bd10']);
   assert.equal(boot().modeAvail('tju'),false);assert.equal(boot({char:'hwoarang'}).modeAvail('tju'),false);
   assert.ok(a.BOARDS.includes('tju'));assert.equal(a.boardMixed('tju'),false);assert.equal(a.boardMixed('bd10'),true);
   dash(a,1000);assert.equal(a.session.dashes,0,'no crouch dash, so no wave');
