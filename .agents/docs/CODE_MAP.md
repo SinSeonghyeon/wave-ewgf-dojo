@@ -65,7 +65,7 @@
 | `src/js/35-dojo3d.js` | WebGL 3D 도장·Canvas 대체, `frame()` 렌더 루프, 도발 레퍼런스 스프라이트 `drawTauntSprite`(`tauntSprite`), 최속 제트어퍼 궤적(`juTrail`) |
 | `src/js/36-boot.js` | 부트 순서 |
 | `src/assets/room-atlas.webp` | 목재/회벽 재질 아틀라스(자체 생성) |
-| `src/assets/portrait-kazuya.webp` · `src/assets/portrait-hwoarang.webp` · `src/assets/portrait-bryan.webp` | 캐릭터 선택 초상(tekken.com 공식 fighter-select 이미지를 240×300 WebP로 자름, 2026-10-11 사용자 결정 — 결정 3 예외. 브라이언은 2026-10-15 같은 예외 적용, 확인 필요). `CHARS[id].portrait`에 data URI로 인라인 |
+| `src/assets/portrait-kazuya.webp` · `src/assets/portrait-hwoarang.webp` · `src/assets/portrait-bryan.webp` | 캐릭터 선택 초상(tekken.com 공식 fighter-select 이미지를 240×300 WebP로 자름, 2026-10-11 사용자 결정 — 결정 3 예외. 브라이언은 2026-10-15 같은 예외 적용, 2026-10-16 사용자 확인). `CHARS[id].portrait`에 data URI로 인라인 |
 | `src/pages/ko.js` · `en.js` · `ja.js` | 가이드·소개·문의(`/<언어>/about/`)·개인정보처리방침 원고(CommonJS, 앱에 포함되지 않음). 세 파일은 같은 slug 순서와 `ui` 키. 본문 링크 `href="@<slug>"`는 같은 언어 페이지, `@`만 쓰면 연습 화면 |
 | `src/pages/page.css` | 가이드·소개·개인정보 페이지 스타일. 색 토큰은 빌드가 `src/style.css`의 `:root`를 복사해 붙인다 |
 
