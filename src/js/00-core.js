@@ -27,8 +27,11 @@ const BD_FULL = BD.CURVE[BD_LAST-1];                                          //
 const BD_NEXT_F = BD.RECOVER_F+1;                                             // 캔슬 없는 백대시 뒤 다음 백대시가 나올 수 있는 첫 프레임 번호
 const BD_MOVE_MS = (BD_LAST-1)*FRAME;                                         // 출력(1f)부터 BD_LAST f에 멈출 때까지 걸리는 시간 (연출도 이 길이)
 // 프레임 원점은 이 두 함수에만 둔다: bdFrameNo는 "몇 f째인가"(출력 = 1f), bdF는 "몇 f 동안인가"(구간 길이, 최소 1f). 섞어 쓰면 1f가 조용히 어긋난다.
-const bdFrameNo = ms => Math.round(Math.max(0, ms)/FRAME)+1;                  // backdash frame number of a moment ms after the output: the output frame (second 4) is 1f, like startup frames
-const bdF = ms => Math.max(1, Math.round(ms/FRAME));                          // length of an interval in frames (hand, 1 hold, 4 N 4), as the history strip shows it
+// 결정 39(replay): a replay may move an input on a 60Hz slot edge by a µs or two (recPush), so an interval of exactly half a frame must not
+// rest on float noise — both functions add BD_ROUND (2e-4 f ≈ 3.3µs, more than that move, far below a frame) and round it up, live and replayed alike
+const BD_ROUND = 2e-4;
+const bdFrameNo = ms => Math.round(Math.max(0, ms)/FRAME + BD_ROUND)+1;                  // backdash frame number of a moment ms after the output: the output frame (second 4) is 1f, like startup frames
+const bdF = ms => Math.max(1, Math.round(ms/FRAME + BD_ROUND));                          // length of an interval in frames (hand, 1 hold, 4 N 4), as the history strip shows it
 const bdDist = h => h<1 ? 0 : BD.CURVE[Math.min(h, BD_LAST)-1];               // metres earned by a backdash cancelled on frame h (the output frame is 1f)
 const bdMps = (dist, period) => Math.round(dist*6000/period)/100;             // set speed in m/s, 2 decimals (period in frames)
 const bdPeriod = (h, c) => h-1+c; // frames from this backdash out to the next: h−1 elapsed before the 1 (the output frame is 1f), then the hand c

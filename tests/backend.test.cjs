@@ -10,10 +10,13 @@ test('leaderboard entry is built only from a finished trial, one metric pair per
   const plain=x=>JSON.parse(JSON.stringify(x)); // vm-realm objects have a foreign prototype; compare by value
   const run=(mode,play)=>{a.setMode(mode);a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();play();a.endTrial();return a.boardEntry(a.trial.result,mode);};
   const wave=run('wave10',()=>{dash(a,4100);a.time(14100);});
-  assert.deepEqual(plain(wave),{board:'wave10',win:8,lang:'ko',score:0.1,tie:1,detail:{dashes:1,chain:1,char:'kazuya'}});
+  const {replay:waveReplay,...waveEntry}=plain(wave);
+  assert.deepEqual(waveEntry,{board:'wave10',win:8,lang:'ko',score:0.1,tie:1,detail:{dashes:1,chain:1,char:'kazuya'}});
+  assert.equal(waveReplay.board,'wave10');assert.equal(waveReplay.v,1); // 결정 39(replay): a 도전 모드 run carries its inputs
+  assert.equal(plain(a.boardEntry({...a.trial.result,replay:null},'wave10')).replay,undefined,'no replay, no field');
   assert.deepEqual(plain(a.boardRowText('wave10',wave)),{label:'0.1 대시/초',sub:'1회 · 최고 연속 1'});
   const ewgf=run('ewgf20',()=>{dash(a,4100);a.onButton(2,4160);});
-  assert.deepEqual(plain(ewgf),{board:'ewgf20',win:8,lang:'ko',score:5,tie:0,detail:{hits:1,target:20,mean:0,char:'kazuya'}});
+  assert.deepEqual(plain(ewgf),{board:'ewgf20',win:8,lang:'ko',score:5,tie:0,detail:{hits:1,target:20,mean:0,char:'kazuya'}},'a switched-off board records no replay (결정 38(challenge-mode))');
   assert.equal(Object.is(ewgf.tie,-0),false,'tie must not be -0');
   const combo=run('combo10',()=>{dash(a,4100);for(const t of [4200,4400]){a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}a.onButton(2,4500);});
   assert.equal(combo.board,'combo10');assert.equal(combo.score,10);assert.deepEqual(plain(Object.keys(combo.detail)),['hits','target','mean','dps','char']);
@@ -183,6 +186,44 @@ test('a delayed board load cannot overwrite a newer submit for the same board',a
   b.answer('/top?board=wave10&nick=me','GET',{season:'all',board:'wave10',total:0,rows:[],me:null,cut10:null}); await load; await b.flush();
   assert.equal(a.board.data.wave10.me.nick,'me');
 });
+test('취소 shows from 시작 to the end and drops the run: no record, no submit, no replay (결정 38(challenge-mode))',async()=>{
+  const tok='ab'.repeat(24), b=backend(), subs=()=>b.calls.filter(c=>c.url.includes('/submit')).length;
+  const a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch);
+  b.answer('/top?board=wave10&nick=me','GET',topRes('me')); await b.flush();
+  a.setMode('wave10'); assert.equal(a.get('dCancel').hidden,true,'hidden before 시작'); assert.equal(a.get('dStartMode').textContent,'웨이브 10초','the start button names the challenge');
+  a.startTrial(); assert.equal(a.get('dCancel').hidden,false,'shown in the countdown'); assert.equal(a.get('dStart').disabled,true);
+  const cd=a.timers.get(a.trial.cdTimer); a.time(4000); cd(); cd(); cd(); dash(a,4100);
+  a.time(5000); a.trialTick(5000); assert.equal(a.trial.running,true); assert.equal(a.get('dCancel').hidden,false,'and in the run'); assert.equal(a.get('hudTimer').textContent,'9.0');
+  a.get('dCancel').click(); await b.flush(); assert.equal(a.get('hudTimer').textContent,'','the clock leaves with the run');
+  assert.equal(a.trial.running,false); assert.equal(a.get('dCancel').hidden,true); assert.equal(a.get('dStart').disabled,false);
+  assert.equal(a.get('dProg').textContent,'도전을 취소했습니다. 기록되지 않습니다.');
+  assert.equal(a.store.records.wave10.length,0); assert.equal(a.recorder.run,null); assert.equal(subs(),0,'nothing is submitted');
+  a.startTrial(); a.get('dCancel').click(); assert.equal(a.trial.cdTimer,null,'a cancel in the countdown stops it'); assert.equal(a.get('dCancel').hidden,true);
+  a.get('dProg').textContent=''; a.get('dCancel').click(); assert.equal(a.get('dProg').textContent,'','a stray click with nothing running does nothing');
+  a.time(20000); a.trialTick(20000); assert.equal(subs(),0); assert.equal(a.store.records.wave10.length,0);
+});
+test('a Worker that refuses the replay as too large (deployed before 결정 39(replay), or rolled back) still gets the score, sent once more without it',async()=>{
+  const tok='ab'.repeat(24), b=backend();
+  const a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch);
+  b.answer('/top?board=wave10&nick=me','GET',topRes('me')); await b.flush();
+  a.setMode('wave10'); a.startTrial(); const cd=a.timers.get(a.trial.cdTimer); a.time(4000); cd(); cd(); cd(); dash(a,4100); a.time(14100); a.endTrial(); await b.flush();
+  assert.ok(b.find('/submit','POST').body.replay,'the first try carries the replay');
+  b.answer('/submit','POST',{error:'too_large'},413); await b.flush();
+  const again=b.find('/submit','POST'); assert.ok(again,'sent again'); assert.equal(again.body.replay,undefined); assert.equal(again.body.score,0.1);
+  b.answer('/submit','POST',{ok:true,id:7,rank:1,total:1,improved:true,...topRes('me')}); await b.flush();
+  assert.equal(a.trial.result.submit.state,'done');
+  assert.equal(b.calls.filter(c=>c.url.includes('/submit')).length,2,'one retry, no loop');
+});
+test('결정 40(post-edit): deleting my post #5 keeps the draft of my reply #5 (post and reply ids are separate rows)',async()=>{
+  const tok='ab'.repeat(24), b=backend();
+  const a=boot({v:4,lang:'ko',window:12,nick:'me',nickToken:tok},b.fetch);
+  const reply={id:5,nick:'me',text:'my reply',created_at:2}, others={id:6,nick:'other',text:'hi',created_at:3};
+  a.setPosts([{id:5,nick:'me',text:'my post',created_at:1,up:0,down:0,replies:[reply,others]}],{});
+  a.live.edit={kind:'reply',id:5,text:'draft'};
+  const done=a.ownChange('post',5,null); await b.flush();
+  b.answer('/post','DELETE',{ok:true,id:5,rows:[{id:5,nick:'',text:'',deleted:1,created_at:1,up:0,down:0,replies:[reply,others]}],crowns:{}}); await done;
+  assert.deepEqual({...a.live.edit},{kind:'reply',id:5,text:'draft'});
+});
 test('leaderboard submit and delete are serialized in both directions',async()=>{
   const tok='ab'.repeat(24), run=a=>{a.setMode('wave10');a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();dash(a,4100);a.time(14100);a.endTrial();};
   // An existing in-flight submit disables and rejects deletion until its response has settled.
@@ -334,4 +375,18 @@ test('shoutbox explains only a real D1 quota failure in plain language',async()=
   assert.equal(a.get('postMsg').textContent,'오늘 무료 서버 사용량을 다 써서 한마디를 이용할 수 없습니다. 더 좋은 서버를 쓰려면 후원이 절실합니다 ㅜㅜ');
   a.get('postsRefresh').click(); await b.flush(); b.answer('/posts','GET',{rows:[]}); await b.flush();
   assert.equal(a.get('postMsg').textContent,'','a later successful refresh clears the quota notice');
+});
+test('each challenge keeps a practice tab: no start, clock, record or board, the same guide, its own hint (결정 38(challenge-mode))',()=>{
+  const a=boot({v:4,lang:'ko'});
+  for(const [m,of] of [['wave','wave10'],['rush','rush30'],['backdash','bd10']]){
+    assert.equal(a.MODES[m].of,of);assert.equal(a.modeKind(m),of);assert.equal(a.MODES[m].start,false);assert.equal(a.MODES[m].guide,a.MODES[of].guide,m+' opens the challenge guide');
+    assert.equal(a.BOARDS.includes(m),false);assert.equal(a.TRIAL_MODES.includes(m),false);assert.equal(a.CHALLENGE_MODES.includes(m),false,m+' is a tab, not in the 도전 모드 window');
+    a.setMode(m);assert.equal(a.get('dStart').hidden,true,m+': no 시작');assert.equal(a.get('dName').textContent,a.T('mode.'+m+'.name'));
+    assert.equal(a.get('hudHint').textContent,a.T('hint.'+m));assert.doesNotMatch(a.get('hudHint').textContent,/시작|GO/,m+': the hint waits for no start');
+    a.startTrial();assert.equal(a.trial.cdTimer,null,m+': no countdown');assert.equal(a.trial.running,false);assert.equal(a.get('dCancel').hidden,true);
+  }
+  assert.equal(a.modeKind('free'),'free');
+  for(const [m,of] of Object.entries(a.MODES).filter(([,M])=>M.of).map(([m,M])=>[m,M.of])){ a.setMode(m); assert.equal(a.practiceOf(of),true,m); assert.equal(a.practiceOf('free'),false); a.setMode(of); assert.equal(a.practiceOf(of),false,of+' is the challenge itself'); }
+  a.setMode('wave');dash(a,1000);a.onDir('f',1100);a.onDir('n',1120);dash(a,1140);
+  assert.equal(a.cd.chain,2,'웨이브 연습 judges like free practice');assert.equal(a.bdActive(),true,'the backdash machine included');assert.equal(a.session.dashes,2);assert.equal(a.get('hudScore').textContent,'');assert.equal(a.store.records.wave10.length,0);
 });

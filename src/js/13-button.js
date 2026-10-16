@@ -1,7 +1,10 @@
 /* ---------- button / EWGF ---------- */
 function onButton(n, t){
   // 결정 35(button-chord): held attacks join the new press. A chord ('1+2') is another input, so no single-button move matches it.
-  const b = buttonChord(n);
+  buttonIn(buttonChord(n), t);
+}
+function buttonIn(b, t){ // the engine's button entry after the chord is built — what a replay feeds back (결정 39(replay))
+  recBtn(b, t);
   practiceInput();
   trialTick(t); tick(t);
   pushHistory({t, btn:b}); gpInput({t, btn:b});

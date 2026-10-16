@@ -13,11 +13,11 @@ test('switching language re-renders result, coach, log and records in place',()=
   const a=boot({v:4,lang:'ko',records:{wave10:[{date:0,score:4.2,dashes:42,chain:9,label:'x',sub:'y'}],ewgf20:[{date:0,score:80,hits:16,target:20,mean:5,label:'80%',sub:'old'}],combo10:[]}});
   dash(a);a.onButton(2,1090);
   assert.equal(a.get('rTitle').textContent,'풍신권');assert.ok(a.get('logBody').innerHTML.includes('풍신권(늦음)'));
-  assert.ok(a.get('bests').innerHTML.includes('4.2 대시/초'));assert.ok(a.get('bests').innerHTML.includes('16/20 · 평균'));
+  assert.ok(a.get('bests').innerHTML.includes('4.2 대시/초'));assert.ok(!a.get('bests').innerHTML.includes('16/20 · 평균'),'a switched-off board keeps its records but no tile (결정 38(challenge-mode))');
   a.setLang('en');
   assert.equal(a.store.lang,'en');assert.equal(a.get('rTitle').textContent,'Wind God Fist');
   assert.ok(a.get('coachMsg').innerHTML.startsWith('So close.'));assert.ok(a.get('logBody').innerHTML.includes('WGF (late)'));
-  assert.ok(a.get('bests').innerHTML.includes('4.2 dashes/s'));assert.ok(a.get('bests').innerHTML.includes('16/20 · avg'));
+  assert.ok(a.get('bests').innerHTML.includes('4.2 dashes/s'));assert.equal(a.store.records.ewgf20.length,1,'still stored');
   a.setLang('ja');assert.equal(a.get('rTitle').textContent,'風神拳');assert.equal(a.get('dName').textContent,'自由練習');
   a.setLang('nope');assert.equal(a.store.lang,'ja');
 });
@@ -41,7 +41,7 @@ test('the three dictionaries share exactly the same key set',()=>{
 test('announcements render in every language and persist the latest read marker',()=>{
   let saved;
   const a=boot({v:4,lang:'ko'},undefined,{localStorage:{getItem:()=>JSON.stringify({v:4,lang:'ko'}),setItem:(k,v)=>saved=JSON.parse(v)}});
-  assert.deepEqual(Array.from(a.NOTICES,n=>n.id),['2026-10-16-update','2026-10-08-update','2026-10-04-backdash','2026-09-30-roundup','2026-09-21-roundup','2026-09-21-mist','2026-09-19-dojo','2026-09-15-notices']);assert.equal(a.NOTICES[0].items.length,7);assert.equal(a.NOTICES[1].items.length,6);assert.equal(a.NOTICES.find(n=>n.id==='2026-09-30-roundup').highlight.items.length,2);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
+  assert.deepEqual(Array.from(a.NOTICES,n=>n.id),['2026-10-16-challenge','2026-10-16-update','2026-10-08-update','2026-10-04-backdash','2026-09-30-roundup','2026-09-21-roundup','2026-09-21-mist','2026-09-19-dojo','2026-09-15-notices']);assert.equal(a.NOTICES[0].items.length,7);assert.equal(a.NOTICES[1].items.length,7);assert.equal(a.NOTICES[2].items.length,6);assert.equal(a.NOTICES.find(n=>n.id==='2026-09-30-roundup').highlight.items.length,2);assert.equal(a.get('noticeBadge').hidden,false);assert.match(a.get('noticeList').innerHTML,/9월 15일 기능 업데이트/);
   assert.ok(a.get('noticeList').innerHTML.includes(a.T(a.NOTICES[0].title)));
   a.setMode('wave10');a.startTrial();a.openNotices();
   assert.equal(a.get('noticeDlg').open,true);assert.equal(a.trial.cdTimer,null,'opening an announcement cancels a countdown');
@@ -243,7 +243,7 @@ test('search text: static localized apps, hreflang and legacy query override',()
   const path=require('node:path');
   const a=boot({v:4,lang:'ko'});
   const u=a.SITE_URL, alt={ko:u+'ko/',en:u+'en/',ja:u+'ja/','x-default':u};
-  const MODES=['mode.wave10.name','mode.ewgf20.name','mode.combo10.name','mode.rush30.name','mode.bd10.name'];
+  const MODES=['mode.wave10.name','mode.rush30.name','mode.bd10.name']; // the 도전 모드 challenges (결정 38(challenge-mode))
   const pages={'index.html':html};
   for(const l of ['ko','en','ja']) pages[l+'/index.html']=require('../tools/build-site').localizedPage(html,l);
   for(const [name,page] of Object.entries(pages)){

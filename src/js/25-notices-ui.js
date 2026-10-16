@@ -23,6 +23,7 @@ $('noticeDlg').addEventListener('close', () => setTimeout(renderRewards, 0));
 let noticeAutoPending = hadStore && !!NOTICE_LATEST && store.noticeSeen!==NOTICE_LATEST;
 let noticeAutoTimer = null, noticeAutoQueued = false;
 function noticeAutoSchedule(delay=500){
+  if(REPLAY) return;
   if(!noticeAutoPending || store.noticeSeen===NOTICE_LATEST || noticeAutoTimer || noticeAutoQueued) return;
   noticeAutoQueued = true;
   requestAnimationFrame(() => { noticeAutoQueued = false; if(noticeAutoPending && !noticeAutoTimer) noticeAutoTimer = setTimeout(noticeAutoTry, delay); });

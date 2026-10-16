@@ -17,7 +17,8 @@ stageAssets(html,out);
     await b.send('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem('wave-ewgf-dojo-v1',JSON.stringify({v:4,lang:'ko',sound:0,fx:1,noticeSeen:${JSON.stringify(notice)},visitDay:new Date(Date.now()+9*3600e3).toISOString().slice(0,10)}));`});
     await b.navigate(fileUrl(page));
     const click=sel=>b.evalJs(`document.querySelector(${JSON.stringify(sel)}).click()`);
-    await click('[data-mode="bd10"]');
+    const bd10=async()=>{await click('#challengeOpen');await click('#challengeList [data-mode="bd10"]');}; // 결정 38(challenge-mode): picked in the 도전 모드 window
+    await bd10();
     assert.equal(await b.evalJs(`!document.querySelector('#bdpTimeline').hidden&&!document.querySelector('#bdpPanel').hidden&&document.body.classList.contains('bd10-mode')`),true,'bd10 shows the timeline and its panel');
 
     // One set: 4 held through the 1 (↙ = 4+2), release 2 (→ 4), release 4 (N), press 4 → the next backdash, which is then released uncancelled.
@@ -80,7 +81,7 @@ stageAssets(html,out);
     for(let i=1;i<path1.length;i++) assert.ok(path1[i].dx>=path1[i-1].dx-1e-6,'never moves forward');
 
     // phone width: the axis scrolls inside its box, the page does not
-    await click('[data-mode="free"]');await click('[data-mode="bd10"]');
+    await click('[data-mode="free"]');await bd10();
     await b.send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await sleep(300);
     assert.equal(await b.evalJs(`document.documentElement.scrollWidth<=innerWidth`),true,'no horizontal overflow at 390px');
     await b.evalJs(`document.querySelector('#bdpTimeline').scrollIntoView({block:'start'})`);await sleep(200);

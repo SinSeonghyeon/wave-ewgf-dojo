@@ -17,7 +17,7 @@ stageAssets(html,out);
     await b.navigate(fileUrl(page)+'?c=bryan');
     const click=sel=>b.evalJs(`document.querySelector(${JSON.stringify(sel)}).click()`);
     const shown=sel=>b.evalJs(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});return !!e&&getComputedStyle(e).display!=='none'&&!e.hidden;})()`);
-    const tabs=sel=>b.evalJs(`Array.from(document.querySelectorAll(${JSON.stringify(sel)})).filter(x=>!x.hidden).map(x=>x.dataset.mode||x.dataset.board).join(',')`);
+    const tabs=sel=>b.evalJs(`Array.from(document.querySelectorAll(${JSON.stringify(sel)})).filter(x=>!x.hidden).map(x=>x.dataset.mode||x.dataset.board||x.id).join(',')`);
     const read=()=>b.evalJs(`({title:document.querySelector('#rTitle').textContent,sub:document.querySelector('#rOff').textContent,char:JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).char,name:document.querySelector('#charOpenName').textContent,tries:+document.querySelector('#stTry').textContent,result:document.querySelector('#tjResult').textContent})`);
     // seq: [part, frame] with part 't' (the 1+3+4 key) | 'f' | 'b' | 'p' (RP) | 'u' 'j' 'k' (LP LK RK) and '-x' for a release.
     // Frame 0 is the taunt press (TJ frame 1); every timestamp sits in the past, so the reader closes each frame on the next one.
@@ -33,18 +33,19 @@ stageAssets(html,out);
     };
     let r=await read();
     assert.equal(r.char,'bryan','?c=bryan opens Bryan');assert.equal(r.name,'브라이언');
-    assert.equal(await tabs('#modes button'),'free,tju,ju,bd10','Bryan: backdash yes, wave and Mishima moves no');
-    assert.equal(await tabs('#boardTabs button'),'bd10,tju');
+    assert.equal(await tabs('#modes button'),'free,tju,ju,backdash,challengeOpen','Bryan: practice tabs (백대시 연습 too) + the 도전 모드 tab');
+    await click('#challengeOpen');assert.equal(await tabs('#challengeList [data-mode]'),'bd10','Bryan: backdash yes, wave and Mishima moves no');await click('#challengeClose');
+    assert.equal(await tabs('#boardTabs button'),'bd10','the tju board is switched off (결정 38(challenge-mode))');
     assert.equal(await shown('.coach>.stats'),false,'no wave/EWGF tiles for a character without either');
     assert.equal(await shown('#histCard'),false);assert.equal(await shown('#waveCard'),false);
     assert.equal(await b.evalJs(`document.querySelector('#analysisLink').getAttribute('href')`),'#bestsCard');
     // free practice already judges the taunt: 1+3+4 key, 6 on 29f, N on 30f, 4+RP on 31f
     r=await play([['t',0],['-t',3],['f',28],['-f',29],['b',30],['p',30],['-p',33],['-b',33]]);
     assert.equal(r.title,'도발 제트어퍼!',JSON.stringify(r));assert.equal(r.tries,0,'the EWGF stats stay untouched');
-    // the practice tab: panel, timeline, challenge button
+    // the practice tab: panel and timeline; its 10-try challenge is switched off (결정 38(challenge-mode))
     await click('[data-mode="tju"]');
     const panel=await b.evalJs(`({panel:!document.querySelector('#tjPanel').hidden,timeline:!document.querySelector('#tjTimeline').hidden,btn:!document.querySelector('#tjChallengeBtn').hidden,cmd:document.querySelector('#tjCommand').textContent,cells:document.querySelectorAll('#tjAxis .wsc-cell').length})`);
-    assert.ok(panel.panel&&panel.timeline&&panel.btn,JSON.stringify(panel));assert.match(panel.cmd,/29f → · 30f ★ · 31f ←\+RP/);assert.equal(panel.cells,25,'1f, 2~12f, 13~34f one by one, 35~77f');
+    assert.ok(panel.panel&&panel.timeline&&!panel.btn,JSON.stringify(panel));assert.match(panel.cmd,/29f → · 30f ★ · 31f ←\+RP/);assert.equal(panel.cells,25,'1f, 2~12f, 13~34f one by one, 35~77f');
     r=await play([['t',0],['-t',3],['f',28],['-f',29],['b',30],['p',30],['-p',33],['-b',33]]);
     assert.match(r.result,/도발 제트어퍼/,JSON.stringify(r));
     const axis=await b.evalJs(`({ok:!!document.querySelector('#tjAxis .tj-band.su.ok'),knee:document.querySelector('#tjAxis .wsc-cell.knee').className,six:document.querySelector('#tjAxis [data-frame="29"] b').textContent,rp:document.querySelector('#tjAxis [data-frame="31"] b').textContent})`);
@@ -74,10 +75,6 @@ stageAssets(html,out);
     r=await play([['b',0],['p',1],['-p',3],['-b',3]]);                    // no 6 before the RP: a miss with its reason
     assert.equal(r.title,'제트어퍼가 나오지 않음',JSON.stringify(r));assert.equal(await b.evalJs(`document.querySelector('#juStats div').textContent`),'3평가 시도');
     await click('[data-mode="tju"]');
-    // the 10-try countdown
-    await click('#tjChallengeBtn');await sleep(100);
-    assert.match(await b.evalJs(`document.querySelector('#tjChallengeStatus').textContent`),/[0-9]/,'countdown shows');
-    await click('#tjChallengeBtn');
     // touch: the 1+3+4 button appears for Bryan and starts a taunt
     await click('#setOpen');await sleep(80);await click('[data-touch="on"]');await click('#setClose');await sleep(80);
     assert.equal(await shown('#tbtns [data-btn="t"]'),true,'the taunt button is on the touch pad');

@@ -18,7 +18,7 @@ function applyTouchLayout(){
   dirs.style.bottom=(inset+maxY*store.touchY/100).toFixed(1)+'px';
 }
 function applyTouchUI(){
-  touchOn = store.touch==='on' || (store.touch==='auto' && touchAuto());
+  touchOn = !REPLAY && (store.touch==='on' || (store.touch==='auto' && touchAuto())); // the replay window shows no controls
   const root = document.documentElement; if(root && root.classList) root.classList.toggle('touch-ui', touchOn);
   if(!lastSrc) srcBadge.textContent = T(touchOn ? 'src.waitTouch' : 'src.wait');
   touchRelease(); resize(); applyTouchLayout();

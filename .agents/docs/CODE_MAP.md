@@ -24,7 +24,7 @@
 | `src/js/01-wardrobe-items.js` | 옷장 슬롯·아이템(그리기 훅), 업적 정의, `TRIAL_MODES` |
 | `src/js/02-chars.js` | 캐릭터 데이터 `CHARS`(능력 플래그 `caps`·기술 `moves`·`legacy`·저스트 레시피 `jf`), `charId`·`charOf`·`charCap`·`charHas` (결정 34) |
 | `src/js/02-notices.js` | `NOTICES`(최신순 공지 데이터) |
-| `src/js/03-store.js` | `STORE`, `store` 로드·검증·저장, `PAGE_LANG`·`ASSET_ROOT` |
+| `src/js/03-store.js` | `STORE`, `store` 로드·검증·저장, `PAGE_LANG`·`ASSET_ROOT`, 다시보기 창 표시 `REPLAY`(`?replay=1` iframe이면 `save()`가 아무것도 쓰지 않음) |
 | `src/js/04-i18n.js` | `LOCALE`, `I18N` 결합, `T()`·`msg()`·`displayFont()` |
 | `src/js/05-sound.js` | `SND`·`BGM_TRACKS`·`BGM_GAIN`(도구가 생성), 효과음 풀, BGM 셔플·Web Lock, 합성 차임·팡파르 |
 | `src/js/06-state.js` | `session`, `cd`(크라우치 대시 상태), `bd`(백대시 상태), `tapDetect`, `ui` 재렌더 보관 |
@@ -33,9 +33,9 @@
 | `src/js/09-history.js` | 입력 기록(씬뷰 왼쪽 세로 목록) |
 | `src/js/10-wsc.js` | 웨캔기어 인식·A/B·10회 도전 |
 | `src/js/11-crouch-dash.js` | `onDir` 진입점, 무족초(`mistDir`/`mistButton`), `commandDir` 상태 머신 |
-| `src/js/12-backdash.js` | 독립 백대시 머신 `bdDir`·bd10 |
-| `src/js/12-bd-practice.js` | bd10 프레임 타임라인·세트 평가 패널(`bdp`) |
-| `src/js/13-button.js` | `onButton` 진입점, `commandButton`(초풍·나락·통발·기원권 분기), `resolvePending` |
+| `src/js/12-backdash.js` | 독립 백대시 머신 `bdDir`·bd10, `bdMode`(bd10·백대시 연습) |
+| `src/js/12-bd-practice.js` | bd10·백대시 연습 프레임 타임라인·세트 평가 패널(`bdp`) |
+| `src/js/13-button.js` | `onButton` 진입점(합성 입력을 만든 뒤 `buttonIn` — 다시보기가 다시 넣는 입구), `commandButton`(초풍·나락·통발·기원권 분기), `resolvePending` |
 | `src/js/14-giwon.js` | 기원권 판정·경직·버퍼, 기원초 링크 판정 |
 | `src/js/15-giwon-practice.js` | 기원초 연습 모드: 타임라인·통계·10회 도전 |
 | `src/js/16-jfsr.js` | 초스카이(결정 33): `jfStaged`(무족 보류 경로의 결과)·`jfButton`·`jfPending`·`jfAttempt`, 초스카이 연습 패널·10회 도전(`jfp`) |
@@ -46,22 +46,23 @@
 | `src/js/17-tju-practice.js` | 도발 제트어퍼 연습 모드: 10회 도전(`tjStartChallenge`·`tjChallengeTick`), 프레임 타임라인(`tjSegments`·`tjBands`·`renderTjLive`), 평가 패널 `renderTj` |
 | `src/js/18-hud.js` | 결과 카드·통계·HUD·로그 |
 | `src/js/19-tick.js` | `tick(now)`: 상태 타임아웃·체인 종료 |
-| `src/js/20-trials.js` | `MODES`·`CHALLENGES`·`BOARDS`, 모드 전환, 측정 모드(시작·카운트다운·종료), 기록 텍스트 |
+| `src/js/20-trials.js` | `MODES`(연습 탭 → 도전 `of`·`modeKind`·`practiceOf`)·`CHALLENGES`·`BOARDS`, 비활성 보드 `BOARDS_OFF`·`boardOn`·도전 모드 목록 `CHALLENGE_MODES`·순위 탭 `boardTabs`, 도전 모드 탭·창(`renderChallengeTab`·`renderChallengeList`·`openChallenges`), 모드 전환, 측정 모드(시작 `startTrial`·GO `trialGo`·취소 버튼 `cancelTrial`·종료 `endTrial`), 기록 텍스트 |
 | `src/js/21-charts.js` | 히스토그램·웨이브 차트(SVG 문자열) |
 | `src/js/22-share-model.js` | 공유 카드 순수 모델 `buildCard`·`buildOgCard` |
-| `src/js/23-settings-ui.js` | 설정 대화상자, 컨트롤러 설정 하위 화면(`ctlView`), 바인딩 카드(`bindingCards`·`btnDots`·`padGlyph`) |
+| `src/js/23-settings-ui.js` | 설정 대화상자, 컨트롤러 설정 하위 화면(`ctlView`), 바인딩 카드(`bindingCards`·`btnDots`·`padGlyph`), 모드 탭 클릭(`revealTab`), 1P/2P `setSide` |
 | `src/js/24-share-dialog.js` | 공유 카드 대화상자·복사·다운로드 |
 | `src/js/25-notices-ui.js` | 공지 대화상자·NEW 배지·자동 열기 |
 | `src/js/26-backend-config.js` | `BOARD_URL`(비우면 백엔드 UI 전체 숨김) |
 | `src/js/27-donate.js` | 후원 대화상자·결과창 안내·헤더 말풍선 |
 | `src/js/28-rewards.js` | 업적 카운터·보상 상자·잭팟 연출·옷장 대화상자 |
-| `src/js/29-backend.js` | 도전 완주 처리, 순위(등록·삭제·경합 방지), 닉네임, 방문자, 한마디·답글·투표 |
+| `src/js/29-backend.js` | 도전 완주 처리, 순위(등록·삭제·경합 방지, 옛 워커의 413이면 다시보기 없이 재등록, 다시보기가 있는 행의 ▶), 닉네임, 방문자, 한마디·답글·투표·본인 수정/삭제(`ownChange`·`live.edit`)·왕관(`crownHTML`, `live.crowns`) |
 | `src/js/30-language.js` | `applyStatic`·`renderAll`·`setLang` |
 | `src/js/31-stage.js` | 스테이지 캔버스, 카메라 줌, 캐릭터 이동·팝, 더미 명중·반응 |
-| `src/js/32-rush.js` | 더미 격파 30초 |
+| `src/js/32-rush.js` | 더미 격파 30초·더미 격파 연습(`rushIdle`), 시작 시각 시드 더미 순서 `rushSeed`·`rushRng`, 명중 기록·재생(`recHit`·`replayHit`) |
 | `src/js/33-fighter.js` | SD 캐릭터·더미 그리기, 포즈(도발 자세표 `TJ_POSE`·`tjTauntPose` 포함) |
 | `src/js/34-share-draw.js` | 공유 카드 캔버스 그리기(`drawCard`) |
-| `src/js/35-dojo3d.js` | WebGL 3D 도장·Canvas 대체, `frame()` 렌더 루프 |
+| `src/js/35-dojo3d.js` | WebGL 3D 도장·Canvas 대체, `frame()` 렌더 루프(맨 앞에서 `replayFrame`) |
+| `src/js/35-replay.js` | 다시보기(결정 39): 녹화 `recorder`(`recBegin`·`recDir`·`recBtn`·`recGo`·`recFinish`, 입력보다 늦은 프레임 처리는 `REC_TICK`), 재생 창 `player`(`replayLoad`·`replayFrame`·`replayStep`·`replayEnded`·`replayBoot`), 부모 페이지 대화상자(`replayOpen`·`replayMount`, `message` 주고받기) |
 | `src/js/36-boot.js` | 부트 순서 |
 | `src/assets/room-atlas.webp` | 목재/회벽 재질 아틀라스(자체 생성) |
 | `src/assets/portrait-kazuya.webp` · `src/assets/portrait-hwoarang.webp` · `src/assets/portrait-bryan.webp` | 캐릭터 선택 초상(tekken.com 공식 fighter-select 이미지를 240×300 WebP로 자름, 2026-10-11 사용자 결정 — 결정 3 예외. 브라이언은 2026-10-15 같은 예외 적용, 확인 필요). `CHARS[id].portrait`에 data URI로 인라인 |
@@ -73,8 +74,8 @@
 | 파일 | 내용 |
 |---|---|
 | `tests/helpers/app.cjs` | 단위 테스트 하네스. `boot(saved, fetch, env)`가 조립한 앱을 vm에서 돌리고 **앱의 모든 최상위 이름**을 돌려준다(목록 관리 없음. `let`은 부트 직후 값의 스냅샷, 객체는 살아 있는 참조) |
-| `tests/<주제>.test.cjs` | chars(캐릭터 선택·초스카이) · tju(브라이언·도발 제트어퍼·최속 제트어퍼) · judging · input · modals · i18n-pages · backend · sound · strikes-rush · moves · wardrobe-rewards · backdash · wsc · stage · giwon · giwon-practice · board(워커) · docs(문서 경로·결정 인용·파일 지도 검사) · source(`src/` include·파싱·조립 결과 검사) |
-| `tests/smoke-*.js` | 헤드리스 Chrome/Edge 브라우저 검사. 조립한 페이지를 `.sandbox/`나 임시 폴더에 쓰고 `stageAssets()`로 자원을 복사 |
+| `tests/<주제>.test.cjs` | chars(캐릭터 선택·초스카이) · tju(브라이언·도발 제트어퍼·최속 제트어퍼) · judging · input · modals · i18n-pages · backend · sound · strikes-rush · moves · wardrobe-rewards · backdash · wsc · stage · giwon · giwon-practice · board(워커) · replay(다시보기 녹화·재생, 주사율별 같은 결과) · docs(문서 경로·결정 인용·파일 지도 검사) · source(`src/` include·파싱·조립 결과 검사) |
+| `tests/smoke-*.js` | 헤드리스 Chrome/Edge 브라우저 검사. 조립한 페이지를 `.sandbox/`나 임시 폴더에 쓰고 `stageAssets()`로 자원을 복사. `smoke-replay`는 페이지를 로컬 http로 띄워 실제 도전 → 등록 → ▶ 재생까지 본다 |
 | `tests/fake-d1.js` | node:sqlite 인메모리 가짜 D1 |
 | `tools/assemble.js` | `src/` → 한 페이지. `sourceFileContaining()`은 생성 상수를 고치는 도구가 대상 파일을 찾는 데 쓴다 |
 | `tools/build-site.js` | Pages 산출물 생성, 언어별 정적 번역, 글 주소·필수 원고·내부 링크 검증(`validateContent`), 가이드·개인정보 페이지(`contentPage`)와 `sitemap.xml` 생성 |
@@ -99,7 +100,9 @@
 | 웨캔기어 | `10-wsc` `20-trials`(`CHALLENGES`) | `wsc` `smoke-wsc` | `WSC_PRACTICE.md` |
 | 백대시·bd10 | `00-core`(`BD`) `06-state` `12-backdash` `12-bd-practice` `11-crouch-dash`(`backdashMotion`) `31-stage`(`bdEase`) | `backdash` `smoke-backdash` | 결정 17, `BACKDASH.md` |
 | 측정 모드·결과 | `20-trials` `18-hud` `21-charts` | `judging` `i18n-pages` | 결정 13·14 |
-| 순위·한마디 | `26-backend-config` `29-backend` `worker/` | `backend` `board` `smoke-chrome` | `worker/README.md`, 결정 16·18·19·22~24·26·31 |
+| 순위·한마디 | `26-backend-config` `29-backend` `worker/` | `backend` `board` `smoke-chrome`(수정·삭제·왕관 포함) | `worker/README.md`, 결정 16·18·19·22~24·26·31·40·41 |
+| 도전 모드 | `20-trials`(`BOARDS_OFF`·`CHALLENGE_MODES`·도전 창·`cancelTrial`·연습 탭 `of`/`modeKind`/`practiceOf`) `32-rush`(`rushIdle`) `12-backdash`(`bdMode`) `23-settings-ui`(탭·창·시작·취소 클릭) `app.html`(`#challengeOpen`·`.stage-start`·`#dCancel`) `style.css`(`.challenge-tab`·`.challenge-start`·`.stage-cancel`) `01-wardrobe-items`(업적 2개 조건) | `i18n-pages` `backend` `smoke-chrome` | 결정 38 |
+| 다시보기 | `35-replay` `20-trials`(`recBegin`·`trialGo`·`recFinish`) `11-crouch-dash`(`recDir`) `13-button`(`buttonIn`) `32-rush`(시드·명중 비트) `31-stage`(`tryHit` force) `29-backend`(▶·`boardEntry.replay`) `03-store`·`05-sound`·`07-input`·`25`·`27`·`28`(`REPLAY`에서 끄는 것) `worker/`(`replays` 테이블·`/replay`) | `replay` `board` `smoke-replay` | 결정 39 |
 | 입력 장치·키 설정·핫키 | `03-store`(`HOTKEYS`) `07-input` `08-touch` `09-history` `13-button`(`onButton`의 합성 입력) `23-settings-ui` | `input` `smoke-bindings` | 결정 11·28·29·35·36 |
 | 소리 | `05-sound` | `sound` `smoke-sound` | 결정 8 |
 | 옷장·업적·보상 | `01-wardrobe-items` `28-rewards` `33-fighter` | `wardrobe-rewards` | 결정 15 |
@@ -110,11 +113,15 @@
 
 새 캐릭터를 추가할 때(결정 34): `02-chars`의 `CHARS` 한 항목(능력 플래그·기술·레시피), 세 언어 `char.<id>.name`·`char.<id>.moves`(타일 설명), 초상 `portrait`(`src/assets/portrait-<id>.webp`, 240×300), 워커 `CHARS`, 캐릭터별 모드 문구가 필요하면 `mode.<mode>.desc.<id>`·`hint.<mode>.<id>`(없으면 공용 문구), 타일은 `CHAR_IDS`로 자동 생성(`renderCharTiles`)되므로 HTML은 손대지 않는다. 새 저스트 기술이면 `poseAt` 포즈·`fx`·`HIT_CONTACT_MS`. 모드 탭·순위 탭은 `MODES.needs`로 자동으로 걸러진다.
 
-새 모드를 추가할 때: `20-trials`의 `MODES`(필요한 능력·기술은 `needs`)(측정 모드면 `01-wardrobe-items`의 `TRIAL_MODES`도), 로컬 N회 도전이면 `CHALLENGES` 한 줄(보드·패널 id 접두어·바쁨 검사가 여기서 파생된다), 워커 `BOARDS`, 세 언어 `mode.<id>.*` 문구, `src/app.html`의 모드 탭·순위 탭 버튼. 도전 없이 타임라인·패널만 있는 모드(`bd10`·`ju`)는 `20-trials`의 `PANEL_MODES` 한 줄(모드 → id 접두어, `renderMode`가 `#<접두어>Timeline`·`#<접두어>Panel`과 `body.<모드>-mode`를 켠다).
+도전 모드(결정 38)에 보이는 것은 `TRIAL_MODES` 중 `BOARDS_OFF`에 없는 모드(`CHALLENGE_MODES`)이고, 순위 탭도 `BOARDS_OFF`를 거른다. 끈 보드를 다시 켜려면 `BOARDS_OFF`에서 빼고 숨긴 안내 문구(10회 도전 순위 문장)를 되돌린다. 다시보기 녹화는 측정 모드(`startTrial`→`endTrial`)에만 연결돼 있다. 도전마다 연습 탭(`wave`·`rush`·`backdash`)이 있고 `MODES[m].of`가 그 도전을 가리킨다. 탭이 도전의 연습을 나누는지는 모드 이름을 직접 비교하지 말고 `modeKind()`·`practiceOf(도전)`으로만 묻는다: `renderMode`의 `PANEL_MODES` 루프(도전의 패널·`body.<도전>-mode`), `bdMode()`(bd10 타임라인·크게 알리기), `bdActive`(웨이브 연습의 백대시 판정), 더미 격파 연습(`setMode`의 `rushIdle`이 타입 더미를 세우고 `endTrial`이 지우지 않음, `rushStrike`는 점수 없이 `tryHit`만, `endCommand`는 웨이브 연속 유지, 1P/2P `setSide`는 새 더미). 이름·설명·힌트·가이드는 탭 자신의 것을 쓴다.
+
+새 모드를 추가할 때: `20-trials`의 `MODES`(필요한 능력·기술은 `needs`)(측정 모드면 `01-wardrobe-items`의 `TRIAL_MODES`도), 로컬 N회 도전이면 `CHALLENGES` 한 줄(보드·패널 id 접두어·바쁨 검사가 여기서 파생된다), 워커 `BOARDS`, 세 언어 `mode.<id>.*` 문구, `src/app.html`의 모드 탭·순위 탭 버튼. 도전 없이 타임라인·패널만 있는 모드(`bd10`·`ju`, 백대시 연습은 `of`로 bd10 것을 씀)는 `20-trials`의 `PANEL_MODES` 한 줄(모드 → id 접두어, `renderMode`가 `#<접두어>Timeline`·`#<접두어>Panel`과 `body.<모드>-mode`를 켠다).
 
 ## 입력 처리 순서 (판정 우선순위)
 
 방향과 버튼은 각각 한 진입점을 지나며, **위에서 먼저 소비한 경로가 이긴다**. 새 기술은 이 표의 어느 줄에 끼우는지부터 정하고, 앞뒤 줄의 기존 테스트가 그대로 통과하는지 본다.
+
+**다시보기 결정성 규칙(결정 39)**: 판정·점수를 바꾸는 코드는 `onDir`·`buttonIn`·`tick`·`trialTick`에 넘어온 시각 `t`와 그 입력의 순서만 읽는다. `performance.now()`·`Date.now()`·`Math.random()`·화면 폭 `W`·연출 좌표를 판정에 쓰면 다시보기가 조용히 어긋나고 끝에 "다름" 알림만 뜬다. 어쩔 수 없으면 녹화에 실어 보낸다: 예외는 더미 격파 둘뿐이다 — 더미 순서는 시작 시각 시드(`rushSeed`·`rushRng`), 명중은 기술마다 1비트(`recHit`·`replayHit`, `tryHit`이 화면 위치와 `performance.now()`를 읽으므로). 녹화는 60Hz 칸 가장자리에 걸린 입력을 칸 안쪽으로 1~2µs 옮기므로(`recPush`), 두 시각의 **차이**를 프레임으로 반올림하는 코드는 정확히 반 프레임에서 갈리지 않게 그보다 큰 치우침을 준다(`00-core`의 `BD_ROUND` = 2e-4f ≈ 3.3µs, `bdFrameNo`·`bdF`). 새 판정 경로를 넣으면 `tests/replay.test.cjs`에 그 경로의 녹화 → 다른 주사율 재생 비교를 더한다.
 
 방향 `onDir(dir, t)` (`11-crouch-dash`):
 
@@ -135,7 +142,7 @@
 
 | 순서 | 단계 | 소비하면 |
 |---|---|---|
-| 0 | 결정 35(button-chord): 홀드 중인 공격 버튼(`heldAttacks`, `07-input`)과 묶어 `'1+2'` 같은 입력 하나로 만든다(`buttonChord`. 값은 숫자 하나 또는 오름차순 `'1+2'` 문자열이고 만들기·나누기는 `buttonChord`·`chordButtons`만 한다). 이하 `n`은 그 값이며, 묶인 입력은 어떤 `n===2`·`n===4`·레시피 버튼과도 같지 않아 "다른 버튼"으로 흐른다 | — |
+| 0 | 결정 35(button-chord): 홀드 중인 공격 버튼(`heldAttacks`, `07-input`)과 묶어 `'1+2'` 같은 입력 하나로 만든다 — 여기까지가 `onButton`, 이하는 `buttonIn(b, t)`(다시보기는 녹화한 `b`를 여기에 넣는다)(`buttonChord`. 값은 숫자 하나 또는 오름차순 `'1+2'` 문자열이고 만들기·나누기는 `buttonChord`·`chordButtons`만 한다). 이하 `n`은 그 값이며, 묶인 입력은 어떤 `n===2`·`n===4`·레시피 버튼과도 같지 않아 "다른 버튼"으로 흐른다 | — |
 | 1 | `practiceInput`·`trialTick`·`tick`, 입력 기록 | — |
 | 2 | 기원권 경직 중(`giwonRecovery`): 마지막 `BUFFER_F` 안이면 한 칸 버퍼(덮어쓰기), 그 전이면 버림 | 끝(해제 칸에 `buttonJudge`로 재전달) |
 | 3 | 도전 카운트다운 중 | 끝 |
@@ -484,7 +491,7 @@ OG 카드   buildOgCard(): og.png용 소개 모델(style:'wood', hero:null, tagl
 ## G 도장 외형 (2026-09-19)
 
 - `.main`은 backend 활성 + 1100px 이상에서 플레이/한마디 2열, 그 외 1열. 한마디는 원래 postsCard DOM을 이동해 글쓰기/답글/투표 API를 유지한다. `.coach`는 아래 전체 폭. `#resultCard`를 스테이지 오른쪽 위로 이동. `.coach`는 하단 6열 통계 + 코치/구간 분석 2열(모바일 3열 통계 + 1열). `.section-links`는 분석/순위/한마디 앵커, records는 차트·로컬 기록 다음 온라인 영역 순서. backend 비활성 시 온라인 앵커도 숨긴다.
-- WSC는 모든 화면에서 `.coach`에 타임라인 + A/B 평가를 배치한다. 750px 이상 하단 2열, 작은 화면 하단 1열. `.stage-actions`의 dStart/wscChallengeBtn은 1P/2P 왼쪽에서 모드에 맞게 노출, 중앙 상단은 hudTimer/hudCenter. dReset DOM은 제거, `resetSession()`은 설정 dataReset이 호출하는 내부 함수로 유지.
+- WSC는 모든 화면에서 `.coach`에 타임라인 + A/B 평가를 배치한다. 750px 이상 하단 2열, 작은 화면 하단 1열. `.stage-actions`(1P/2P 왼쪽)에는 10회 도전 버튼들과 도전 중에만 보이는 취소 `dCancel`(`cancelTrial`)이 있고, 측정 시작 `dStart`는 `.hud` 안 `#hudCenter` 바로 뒤의 `.stage-start`(중앙 상단)에 있어 `.hud-center:not(:empty)~.stage-start`로 카운트다운·결과 표시 중 가려진다. 중앙 상단은 그 밖에 hudTimer/hudCenter. dReset DOM은 제거, `resetSession()`은 설정 dataReset이 호출하는 내부 함수로 유지.
 - `stageScale`은 데스크톱 캔버스의 표시 배율(1~1.15), 터치는 0.9. 데스크톱 스테이지 높이는 :root의 --scene-height=clamp(465px,52vh,510px), 한마디는 같은 값+55px. 1100px 미만 한마디는520px, 터치 세로 씬은2/3 비율·최대78vh, 가로는16/9·최대72vh. canvas의 물리 픽셀 크기는 DOM×DPR, 논리 W/H는 표시 배율로 나눈다.
   drawFighter와 기본 복장·옷장 훅·공유 카드 캐릭터는 기존 그림으로 유지(2026-09-19 재디자인 철회). 카메라 목표 위치 1P 43% / 2P 62%, 판정 시각·세계 이동량·충돌 거리 상수는 그대로다.
 - `ResizeObserver`는 WSC 모드/터치 설정으로 DOM 스테이지 크기가 변할 때 canvas 및 터치 배치를 갱신. window resize도 유지.

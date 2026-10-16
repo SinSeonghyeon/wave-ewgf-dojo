@@ -51,7 +51,7 @@ const btnMark = b => chordButtons(b).map(n => ['','LP','RP','LK','RK'][n]).join(
 // The 1+3+4 key (bt): one press holds LP, LK and RK at once, like the game's LP+LK+RK hotkey for the taunt (결정 37(tju)). Only a character
 // with a taunt reads it (for the others L/RB stay inert: Kazuya's 4 would be 나락); it joins the held set, so a press is one chord '1+3+4' (결정 35(button-chord)).
 const tauntCode = code => !!code && (code===store.keys.bt || code===store.altKeys.bt);
-const MODAL_IDS = ['nickDlg','shareDlg','setDlg','donateDlg','fitDlg','noticeDlg','charDlg']; // every <dialog> in app.html (tests/modals.test.cjs checks the list)
+const MODAL_IDS = ['nickDlg','shareDlg','setDlg','donateDlg','fitDlg','noticeDlg','charDlg','challengeDlg','replayDlg']; // every <dialog> in app.html (tests/modals.test.cjs checks the list)
 const modalOpen = () => MODAL_IDS.some(id => $(id).open); // any dialog pauses game input
 let listening = null; // key remap target: {slot, alt}
 let bindingDevice='kb', bindingMessage=['set.bindIdle'], padCapture=null, padNeedsRelease=false, bindingPadPrevious=null;
@@ -107,6 +107,7 @@ function renderBindingCheck(force=false){
   }
 }
 addEventListener('keydown', e => {
+  if(REPLAY) return;
   if(padCapture && e.code==='Escape'){ e.preventDefault(); cancelBinding(); return; }
   const formInput=e.target && (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.isContentEditable);
   const navigation=['Tab','Escape','ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight','MetaLeft','MetaRight'].includes(e.code) || (e.target?.tagName==='BUTTON' && ['Enter','Space'].includes(e.code));
@@ -144,6 +145,7 @@ addEventListener('keydown', e => {
   if(lastSrc!=='kb') setSrc('kb');
 });
 addEventListener('keyup', e => {
+  if(REPLAY) return;
   if(bindingCheckHeld.delete(e.code)) renderBindingCheck();
   if(!held.has(e.code)) return;
   held.delete(e.code);
@@ -156,7 +158,7 @@ function resetInput(){
   held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); touchDir={x:0,y:0}; curDir='n'; heldDir='n'; prevDir='n'; heldDirT=0; touchRelease();
   clearCommand(); resetCombo(); resetTaps(); bdClear(); giwonClear(); updateHud(); renderWsc();
 }
-addEventListener('blur', () => { suspendBindings(); resetInput(); endTrial(true); bgmSync(); });
+addEventListener('blur', () => { if(REPLAY) return; suspendBindings(); resetInput(); endTrial(true); bgmSync(); });
 
 /* gamepad */
 let padIndex = null, padLastT = 0; // padLastT: last judged pad time (keeps t monotonic across the timestamp fallback)
@@ -231,6 +233,7 @@ function capturePad(inputs){
   store[field][slot]=code; padCapture=null; resetInput(); save(); bindingFeedback(other?'set.padSwapped':'set.bindSaved'); renderKeys();
 }
 function pollPad(snapshotOnly=false){
+  if(REPLAY) return;
   if(document.hidden || !document.hasFocus()){ suspendBindings(); return; }
   let pads;
   try{ pads = navigator.getGamepads ? navigator.getGamepads() : []; }catch(e){ if(padIndex!==null) releasePad(); return; }

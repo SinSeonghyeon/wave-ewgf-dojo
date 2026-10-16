@@ -2,7 +2,7 @@
 -- Apply: npx wrangler d1 execute mishima-dojo-board --remote --file=schema.sql
 CREATE TABLE IF NOT EXISTS scores (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  week       TEXT    NOT NULL,             -- season key the Worker reads/writes: 'all' since 2026-09-14 (one cumulative board, no reset). Was the Monday of the KST week 'YYYY-MM-DD'; see migrate-2026-09-14-alltime.sql
+  week       TEXT    NOT NULL,             -- season key the Worker reads/writes (SEASON): 's2' since the 2026-10-16 replay release, 'all' 2026-09-14 … then (kept, unlisted). Was the Monday of the KST week 'YYYY-MM-DD'; see migrate-2026-09-14-alltime.sql
   board      TEXT    NOT NULL,             -- wave10 | ewgf20 | combo10 | rush30 | bd10
   nick       TEXT    NOT NULL,             -- 2..12 code points
   score      REAL    NOT NULL,             -- primary metric (wave10: dash/s, others: success %)
@@ -40,11 +40,14 @@ CREATE TABLE IF NOT EXISTS visits (
 );
 
 -- Message board: nickname + one line of text, newest first. Replies are one level deep and oldest first under each post.
+-- edited_at / deleted (2026-10-16, 결정 40(post-edit)): an existing database gets them from migrate-2026-10-16-post-edit.sql (run once, before the Worker).
 CREATE TABLE IF NOT EXISTS posts (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   nick       TEXT    NOT NULL,             -- 2..12 code points
-  text       TEXT    NOT NULL,             -- 1..200 code points, whitespace collapsed
-  created_at INTEGER NOT NULL              -- epoch ms
+  text       TEXT    NOT NULL,             -- 1..200 code points, whitespace collapsed ('' once deleted)
+  created_at INTEGER NOT NULL,             -- epoch ms
+  edited_at  INTEGER,                      -- epoch ms of the author's last edit or delete, NULL if never
+  deleted    INTEGER NOT NULL DEFAULT 0    -- 1 = the author deleted it while others' replies stayed: shown as a placeholder
 );
 
 -- Replies (2026-09-14): many one-level replies per post. The Worker removes these before deleting the parent post.
@@ -53,7 +56,8 @@ CREATE TABLE IF NOT EXISTS replies (
   post_id    INTEGER NOT NULL,
   nick       TEXT    NOT NULL,             -- 2..12 code points
   text       TEXT    NOT NULL,             -- 1..200 code points, whitespace collapsed
-  created_at INTEGER NOT NULL              -- epoch ms
+  created_at INTEGER NOT NULL,             -- epoch ms
+  edited_at  INTEGER                       -- epoch ms of the author's last edit, NULL if never (2026-10-16)
 );
 CREATE INDEX IF NOT EXISTS replies_post_id ON replies (post_id, id);
 
@@ -66,3 +70,13 @@ CREATE TABLE IF NOT EXISTS votes (
   created_at INTEGER NOT NULL,              -- epoch ms of the last set/change
   PRIMARY KEY (post_id, key)
 );
+
+-- Replays (2026-10-16, 결정 39(replay)): the recorded inputs of a run, kept only while its scores row sits in the board's public top 10.
+-- /submit writes or drops them when a stored best changes; DELETE /score and DELETE /scores/:id remove the row's replay with it.
+CREATE TABLE IF NOT EXISTS replays (
+  score_id   INTEGER PRIMARY KEY,           -- scores.id of the run
+  board      TEXT    NOT NULL,
+  data       TEXT    NOT NULL,              -- JSON {v:1,board,ev:[Δt µs, code …],char,moves,win,init,seed,hits} (≤ 60000 chars)
+  created_at INTEGER NOT NULL               -- epoch ms
+);
+CREATE INDEX IF NOT EXISTS replays_board ON replays(board);

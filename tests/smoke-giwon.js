@@ -362,33 +362,11 @@ stageAssets(html,out);
     const other=await read();
     assert.equal(other.kind,'DEMON PAW',JSON.stringify(other));
     assert.equal((await gpRead()).rows,rowsBefore,'통발 opens no practice attempt');
-    // 10회 도전: 버튼은 이 모드에서만 보이고, 카운트다운 → 진행 → 취소가 HUD와 패널에 그대로 나온다
-    const chal=()=>b.evalJs(`({hidden:document.querySelector('#gpChallengeBtn').hidden,btn:document.querySelector('#gpChallengeBtn').textContent,
-      status:document.querySelector('#gpChallengeStatus').textContent,center:document.querySelector('#hudCenter').textContent,
-      score:document.querySelector('#hudScore').textContent,state:giwonTest.gp.challenge.status})`);
-    let ch=await chal();
-    assert.equal(ch.hidden,false,'도전 버튼은 기원초 연습에 있다');
-    assert.equal(ch.status,await b.evalJs(`giwonTest.T('gp.challengeHint',giwonTest.GP_CHALLENGE)`),'시작 전에는 안내 문구');
-    await click('#gpChallengeBtn');
-    ch=await chal();
-    assert.equal(ch.state,'countdown',JSON.stringify(ch));
-    assert.match(ch.center,/^[1-3]$/,'카운트다운이 씬 가운데에 뜬다: '+JSON.stringify(ch));
-    await sleep(3300);
-    ch=await chal();
-    assert.equal(ch.state,'running',JSON.stringify(ch));
-    assert.equal(ch.center,'','시작하면 카운트다운이 사라진다');
-    assert.equal(ch.score,'0 / '+K.total,JSON.stringify(ch));
-    await link(1);giwons++;
-    ch=await chal();
-    assert.equal(ch.score,'1 / '+K.total,'평가된 시도만 진행도를 올린다: '+JSON.stringify(ch));
-    await click('#gpChallengeBtn');
-    ch=await chal();
-    assert.equal(ch.state,'cancelled',JSON.stringify(ch));
-    assert.equal(ch.score,'','취소하면 HUD가 비워진다');
+    // 10회 도전은 결정 38(challenge-mode)로 꺼져 있다: 버튼·상태 문구·순위 탭이 보이지 않는다(코드는 남김)
+    assert.deepEqual(await b.evalJs(`({btn:document.querySelector('#gpChallengeBtn').hidden,status:document.querySelector('#gpChallengeStatus').hidden,tab:document.querySelector('#boardTabs [data-board="giwon"]').hidden})`),{btn:true,status:true,tab:true});
 
     await click('[data-mode="free"]');
     assert.equal(await b.evalJs(`document.querySelector('#gpPanel').hidden&&document.querySelector('#gpTimeline').hidden`),true,'and both panels leave with the mode');
-    assert.equal(await b.evalJs(`giwonTest.gp.challenge.status`),'cancelled','모드를 벗어나면 도전도 끝난다');
 
     // 8. touch controls, mobile layout
     await b.send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});

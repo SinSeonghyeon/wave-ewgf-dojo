@@ -4,6 +4,9 @@ const LANGS = ['ko','en','ja'];
 // Localized HTML is generated from this file; an explicit page language wins over browser/saved preferences.
 const PAGE_LANG = document.documentElement?.dataset?.pageLang || '';
 const ASSET_ROOT = PAGE_LANG ? '../' : '';
+// 결정 39(replay): the replay window is this page in an <iframe> with ?replay=1. It plays a recorded run through the engine and writes
+// nothing — no localStorage, no backend, no BGM, notices, rewards or dialogs — and takes no live input (35-replay.js).
+const REPLAY = typeof location!=='undefined' && typeof window!=='undefined' && window.parent!==window && /(?:^|[?&])replay=1(?:&|$)/.test(location.search||'');
 const detectLang = () => { const l = (typeof navigator!=='undefined' && navigator.language || '').toLowerCase(); return l.startsWith('ko')?'ko':l.startsWith('ja')?'ja':'en'; };
 const WINDOWS = [8,12,15], WINDOW_DEFAULT = 12; // Legacy saved values / unchanged Worker contract; not used by the current EWGF judge
 const NICK_BAD = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}\u034f\u115f\u1160\u3164\uffa0\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u; // control, format (zero-width/bidi), private-use, unassigned, separators, Hangul fillers, variation selectors; must match BAD_CHARS in worker/index.js
@@ -122,7 +125,7 @@ try{
     if(s.fit && typeof s.fit==='object') for(const sl of SLOTS){ const id = s.fit[sl]; if(typeof id==='string' && ITEMS[sl][id] && owned(id)) store.fit[sl]=id; } // an unowned item falls back to base
   }
 }catch(e){}
-const save = () => { try{ localStorage.setItem(STORE, JSON.stringify(store)); }catch(e){} };
+const save = () => { if(REPLAY) return; try{ localStorage.setItem(STORE, JSON.stringify(store)); }catch(e){} }; // the replay window borrows the viewer's settings and never writes them back
 let saveTimer = null; // saveSoon: lifetime counters change on every dash/attempt; the synchronous localStorage write waits 1.5s so it never sits in the input path
 const saveSoon = () => { if(saveTimer) return; saveTimer = setTimeout(() => { saveTimer = null; save(); }, 1500); };
 if(LANGS.includes(PAGE_LANG)){ store.lang=PAGE_LANG; save(); }

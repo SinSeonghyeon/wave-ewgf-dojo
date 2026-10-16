@@ -5,7 +5,8 @@ function completeChallenge(c, target){ // a finished run is kept (until the next
   boardSubmit();
 }
 const board = { tab:'wave10', data:{}, msg:'', seq:0, rev:{}, loads:new Map(), deleting:false, submitting:false, loadAfterDelete:false, submitQueue:[] }; // queued writes own their result/payload/identity; changing the visible mode cannot replace them
-const live = { visits:null, posts:null, postsMsg:'', postsLoading:false, posting:false, voting:false, replying:false, postsSeq:0, replyTo:0, replyText:'', visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // post mutations share one busy gate; postsSeq keeps an older list load from replacing a newer response
+const live = { visits:null, posts:null, crowns:{}, postsMsg:'', postsLoading:false, posting:false, voting:false, replying:false, editing:false, postsSeq:0, replyTo:0, replyText:'', edit:null, visitsBusy:false, nickBusy:false, nickMsg:'', nickLater:false, nickLost:false }; // post mutations share one busy gate; postsSeq keeps an older list load from replacing a newer response
+// crowns: nick → [[board, rank]…] from /posts (결정 41(crown)) · edit: the post or reply being edited {kind, id, text} (결정 40(post-edit))
 // nickLater: the gate offers "practise without ranking" after the server itself failed · nickLost: a 403 arrived while the result card was up
 const TIERS = [1, 10, 20, 50, 70]; // upper bounds of "top N%" for grades SS S A B C (tier 0..4); anything above is D (tier 5). Titles: tier.N.title, comments: tier.N.<mode>
 // Grade for the result banner. Tiny boards count as ten players so 1st of 1 lands on S (top 10%), not SS — and 1st of 1 is never "D" at top 100%.
@@ -32,6 +33,7 @@ function boardEntry(r, m){ // pure: finished trial result → submission payload
   else if(m==='bd10'){ e.score = +rec.score; e.tie = rec.top||0; e.detail = {dashes:rec.dashes||0, top:rec.top||0, chain:rec.chain||0}; }
   else { e.score = rec.score; e.tie = -Math.abs(rec.mean) || 0; e.detail = {hits:rec.hits, target:rec.target, mean:rec.mean}; }
   e.detail.char = r.char || CHAR_DEFAULT; // whose record it is (결정 34(char-select)); one board per mode, characters mixed
+  if(r.replay) e.replay = r.replay; // the server keeps it only while the row is in the top 10 (결정 39(replay))
   return e;
 }
 function boardRowText(m, row){ const x = recText(m, {score:row.score, ...(row.detail||{})}); return {label: x.label ?? String(row.score), sub: x.sub ?? ''}; }
@@ -90,6 +92,7 @@ $('nickDlg').addEventListener('close', () => { renderNick(); renderTrialRank(); 
 $('nickBtn').addEventListener('click', () => openNick());
 function setBoardMsg(m){ board.msg = m; $('boardMsg').textContent = msg(m); }
 async function boardFetch(path, init){
+  if(REPLAY) throw new Error('replay'); // the replay window never talks to the server (결정 39(replay))
   const headers = {...(init && init.body ? {'content-type':'application/json'} : {}), ...(init && init.headers || {})}; // GETs and bodiless POSTs stay preflight-free
   const signal = typeof AbortSignal!=='undefined' && AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined; // a hung request must not pin busy flags (gate, submit, post) forever
   const res = await fetch(BOARD_URL + path, {signal, ...init, headers});
@@ -112,7 +115,8 @@ function renderBoard(){
   const rows = d ? d.rows : [];
   // a board two characters can reach tags every row; rows from before the selector have no char and were all the default character
   const tag = r => boardMixed(t) ? `<small class="char-tag">${escapeHTML(T('char.'+(CHAR_IDS.includes(r.detail&&r.detail.char) ? r.detail.char : CHAR_DEFAULT)+'.name'))}</small>` : '';
-  const tr = r => { const mine = me && r.id===me.id, x = boardRowText(t, r), del = mine ? `<button class="board-delete" data-delete-score aria-label="${escapeHTML(T('board.deleteAria'))}"${board.deleting||board.submitting?' disabled':''}>${escapeHTML(T('board.delete'))}</button>` : ''; return `<tr${mine?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}${tag(r)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="act">${del}</td></tr>`; };
+  const play = r => r.replay && boardOn(t) ? `<button class="board-replay" data-replay-id="${r.id}" aria-label="${escapeHTML(T('replay.openAria', r.nick))}" title="${escapeHTML(T('replay.openAria', r.nick))}">${escapeHTML(T('replay.open'))}</button>` : ''; // 결정 39(replay): top-10 rows that kept one
+  const tr = r => { const mine = me && r.id===me.id, x = boardRowText(t, r), del = mine ? `<button class="board-delete" data-delete-score aria-label="${escapeHTML(T('board.deleteAria'))}"${board.deleting||board.submitting?' disabled':''}>${escapeHTML(T('board.delete'))}</button>` : ''; return `<tr${mine?' class="me"':''}><td class="n">${r.rank}</td><td>${escapeHTML(r.nick)}${tag(r)}</td><td class="s">${escapeHTML(x.label)}<small>${escapeHTML(x.sub)}</small></td><td class="act">${play(r)}${del}</td></tr>`; };
   const below = me && !rows.some(r => r.id===me.id) ? `<tr class="sep"><td colspan="4">⋯</td></tr>` + tr(me) : ''; // my row when it sits under the top list
   $('boardList').innerHTML = !d ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('board.empty'))}</div>` :
     `<table><thead><tr><th>${escapeHTML(T('board.hRank'))}</th><th>${escapeHTML(T('board.hNick'))}</th><th>${escapeHTML(T('board.hScore'))}</th><th></th></tr></thead><tbody>` +
@@ -171,6 +175,7 @@ function renderShareRank(){
   $('shareTierMsg').textContent = done ? T('tier.'+t+'.'+mode) : ''; // trial.result belongs to the current mode (setMode clears it)
 }
 async function boardSubmit(){
+  if(REPLAY) return; // a replayed run is never anyone's score
   const r = rankingResult(), e = boardEntry(r, mode); if(!BOARD_URL || !e || !hasNick() || (r.submit && r.submit.state!=='fail')) return renderTrialRank();
   r.submit = {state:'busy'};
   board.submitQueue.push({r,e,nick:store.nick,token:store.nickToken,tab0:board.tab});
@@ -185,7 +190,10 @@ async function boardDrain(){
     if(!sameIdentity()){ r.submit={state:'fail',error:'auth'}; renderTrialRank(); continue; }
     board.submitting=true; renderBoard();
     try{
-      const res=await boardFetch('/submit',{method:'POST',body:JSON.stringify({...e,nick,token})});
+      const send=body=>boardFetch('/submit',{method:'POST',body:JSON.stringify({...body,nick,token})});
+      let res;
+      try{ res=await send(e); }
+      catch(err){ if(err.message!=='too_large' || !e.replay) throw err; const {replay, ...plain}=e; res=await send(plain); } // a Worker from before 결정 39(replay) (2000-char body, deploy order slip or rollback) refuses the replay: the score still goes in
       r.submit={state:'done',rank:res.rank,total:res.total,improved:res.improved};
       if(sameIdentity()){
         boardSet(e.board,res); if(e.board==='wave10') renderWave();
@@ -202,7 +210,12 @@ async function boardDrain(){
 }
 $('dRankRetry').addEventListener('click', boardSubmit);
 $('boardRefresh').addEventListener('click', boardLoad);
-$('boardList').addEventListener('click', ev => { const b = ev.target && ev.target.closest ? ev.target.closest('button[data-delete-score]') : null; if(b) boardDelete(); });
+$('boardList').addEventListener('click', ev => {
+  const b = ev.target && ev.target.closest ? ev.target.closest('button[data-delete-score],button[data-replay-id]') : null; if(!b) return;
+  if(b.dataset.replayId==null) return boardDelete();
+  const d = board.data[board.tab], id = +b.dataset.replayId, row = d && [...d.rows, ...(d.me ? [d.me] : [])].find(r => r.id===id);
+  if(row) replayOpen(row, board.tab);
+});
 $('boardTabs').addEventListener('click', ev => {
   const b = ev.target && ev.target.closest ? ev.target.closest('button[data-board]') : null;
   if(!b || board.deleting || b.dataset.board===board.tab) return;
@@ -220,18 +233,19 @@ function renderVisits(){ const v = live.visits; $('visits').textContent = v ? T(
 // shoutbox: nickname + one line, newest first; the nickname field doubles as the ranking nickname editor
 function setPostsMsg(m){ live.postsMsg = m; $('postMsg').textContent = msg(m); }
 const postTime = t => new Date(t).toLocaleString(LOCALE[store.lang], {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
-const postsMutating = () => live.posting || live.voting || live.replying;
+const postsMutating = () => live.posting || live.voting || live.replying || live.editing;
 async function postsLoad(){
   if(!BOARD_URL || postsMutating() || live.postsLoading) return;
   live.postsLoading = true; const seq = ++live.postsSeq; renderPosts();
-  try{ const rows = (await boardFetch('/posts')).rows; if(seq===live.postsSeq){ setPosts(rows); if(live.postsMsg && ['posts.loadFail','posts.quota'].includes(live.postsMsg[0])) setPostsMsg(''); } }
+  try{ const res = await boardFetch('/posts'); if(seq===live.postsSeq){ setPosts(res.rows, res.crowns); if(live.postsMsg && ['posts.loadFail','posts.quota'].includes(live.postsMsg[0])) setPostsMsg(''); } }
   catch(e){ if(seq===live.postsSeq && !live.posts) setPostsMsg([e.message==='quota' ? 'posts.quota' : 'posts.loadFail']); }
   finally{ live.postsLoading = false; renderPosts(); }
 }
-function setPosts(rows){ // every post/reply/vote answer lands here: posts that fell off the 50-row list are never shown again, so my votes on them are forgotten too
-  live.posts = rows;
+function setPosts(rows, crowns){ // every post/reply/vote/edit answer lands here: posts that fell off the 50-row list are never shown again, so my votes on them are forgotten too
+  live.posts = rows; live.crowns = crowns && typeof crowns==='object' ? crowns : {}; // an older Worker sends no crowns
   const keep = new Set((rows||[]).map(p => String(p.id)));
-  if(live.replyTo && !keep.has(String(live.replyTo))){ live.replyTo = 0; live.replyText = ''; }
+  if(live.replyTo && (!keep.has(String(live.replyTo)) || (rows||[]).some(p => p.id===live.replyTo && p.deleted))){ live.replyTo = 0; live.replyText = ''; }
+  if(live.edit && !(rows||[]).some(p => live.edit.kind==='post' ? p.id===live.edit.id && !p.deleted : (p.replies||[]).some(r => r.id===live.edit.id))) live.edit = null;
   let n = 0; for(const id of Object.keys(store.votes)) if(!keep.has(id)){ delete store.votes[id]; n++; }
   if(n) save();
 }
@@ -239,6 +253,27 @@ function voteBtn(p, v){ // 👍/👎 pill with the count; aria-pressed marks my 
   const label = T(v===1 ? 'posts.like' : 'posts.dislike'), mine = (store.votes[p.id]||0)===v;
   return `<button type="button" class="vote" data-id="${p.id}" data-v="${v}" aria-pressed="${mine}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}"${postsMutating() ? ' disabled' : ''}>${v===1 ? '👍' : '👎'} ${(v===1 ? p.up : p.down)|0}</button>`;
 }
+// 결정 41(crown): one crown beside a nickname in the 도전 모드 top 10 — bigger with a count on two boards, glowing on three or more, a gem for a 1st place
+const CROWN_SVG = '<svg viewBox="0 0 24 18" aria-hidden="true"><path d="M2 16h20l1.6-11.5-6.2 4.6L12 1.5 6.6 9.1.4 4.5z"/><circle class="gem" cx="12" cy="11.2" r="2"/></svg>';
+function crownHTML(nick){
+  const list = live.crowns && Array.isArray(live.crowns[nick]) ? live.crowns[nick].filter(c => Array.isArray(c) && MODES[c[0]] && Number.isInteger(c[1])) : [];
+  if(!list.length) return '';
+  const n = list.length, tip = T('crown.title', list.map(([b, r]) => T('crown.rank', T('mode.'+b+'.name'), r)).join(' · '));
+  return `<span class="crown c${Math.min(n,3)}${list.some(c => c[1]===1) ? ' first' : ''}" role="img" title="${escapeHTML(tip)}" aria-label="${escapeHTML(tip)}">${CROWN_SVG}${n>1 ? `<b>${n}</b>` : ''}</span>`;
+}
+const mineNick = n => hasNick() && !!n && nickKey(n)===nickKey(store.nick);
+// 결정 40(post-edit): my own post or reply shows 수정·삭제; editing swaps its text for a one-line form
+function ownTools(kind, item, busy){
+  if(!mineNick(item.nick)) return '';
+  const dis = busy ? ' disabled' : '';
+  return `<span class="own-tools"><button type="button" class="own-edit" data-kind="${kind}" data-id="${item.id}" aria-label="${escapeHTML(T('posts.editAria'))}"${dis}>${escapeHTML(T('posts.edit'))}</button><button type="button" class="own-delete" data-kind="${kind}" data-id="${item.id}" aria-label="${escapeHTML(T('posts.deleteAria'))}"${dis}>${escapeHTML(T('posts.delete'))}</button></span>`;
+}
+function postBody(kind, item, busy){
+  const e = live.edit;
+  if(e && e.kind===kind && e.id===item.id) return `<form class="edit-form" data-kind="${kind}" data-id="${item.id}"><input maxlength="200" autocomplete="off" aria-label="${escapeHTML(T('posts.editAria'))}" value="${escapeHTML(e.text)}"${busy?' disabled':''}><button class="btn" type="submit"${busy?' disabled':''}>${escapeHTML(T('posts.editSave'))}</button><button class="btn ghost edit-cancel" type="button"${busy?' disabled':''}>${escapeHTML(T('posts.replyCancel'))}</button></form>`;
+  return `<p>${escapeHTML(item.text)}</p>`;
+}
+const postHead = (item, kind, busy) => `<b>${escapeHTML(item.nick)}</b>${crownHTML(item.nick)}<time>${escapeHTML(postTime(item.created_at))}${item.edited_at ? ' · '+escapeHTML(T('posts.edited')) : ''}</time>${ownTools(kind, item, busy)}`;
 function renderPosts(){
   if(!BOARD_URL) return;
   const rows = live.posts, text = $('postText'), busy = postsMutating();
@@ -247,11 +282,32 @@ function renderPosts(){
   $('postsRefresh').textContent = T(live.postsLoading ? 'posts.refreshing' : 'posts.refresh');
   $('postList').innerHTML = !rows ? '' : !rows.length ? `<div class="empty">${escapeHTML(T('posts.empty'))}</div>` :
     rows.map(p => { const replies = Array.isArray(p.replies) ? p.replies : [];
-      const list = replies.length ? `<div class="reply-list">${replies.map(r => `<div class="reply"><b>${escapeHTML(r.nick)}</b><time>${escapeHTML(postTime(r.created_at))}</time><p>${escapeHTML(r.text)}</p></div>`).join('')}</div>` : '';
+      const list = replies.length ? `<div class="reply-list">${replies.map(r => `<div class="reply">${postHead(r, 'reply', busy)}${postBody('reply', r, busy)}</div>`).join('')}</div>` : '';
+      if(p.deleted) return `<div class="post deleted"><p class="post-gone">${escapeHTML(T('posts.deleted'))}</p>${list}</div>`; // 결정 40(post-edit): only its place in the thread is left
       const form = live.replyTo===p.id ? `<form class="reply-form" data-id="${p.id}"><input maxlength="200" autocomplete="off" aria-label="${escapeHTML(T('posts.replyPh'))}" placeholder="${escapeHTML(T('posts.replyPh'))}" value="${escapeHTML(live.replyText)}"${busy?' disabled':''}><button class="btn" type="submit"${busy?' disabled':''}>${escapeHTML(T('posts.replySend'))}</button><button class="btn ghost reply-cancel" type="button"${busy?' disabled':''}>${escapeHTML(T('posts.replyCancel'))}</button></form>` : '';
-      return `<div class="post"><b>${escapeHTML(p.nick)}</b><time>${escapeHTML(postTime(p.created_at))}</time><p>${escapeHTML(p.text)}</p><div class="post-actions"><div class="post-votes">${voteBtn(p,1)}${voteBtn(p,-1)}</div><button type="button" class="reply-open" data-id="${p.id}"${busy?' disabled':''}>↳ ${escapeHTML(T('posts.reply', replies.length))}</button></div>${list}${form}</div>`;
+      return `<div class="post">${postHead(p, 'post', busy)}${postBody('post', p, busy)}<div class="post-actions"><div class="post-votes">${voteBtn(p,1)}${voteBtn(p,-1)}</div><button type="button" class="reply-open" data-id="${p.id}"${busy?' disabled':''}>↳ ${escapeHTML(T('posts.reply', replies.length))}</button></div>${list}${form}</div>`;
     }).join('');
 }
+// 결정 40(post-edit): POST /edit and DELETE /post answer with the fresh list, like posting
+async function ownChange(kind, id, text){
+  if(!BOARD_URL || postsMutating() || !Number.isInteger(id) || !['post','reply'].includes(kind)) return;
+  if(!hasNick()) return openNick();
+  const nick = store.nick, token = store.nickToken, sameIdentity = () => nick===store.nick && token===store.nickToken, del = text==null;
+  if(!del){ text = String(text).replace(/\s+/g,' ').trim(); if(!text || [...text].length>200) return setPostsMsg(['posts.textBad']); }
+  live.editing = true; const seq = ++live.postsSeq; setPostsMsg([del ? 'posts.deleting' : 'posts.editing']); renderPosts();
+  try{
+    const res = await boardFetch(del ? '/post' : '/edit', {method:del ? 'DELETE' : 'POST', body:JSON.stringify(del ? {nick, token, kind, id} : {nick, token, kind, id, text})});
+    if(seq===live.postsSeq) setPosts(res.rows, res.crowns);
+    if(!del || (live.edit && live.edit.kind===kind && live.edit.id===id)) live.edit = null; // post #5 and reply #5 are different rows
+    setPostsMsg('');
+  }catch(err){
+    setPostsMsg([err.message==='rate' ? 'posts.tooFast' : err.message==='text' ? 'posts.textBad' : del ? 'posts.deleteFail' : 'posts.editFail']);
+    if(err.message==='auth' && sameIdentity()) lostNick();
+    if(err.message==='post'){ live.edit = null; live.editing = false; return postsLoad(); } // gone meanwhile: refresh the list
+  }
+  live.editing = false; renderPosts();
+}
+function ownFind(kind, id){ for(const p of live.posts||[]){ if(kind==='post' && p.id===id) return p; const r = (p.replies||[]).find(x => x.id===id); if(kind==='reply' && r) return r; } return null; }
 // like/dislike (2026-09-13): the server keeps one vote per (post, nickname) and takes an idempotent "set to v" (1 / -1 / 0 = none), so pressing my
 // current vote sends 0 (cancel) and the other button switches. store.votes mirrors the server's `mine` answer; a stale cache is corrected, never double-counted.
 async function postVote(id, v){
@@ -262,7 +318,7 @@ async function postVote(id, v){
   live.voting = true; const seq = ++live.postsSeq; renderPosts();
   try{
     const r = await boardFetch('/vote', {method:'POST', body:JSON.stringify({nick, token, id, v:want})});
-    if(seq===live.postsSeq) setPosts(r.rows);
+    if(seq===live.postsSeq) setPosts(r.rows, r.crowns);
     if(sameIdentity()){ if(r.mine) store.votes[id] = r.mine; else delete store.votes[id]; save(); }
     if(live.postsMsg && /^posts\.vote/.test(live.postsMsg[0])) setPostsMsg('');
   }catch(err){
@@ -274,11 +330,19 @@ async function postVote(id, v){
 }
 $('postList').addEventListener('click', ev => {
   const vote = ev.target.closest && ev.target.closest('button.vote'); if(vote) return postVote(+vote.dataset.id, +vote.dataset.v);
+  const own = ev.target.closest && ev.target.closest('button.own-edit,button.own-delete');
+  if(own){
+    const kind = own.dataset.kind, id = +own.dataset.id, item = ownFind(kind, id); if(!item || postsMutating()) return;
+    if(own.classList.contains('own-edit')){ live.edit = live.edit && live.edit.kind===kind && live.edit.id===id ? null : {kind, id, text:item.text}; return renderPosts(); }
+    if(typeof confirm==='function' && !confirm(T('posts.deleteConfirm'))) return;
+    return ownChange(kind, id, null);
+  }
+  if(ev.target.closest && ev.target.closest('button.edit-cancel')){ live.edit = null; return renderPosts(); }
   const open = ev.target.closest && ev.target.closest('button.reply-open');
   if(open){ if(!hasNick()) return openNick(); live.replyTo = live.replyTo===+open.dataset.id ? 0 : +open.dataset.id; live.replyText = ''; return renderPosts(); }
   if(ev.target.closest && ev.target.closest('button.reply-cancel')){ live.replyTo = 0; live.replyText = ''; renderPosts(); }
 });
-$('postList').addEventListener('input', ev => { if(ev.target.closest && ev.target.closest('.reply-form')) live.replyText = ev.target.value; });
+$('postList').addEventListener('input', ev => { if(!ev.target.closest) return; if(ev.target.closest('.reply-form')) live.replyText = ev.target.value; else if(ev.target.closest('.edit-form') && live.edit) live.edit.text = ev.target.value; });
 async function replySend(id, raw){
   if(!BOARD_URL || postsMutating() || !Number.isInteger(id)) return;
   if(!hasNick()) return openNick();
@@ -287,8 +351,8 @@ async function replySend(id, raw){
   if(!text || [...text].length>200) return setPostsMsg(['posts.textBad']);
   live.replying = true; const seq = ++live.postsSeq; live.replyText = text; setPostsMsg(['posts.replying']); renderPosts();
   try{
-    const rows = (await boardFetch('/reply', {method:'POST', body:JSON.stringify({nick, token, id, text})})).rows;
-    if(seq===live.postsSeq) setPosts(rows);
+    const res = await boardFetch('/reply', {method:'POST', body:JSON.stringify({nick, token, id, text})});
+    if(seq===live.postsSeq) setPosts(res.rows, res.crowns);
     live.replyTo = 0; live.replyText = ''; setPostsMsg('');
   }catch(err){
     setPostsMsg([err.message==='rate' ? 'posts.tooFast' : err.message==='text' ? 'posts.textBad' : 'posts.replyFail']);
@@ -297,7 +361,10 @@ async function replySend(id, raw){
   }
   live.replying = false; renderPosts();
 }
-$('postList').addEventListener('submit', ev => { const f = ev.target.closest && ev.target.closest('form.reply-form'); if(!f) return; ev.preventDefault(); replySend(+f.dataset.id, f.querySelector('input').value); });
+$('postList').addEventListener('submit', ev => {
+  const e = ev.target.closest && ev.target.closest('form.edit-form'); if(e){ ev.preventDefault(); return ownChange(e.dataset.kind, +e.dataset.id, e.querySelector('input').value); }
+  const f = ev.target.closest && ev.target.closest('form.reply-form'); if(!f) return; ev.preventDefault(); replySend(+f.dataset.id, f.querySelector('input').value);
+});
 async function postSend(){
   if(!BOARD_URL || postsMutating()) return;
   if(!hasNick()) return openNick();
@@ -305,17 +372,19 @@ async function postSend(){
   const text = $('postText').value.replace(/\s+/g,' ').trim();
   if(!text || [...text].length>200) return setPostsMsg(['posts.textBad']);
   live.posting = true; const seq = ++live.postsSeq; setPostsMsg(['posts.sending']); renderPosts();
-  try{ const rows = (await boardFetch('/posts', {method:'POST', body:JSON.stringify({nick, token, text})})).rows; if(seq===live.postsSeq) setPosts(rows); $('postText').value = ''; setPostsMsg(''); }
+  try{ const res = await boardFetch('/posts', {method:'POST', body:JSON.stringify({nick, token, text})}); if(seq===live.postsSeq) setPosts(res.rows, res.crowns); $('postText').value = ''; setPostsMsg(''); }
   catch(err){ setPostsMsg([err.message==='rate' ? 'posts.tooFast' : err.message==='text' ? 'posts.textBad' : 'posts.sendFail']); if(err.message==='auth' && sameIdentity()) lostNick(); }
   live.posting = false; renderPosts();
 }
 $('postForm').addEventListener('submit', ev => { ev.preventDefault(); postSend(); });
 $('postsRefresh').addEventListener('click', postsLoad);
 function backendInit(){
+  if(REPLAY){ $('boardCard').hidden = $('postsCard').hidden = true; return; } // 결정 39(replay): the replay window has no community side
   document.querySelectorAll('.section-links a[href="#boardCard"],.section-links a[href="#postsCard"]').forEach(a=>a.hidden=!BOARD_URL);
   $('boardCard').hidden = $('postsCard').hidden = !BOARD_URL;
   if(document.body) document.body.classList.toggle('has-community',!!BOARD_URL);
   if(!BOARD_URL) return;
+  if(!boardTabs().includes(board.tab)) board.tab = boardTabs()[0] || board.tab; // a character without a wave opens on a board it can reach
   boardLoad(); postsLoad(); visitsLoad(); renderNick();
   if(!hasNick()){ openNick(); if(store.nick) claimNick(store.nick); } // first visit → gate; a nickname saved before tokens existed is claimed as-is
   setInterval(() => { if(document.hidden) return; bumpVisitDay(); if(live.visitPending) visitsLoad(); }, 60000); // no recurring D1 reads; only count a KST day crossed by an already-open tab

@@ -12,7 +12,11 @@ function renderTouchSettings(){
   applyTouchLayout();
 }
 for(const k of ['touchSize','touchX','touchY']) $(k).addEventListener('input', () => { store[k]=+$(k).value; save(); renderTouchSettings(); });
-segSel('sideSel','side', v => { endTrial(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); renderWsc(); });
+function setSide(v){
+  endTrial(true); store.side=+v; resetInput(); history.length=0; save(); renderHistory(); renderWsc();
+  if(world.dummy.type) rushSpawn(); // 더미 격파 연습 keeps its target through endTrial; a typed dummy is never put back in front like the plain bag, so the new side gets a fresh one
+}
+segSel('sideSel','side', setSide);
 segSel('fxSel','fx', v => { store.fx=+v; save(); rewardNoticeClear(); renderRewards(); });
 segSel('langSel','lang', v => { setLang(v); });
 $('setOpen').addEventListener('click', () => { unlockAudio(); const d = $('setDlg'); if(!d.open){ donateNudgeDefer(); endTrial(true); resetInput(); bindingPadPrevious=null; d.showModal(); pollPad(true); jackpotPause(); } });
@@ -125,13 +129,23 @@ $('bindingReset').addEventListener('click',()=>{
   else { store.keys={...DEFAULT_KEYS}; store.altKeys=Object.fromEntries(Object.keys(DEFAULT_KEYS).map(k=>[k,''])); store.hotKeys=emptyHotKeys(); }
   padNeedsRelease=true; resetInput(); save(); bindingFeedback('set.bindSaved'); renderKeys();
 });
-$('modes').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { setMode(b.dataset.mode); if(b.scrollIntoView) b.scrollIntoView({block:'nearest', inline:'nearest'}); })); // a half-hidden tab slides fully into the scrolling list
+function revealTab(b){ // a half-hidden tab slides fully into the scrolling list, clear of the 도전 모드 tab stuck to its right end
+  const box = $('modes'), c = $('challengeOpen'), r = b.getBoundingClientRect(), bx = box.getBoundingClientRect();
+  const right = c.hidden ? bx.right : c.getBoundingClientRect().left;
+  if(r.right > right) box.scrollLeft += r.right - right + 12; else if(r.left < bx.left) box.scrollLeft -= bx.left - r.left + 12;
+}
+$('modes').querySelectorAll('button[data-mode]').forEach(b => b.addEventListener('click', () => { setMode(b.dataset.mode); revealTab(b); }));
+// 도전 모드 (결정 38(challenge-mode)): the tab opens the window, a challenge in it switches the mode and closes it
+$('challengeOpen').addEventListener('click', openChallenges);
+$('challengeClose').addEventListener('click', () => $('challengeDlg').close());
+$('challengeList').addEventListener('click', ev => { const b = ev.target && ev.target.closest ? ev.target.closest('button[data-mode]') : null; if(!b) return; setMode(b.dataset.mode); $('challengeDlg').close(); });
 $('modes').addEventListener('wheel', e => { const m = e.currentTarget; if(e.deltaX || !e.deltaY || m.scrollWidth <= m.clientWidth) return; m.scrollLeft += e.deltaY; e.preventDefault(); }, {passive:false}); // a plain mouse wheel over the list scrolls it sideways
 // 캐릭터 선택 (결정 34(char-select)): the prominent button opens the tile view; a tile picks and closes
 $('charOpen').addEventListener('click', () => { const d = $('charDlg'); if(d.open) return; donateNudgeDefer(); endTrial(true); resetInput(); renderCharTiles(); d.showModal(); jackpotPause(); });
 $('charClose').addEventListener('click', () => $('charDlg').close());
 $('charTiles').addEventListener('click', ev => { const b = ev.target && ev.target.closest ? ev.target.closest('button[data-char]') : null; if(!b) return; setChar(b.dataset.char); $('charDlg').close(); });
 $('dStart').addEventListener('click', startTrial);
+$('dCancel').addEventListener('click', cancelTrial);
 function resetSession(){
   // Only the settings data reset calls this now: reset every mode, including retained ranking results.
   board.submitQueue.length=0; // Requests already sent cannot be recalled; unsent results are discarded.

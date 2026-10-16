@@ -26,6 +26,7 @@ const canDraw = c => { const g = c && typeof c.getContext==='function' ? c.getCo
 function drawPreview(c, look, scale){ const g = canDraw(c); if(!g) return; g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,c.width,c.height); g.save(); g.translate(c.width/2, c.height-8); g.scale(scale,scale); drawFighter(g, 0, 0, {lean:4, armR:35, armL:-30, spread:0.25}, 1, 1, null, look); g.restore(); }
 function unlockItem(id, kind){ store.pendingRewards.push({kind, id, at:Date.now(), day:store.life.days}); rewardNoticeAdd(kind); }
 function checkAch(){ // called after every counter change; cheap (25 predicates)
+  if(REPLAY) return; // a replayed run unlocks nothing
   const l = store.life; let n = 0;
   for(const id of Object.keys(ACH)) if(!earned(id) && ACH[id].stat(l)>=ACH[id].target){ unlockItem(id, 'ach'); n++; }
   if(n){ save(); if($('fitDlg').open) renderFit(); renderRewards(); }

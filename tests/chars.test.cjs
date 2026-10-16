@@ -28,9 +28,9 @@ test('the default character is kazuya; a saved or addressed character loads, an 
 });
 test('modes and boards follow the character capabilities',()=>{
   const k=boot(), h=hw();
-  for(const m of ['free','wsc','giwon','wave10','ewgf20','combo10','rush30','bd10']) assert.ok(k.modeAvail(m),'kazuya '+m);
+  for(const m of ['free','wave','wsc','giwon','rush','backdash','wave10','ewgf20','combo10','rush30','bd10']) assert.ok(k.modeAvail(m),'kazuya '+m);
   assert.equal(k.modeAvail('jfsr'),false);
-  assert.deepEqual(Object.keys(k.MODES).filter(h.modeAvail),['free','jfsr','wave10','bd10']);
+  assert.deepEqual(Object.keys(k.MODES).filter(h.modeAvail),['free','wave','jfsr','backdash','wave10','bd10']);
   assert.equal(k.boardMixed('wave10'),true);assert.equal(k.boardMixed('bd10'),true);
   assert.equal(k.boardMixed('ewgf20'),false);assert.equal(k.boardMixed('jfsr'),false);
   assert.ok(k.BOARDS.includes('jfsr'),'the jfsr challenge has a board');

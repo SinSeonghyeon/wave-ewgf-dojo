@@ -5,16 +5,19 @@
 | 경로 | 용도 |
 |---|---|
 | `POST /nick` | 닉네임 등록 `{nick}` → `{ok,nick,token}`. 대소문자·전각을 무시하고 유일. 이미 있으면 409 `taken`. 토큰은 브라우저가 보관하고 아래 등록·게시에 붙인다 |
-| `GET /top?board=wave10[&nick=]` | 상위 10 + 참가 수 + (nick이 있으면) 내 행과 순위 `me` + `cut10`(상위 10% 경계 점수. 10명 미만은 10명으로 계산해 1위 점수, 빈 보드는 null. 앱은 wave10의 값으로 웨이브 차트 상위 띠를 그린다) |
-| `POST /submit` | 기록 등록(`token` 필수, 틀리면 403 `auth`). 닉네임당 보드마다 1행(초기화 없음, 2026-09-14): 더 좋으면 교체, 아니면 유지(`improved:false`) |
+| `GET /top?board=wave10[&nick=]` | 상위 10 + 참가 수 + (nick이 있으면) 내 행과 순위 `me` + `cut10`(상위 10% 경계 점수. 10명 미만은 10명으로 계산해 1위 점수, 빈 보드는 null. 앱은 wave10의 값으로 웨이브 차트 상위 띠를 그린다). 행마다 다시보기가 있으면 `replay:true`(2026-10-16) |
+| `POST /submit` | 기록 등록(`token` 필수, 틀리면 403 `auth`). 닉네임당 보드마다 1행(초기화 없음, 2026-09-14): 더 좋으면 교체, 아니면 유지(`improved:false`). 선택 필드 `replay`(입력 기록, 아래 "다시보기")는 그 행이 공개 상위 10일 때만 보관 |
+| `GET /replay?id=` | 순위 행 id의 다시보기 `{ok, 그 행(/top 행 모양), replay}`(2026-10-16, 결정 39). 없거나 10위 밖으로 밀려 지워졌으면 404 `replay`, 섀도 밴 닉의 행도 404 |
 | `DELETE /score` | 본인 기록 삭제 `{board,nick,token}`. 닉네임+토큰 소유권을 검증하고 현재 보드의 본인 행만 지운 뒤 갱신된 `/top` 모양을 돌려준다 |
 | `GET /visits` · `POST /visits` | 오늘(KST)·누적 방문 수. POST는 오늘에 1을 더한다(앱이 브라우저당 하루 1회만 보냄) |
-| `GET /posts` · `POST /posts` | 한마디 최신 50개(행마다 좋아요 `up`·싫어요 `down` 수와 오래된 순 `replies[]`) · 작성(`{nick,token,text}`, 200자) |
+| `GET /posts` · `POST /posts` | 한마디 최신 50개(행마다 좋아요 `up`·싫어요 `down` 수, `edited_at`, 자리표시면 `deleted:1`(닉·본문 빈칸), 오래된 순 `replies[]`) + 그 페이지 닉네임의 왕관 `crowns`(`{닉: [[보드, 순위], …]}`, 결정 41) · 작성(`{nick,token,text}`, 200자) |
 | `POST /reply` | 원글에 1단계 대댓글 작성(`{nick,token,id,text}`, 200자, 여러 개 가능) → `{ok,id,postId,rows}`. 원글과 합쳐 IP당 1분 3개(`POST_LIMIT`) |
 | `POST /vote` | 글에 좋아요/싫어요(`{nick,token,id,v}`, v = 1 좋아요 · -1 싫어요 · 0 취소). 닉네임당 글 하나에 표 1개(`votes` PK), 같은 값을 다시 보내도 중복되지 않는 "설정" 방식. 응답 `{ok,id,mine,rows}`. 400 `id`/`v`, 403 `auth`, 404 `post`, 429 `rate`(IP당 1분 30개, `VOTE_LIMIT`) |
+| `POST /edit` | 본인 원글·답글 수정 `{kind,id,nick,token,text}`(kind = `post` 또는 `reply`)(2026-10-16, 결정 40). 작성자 닉네임+토큰 확인, 글자 규칙은 작성과 같다, `edited_at` 기록 → `{ok,rows,crowns}`. 403 `auth`(토큰 불일치)·`owner`(남의 글), 404 `post`(없거나 삭제된 글), 429 `rate`(`VOTE_LIMIT` 묶음) |
+| `DELETE /post` | 본인 원글·답글 삭제 `{kind,id,nick,token}`(결정 40). 답글·답글 없는 원글은 행째(원글의 표도), 답글이 달린 원글은(본인 답글만 있어도) `deleted=1` 자리표시(닉·본문·표 지움, 답글 유지). 마지막 답글이 지워지면 자리표시도 사라진다 → `{ok,rows,crowns}` |
 | `DELETE /posts/:id` | 관리자 삭제(그 글의 표와 대댓글도 함께 지움). 헤더 `authorization: Bearer <ADMIN_TOKEN>` |
 | `GET /scores?board=` | 관리자. 그 보드의 **모든** 행을 id·차단 표시(`banned`)와 함께 |
-| `DELETE /scores/:id` | 관리자. 기록 한 행 영구 삭제 |
+| `DELETE /scores/:id` | 관리자. 기록 한 행 영구 삭제(그 행의 다시보기도) |
 | `GET /ban` · `POST /ban {nick}` · `DELETE /ban?nick=` | 관리자. 섀도 밴 목록·추가·해제(아래 "순위 조작 대응") |
 
 ## 현재 상태 (2026-09-12)
@@ -29,7 +32,7 @@
 
 워커 재배포와 D1 스키마 적용은 **사용자 작업**이다. 앱이 새 보드·새 경로·새 테이블을 쓰는 변경이면 순서는 항상
 
-1. 새 테이블·인덱스(`schema.sql`, `IF NOT EXISTS`라 안전)를 먼저 적용 — 새 워커가 없는 테이블을 읽지 않게
+1. 새 테이블·인덱스(`schema.sql`, `IF NOT EXISTS`라 안전)를 먼저 적용 — 새 워커가 없는 테이블을 읽지 않게. 기존 테이블에 **열을 더하는** `ALTER`(파일 머리에 "워커보다 먼저"라고 적힌 `migrate-*.sql`)도 이 단계에서 `schema.sql`보다 먼저 한 번만 실행한다
 2. 워커 배포(`npx wrangler@latest deploy`)
 3. 기존 행을 바꾸는 **데이터 마이그레이션**(`migrate-*.sql`)은 워커 배포 **뒤에** 실행 — 옛 워커가 그사이 쓴 행까지 옮기도록. 각 파일 머리의 안내를 따른다
 4. 사이트 푸시(main → Pages)
@@ -127,7 +130,8 @@ workers.dev 서브도메인이 없으면 deploy가 멈춘다. 대시보드 Worke
 
 ## 설계
 
-- 시즌 키 `scores.week` = `SEASON` 상수 `'all'`(2026-09-14 사용자 결정: 초기화 없음, 유입이 늘면 그때 넣는다). `seasonKey(now)` 한 곳이 저장·조회 키를 정하므로 주간 초기화를 되살리려면 거기서 `weekKey(now)`(해당 주 월요일 날짜 KST)를 돌려주면 된다 — 다른 키의 행은 지우지 않고 조회에서만 빠진다. 2026-09-14 이전의 주간 행은 `migrate-2026-09-14-alltime.sql`로 닉·보드당 최고 1건만 남겨 `'all'`로 합쳤다.
+- 시즌 키 `scores.week` = `SEASON` 상수. 2026-09-14부터 `'all'`(사용자 결정: 정기 초기화 없음), 2026-10-16 다시보기 배포부터 `'s2'`(사용자 결정: 기존 상위 행에 다시보기가 없어 한 번 새로 시작. `'all'` 행은 D1에 그대로 남고 조회에서만 빠진다 — `'all'`로 되돌리면 다시 보인다). `seasonKey(now)` 한 곳이 저장·조회 키를 정하므로 주간 초기화를 되살리려면 거기서 `weekKey(now)`(해당 주 월요일 날짜 KST)를 돌려주면 된다 — 다른 키의 행은 지우지 않고 조회에서만 빠진다. 2026-09-14 이전의 주간 행은 `migrate-2026-09-14-alltime.sql`로 닉·보드당 최고 1건만 남겨 `'all'`로 합쳤다.
+- 앱이 보여 주는 보드는 2026-10-16부터 `wave10`·`rush30`·`bd10` 3개(결정 38). 아래 다른 보드는 워커에 남아 있고 앱이 다시 켜면 이어진다.
 - 보드 5개: `wave10`(score=대시/초, tie=최고 연속), `ewgf20`(score=성공률, tie=−|평균 오프셋|), `combo10`(score=성공률, tie=측정 중 평균 대시/초), `rush30`(score=점수, tie=격파 수, detail {kills,whiffs,dashPts}. 2026-09-13 추가), `bd10`(score=백대시로 물러난 거리 m 0~60, tie=매우 빠름 세트 수, detail {dashes,top,chain}. 2026-09-13 추가 — 배포 전에는 앱의 bd10 등록이 400 `board`로 거부되므로 사이트보다 먼저 배포한다).
 - 닉네임: `nicks(key,nick,token)`. key = NFKC 소문자. 계정 대신 토큰(48 hex)으로 소유를 증명한다. 토큰을 잃으면(브라우저 데이터 삭제) 그 닉네임은 다시 못 쓴다 — 해제 API는 일부러 없다. 필요하면 D1에서 직접 `DELETE FROM nicks WHERE key=?`.
 - 닉네임당 보드마다 1행: `INSERT … ON CONFLICT(week,board,nick) DO UPDATE … WHERE 더 좋을 때만`. 순위 = 자기보다 (score, tie)가 높은 기록 수 + 1. 동점은 같은 순위. 응답은 상위 10 + 전체 참가자 수 + 내 행(`me`, 10위 밖이어도 순위 계산).
@@ -139,6 +143,31 @@ workers.dev 서브도메인이 없으면 deploy가 멈춘다. 대시보드 Worke
 - 관측: 변경 전후 `npx wrangler d1 insights mishima-dojo-board --timePeriod=1d --sort-type=sum --sort-by=reads --sort-direction=DESC --limit=20`로 쿼리별 읽기 행·실행 횟수를 확인한다. 2026-09-15 실제 1일치에서 기존 `/top` 분리 쿼리 4종이 약 560만 행(2,027,017 + 1,626,322 + 1,560,904 + 388,551), `/posts` 약 327,543행, 방문 집계 약 10,492행을 읽어 순위 조회가 한도를 소진했다.
 - 조회 절약 원칙(2026-09-15): `/top`은 window CTE 한 쿼리로 상위 10·참가 수·내 순위·cut10을 함께 계산한다. `/posts`는 최신 50개를 먼저 제한하고 그 글에만 투표를 조인한다. 앱은 한마디·순위 자동 폴링을 하지 않는다(한마디는 최초 로드/새로고침 버튼/변경, 순위는 최초 로드/탭/새로고침/점수 변경). 새 쿼리는 인덱스를 타는 범위 조건과 작은 CTE를 우선하고 Insights로 실제 스캔량을 확인한다.
 - 테스트: `node --test tests/board.test.cjs` (`tests/fake-d1.js` = node:sqlite 인메모리에 schema.sql을 그대로 적용한 가짜 D1, Node 22.13+). 스모크 테스트는 같은 핸들러를 로컬 http로 감싸 실제 브라우저에서 등록·조회·게시·대댓글·방문 집계를 돈다.
+
+## 2026-10-16 다시보기 · 한마디 수정/삭제 · 왕관 · 도전 모드 정리
+
+- 다시보기(결정 39): `replays(score_id,board,data,created_at)` 테이블. `/submit`이 보낸 `replay`를 `cleanReplay`로 형식·크기만 검사(이벤트 쌍 ≤ 8000, JSON ≤ 60000자, 코드 0~8 방향 · 17~31 버튼 · 32 TICK · 33 시작 · 34 GO, `init` 0~80 = 쥔 방향×9 + 직전 방향, `char`·`win`·`moves`·`seed`·`hits` 허용 값만, 모르는 필드는 버림)하고, 틀리면 다시보기만 버리고 기록은 받는다. 보관은 그 보드의 **공개 상위 10행**뿐: 등록 기록이 바뀌면 새 것으로 바꾸거나 지우고, 10위 밖으로 밀린 행의 것은 같은 요청에서 지운다(`publicTop`, 섀도 밴 제외). `DELETE /score`·관리자 기록 삭제가 함께 지운다. `/top` 행의 `replay` 표시는 `EXISTS` 한 번(상위 10행 PK 조회).
+- 한마디 본인 수정·삭제(결정 40): `posts.edited_at`·`posts.deleted`·`replies.edited_at` 열. 삭제된 원글(자리표시)에는 답글·투표를 받지 않는다(404 `post`).
+- 왕관(결정 41): `/posts` 응답의 `crowns`. 도전 모드 보드 `CROWN_BOARDS`(`wave10`·`rush30`·`bd10`)의 공개 상위 10을 보드마다 한 번 읽고(10행씩) 워커 인스턴스 메모리에 5분 캐시한다. 같은 인스턴스의 등록·삭제·밴은 캐시를 바로 버린다(다른 인스턴스는 최대 5분 늦음).
+- 새 시즌(결정 19 보완): `SEASON`이 `'all'` → `'s2'`. 워커가 배포되는 순간 모든 순위표·참가 수·`cut10`·왕관이 빈 상태로 시작한다. 기존 행은 지우지 않는다(되돌리기 = `'all'`로 재배포). 닉네임·한마디·방문 수는 그대로.
+- 도전 모드 정리(결정 38): `ewgf20`·`combo10`·`wsc`·`giwon`·`jfsr`·`tju` 보드는 **앱에서만** 숨겼다. 워커의 보드·검증·기록은 그대로라 다시 켜면 이어진다.
+
+순서 — **열 추가 → 스키마 → 워커 → 사이트**. 열 없이 새 워커를 먼저 올리면 `/posts`가 `no such column`으로 실패해 한마디가 안 보인다. 새 워커 + 옛 사이트는 문제없다(옛 앱은 `replay`·`crowns`·`edited_at`을 무시).
+
+```powershell
+cd D:\dojo\worker
+npx wrangler d1 execute mishima-dojo-board --remote --file=migrate-2026-10-16-post-edit.sql   # 한 번만. 두 번째는 duplicate column 오류로 아무것도 안 바뀜
+npx wrangler d1 execute mishima-dojo-board --remote --file=schema.sql                         # replays 테이블·인덱스
+npx wrangler@latest deploy
+# --file이 401(code 10000)로 거부되면 문장을 하나씩 직접:
+# npx wrangler d1 execute mishima-dojo-board --remote --command "ALTER TABLE posts ADD COLUMN edited_at INTEGER"
+# npx wrangler d1 execute mishima-dojo-board --remote --command "ALTER TABLE posts ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0"
+# npx wrangler d1 execute mishima-dojo-board --remote --command "ALTER TABLE replies ADD COLUMN edited_at INTEGER"
+# npx wrangler d1 execute mishima-dojo-board --remote --command "CREATE TABLE IF NOT EXISTS replays (score_id INTEGER PRIMARY KEY, board TEXT NOT NULL, data TEXT NOT NULL, created_at INTEGER NOT NULL)"
+# npx wrangler d1 execute mishima-dojo-board --remote --command "CREATE INDEX IF NOT EXISTS replays_board ON replays(board)"
+```
+
+확인: `/` 응답에 `"season":"s2"`, `/posts` 응답에 `"crowns":{` 와 행마다 `"edited_at":null`이 보이면 새 워커다. 워커 배포부터 사이트 푸시까지는 옛 사이트에 빈 순위표가 보이므로(새 시즌 공지는 새 사이트에 있다) 두 작업을 이어서 한다. 사이트 푸시 뒤 도전 모드를 한 판 해서 순위표 내 행에 ▶가 생기면 다시보기 보관까지 끝. 배포 뒤 하루쯤 `wrangler d1 insights`(위 "관측")로 `/posts`·`/top`의 읽기 행이 크게 늘지 않았는지 본다(결정 24).
 
 ## 2026-10-15 도발 제트어퍼 보드·브라이언 추가
 
