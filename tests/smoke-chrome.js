@@ -339,7 +339,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.ko2 = await evalJs(`({title:${q('#boardCard h2')}.textContent, empty:${q('#boardList .empty')}?.textContent, me:${q('#boardMe')}.textContent, rank:${q('#dRank')}.textContent, visits:${q('#visits')}.textContent, postsTitle:${q('#postsCard h2')}.textContent, nickBtn:${q('#nickBtn')}.textContent})`);
   out.db = {scores:db.rows.map(r => ({board:r.board, nick:r.nick, score:r.score, tie:r.tie, win:r.win, week:r.week})), posts:db.posts.map(p => [p.nick, p.text]), replies:db.replies.map(r => [r.post_id,r.nick,r.text]), visits:db.visits, nicks:db.db.prepare('SELECT key,nick FROM nicks ORDER BY key').all().map(r => [r.key, r.nick])};
   const bd = out.board, auto = bd.auto;
-  if(bd.tabs.length!==3 || !/Wave 10s/.test(bd.tabs[0]||'') || !/rush30|Dummy Rush/.test(bd.tabs[1]||'') || !/bd10|Backdash/.test(bd.tabs[2]||'')) errors.push('leaderboard tabs check failed (the 도전 모드 boards only, 결정 38(challenge-mode)): '+JSON.stringify(bd.tabs));
+  if(bd.tabs.length!==4 || !/Wave 10s/.test(bd.tabs[0]||'') || !/Wave ×5/.test(bd.tabs[1]||'') || !/rush30|Dummy Rush/.test(bd.tabs[2]||'') || !/bd10|Backdash/.test(bd.tabs[3]||'')) errors.push('leaderboard tabs check failed (the 도전 모드 boards only, 결정 38(challenge-mode)): '+JSON.stringify(bd.tabs));
   if(bd.cardHidden || bd.postsHidden || !/rank 1 of 1 · top 100%/.test(bd.rank) || !bd.retryHidden || bd.info!=='1 entries' || !/rank 1 of 1 · top 100%/.test(bd.me) || !bd.meRow || bd.rows.length!==1 || bd.rows[0][1]!=='스모크 테스트' || bd.tag!=='Kazuya' || bd.rows[0][0]!=='1' || !/^Today 1 · total 1 visits$/.test(bd.visits)) errors.push('leaderboard check failed: '+JSON.stringify(bd));
   if(!auto || auto.during.rank!=='' || auto.during.open || !/best stands · rank 1 of 1/.test(auto.after.rank) || auto.after.rows!==1 || !auto.after.open || !/best stands/.test(auto.after.line) || auto.after.tier!=='S') errors.push('leaderboard auto-submit check failed: '+JSON.stringify(auto));
   if(!bd.deleted || bd.deleted.msg!=='Your result was deleted.' || !/No entry from you/.test(bd.deleted.me) || bd.deleted.rows!==0 || bd.deleted.button || bd.deleted.db!==0) errors.push('leaderboard self-delete check failed: '+JSON.stringify(bd.deleted));
@@ -363,7 +363,7 @@ let dir, browser, server; const rmTmp = () => { if(dir) try{ fs.rmSync(dir,{recu
   out.wscOff = await evalJs(`({btn:document.querySelector('#wscChallengeBtn').hidden, status:document.querySelector('#wscChallengeStatus').hidden, tab:document.querySelector('#boardTabs [data-board="wsc"]').hidden,
     list:(document.querySelector('#challengeOpen').click(), [...document.querySelectorAll('#challengeList [data-mode]')].map(b=>b.dataset.mode).join(','))})`);
   await evalJs(`document.querySelector('#challengeClose').click()`);
-  if(!out.wscOff.btn || !out.wscOff.status || !out.wscOff.tab || out.wscOff.list!=='wave10,rush30,bd10') errors.push('switched-off WSC challenge check failed: '+JSON.stringify(out.wscOff));
+  if(!out.wscOff.btn || !out.wscOff.status || !out.wscOff.tab || out.wscOff.list!=='wave10,wave5,rush30,bd10') errors.push('switched-off WSC challenge check failed: '+JSON.stringify(out.wscOff));
   await evalJs(`document.querySelector('[data-mode="free"]').click()`);
   // touch controls: three direction buttons feed the normal path; down+right forms d/f
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});

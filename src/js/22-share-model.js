@@ -15,6 +15,14 @@ function buildCard(src){
     chart = {type:'wave', pts:cycles.slice(-40).map(c=>c.dps), top:waveTop()};
     summary = T('rec.dps',dps)+' · '+T('rec.waveSub', r.dashes, chain);
     sub = T('trial.waveEnd', r.dashes, dps);
+  } else if(src.kind==='trial' && m==='wave5'){ // score = −centiseconds (결정 42(wave5))
+    const r = src.rec, n = MODES.wave5.target, sec = wave5Sec(r.score), chain = r.chain||0;
+    const span = cycles.reduce((a, c) => a+c.cycle, 0); // the run's linked dash-to-dash cycles: its wave speed (n ÷ the timed span would count only n−1 cycles and read fast)
+    hero = {value:sec+' s', label:T('card.time', n)};
+    metrics = [metric('card.chain', chain), metric('card.wave', span ? (1000*cycles.length/span).toFixed(1) : '–')];
+    chart = cycles.length>=2 ? {type:'wave', pts:cycles.slice(-40).map(c=>c.dps), top:waveTop()} : null;
+    summary = T('rec.sec', sec)+' · '+T('rec.wave5Sub', chain);
+    sub = T('trial.wave5End', n, sec);
   } else if(src.kind==='trial' && m==='bd10'){
     const r = src.rec, dist = (+r.score).toFixed(1);
     hero = {value:dist+' m', label:T('card.dist')};

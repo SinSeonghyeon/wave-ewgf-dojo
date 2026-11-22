@@ -68,6 +68,29 @@ test('replay: wave10 — the same dashes and chain on another frame cadence, a l
   assert.deepEqual(plain(c.recorder.run.ev.slice(-4).filter((x, i) => i % 2)), [32, 3], 'TICK (32) then d (3)');
 });
 
+test('replay: wave5 (결정 42(wave5)) — the same time on another frame cadence; a replay that never reaches its fifth dash reports no score', () => {
+  const a = boot();
+  const result = liveRun(a, 'wave5', (a, go) => {
+    const list = []; let t = go + 260; // reaction time after GO is off the clock
+    for(let i = 0; i < 5; i++){
+      const g = 15 + (i % 3) * 4.1;
+      for(const d of i ? ['f','n','f','n','d','df'] : ['f','n','d','df']){ const at = t; list.push(ev(at, () => a.onDir(d, at))); t += g; }
+      t += 6.3;
+    }
+    return list;
+  }, {step: F, phase: 2.1});
+  const rec = result.rec, replay = result.replay;
+  assert.ok(rec.score < -30 && rec.score > -100, JSON.stringify(rec)); assert.equal(replay.board, 'wave5');
+  for(const cadence of [{step: F, phase: 0}, {step: 1000/144, phase: 3.3}, {step: 1000/30, phase: 11}]){
+    const {b, end} = playBack(replay, cadence);
+    assert.deepEqual([b.trial.result.rec.score, b.trial.result.rec.chain], [rec.score, rec.chain], JSON.stringify(cadence));
+    assert.equal(end.score, rec.score); assert.equal(end.tie, rec.chain); assert.equal(end.label, rec.label);
+  }
+  const cut = plain(replay); cut.ev = cut.ev.slice(0, -6); // the fifth dash's last three inputs lost: the playback runs out of time
+  const {end} = playBack(cut);
+  assert.equal(end.score, null); assert.equal(end.label, '');
+});
+
 test('replay: an input exactly on a 60Hz slot boundary (a 0.1ms browser clock lands on one every 50ms) keeps the slot the live run judged', () => {
   const a = boot();
   const result = liveRun(a, 'wave10', (a, go) => {

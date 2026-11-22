@@ -231,6 +231,7 @@ function completeCD(t){
     if(cd.chain>=3){ const last3 = cd.chainCycles.slice(-3); const span = last3[2].t - last3[0].t; const dps = 2000/span; if(dps>session.bestDps) session.bestDps = dps; }
   }
   if(trial.running && mode==='wave10'){ trial.count++; trial.bestChain = Math.max(trial.bestChain||0, cd.chain); }
+  else if(trial.running && mode==='wave5'){ if(!trial.count) trial.t0 = Math.max(cd.tF, trial.tStart); trial.count++; trial.bestChain = Math.max(trial.bestChain||0, cd.chain); trial.tEnd = t; } // the clock runs from the first dash's 6 (결정 42(wave5))
   else if(trial.running && mode==='rush30'){ const p = Math.min(cd.chain, RUSH_PTS.dashMax); trial.score += p; trial.dashPts += p; pop('+'+p, cssVar('--accent','#4CC9FF'), 24, {y:-150}); renderRushHud(); } // wave movement scores by chain length, anywhere (user decision)
   if(cyc.cycle) renderWave();
   fx.crouchDash();
@@ -251,6 +252,7 @@ function completeCD(t){
   }
   if(cd.pending) resolvePending(t, t);
   updateStats(); updateHud();
+  if(trial.running && mode==='wave5' && trial.count>=trial.target) endTrial(); // the fifth dash's 3 stops the clock, after this dash's own result
 }
 function fault(kind, t){
   if(!['f_before_d','n_to_df','cancel_as_start'].includes(kind)) return;

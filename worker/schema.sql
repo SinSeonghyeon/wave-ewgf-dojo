@@ -3,11 +3,11 @@
 CREATE TABLE IF NOT EXISTS scores (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   week       TEXT    NOT NULL,             -- season key the Worker reads/writes (SEASON): 's2' since the 2026-10-16 replay release, 'all' 2026-09-14 … then (kept, unlisted). Was the Monday of the KST week 'YYYY-MM-DD'; see migrate-2026-09-14-alltime.sql
-  board      TEXT    NOT NULL,             -- wave10 | ewgf20 | combo10 | rush30 | bd10
+  board      TEXT    NOT NULL,             -- a key of BOARDS in index.js: wave10 | wave5 | ewgf20 | combo10 | rush30 | bd10 | …
   nick       TEXT    NOT NULL,             -- 2..12 code points
-  score      REAL    NOT NULL,             -- primary metric (wave10: dash/s, others: success %)
-  tie        REAL    NOT NULL DEFAULT 0,   -- secondary metric, higher wins (wave10: best chain, ewgf20: -|mean offset|, combo10: mean dash/s)
-  detail     TEXT    NOT NULL DEFAULT '{}',-- JSON: wave10 {dashes,chain} · ewgf20 {hits,target,mean} · combo10 {hits,target,mean,dps}
+  score      REAL    NOT NULL,             -- primary metric, higher wins (wave10: dash/s, wave5: −centiseconds so the fastest is highest — 1.23 s = -123, rush30: points, bd10: metres, EWGF boards: success %)
+  tie        REAL    NOT NULL DEFAULT 0,   -- secondary metric, higher wins (wave10 · wave5: best chain, ewgf20: -|mean offset|, combo10: mean dash/s)
+  detail     TEXT    NOT NULL DEFAULT '{}',-- JSON: wave10 {dashes,chain} · wave5 {chain} · ewgf20 {hits,target,mean} · combo10 {hits,target,mean,dps}
   win        INTEGER NOT NULL,             -- EWGF window in ms: 8 / 12 / 15
   lang       TEXT    NOT NULL DEFAULT 'ko',
   created_at INTEGER NOT NULL              -- epoch ms

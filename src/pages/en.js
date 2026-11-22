@@ -162,6 +162,7 @@ module.exports = {
 <li><strong>Accuracy first</strong>: in free practice, get ten dashes in a row without a break. When it breaks, read the named cause.</li>
 <li><strong>Rhythm</strong>: count three beats, “dash – cancel – release”. The input log shows how many frames each direction was held, so check you are not sitting on any direction.</li>
 <li><strong>Wave 10s</strong>: counts crouch dashes over ten seconds and records dashes per second and your best chain. Check the speed chart for slowing down near the end.</li>
+<li><strong>Wave ×5</strong>: times five crouch dashes from the first 6. Good for sharpening how fast the first few dashes come out.</li>
 <li><strong>Dummy Rush 30s</strong>: wave in and hit high dummies with an EWGF, mids with f,f+2 and lows with hell sweep, the match-like test of speed and timing together.</li>
 </ol>
 
@@ -360,7 +361,7 @@ module.exports = {
 <li>On the <a href="@">practice screen</a>, press the <strong>Character</strong> button left of the mode tabs and pick <strong>Hwoarang</strong>.</li>
 <li>On the <strong>JF Sky Rocket</strong> tab every input shows the forward and neutral frames and the d/f ↔ 4 gap. A single <code>↘+4</code> row in the input log means one frame.</li>
 <li>When the rate climbs, run the <strong>10-try challenge</strong>. With a nickname the result goes to the "JF Sky Rocket ×10" leaderboard.</li>
-<li>Hwoarang can also play Wavedash 10s and Backdash 10s; those records share Kazuya\'s leaderboards with a character tag.</li>
+<li>Hwoarang can also play Wavedash 10s, Wave ×5 and Backdash 10s; those records share Kazuya\'s leaderboards with a character tag.</li>
 </ol>
 `,
     },
@@ -485,6 +486,7 @@ module.exports = {
 <p>Besides unlimited <strong>Free practice</strong> and the practice modes (wave, wave-cancel upper, d/f+2 link, dummy rush, backdash and more), <strong>Challenge Mode</strong> tests you under fixed conditions:</p>
 <ul>
 <li><strong>Wave 10s</strong>: how many crouch dashes you chain in ten seconds, and how fast</li>
+<li><strong>Wave ×5</strong>: how fast you finish five crouch dashes, in seconds</li>
 <li><strong>Dummy Rush 30s</strong>: hit high, mid and low dummies with EWGF, f,f+2 and hell sweep for points</li>
 <li><strong>Backdash 10s</strong>: distance covered in ten seconds, and your cancel timing</li>
 </ul>

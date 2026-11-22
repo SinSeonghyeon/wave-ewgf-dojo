@@ -15,6 +15,11 @@ test('leaderboard entry is built only from a finished trial, one metric pair per
   assert.equal(waveReplay.board,'wave10');assert.equal(waveReplay.v,1); // 결정 39(replay): a 도전 모드 run carries its inputs
   assert.equal(plain(a.boardEntry({...a.trial.result,replay:null},'wave10')).replay,undefined,'no replay, no field');
   assert.deepEqual(plain(a.boardRowText('wave10',wave)),{label:'0.1 대시/초',sub:'1회 · 최고 연속 1'});
+  const five=run('wave5',()=>{let t=4100;for(let i=0;i<5;i++)for(const d of i?['f','n','f','n','d','df']:['f','n','d','df']){a.onDir(d,t);t+=20;}});const {replay:fiveReplay,...fiveEntry}=plain(five);
+  assert.deepEqual(fiveEntry,{board:'wave5',win:8,lang:'ko',score:-54,tie:5,detail:{chain:5,char:'kazuya'}},'결정 42(wave5): −centiseconds, tie = best chain');assert.equal(fiveReplay.board,'wave5');
+  assert.deepEqual(plain(a.boardRowText('wave5',five)),{label:'0.54초',sub:'최고 연속 5'});
+  const fiveCard=a.buildCard({kind:'trial',mode:'wave5',rec:a.trial.result.rec,attempts:[],cycles:a.trial.result.cycles,window:8});
+  assert.equal(fiveCard.hero.value,'0.54 s');assert.equal(fiveCard.hero.label,'대시 5회 시간');assert.deepEqual(plain(fiveCard.metrics.map(m=>[m.label,m.value])),[['최고 연속 대시','5'],['웨이브 속도 (대시/초)','8.3']],'wave speed from the 120 ms cycles, not 5 ÷ the timed span');assert.equal(fiveCard.sub,'대시 5회 · 0.54초');assert.equal(fiveCard.chart.type,'wave');
   const ewgf=run('ewgf20',()=>{dash(a,4100);a.onButton(2,4160);});
   assert.deepEqual(plain(ewgf),{board:'ewgf20',win:8,lang:'ko',score:5,tie:0,detail:{hits:1,target:20,mean:0,char:'kazuya'}},'a switched-off board records no replay (결정 38(challenge-mode))');
   assert.equal(Object.is(ewgf.tie,-0),false,'tie must not be -0');
@@ -326,7 +331,7 @@ test('app and worker agree on the leaderboard contract (boards, windows, detail 
   assert.deepEqual([...a.WINDOWS],w.WINDOWS);assert.deepEqual([...a.BOARDS],Object.keys(w.BOARDS));
   assert.deepEqual(html.match(/<button data-board="(\w+)"/g).map(x=>x.match(/"(\w+)"/)[1]),Object.keys(w.BOARDS),'#boardTabs buttons');
   const run=(mode,play)=>{a.setMode(mode);a.startTrial();const cd=a.timers.get(a.trial.cdTimer);a.time(4000);cd();cd();cd();play();a.endTrial();return JSON.parse(JSON.stringify(a.boardEntry(a.trial.result,mode)));};
-  const entries={wave10:run('wave10',()=>{dash(a,4100);a.time(14100);}),ewgf20:run('ewgf20',()=>{dash(a,4100);a.onButton(2,4160);}),
+  const entries={wave10:run('wave10',()=>{dash(a,4100);a.time(14100);}),wave5:run('wave5',()=>{let t=4100;for(let i=0;i<5;i++)for(const d of i?['f','n','f','n','d','df']:['f','n','d','df']){a.onDir(d,t);t+=20;}}),ewgf20:run('ewgf20',()=>{dash(a,4100);a.onButton(2,4160);}),
     combo10:run('combo10',()=>{dash(a,4100);for(const t of [4200,4400]){a.onDir('f',t);a.onDir('n',t+20);dash(a,t+40);}a.onButton(2,4500);}),
     rush30:run('rush30',()=>{dash(a,4100);a.world.dummyX=a.world.charX+60;a.world.dummy.type='low';dash(a,4300);a.onButton(4,4400);a.time(34100);a.trialTick(34100);}),
     bd10:run('bd10',()=>{const o=bdOut(a,4100);a.onDir('db',bdAt(o,a.bdBestH(6)));a.time(14100);})};

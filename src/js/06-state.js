@@ -20,7 +20,7 @@ function tapDetect(dir, t){ // returns 'f' | 'b' on a completed double tap, else
   resetTaps(); return null; // d / d/f / d/b / u* break the pair
 }
 let mode = 'free';
-const trial = { running:false, tStart:0, dur:0, count:0, target:0, cdTimer:null, messageTimer:null, openTimer:null };
+const trial = { running:false, tStart:0, dur:0, t0:0, tEnd:0, count:0, target:0, cdTimer:null, messageTimer:null, openTimer:null };
 /* last rendered texts, kept as re-evaluable messages so a language switch can redraw them */
 const ui = { result:{cls:'',kind:'READY',title:['ready.title'],sub:['ready.sub']}, coach:['coach.intro'], trend:['trend.intro'], seg:null, padId:null, padStd:true, padPS:false, shareMsg:'' };
 

@@ -557,6 +557,23 @@ test('crowns: /posts lists [board, rank] for nicknames in a crown board top 10 (
   assert.equal((await (await w.handle(req('/posts'), env, NOW + 7 + 5 * 60e3)).json()).crowns.bravo, undefined);
 });
 
+test('wave5 (결정 42(wave5)): −centiseconds rank the fastest first, a slower run never replaces a faster one, the board wears crowns', async () => {
+  const w = await worker(), env = {DB: fakeD1()}, me = owned(w, env);
+  const five = (nick, cs, chain = 5, now = NOW) => me.submit({board: 'wave5', nick, score: -cs, tie: chain, detail: {chain}}, now);
+  assert.equal((await five('alpha', 150)).status, 200); await five('bravo', 123, 3); await five('charlie', 123, 5);
+  const slower = await (await five('alpha', 200, 5, NOW + 1000)).json();
+  assert.equal(slower.improved, false); assert.equal(slower.me.score, -150, 'a slower run keeps the faster row');
+  const top = await (await w.handle(req('/top?board=wave5'), env, NOW)).json();
+  assert.deepEqual(top.rows.map(r => [r.rank, r.nick, r.score]), [[1, 'charlie', -123], [2, 'bravo', -123], [3, 'alpha', -150]], 'same time: the longer chain first');
+  const faster = await (await five('alpha', 99, 2, NOW + 2000)).json();
+  assert.equal(faster.improved, true); assert.equal(faster.rank, 1); assert.equal(faster.id, slower.id);
+  await me.post({nick: 'alpha', text: 'hi'}, NOW + 3);
+  assert.deepEqual((await (await w.handle(req('/posts'), env, NOW + 4)).json()).crowns.alpha, [['wave5', 1]]);
+  const {validate} = w, e = over => entry({board: 'wave5', score: -123, tie: 5, detail: {chain: 5}, ...over});
+  assert.equal(validate(e()).error, undefined);
+  for (const [k, v] of Object.entries({score: e({score: 0}), 'score slow': e({score: -2001}), tie: e({tie: 6, detail: {chain: 6}}), 'detail frac': e({score: -12.5}), 'detail tie': e({tie: 4})})) assert.equal(validate(v).error, k.split(' ')[0], k);
+});
+
 /* ---------- 결정 40(post-edit): own edits and deletes ---------- */
 test('post edit/delete: only the author, text rules kept, edited_at set, placeholder while others replied, votes and replies follow', async () => {
   const w = await worker(), env = {DB: fakeD1()}, me = owned(w, env);

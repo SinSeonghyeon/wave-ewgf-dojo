@@ -13,11 +13,13 @@ const MODES = {
   rush:   {start:false, guide:'guide/ewgf/', needs:{moves:['ewgf','tongbal','hellsweep']}, of:'rush30'}, // 더미 격파 연습: the typed dummies with no clock or points (rushIdle)
   backdash:{start:false, guide:'guide/backdash/', needs:{cap:'kbd'}, of:'bd10'}, // 백대시 연습: the 백대시 10초 timeline and panel with no clock (bdMode)
   wave10: {start:true, dur:10000, guide:'guide/wave-dash/', needs:{cap:'wave'}},
+  wave5:  {start:true, target:5, limit:20000, guide:'guide/wave-dash/', needs:{cap:'wave'}}, // 웨이브 5회: seconds from the first dash's 6 to the fifth dash's 3, fastest first; no fifth dash by the limit = no record (결정 42(wave5)). limit is wave5's own: only its branches in endTrial/trialTick read it
   ewgf20: {start:true, target:20, guide:'guide/ewgf/', needs:{moves:['ewgf']}},
   combo10:{start:true, target:10, guide:'guide/wave-dash/', needs:{cap:'wave', moves:['ewgf']}},
   rush30: {start:true, dur:30000, rush:true, guide:'guide/ewgf/', needs:{moves:['ewgf','tongbal','hellsweep']}}, // 더미 격파: typed dummies, points (see RUSH_PTS)
   bd10:   {start:true, dur:10000, bd:true, guide:'guide/backdash/', needs:{cap:'kbd'}},   // 백대시: metres retreated with cancelled backdashes (see BD)
 };
+const wave5Sec = score => (-score/100).toFixed(2); // a 웨이브 5회 score (−centiseconds, 결정 42(wave5)) as seconds text: -123 → '1.23'
 // 결정 38(challenge-mode): each challenge keeps a practice tab — the same drill with no start, clock, score or board. of = the challenge whose
 // timeline, panel and dummies it shares. Every check that a tab shares its challenge's drill reads of through these two (the body class and
 // panels, bdMode, the 더미 격파 연습 dummies and chain, 웨이브 연습's backdash machine); the texts and guide stay the tab's own.
@@ -34,11 +36,11 @@ const CHALLENGES = {wsc:{target:WSC_TARGET, state:()=>wsc.challenge, ui:'wsc'}, 
 // body.<mode>-mode) — 백대시 10초 and 백대시 연습 (12-bd-practice.js) · 최속 제트어퍼 연습 (17-ju-practice.js)
 const PANEL_MODES = {bd10:'bdp', ju:'ju'};
 const BOARDS = [...TRIAL_MODES, ...Object.keys(CHALLENGES)]; // matches worker and tabs
-// 결정 38(challenge-mode): the 도전 모드 window lists only the open-ended scores. These boards are switched off, not removed — their mode
+// 결정 38(challenge-mode): the 도전 모드 window lists only the open-ended scores (and the 웨이브 5회 time, 결정 42(wave5)), none with a perfect score. These boards are switched off, not removed — their mode
 // code, worker board and stored rows stay, only the tabs, buttons and texts that lead to them hide. Taking a board out of this set brings it back.
 const BOARDS_OFF = new Set(['ewgf20','combo10','wsc','giwon','jfsr','tju']);
 const boardOn = b => !BOARDS_OFF.has(b);
-const CHALLENGE_MODES = TRIAL_MODES.filter(boardOn); // the 도전 모드 window, in TRIAL_MODES order (wave10 · rush30 · bd10)
+const CHALLENGE_MODES = TRIAL_MODES.filter(boardOn); // the 도전 모드 window, in TRIAL_MODES order (wave10 · wave5 · rush30 · bd10)
 const boardTabs = () => BOARDS.filter(b => boardOn(b) && modeAvail(b)); // the ranking tabs the current character sees
 const challengeTarget = m => CHALLENGES[m] ? CHALLENGES[m].target : 0; // 0 = not a challenge board
 const challengeStatus = m => CHALLENGES[m] ? CHALLENGES[m].state().status : ''; // '' for modes without a challenge
@@ -149,7 +151,7 @@ function startTrial(){
   donateNudgeDefer();
   endTrial(true); clearShare();
   jackpotPause();
-  trial.running=false; trial.count=0; trial.bestChain=0; trial.target=M.target||0; trial.dur=M.dur||0; trial.score=0; trial.kills=0; trial.whiffs=0; trial.dashPts=0; trial.dist=0; trial.bdCount=0; trial.bdTop=0;
+  trial.running=false; trial.count=0; trial.bestChain=0; trial.target=M.target||0; trial.dur=M.dur||0; trial.t0=0; trial.tEnd=0; trial.score=0; trial.kills=0; trial.whiffs=0; trial.dashPts=0; trial.dist=0; trial.bdCount=0; trial.bdTop=0;
   $('dStart').disabled=true; $('dCancel').hidden=false; // 시작 leaves the stage top; 취소 takes the old start spot until the run ends
   recBegin(performance.now()); // 결정 39(replay): the countdown is part of the run
   let c = 3; $('hudCenter').textContent=c;
@@ -173,6 +175,12 @@ function endTrial(cancel){
   if(world.dummy.type && !practiceOf('rush30')){ world.dummy.type=null; world.dummy.respawn=0; } // every exit (finish, cancel from blur/settings/donate/nick/setMode/reset) hands the stage back to the plain dummy — 더미 격파 연습 keeps its targets
   $('hudScore').textContent='';
   if(cancel || !wasRunning) { recDrop(); $('dProg').textContent=''; setTimeout(renderRewards, 0); return; } // refresh after any dialog opened by the caller
+  if(mode==='wave5' && trial.count<trial.target){ // 웨이브 5회 ran out of time: said so, never recorded or submitted (결정 42(wave5))
+    recDrop(); $('dProg').textContent = T('trial.wave5Over', MODES.wave5.limit/1000, trial.count, trial.target);
+    $('hudCenter').textContent = trial.count+' / '+trial.target; trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; }, 2200);
+    if(REPLAY) replayEnded(); // a replay that lost its fifth dash reports no score: the parent shows the mismatch
+    setTimeout(renderRewards, 0); return;
+  }
   const since = a => a.t>=trial.tStart;
   let rec, text, at = session.attempts.filter(since);
   if(mode==='wave10'){
@@ -180,6 +188,11 @@ function endTrial(cancel){
     rec = {date:Date.now(), score:dps, dashes:trial.count, chain, label:T('rec.dps',dps.toFixed(1)), sub:T('rec.waveSub',trial.count,chain)};
     text = T('trial.waveEnd', trial.count, dps.toFixed(1));
     $('hudCenter').textContent = trial.count+' DASH';
+  } else if(mode==='wave5'){ // score = −centiseconds, so every higher-is-better comparison (bests, the worker's order) puts the fastest first
+    const score = -Math.round((trial.tEnd-trial.t0)/10), sec = wave5Sec(score), chain = trial.bestChain||0;
+    rec = {date:Date.now(), score, chain, label:T('rec.sec',sec), sub:T('rec.wave5Sub',chain)};
+    text = T('trial.wave5End', trial.target, sec);
+    $('hudCenter').textContent = sec+' s';
   } else if(mode==='rush30'){
     const {score, kills, whiffs, dashPts} = trial;
     rec = {date:Date.now(), score, kills, whiffs, dashPts, label:T('rec.pts',score), sub:T('rec.rushSub',kills,whiffs,dashPts)};
@@ -203,8 +216,8 @@ function endTrial(cancel){
   trial.messageTimer=setTimeout(()=>{ $('hudCenter').textContent=''; }, 2200);
   $('dProg').textContent = text;
   const oldRecords = trialRecs(mode), personalBest = !oldRecords.length || rec.score > Math.max(...oldRecords.map(r=>r.score));
-  store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); save(); renderBests();
-  store.life.trials[mode]++; jackpotHold = true; setTimeout(() => { jackpotHold = false; renderRewards(); }, 2300); checkAch(); // claiming waits for the result flash
+  store.records[mode].push(rec); store.records[mode] = store.records[mode].slice(-30); store.life.trials[mode]++; save(); renderBests(); // the run count is stored in the same save as its record
+  jackpotHold = true; setTimeout(() => { jackpotHold = false; renderRewards(); }, 2300); checkAch(); // claiming waits for the result flash
   trial.result = {rec, attempts:at, cycles:session.cycles.filter(since), window:store.window, personalBest, char:charId(), replay:recFinish()}; $('dShare').hidden=false;
   if(REPLAY){ replayEnded(); return; } // the replay window shows the end on the stage; the parent compares it with the board row
   boardSubmit(); // always to the ranking (the server keeps only the best); no-op without a claimed nickname
@@ -218,6 +231,10 @@ function trialTick(now){
     const el = $('hudTimer'); el.textContent = (left/1000).toFixed(1); el.classList.toggle('warn', left<3000);
     if(mode==='rush30') renderRushHud(); else if(mode==='bd10') renderBdHud(); else $('dProg').textContent = T('trial.dashes', trial.count);
     if(left<=0) endTrial();
+  } else if(mode==='wave5'){ // 웨이브 5회: a stopwatch from the first dash's 6 (0 until that dash completes); the run fails at the limit after GO (결정 42(wave5))
+    const el = $('hudTimer'), left = MODES.wave5.limit-(now-trial.tStart); el.textContent = (trial.count ? Math.max(0, now-trial.t0)/1000 : 0).toFixed(2); el.classList.toggle('warn', left<3000);
+    $('hudScore').textContent = $('dProg').textContent = trial.count+' / '+trial.target;
+    if(left<=0) endTrial();
   } else {
     $('dProg').textContent = trial.count+' / '+trial.target;
   }
@@ -225,6 +242,7 @@ function trialTick(now){
 function recText(m, r){ // prefer numeric fields so old records re-render in the current language
   if(challengeTarget(m))return {label:T('wsc.rankScore',r.hits??r.score,r.target??challengeTarget(m)),sub:T('wsc.rankBest',r.best||0)};
   if(m==='wave10' && Number.isFinite(r.dashes)) return {label:T('rec.dps',(+r.score).toFixed(1)), sub:T('rec.waveSub',r.dashes,r.chain||0)};
+  if(m==='wave5' && Number.isFinite(r.chain)) return {label:T('rec.sec',wave5Sec(r.score)), sub:T('rec.wave5Sub',r.chain)};
   if(m==='rush30' && Number.isFinite(r.kills)) return {label:T('rec.pts',r.score), sub:T('rec.rushSub',r.kills,r.whiffs||0,r.dashPts||0)};
   if(m==='bd10' && Number.isFinite(r.dashes)) return {label:T('rec.dist',(+r.score).toFixed(1)), sub:T('rec.bdSub',r.dashes,r.top||0,r.chain||0)};
   if(Number.isFinite(r.hits) && Number.isFinite(r.target) && Number.isFinite(r.mean)){

@@ -30,7 +30,7 @@ stageAssets(html,out);
     };
     let r=await read();
     assert.equal(r.char,'hwoarang','?c=hwoarang opens Hwoarang');assert.equal(r.name,'화랑','the character button shows who is selected');
-    assert.equal(await tabs(),'free,wave,jfsr,backdash,challengeOpen');assert.equal(await challenges(),'wave10,bd10','Hwoarang: the 도전 모드 window lists what he can play (결정 38(challenge-mode))');
+    assert.equal(await tabs(),'free,wave,jfsr,backdash,challengeOpen');assert.equal(await challenges(),'wave10,wave5,bd10','Hwoarang: the 도전 모드 window lists what he can play (결정 38(challenge-mode))');
     // 6 N 3+4: forward 1f, neutral 1f, then down+forward and RK on one frame
     r=await play([['f',0],['-f',1],['d',2],['f',2],['k',2],['-k',4],['-d',4],['-f',4]]);
     assert.equal(r.title,'최속 초스카이!',JSON.stringify(r));assert.equal(r.tries,0,'the EWGF stats stay untouched');
@@ -55,7 +55,7 @@ stageAssets(html,out);
       assert.equal(await b.evalJs(`document.querySelector('#charDlg').open`),false,'a tile picks and closes');
     };
     await pick('kazuya');
-    assert.equal(await tabs(),'free,wave,wsc,giwon,rush,backdash,challengeOpen');assert.equal(await challenges(),'wave10,rush30,bd10');
+    assert.equal(await tabs(),'free,wave,wsc,giwon,rush,backdash,challengeOpen');assert.equal(await challenges(),'wave10,wave5,rush30,bd10');
     r=await read();assert.equal(r.char,'kazuya');assert.equal(r.url,'');
     await pick('hwoarang');r=await read();assert.equal(r.url,'?c=hwoarang');
     // layout: no sideways overflow, the selector stays on screen

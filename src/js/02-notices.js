@@ -2,6 +2,7 @@
 // Newest first. For each patch, add one entry and the matching notice.<id> strings to all three I18N dictionaries.
 // The latest id is the read marker saved in this browser; no backend or deployment-time request is involved.
 const NOTICES = [
+  {id:'2026-11-23-update',date:'2026-11-23',kind:'notice.kind.update',title:'notice.20261123.title',summary:'notice.20261123.summary',items:['notice.20261123.1','notice.20261123.2','notice.20261123.3','notice.20261123.4']}, // Wave x5 challenge + the d/f+2 game-recording reference, one notice for the 2026-11-23 release
   {id:'2026-10-17-update',date:'2026-10-17',kind:'notice.kind.update',title:'notice.20261017.title',summary:'notice.20261017.summary',items:['notice.20261016c.1','notice.20261016c.2','notice.20261016c.7','notice.20261016.1','notice.20261016.2','notice.20261016.3','notice.20261016.4','notice.20261016.5','notice.20261016.6','notice.20261016.7','notice.20261016c.3','notice.20261016c.4','notice.20261016c.5','notice.20261016c.6']}, // 2026-10-16 update + challenge, merged for the 2026-10-17 release
   {id:'2026-10-08-update',date:'2026-10-08',kind:'notice.kind.update',title:'notice.20261008.title',summary:'notice.20261008.summary',items:['notice.20261008.1','notice.20261008.2','notice.20261008.3','notice.20261008.4','notice.20261008.5','notice.20261008.6']},
   {id:'2026-10-04-backdash',date:'2026-10-04',kind:'notice.kind.update',title:'notice.20261004.title',summary:'notice.20261004.summary',items:['notice.20261004.1','notice.20261004.2','notice.20261004.3','notice.20261004.4']},

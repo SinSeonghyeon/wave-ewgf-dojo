@@ -28,6 +28,7 @@ function boardEntry(r, m){ // pure: finished trial result → submission payload
   const rec = r.rec, e = {board:m, win:r.window, lang:store.lang};
   if(n){e.score=rec.hits;e.tie=rec.best;e.detail={hits:rec.hits,target:rec.target,best:rec.best};}
   else if(m==='wave10'){ e.score = +rec.score; e.tie = rec.chain||0; e.detail = {dashes:rec.dashes, chain:rec.chain||0}; }
+  else if(m==='wave5'){ e.score = rec.score; e.tie = rec.chain||0; e.detail = {chain:rec.chain||0}; } // score = −centiseconds (결정 42(wave5))
   else if(m==='combo10'){ e.score = rec.score; e.tie = rec.dps||0; e.detail = {hits:rec.hits, target:rec.target, mean:rec.mean, dps:rec.dps||0}; }
   else if(m==='rush30'){ e.score = rec.score; e.tie = rec.kills||0; e.detail = {kills:rec.kills||0, whiffs:rec.whiffs||0, dashPts:rec.dashPts||0}; }
   else if(m==='bd10'){ e.score = +rec.score; e.tie = rec.top||0; e.detail = {dashes:rec.dashes||0, top:rec.top||0, chain:rec.chain||0}; }
