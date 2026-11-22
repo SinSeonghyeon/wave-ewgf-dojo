@@ -125,7 +125,7 @@ function playFanfare(){
     return () => bus.disconnect();
   }catch(e){}
 }
-function unlockAudio(){ if(REPLAY) return; dailyGift(); /* first gesture reserves the daily gift */ if(!snd.ok || snd.unlocked) return; snd.unlocked=true; Object.keys(SND).filter(name=>name!=='bgm').forEach(sfxPool); bgmSync(); }
+function unlockAudio(){ if(REPLAY) return; refPreload(); /* the first gesture also fetches the reference sheets (35-dojo3d; a replay window: replayLoad) */ dailyGift(); /* first gesture reserves the daily gift */ if(!snd.ok || snd.unlocked) return; snd.unlocked=true; Object.keys(SND).filter(name=>name!=='bgm').forEach(sfxPool); bgmSync(); }
 addEventListener('pointerdown', unlockAudio);
 addEventListener('visibilitychange', () => { if(document.hidden && !REPLAY) { resetInput(); endTrial(true); } bgmSync(); }); // a hidden replay just catches up when it is shown again
 addEventListener('focus', bgmSync);

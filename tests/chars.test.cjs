@@ -132,3 +132,23 @@ test('결정 35(button-chord): a held LK turns the Sky Rocket RK into 3+4, which
   const a=hw();a.events.keydown({code:'KeyJ',timeStamp:900,preventDefault(){}});
   assert.equal(jf(a),null,'no attempt from a chord');
 });
+test('every reference sheet (CHARS[id].refs) is a file in sprites/ whose size matches its cells',()=>{
+  const fs=require('node:fs');
+  // WebP canvas size: VP8X (extended, any sheet with alpha), VP8L (lossless) or VP8 (lossy)
+  const webpSize=b=>{
+    assert.equal(b.toString('ascii',0,4),'RIFF');assert.equal(b.toString('ascii',8,12),'WEBP');
+    const kind=b.toString('ascii',12,16);
+    if(kind==='VP8X') return [1+b.readUIntLE(24,3),1+b.readUIntLE(27,3)];
+    if(kind==='VP8L'){const v=b.readUInt32LE(21);return [1+(v&0x3fff),1+((v>>14)&0x3fff)];}
+    return [b.readUInt16LE(26)&0x3fff,b.readUInt16LE(28)&0x3fff];
+  };
+  const a=boot();
+  for(const id of a.CHAR_IDS) for(const [key,sp] of Object.entries(a.CHARS[id].refs||{})){
+    const file=path.join(__dirname,'..',sp.src);
+    assert.ok(fs.existsSync(file),id+' '+key+': '+sp.src);
+    assert.deepEqual(webpSize(fs.readFileSync(file)),[sp.cols*sp.w,Math.ceil(sp.n/sp.cols)*sp.h],id+' '+key+' sheet size');
+    for(const k of ['footX','ground']) assert.ok(sp[k]>0&&sp[k]<1,id+' '+key+' '+k);
+    assert.ok(sp.hgt>0&&sp.gap>0&&sp.n>0);
+  }
+  assert.ok(a.CHARS.bryan.refs.taunt&&a.CHARS.kazuya.refs.giwon,'the taunt and the 기원권 have their recordings');
+});

@@ -63,6 +63,7 @@ function replayLoad(data){
   const d = replayCheck(data); if(!d){ replayPost({type:'mishima-replay-error'}); return; }
   const c = CHAR_IDS.includes(d.char) ? d.char : CHAR_DEFAULT;
   if(c!==charId()){ store.char = c; renderCharUI(); renderMoveSel(); if(!charCap('wave')) coachForChar(); } // save() is off in this window
+  refPreload(); // the run's character, not the viewer's: this window has no gesture to fetch the reference sheets on
   store.moves[c] = {...movesDefault()[c], ...(d.moves||{})};                                                // 결정 32(move-toggle) as the player had it
   if(WINDOWS.includes(d.win)) store.window = d.win;
   if(!modeAvail(d.board)){ replayPost({type:'mishima-replay-error'}); return; }

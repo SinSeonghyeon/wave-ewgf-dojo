@@ -110,7 +110,7 @@ function setChar(c){
     const q = params.toString(); // not params.size: Safari before 17 has none, and the ?c= would silently drop
     try{ window.history.replaceState(null, '', location.pathname + (q?'?'+q:'') + location.hash); }catch(e){}
   }
-  renderCharUI(); renderMoveSel();
+  renderCharUI(); renderMoveSel(); refPreload();
   if(!wave || !charCap('wave')) coachForChar(); // to or from a character without a wave: its own idle coach box (Kazuya ↔ Hwoarang keep the last advice)
   setMode(modeAvail(mode) ? mode : 'free'); // ends a trial or challenge and clears the input like any mode change
   if(!boardTabs().includes(board.tab)){ board.tab = boardTabs()[0] || board.tab; board.msg=''; }

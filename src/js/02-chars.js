@@ -8,12 +8,17 @@
    jf: {move, btn} — a 6N3 + btn same-60Hz-frame just frame judged through the staged 6N3 path (결정 33(jfsr)).
    tj: {move} — the taunt (1+3+4) whose knee is cancelled into a follow-up, judged slot by slot in 16-tju.js against the TJ
    model (결정 37(tju)); the Jet Upper 6 N 4+RP is read by the same parser with or without a taunt in front.
+   refs: {anim kind: sheet} — a move recorded in the game and cut out, one cell per game frame from the press, drawn beside the fighter
+   while that move plays (drawRefSprite in 35-dojo3d.js; visual only). {src, w, h, cols, n, footX, ground: the recorded attacker's
+   feet in the cell, hgt: drawn cell height and gap: fighter → those feet, CSS px; a narrow stage shrinks the cell, never that gap's
+   clearance in front of the cell; keep: plays to its last cell whatever the fighter does next, only the move again restarts it}.
+   Kazuya's 기원권 shows the counter-hit opponent too and plays on every 기원권, hit or whiff (strike in 16-strikes.js).
    portrait: the character-select image (official tekken.com fighter-select art, 2026-10-11 user decision — 결정 3(no-official-ip)
    exception, inlined from src/assets by tools/assemble.js); the player's SD doll and outfit are untouched. */
 const CHARS = {
-  kazuya:   {caps:{wave:true, kbd:true, wsc:true,  giwon:true},  moves:['ewgf','mist','tongbal','hellsweep','giwon'], legacy:true, portrait:'@@DATA_URI:assets/portrait-kazuya.webp@@'},
+  kazuya:   {caps:{wave:true, kbd:true, wsc:true,  giwon:true},  moves:['ewgf','mist','tongbal','hellsweep','giwon'], legacy:true, refs:{giwon:{src:'sprites/kazuya-giwon.webp', w:254, h:160, cols:12, n:132, footX:0.308, ground:0.955, hgt:135, gap:175, keep:true}}, portrait:'@@DATA_URI:assets/portrait-kazuya.webp@@'},
   hwoarang: {caps:{wave:true, kbd:true, wsc:false, giwon:false}, moves:['jfsr'], jf:{move:'jfsr', btn:4}, portrait:'@@DATA_URI:assets/portrait-hwoarang.webp@@'},
-  bryan:    {caps:{wave:false, kbd:true, wsc:false, giwon:false}, moves:['tju'], tj:{move:'tju', sprite:{src:'sprites/bryan-taunt.webp', w:168, h:200, cols:11, n:77, footX:0.265, ground:0.979}}, portrait:'@@DATA_URI:assets/portrait-bryan.webp@@'}, // 2026-10-15: backdash yes, no wave and no Mishima move
+  bryan:    {caps:{wave:false, kbd:true, wsc:false, giwon:false}, moves:['tju'], tj:{move:'tju'}, refs:{taunt:{src:'sprites/bryan-taunt.webp', w:168, h:200, cols:11, n:77, footX:0.265, ground:0.979, hgt:135, gap:120}}, portrait:'@@DATA_URI:assets/portrait-bryan.webp@@'}, // 2026-10-15: backdash yes, no wave and no Mishima move
 };
 const CHAR_IDS = Object.keys(CHARS), CHAR_DEFAULT = 'kazuya';
 const charId = () => CHARS[store.char] ? store.char : CHAR_DEFAULT;

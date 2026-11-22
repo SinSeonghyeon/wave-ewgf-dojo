@@ -218,3 +218,29 @@ test('기원권 leaves 통발, 나락, 무족초, the wave and WSC tasks alone',
   assert.equal(e.wsc.session.tries,0,'and 기원권 consumes no WSC task');assert.equal(e.wsc.active,null);
   assert.equal(e.get('rKind').textContent,'DEMON SLAYER','but it is still judged and drawn');
 });
+test('every 기원권, hit or whiff, plays the recorded counter hit from the frame it came out; another one restarts it; input does not cut it',()=>{
+  const at=(dummyX)=>{const x=boot();x.world.charX=120;x.world.dummyX=dummyX;Object.assign(x.world.dummy,{alive:true,hit:0,type:null,y:0});x.time(1000);giwon(x,1000);return x;};
+  const a=at(190), R=a.refSprite.run;
+  assert.equal(R.key,'giwon');assert.equal(R.sp,a.CHARS.kazuya.refs.giwon);assert.equal(R.sp.keep,true);
+  assert.equal(R.t0,1000,'frame 1 is the frame the 기원권 came out (giwonLink.t0)');assert.equal(R.cut,false,'nothing on the stage yet: it rises from the dark');
+  // the sheet counts 60Hz slots from the press (the game shows the hit on 14f)
+  assert.equal(a.refFrame(1000,1000),1);assert.equal(a.refFrame(1000+13*F,1000),14);assert.equal(a.refFrame(1000-3,1000),1);
+  // out of reach (2026-11-20 사용자 요청: 허공에 칠 때도)
+  const w=at(600);assert.equal(w.store.life.giwon,1);assert.equal(w.refSprite.run.key,'giwon');assert.equal(w.refSprite.run.t0,1000);
+  // another 기원권 after the recovery (here on the still-folded bag) starts the recording over from its own frame 1, at once
+  a.refSprite.last={f:48};const again=giwonRec(a,1000)+F;a.time(again);giwon(a,again);
+  assert.equal(a.store.life.giwon,2,'the second 기원권 did come out');
+  const R2=a.refSprite.run;assert.notEqual(R2,R);assert.equal(R2.t0,again);assert.equal(R2.cut,true,'replaces the frame on the stage without the fade-in');
+  // nothing the fighter does cuts it — the hook ending, a walk, a 기원초, resetInput (mode change, modal, blur); its last cell or a character change does
+  const run=(setup,t)=>{const x=at(190);setup(x);x.drawRefSprite(null,300,400,t);return x.refSprite.run;};
+  for(const [label,setup] of [['idle',x=>{x.anim.kind='idle';}],['walk',x=>{x.anim.kind='walk';}],['기원초',x=>{x.time(1000+48*F);x.startAnim('ewgf');}],['resetInput',x=>{x.resetInput();}]])
+    assert.ok(run(setup,1000+60*F),label+': still playing at 61f');
+  assert.ok(run(()=>{},1000+131*F),'frame 132 is the last');assert.equal(run(()=>{},1000+132*F),null);
+  assert.equal(run(x=>{x.setChar('bryan');},1000+F),null,'a character change');
+  // Bryan's taunt (no keep): plays from fx.taunt, and the cancel's next move, a walk or resetInput still cut it
+  const taunt=setup=>{const c=boot({char:'bryan'});c.time(1000);c.fx.taunt(1000);assert.equal(c.refSprite.run.key,'taunt');assert.equal(c.refSprite.run.t0,1000);
+    setup(c);c.drawRefSprite(null,300,400,1000+20*F);return c.refSprite.run;};
+  assert.ok(taunt(()=>{}));
+  assert.equal(taunt(c=>{c.time(1000+10*F);c.startAnim('ju');}),null,'a follow-up');
+  assert.equal(taunt(c=>{c.anim.kind='walk';}),null,'a walk');assert.equal(taunt(c=>{c.resetInput();}),null,'resetInput');
+});
