@@ -23,12 +23,12 @@ function liveRun(a, mode, play, {t0 = 1000, jitter = 3.7, step = F, phase = 5.3,
   return a.trial.result;
 }
 // Playback: a fresh engine in the replay window, the run posted by the parent, frames every `step` ms until the end message.
-function playBack(replay, {step = F, phase = 0, dummy = false, saved, onFrame = null} = {}){
+function playBack(replay, {step = F, phase = 0, dummy = false, saved, onFrame = null, env = {}} = {}){
   const posted = [], parent = {postMessage: m => posted.push(m)}, writes = [], fetches = [];
   const b = boot(saved, (...args) => { fetches.push(args); return new Promise(() => {}); }, {
     location: {search: '?replay=1', pathname: '/ko/', hash: '', origin: 'https://mishimaryu.com', protocol: 'https:'}, URLSearchParams,
     window: {parent, history: {replaceState(){}}},
-    localStorage: {getItem: () => saved === undefined ? null : JSON.stringify(saved), setItem: (k, v) => writes.push(v)},
+    localStorage: {getItem: () => saved === undefined ? null : JSON.stringify(saved), setItem: (k, v) => writes.push(v)}, ...env,
   });
   assert.equal(b.REPLAY, true);
   assert.deepEqual(posted.map(m => m.type), ['mishima-replay-ready'], 'the window asks its parent for the run');
@@ -168,6 +168,9 @@ test('replay: the settings that judge (character, move toggles) travel with the 
   assert.ok(w.cleanReplay(plain(result.replay), 'wave10'));
   const {b} = playBack(result.replay, {saved: {v:4, char:'hwoarang'}}); // the viewer plays Hwoarang with every move on
   assert.equal(b.charId(), 'kazuya'); assert.equal(b.store.moves.kazuya.hellsweep, 0);
+  // the reference sheet fetched is the run's character's (replayLoad), never the viewer's stored one
+  const {b: v} = playBack(result.replay, {saved: {v:4, char:'bryan'}, env: {Image: class {}}});
+  assert.deepEqual(Object.keys(v.refSprite.imgs), [v.CHARS.kazuya.refs.giwon.src]);
   const off = boot(); off.setMode('ewgf20'); off.startTrial(); assert.equal(off.recorder.run, null, '초풍 20회 is off (결정 38(challenge-mode))');
   const cancelled = boot(); cancelled.setMode('wave10'); cancelled.startTrial(); assert.ok(cancelled.recorder.run); cancelled.setMode('free'); assert.equal(cancelled.recorder.run, null, 'a cancelled run drops its recording');
 });

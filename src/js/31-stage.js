@@ -67,7 +67,7 @@ const fx = {
     if(!world.dummy.type) tryHit(electric ? 'jfsr' : 'sky');
   },
   // 도발 제트어퍼 (결정 37(tju)): the taunt pose is drawn frame by frame from the press (poseAt 'taunt', TJ_POSE); sound and contact follow the judged frames
-  taunt(t0){ startAnim('taunt'); anim.t0 = t0; anim.kneeFrom = 0; },
+  taunt(t0){ startAnim('taunt'); anim.t0 = t0; anim.kneeFrom = 0; refPlay('taunt', t0); },
   taunt2(){ pop(T('pop.tauntDouble'), cssVar('--gold','#F5C542'), 24, {y:-150}); },        // 더블 도발: the first press keeps its frames
   tauntCut(kneeLanded){ // the first input cancels the taunt: back to guard unless a follow-up takes over; after the knee the head catches fire (실측 영상)
     if(anim.kind!=='taunt') return;

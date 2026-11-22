@@ -11,7 +11,8 @@ function strike(kind, t){
   endCommand();
   // mistRelease must not survive a 기원권: it swallows f/d until a neutral arrives, which would eat a ↘→6 slide
   // (holding the start 6 through the recovery). The recovery itself already drops every direction but f (onDir).
-  if(kind==='giwon'){ giwonArm(t); mistRelease=false; }
+  // the recorded counter hit plays on every 기원권, hit or whiff, from the frame it came out (a buffered one: its release frame); another one restarts it (2026-11-20 사용자 요청)
+  if(kind==='giwon'){ giwonArm(t); mistRelease=false; refPlay('giwon', giwonLink.t0); }
   updateHud();
 }
 const frameSlot = t => Math.floor(t / FRAME + 0.5); // performance.timeOrigin is the shared grid origin; independent of render rate

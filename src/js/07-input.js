@@ -156,7 +156,7 @@ function resetInput(){
   const openHistory=history.slice().reverse().find(e=>e.dir); if(openHistory && openHistory.endT==null) openHistory.endT=historyStopT;
   wscCancel(); gpChallengeCancel(); jfChallengeCancel(); tjChallengeCancel(); tjClear();
   held.clear(); kbVector(); padDir={x:0,y:0}; padBtn.fill(false); touchDir={x:0,y:0}; curDir='n'; heldDir='n'; prevDir='n'; heldDirT=0; touchRelease();
-  clearCommand(); resetCombo(); resetTaps(); bdClear(); giwonClear(); updateHud(); renderWsc();
+  clearCommand(); resetCombo(); resetTaps(); bdClear(); giwonClear(); refStop(); updateHud(); renderWsc();
 }
 addEventListener('blur', () => { if(REPLAY) return; suspendBindings(); resetInput(); endTrial(true); bgmSync(); });
 

@@ -172,21 +172,24 @@ function drawDojo(g,gy,zoom){
   $('stageBack').hidden=true;$('stageBox').dataset.renderer='canvas';drawRoomFallback(g,roomCamera(W,H,gy,world.camX));
 }
 
-// 도발 레퍼런스 (결정 37(tju), 2026-10-16 사용자 요청): the taunt as recorded in the game, one sheet cell per taunt frame (1 = the press),
-// drawn beside the fighter on the side away from the dummy while the taunt plays. Visual only (결정 9(visual-only-motion)). The sheet is a separate
-// same-origin file like sfx/, fetched once the character has one (CHARS[id].tj.sprite).
-const TAUNT_SPRITE_H = 135, TAUNT_SPRITE_GAP = 120;          // drawn height and the distance behind the fighter (CSS px)
-const TAUNT_SPRITE_IN = 5, TAUNT_SPRITE_OUT = 5;            // frames of the fade-in from the dark and of the burn-away after the taunt ends or is cancelled
-const TAUNT_SPRITE_LINE = 3, TAUNT_SPRITE_LINE_C = 'rgba(255,240,222,.92)'; // outline width (sheet px) and color
-const tauntBuf = {};                                       // small scratch canvases, one cell big: the cell, its silhouette, cell + outline
-function tauntCanvas(k, w, h){ let c = tauntBuf[k]; if(!c){ c = tauntBuf[k] = document.createElement('canvas'); } if(c.width!==w || c.height!==h){ c.width = w; c.height = h; } return c; }
-function tauntSil(cell, color){ // the cell's shape in one color
-  const c = tauntCanvas('sil', cell.width, cell.height), x = c.getContext('2d');
+// 레퍼런스 스프라이트 (게임 녹화 누끼): a move as recorded in the game, one sheet cell per game frame (1 = its press), drawn beside the fighter
+// on the side away from the dummy while that move plays. Visual only (결정 9(visual-only-motion)). CHARS[id].refs maps an anim kind to its sheet:
+// the taunt (결정 37(tju), 2026-10-16) and the 기원권 counter hit with its opponent (결정 30(giwon), 2026-11-19 — every 기원권, hit or whiff, 2026-11-20).
+// A sheet is a separate same-origin file like sfx/, fetched on the first gesture (refPreload, beside the sounds), on a character change, when a replay
+// loads (replayLoad), or when its move first plays. hgt: drawn cell height, gap: fighter → the sheet's anchor (footX, ground = the recorded attacker's
+// feet on the floor), CSS px. Shown with 연출 off too (store.fx only swaps the burn for a plain fade): it is a reference, not an effect.
+const REF_IN = 5, REF_OUT = 5;                     // frames of the fade-in from the dark and of the burn-away after the move ends or is cut off
+const REF_LINE = 3, REF_LINE_C = 'rgba(255,240,222,.92)'; // outline width (sheet px) and color
+const REF_EDGE = 6;                                // CSS px kept from the stage edge: a sheet that would leave the stage shrinks toward the fighter instead
+const refBuf = {};                                 // small scratch canvases, one cell big: the cell, its silhouette, cell + outline, the burn
+function refCanvas(k, w, h){ let c = refBuf[k]; if(!c){ c = refBuf[k] = document.createElement('canvas'); } if(c.width!==w || c.height!==h){ c.width = w; c.height = h; } return c; }
+function refSil(cell, color){ // the cell's shape in one color
+  const c = refCanvas('sil', cell.width, cell.height), x = c.getContext('2d');
   x.globalCompositeOperation = 'copy'; x.drawImage(cell, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height);
   x.globalCompositeOperation = 'source-over'; return c;
 }
-function tauntNoise(w, h){ // burn order per pixel, 0..1: soft blotches plus grain, the feet a little ahead of the head
-  if(tauntBuf.noise && tauntBuf.noise.w===w && tauntBuf.noise.h===h) return tauntBuf.noise.v;
+function refNoise(w, h){ // burn order per pixel, 0..1: soft blotches plus grain, the feet a little ahead of the head
+  if(refBuf.noise && refBuf.noise.w===w && refBuf.noise.h===h) return refBuf.noise.v;
   const gw = 12, gh = 14, grid = Array.from({length:gw*gh}, () => Math.random()), v = new Float32Array(w*h);
   for(let y=0; y<h; y++) for(let x=0; x<w; x++){
     const ux = x/(w-1)*(gw-1), uy = y/(h-1)*(gh-1), x0 = Math.min(gw-2, Math.floor(ux)), y0 = Math.min(gh-2, Math.floor(uy)), tx = ux-x0, ty = uy-y0;
@@ -195,10 +198,10 @@ function tauntNoise(w, h){ // burn order per pixel, 0..1: soft blotches plus gra
   }
   let lo = Infinity, hi = -Infinity; for(const n of v){ lo = Math.min(lo, n); hi = Math.max(hi, n); }
   for(let i=0; i<v.length; i++) v[i] = (v[i]-lo)/(hi-lo);
-  tauntBuf.noise = {w, h, v}; return v;
+  refBuf.noise = {w, h, v}; return v;
 }
-function tauntBurn(src, p){ // paper burn: pixels whose burn order is past p are gone, a thin dim ember edge runs along the front
-  const w = src.width, h = src.height, c = tauntCanvas('burn', w, h), x = c.getContext('2d', {willReadFrequently:true}), v = tauntNoise(w, h), E = 0.07, q = p*(1+E);
+function refBurn(src, p){ // paper burn: pixels whose burn order is past p are gone, a thin dim ember edge runs along the front
+  const w = src.width, h = src.height, c = refCanvas('burn', w, h), x = c.getContext('2d', {willReadFrequently:true}), v = refNoise(w, h), E = 0.07, q = p*(1+E);
   x.globalCompositeOperation = 'copy'; x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-over';
   let im; try{ im = x.getImageData(0, 0, w, h); }catch(err){ return src; } // a file:// copy taints the canvas: plain fade there
   const d = im.data;
@@ -210,28 +213,46 @@ function tauntBurn(src, p){ // paper burn: pixels whose burn order is past p are
   }
   x.putImageData(im, 0, 0); return c;
 }
-// The sheet loaded for CHARS[id].tj.sprite.src (CHARS stays plain data) and the last frame drawn {f, x, side, t}: once the taunt is over
-// or cancelled that frame burns away where it stood
-const tauntSprite = {src:null, img:null, last:null};
-function drawTauntSprite(g, sx, gy, now){
-  const sp = charOf().tj && charOf().tj.sprite, S = tauntSprite;
-  if(!sp || typeof Image==='undefined' || typeof document==='undefined') return;
-  if(S.src!==sp.src){ S.src = sp.src; S.img = new Image(); S.img.src = ASSET_ROOT + sp.src; S.last = null; }
-  if(!S.img.complete || !S.img.naturalWidth) return;               // still loading, or missing (then it never draws)
-  const tf = anim.kind==='taunt' ? (now-anim.t0)/FRAME : -1;
-  let f = Math.floor(tf)+1, p;                                     // p = how far it has come out of the dark: 0 gone, 1 fully there
-  if(tf>=0 && f<=sp.n){ S.last = {f, x:sx - store.side*TAUNT_SPRITE_GAP, side:store.side, t:now}; p = Math.min(1, (tf+1)/TAUNT_SPRITE_IN); }
-  else {
+// Sheets loaded by src (CHARS stays plain data), the move playing {key, sp, t0, char, cut} and the last frame drawn {f, sp, im, x, side, s, t}:
+// once the sheet is over or cut off that frame burns away where it stood. A character change always cuts it. A sheet with `keep` (the 기원권,
+// 2026-11-20 사용자 요청: "입력하면 바로 사라지는 게 불편") then only ends on its last cell — the same move pressed again restarts it from cell 1.
+// Without `keep` (the taunt, whose pose outlasts its 77 cells) anything that leaves its pose — a follow-up, the cancel's guard, a walk — or refStop cuts it.
+const refSprite = {imgs:{}, run:null, last:null};
+function refStop(){ if(refSprite.run && !refSprite.run.sp.keep) refSprite.run = null; } // resetInput: a mode change, a modal, blur or a challenge start
+function refImg(sp){ let im = refSprite.imgs[sp.src]; if(!im && typeof Image!=='undefined'){ im = refSprite.imgs[sp.src] = new Image(); im.src = ASSET_ROOT + sp.src; } return im; }
+function refPreload(){ const r = charOf().refs; if(r) for(const k in r) refImg(r[k]); }
+// the sheet frame at `now` for a move pressed at t0: its 60Hz slot counted from the press's slot (= 1), the grid every judge uses (결정 2(ewgf-judge))
+const refFrame = (now, t0) => Math.max(1, frameSlot(now) - frameSlot(t0) + 1);
+function refPlay(key, t0){ // the move `key` (an anim kind, already started) came out on t0, its press: play its sheet if the character has one
+  const sp = charOf().refs && charOf().refs[key]; if(!sp) return;
+  // cut: a sheet already on the stage (playing or burning away) is replaced at once, without the fade-in from the dark
+  refImg(sp); refSprite.run = {key, sp, t0, char:charId(), cut:!!refSprite.last};
+}
+function drawRefSprite(g, sx, gy, now){
+  const S = refSprite, R = S.run;
+  const fr = R ? refFrame(now, R.t0) : 0;
+  if(R && (R.char!==charId() || fr>R.sp.n || (!R.sp.keep && anim.kind!==R.key))) S.run = null;
+  let f, p;                                                        // p = how far it has come out of the dark: 0 gone, 1 fully there
+  if(S.run){
+    const sp = R.sp, im = refImg(sp), tf = Math.max(0, (now-R.t0)/FRAME);
+    if(!im || !im.complete || !im.naturalWidth) return;             // still loading, or missing (then it never draws)
+    let s = sp.hgt/sp.h, gap = sp.gap;
+    // the far edge of the cell must stay on the stage: on a narrow one the cell shrinks but keeps its clearance in front
+    // (fighter → the cell's front edge, where Kazuya's recorded opponent stands), so it never covers the fighter
+    const ahead = sp.w*(1-sp.footX), clear = gap - ahead*s, room = store.side>0 ? sx - REF_EDGE : W - REF_EDGE - sx;
+    if(gap + (sp.w*sp.footX + REF_LINE+1)*s > room && room>clear){ s = (room-clear)/(sp.w + REF_LINE+1); gap = clear + ahead*s; }
+    f = fr; S.last = {f, sp, im, x:sx - store.side*gap, side:store.side, s, t:now}; p = R.cut ? 1 : Math.min(1, (tf+1)/REF_IN);
+  } else {
     if(!S.last) return;
-    const out = (now-S.last.t)/FRAME/TAUNT_SPRITE_OUT; if(out>=1){ S.last = null; return; }
+    const out = (now-S.last.t)/FRAME/REF_OUT; if(out>=1){ S.last = null; return; }
     f = S.last.f; p = 1-out;
   }
-  const L = S.last, P = TAUNT_SPRITE_LINE+1, cw = sp.w+2*P, ch = sp.h+2*P, i = f-1;
-  const cell = tauntCanvas('cell', cw, ch), cx = cell.getContext('2d');
-  cx.clearRect(0, 0, cw, ch); cx.drawImage(S.img, (i%sp.cols)*sp.w, Math.floor(i/sp.cols)*sp.h, sp.w, sp.h, P, P, sp.w, sp.h);
-  const sil = tauntSil(cell, TAUNT_SPRITE_LINE_C), lined = tauntCanvas('lined', cw, ch), lx = lined.getContext('2d');
+  const L = S.last, sp = L.sp, P = REF_LINE+1, cw = sp.w+2*P, ch = sp.h+2*P, i = f-1;
+  const cell = refCanvas('cell', cw, ch), cx = cell.getContext('2d');
+  cx.clearRect(0, 0, cw, ch); cx.drawImage(L.im, (i%sp.cols)*sp.w, Math.floor(i/sp.cols)*sp.h, sp.w, sp.h, P, P, sp.w, sp.h);
+  const sil = refSil(cell, REF_LINE_C), lined = refCanvas('lined', cw, ch), lx = lined.getContext('2d');
   lx.clearRect(0, 0, cw, ch);
-  for(let a=0; a<8; a++) lx.drawImage(sil, Math.round(Math.cos(a*Math.PI/4)*TAUNT_SPRITE_LINE), Math.round(Math.sin(a*Math.PI/4)*TAUNT_SPRITE_LINE));
+  for(let a=0; a<8; a++) lx.drawImage(sil, Math.round(Math.cos(a*Math.PI/4)*REF_LINE), Math.round(Math.sin(a*Math.PI/4)*REF_LINE));
   lx.drawImage(cell, 0, 0);
   const fxOn = store.fx && !reduced, e = p*p*(3-2*p);               // smoothstep
   let img = lined;
@@ -239,12 +260,12 @@ function drawTauntSprite(g, sx, gy, now){
     // out of the dark: the colours lift from a near-black shape while it burns in (or the reverse when it leaves)
     lx.globalCompositeOperation = 'source-atop'; lx.globalAlpha = 0.85*(1-e); lx.fillStyle = '#0b0705'; lx.fillRect(0, 0, cw, ch);
     lx.globalAlpha = 1; lx.globalCompositeOperation = 'source-over';
-    if(fxOn) img = tauntBurn(lined, p);
+    if(fxOn) img = refBurn(lined, p);
   }
-  const s = TAUNT_SPRITE_H/sp.h;
-  g.save(); g.translate(L.x, gy); g.scale(L.side, 1); // the recording faces right (side 1)
+  const s = L.s;
+  g.save(); g.translate(L.x, gy); g.scale(L.side, 1); // the recordings face right (side 1)
   g.globalAlpha = fxOn ? Math.min(1, 0.25+0.75*e) : e;
-  g.drawImage(img, -sp.w*sp.footX*s - P*s, -TAUNT_SPRITE_H*sp.ground - P*s, cw*s, ch*s);
+  g.drawImage(img, -(sp.w*sp.footX + P)*s, -(sp.h*sp.ground + P)*s, cw*s, ch*s);
   g.restore();
 }
 const JU_TRAIL_MS = 220; // how long a point of the 최속 제트어퍼 arc stays
@@ -290,7 +311,7 @@ function frame(now){
   ctx.fillStyle='rgba(0,0,0,.45)'; ctx.beginPath(); ctx.ellipse(sx, gy+2, 26-(pose.jump||0)*0.2, 5, 0, 0, Math.PI*2); ctx.fill();
   // fighter
   const fist = drawFighter(ctx, sx, gy, pose, store.side, 1, null);
-  drawTauntSprite(ctx, sx, gy, now);
+  drawRefSprite(ctx, sx, gy, now);
   // 최속 제트어퍼 (fx.tjMove fast): the uppercut leaves a hot arc behind the fist for ~0.2 s. Visual only
   if(anim.kind==='ju' && anim.fast && store.fx && !reduced){
     const f = (now-anim.t0)/FRAME+1;
