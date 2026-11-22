@@ -1,7 +1,7 @@
 // 결정 39(replay) browser smoke: node tests/smoke-replay.js
 // Real 도전 모드 runs on keyboard events (the real frame loop, real event times) are submitted to the local worker (worker/index.js +
 // tests/fake-d1.js over http), then ▶ on the board row opens the dialog: the ?replay=1 frame plays the same run on its own copy of the app
-// (input ledger, HUD, REPLAY badge) and the parent reports the same score. wave10 and rush30 (seeded dummy order + hit bits). The replay
+// (input ledger, HUD, REPLAY badge) and the parent reports the same score. wave10, wave5 (a timed run with a pause, 결정 42(wave5)) and rush30 (seeded dummy order + hit bits). The replay
 // window must send nothing to the worker and change nothing in this browser's records.
 const path = require('path');
 const fs = require('fs');
@@ -86,28 +86,34 @@ let dir, browser, servers = [];
   };
   const records = () => evalJs(`JSON.stringify((s=>({records:s.records, stats:s.stats, life:s.life}))(JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1'))))`);
 
-  for(const [board, secs, n] of [['wave10', 10, 40], ['rush30', 30, 60]]){
+  // run: the keys of the live run
+  const runs = [['wave10', 10, () => play(waves(40))], ['wave5', 20, async () => { await play(waves(2)); await sleep(1500); await play(waves(3)); }], ['rush30', 30, () => play(waves(60, true))]];
+  for(const [board, secs, run] of runs){
     console.log('Smoke: '+board+' run → submit');
     const before = db.rows.filter(r => r.board===board).length;
     await evalJs(`document.querySelector('#challengeOpen').click(); document.querySelector('#challengeList [data-mode="${board}"]').click(); document.querySelector('#dStart').click()`);
-    await sleep(3250);
-    await play(waves(n, board==='rush30'));
-    await waitFor(`!document.querySelector('#dStart').disabled && !document.querySelector('#dShare').hidden`, secs*1000+8000);
+    await waitFor(`!!document.querySelector('#hudTimer').textContent`, 6000); // GO: the clock is up (a dash typed before GO is washed out, and wave5 has only five)
+    await run();
+    try{ await waitFor(`!document.querySelector('#dStart').disabled && !document.querySelector('#dShare').hidden`, secs*1000+8000); }
+    catch(e){ fail.push(board+': the run did not finish · '+await evalJs(`document.querySelector('#dProg').textContent`)); continue; }
     await waitFor(`/1위/.test(document.querySelector('#dRank').textContent)`, 8000);
     const row = db.rows.find(r => r.board===board);
     if(db.rows.filter(r => r.board===board).length!==before+1 || !row) { fail.push(board+': no board row'); continue; }
+    await waitFor(`document.querySelector('#shareDlg').open`, 4000); // the result card opens 900ms after the end; left open, its modal would swallow the next run's keys
     await evalJs(`document.querySelector('#shareDlg').open && document.querySelector('#shareDlg').close()`);
 
     console.log('Smoke: '+board+' ▶ replay');
     await evalJs(`document.querySelector('#boardTabs button[data-board="${board}"]').click()`);
     await waitFor(`!!document.querySelector('#boardList .board-replay')`);
+    // the run is in storage: its record and run count go out in one save (a deferred save left by its last dash rewrites the same state)
+    await waitFor(`JSON.parse(localStorage.getItem('wave-ewgf-dojo-v1')).life.trials['${board}']===1`);
     const kept = await records(), callsAt = calls.length;
     await evalJs(`document.querySelector('#boardList .board-replay').click()`);
     await waitFor(`document.querySelector('#replayDlg').open && !!document.querySelector('#replayFrame iframe')`);
     const who = await evalJs(`document.querySelector('#replayWho').textContent`);
     if(!/^1위 다시보기 · /.test(who)) fail.push(board+': who line '+who);
-    // midway: the frame is the app in replay view, playing the run on its own
-    await sleep(3000 + 45*17 + Math.min(secs, 10)*500);
+    // midway: the frame is the app in replay view, playing the run on its own (checked once its input ledger shows the run under way)
+    await waitFor(`document.querySelector('#replayFrame iframe')?.contentDocument?.querySelectorAll('#inputs .chip').length>=5`, 10000);
     const mid = await evalJs(`(()=>{const w=document.querySelector('#replayFrame iframe').contentWindow,d=w.document;
       return {view:d.body.classList.contains('replay-view'), badge:d.querySelector('#stageBox').dataset.badge, chips:d.querySelectorAll('#inputs .chip').length,
         timer:d.querySelector('#hudTimer').textContent, header:getComputedStyle(d.querySelector('header.top')).display, board:d.querySelector('#boardCard').hidden && d.querySelector('#postsCard').hidden, msg:document.querySelector('#replayMsg').textContent};})()`);

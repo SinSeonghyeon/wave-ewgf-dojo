@@ -47,7 +47,7 @@ test('wardrobe: donate and trials reserve rewards; closing dialogs and trials ne
 test('wardrobe: saved progress is validated on load, an unowned outfit falls back to base, and setFit refuses locked items',()=>{
   const a=boot({v:4,visitDay:'2000-01-01',life:{dashes:'x',ewgf:-1,tongbal:7,days:2,giftDay:'2026-09-01',trials:{rush30:1,bogus:3}},ach:{red_top:1,bogus:2,red_head:'x',daily_arms_blue:5},fit:{top:'red_top',head:'red_head',arms:'daily_arms_blue',legs:'nope',skin:42}});
   assert.equal(a.store.life.dashes,0);assert.equal(a.store.life.ewgf,0);assert.equal(a.store.life.tongbal,7);assert.equal(a.store.life.giftDay,'2026-09-01');
-  assert.deepEqual(J(a.store.life.trials),{wave10:0,ewgf20:0,combo10:0,rush30:1,bd10:0},'an old save gains the bd10 counter at 0');
+  assert.deepEqual(J(a.store.life.trials),{wave10:0,wave5:0,ewgf20:0,combo10:0,rush30:1,bd10:0},'an old save gains the bd10 and wave5 counters at 0');
   assert.deepEqual(J(Object.keys(a.store.ach).sort()),['daily_arms_blue','red_top'],'only existing owned items restored');
   assert.equal(a.store.life.days,3,'a new KST day counts');assert.deepEqual(J(a.store.pendingRewards.map(j=>j.id).sort()),['red_shoes','red_skin']);
   assert.deepEqual(J(a.store.fit),{head:'base',top:'red_top',arms:'daily_arms_blue',legs:'base',shoes:'base',skin:'base'});

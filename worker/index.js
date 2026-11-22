@@ -34,6 +34,7 @@ const KST = 9 * 3600e3, DAY = 86400e3, TOP = 10, POSTS = 50, TEXT_MAX = 200, BOD
 const CHALLENGE_10 = {score:[0,10], tie:[0,10], detail:{hits:[0,10], target:[10,10], best:[0,10]}};
 export const BOARDS = {
   wave10:  {score: [0, 20],  tie: [0, 500],   detail: {dashes: [0, 200], chain: [0, 200]}},
+  wave5:   {score: [-2000, -1], tie: [0, 5], detail: {chain: [0, 5]}}, // 웨이브 5회 (2026-10-17, 결정 42(wave5)): score = −centiseconds (whole), so the shared DESC order ranks the fastest first; tie = best chain
   ewgf20:  {score: [0, 100], tie: [-500, 0],  detail: {hits: [0, 20], target: [20, 20], mean: [-500, 500]}},
   combo10: {score: [0, 100], tie: [0, 20],    detail: {hits: [0, 10], target: [10, 10], mean: [-500, 500], dps: [0, 20]}},
   rush30:  {score: [0, 2000], tie: [0, 500],  detail: {kills: [0, 500], whiffs: [0, 2000], dashPts: [0, 1000]}}, // 더미 격파 30초 (2026-09-13): score = points, tie = dummies destroyed
@@ -48,7 +49,7 @@ export const BOARDS = {
 export const CHARS = ['kazuya', 'hwoarang', 'bryan'];
 // 결정 38(challenge-mode)·41(crown): the boards 도전 모드 plays. A nickname in the public top 10 of any of them wears a crown on the message board.
 // The other boards stay valid for /submit and /top (switched off in the app, not removed).
-export const CROWN_BOARDS = ['wave10', 'rush30', 'bd10'];
+export const CROWN_BOARDS = ['wave10', 'wave5', 'rush30', 'bd10'];
 // 결정 39(replay): a finished run may carry the inputs it was played with. Only rows in a board's public top 10 keep theirs.
 // ev = [Δt µs, code, …]: code 0..8 direction, 16+mask a button press (mask = attack bits 1·2·4·8, one or more), 32 a late frame tick, 33 start, 34 go.
 export const REPLAY_MAX = 60000, REPLAY_EVENTS = 8000, SUBMIT_MAX = REPLAY_MAX + 4000;
@@ -189,6 +190,7 @@ export function validate(body) {
   if(BOARDS[body.board]===CHALLENGE_10){
     if(!Number.isInteger(score)||!Number.isInteger(tie)||!Number.isInteger(detail.hits)||!Number.isInteger(detail.best)||score!==detail.hits||tie!==detail.best||tie>score||(score>0&&tie<1))return {error:'detail'};
   }
+  if(body.board==='wave5'&&(!Number.isInteger(score)||!Number.isInteger(tie)||tie!==detail.chain))return {error:'detail'};
   return {value: {board: body.board, nick, score, tie, win: body.win, lang: LANGS.includes(body.lang) ? body.lang : 'ko', detail}};
 }
 

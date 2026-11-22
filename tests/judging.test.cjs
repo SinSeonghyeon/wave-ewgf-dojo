@@ -374,3 +374,47 @@ test('623의 2가 대각과 같은 60Hz 칸이면 2가 없었던 것이다: 6→
   const w=boot();w.setMode('wsc');w.onDir('f',1000);w.onDir('d',1000+3*F);w.onDir('df',1000+3*F+2);
   assert.equal(w.wsc.active,null,'웨캔기어도 같은 6→3을 웨이브로 세지 않는다');
 });
+// 결정 42(wave5): 웨이브 5회 — five crouch dashes, timed from the first completed dash's 6 to the fifth dash's 3
+test('웨이브 5회: the clock runs from the first completed dash\'s 6 to the fifth dash\'s 3; misses and breaks keep the count and only cost time',()=>{
+  const a=boot({v:4,lang:'ko'});a.setMode('wave5');a.time(1000);a.startTrial();const go=a.timers.get(a.trial.cdTimer);
+  dash(a,1500);assert.equal(a.trial.count,0,'a dash in the countdown is not on the clock');
+  a.time(4000);go();go();go();assert.equal(a.trial.tStart,4000);assert.equal(a.trial.running,true);
+  const seq=(t,dirs)=>{for(const d of dirs){a.onDir(d,t);t+=17;}return t-17;};
+  seq(4300,['f','n','df']);a.onDir('n',4400);                     // a failed try (N → ↘) before any dash: not on the clock
+  a.trialTick(4450);assert.equal(a.get('hudTimer').textContent,'0.00','the stopwatch waits for the first dash');
+  let end=seq(4500,['f','n','d','df']);                            // dash 1: its 6 at 4500 starts the clock
+  assert.equal(a.trial.t0,4500);a.trialTick(4600);assert.equal(a.get('hudTimer').textContent,'0.10');assert.equal(a.get('dProg').textContent,'1 / 5');
+  end=seq(end+17,['f','n','f','n','d','df']);                       // dash 2 (wave)
+  end=seq(end+17,['f','n','df']);assert.equal(a.trial.count,2,'a MISS keeps the count');
+  end=seq(end+17,['f','n','d','df']);                              // dash 3 after the miss
+  a.onDir('n',end+17);                                             // a 900ms break: the chain ends, the clock keeps running
+  end=seq(end+900,['f','n','f','n','d','df']);                      // dash 4
+  assert.equal(a.trial.running,true);assert.equal(a.trial.count,4);
+  end=seq(end+17,['f','n','f','n','d','df']);                       // dash 5 ends the run at its 3
+  assert.equal(a.trial.running,false);assert.equal(a.trial.count,5);
+  const rec=a.store.records.wave5[0], cs=Math.round((end-4500)/10);
+  assert.equal(rec.score,-cs);assert.equal(rec.chain,2);assert.equal(rec.label,(cs/100).toFixed(2)+'초');assert.equal(rec.sub,'최고 연속 2');
+  assert.equal(a.get('dProg').textContent,'대시 5회 · '+(cs/100).toFixed(2)+'초');assert.equal(a.get('hudCenter').textContent,(cs/100).toFixed(2)+' s');
+  assert.equal(a.store.life.trials.wave5,1);assert.equal(a.trial.result.personalBest,true);
+  a.onDir('n',end+20);end=seq(end+40,['f','n','f','n','d','df']);assert.equal(a.store.records.wave5.length,1,'after the run: free practice');
+  // a slower second run is kept but the faster one stays the best (score = −centiseconds: higher is better everywhere)
+  a.startTrial();a.time(20000);const go2=a.timers.get(a.trial.cdTimer);go2();go2();go2();
+  let t=seq(20100,['f','n','d','df']);for(let i=0;i<4;i++) t=seq(t+300,['f','n','f','n','d','df']);
+  const slow=a.store.records.wave5[1];assert.ok(slow.score<rec.score,'slower = lower score');assert.equal(a.trial.result.personalBest,false);
+  a.renderBests();assert.match(a.get('bests').innerHTML,new RegExp(rec.label.replace('.','\\.')));
+  a.renderChallengeList();assert.match(a.get('challengeList').innerHTML,new RegExp('내 최고 '+rec.label.replace('.','\\.')));
+  assert.deepEqual({...a.recText('wave5',{score:-123,chain:4})},{label:'1.23초',sub:'최고 연속 4'});
+});
+test('웨이브 5회: no fifth dash 20s after GO is a failed run — nothing recorded, counted or submitted; a dash at the limit does not count',()=>{
+  for(const last of [23990,24000]){
+    const a=boot({v:4,lang:'ko'});a.setMode('wave5');a.startTrial();a.time(4000);const go=a.timers.get(a.trial.cdTimer);go();go();go();
+    let t=4100;for(let i=0;i<4;i++){for(const d of i?['f','n','f','n','d','df']:['f','n','d','df']){a.onDir(d,t);t+=17;}}
+    a.onDir('n',t);a.trialTick(23900);assert.equal(a.trial.running,true);
+    for(const [k,d] of ['f','n','f','n','d'].entries()) a.onDir(d,last-100+k*17);a.onDir('df',last);
+    if(last<24000){ assert.equal(a.store.records.wave5.length,1,'the fifth dash just inside the limit counts'); continue; }
+    assert.equal(a.trial.running,false);assert.equal(a.store.records.wave5.length,0);assert.equal(a.store.life.trials.wave5,0);assert.equal(a.trial.result,null);
+    assert.equal(a.get('dProg').textContent,'20초 초과 · 대시 4/5 — 기록되지 않습니다.');assert.equal(a.get('hudCenter').textContent,'4 / 5');assert.equal(a.recorder.run,null,'no replay');
+  }
+  const b=boot({v:4,lang:'ko'});b.setMode('wave5');b.startTrial();b.time(4000);const go=b.timers.get(b.trial.cdTimer);go();go();go();b.trialTick(24000);
+  assert.equal(b.trial.running,false);assert.equal(b.store.records.wave5.length,0,'a frame tick at the limit ends it too');
+});

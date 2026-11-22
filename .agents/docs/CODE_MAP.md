@@ -47,7 +47,7 @@
 | `src/js/17-tju-practice.js` | 도발 제트어퍼 연습 모드: 10회 도전(`tjStartChallenge`·`tjChallengeTick`), 프레임 타임라인(`tjSegments`·`tjBands`·`renderTjLive`), 평가 패널 `renderTj` |
 | `src/js/18-hud.js` | 결과 카드·통계·HUD·로그 |
 | `src/js/19-tick.js` | `tick(now)`: 상태 타임아웃·체인 종료 |
-| `src/js/20-trials.js` | `MODES`(연습 탭 → 도전 `of`·`modeKind`·`practiceOf`)·`CHALLENGES`·`BOARDS`, 비활성 보드 `BOARDS_OFF`·`boardOn`·도전 모드 목록 `CHALLENGE_MODES`·순위 탭 `boardTabs`, 도전 모드 탭·창(`renderChallengeTab`·`renderChallengeList`·`openChallenges`), 모드 전환, 측정 모드(시작 `startTrial`·GO `trialGo`·취소 버튼 `cancelTrial`·종료 `endTrial`), 기록 텍스트 |
+| `src/js/20-trials.js` | `MODES`(연습 탭 → 도전 `of`·`modeKind`·`practiceOf`)·`CHALLENGES`·`BOARDS`, 비활성 보드 `BOARDS_OFF`·`boardOn`·도전 모드 목록 `CHALLENGE_MODES`·순위 탭 `boardTabs`, 도전 모드 탭·창(`renderChallengeTab`·`renderChallengeList`·`openChallenges`), 모드 전환, 측정 모드(시작 `startTrial`·GO `trialGo`·취소 버튼 `cancelTrial`·종료 `endTrial`, 웨이브 5회의 스톱워치·20초 제한은 `trialTick`의 wave5 분기), 기록 텍스트(웨이브 5회 초 `wave5Sec`) |
 | `src/js/21-charts.js` | 히스토그램·웨이브 차트(SVG 문자열) |
 | `src/js/22-share-model.js` | 공유 카드 순수 모델 `buildCard`·`buildOgCard` |
 | `src/js/23-settings-ui.js` | 설정 대화상자, 컨트롤러 설정 하위 화면(`ctlView`), 바인딩 카드(`bindingCards`·`btnDots`·`padGlyph`), 모드 탭 클릭(`revealTab`), 1P/2P `setSide` |
@@ -103,6 +103,7 @@
 | 측정 모드·결과 | `20-trials` `18-hud` `21-charts` | `judging` `i18n-pages` | 결정 13·14 |
 | 순위·한마디 | `26-backend-config` `29-backend` `worker/` | `backend` `board` `smoke-chrome`(수정·삭제·왕관 포함) | `worker/README.md`, 결정 16·18·19·22~24·26·31·40·41 |
 | 도전 모드 | `20-trials`(`BOARDS_OFF`·`CHALLENGE_MODES`·도전 창·`cancelTrial`·연습 탭 `of`/`modeKind`/`practiceOf`) `32-rush`(`rushIdle`) `12-backdash`(`bdMode`) `23-settings-ui`(탭·창·시작·취소 클릭) `app.html`(`#challengeOpen`·`.stage-start`·`#dCancel`) `style.css`(`.challenge-tab`·`.challenge-start`·`.stage-cancel`) `01-wardrobe-items`(업적 2개 조건) | `i18n-pages` `backend` `smoke-chrome` | 결정 38 |
+| 웨이브 5회 | `20-trials`(`MODES.wave5`의 `target`·`limit`(wave5 분기만 읽음), `trialTick` 스톱워치·20초 실패, `endTrial` 기록 = −1/100초, 점수 → 초 문자열 `wave5Sec`(`recText`·카드 공용)) `11-crouch-dash`(`completeCD`가 첫 대시의 `cd.tF`를 `trial.t0`로, 다섯 번째 3에서 `endTrial`) `29-backend`(`boardEntry`) `22-share-model`(지표 = 최고 연속·연결된 사이클의 웨이브 속도) `worker/`(`BOARDS.wave5`·`CROWN_BOARDS`, `validate` 정수·tie=chain) | `judging` `backend` `board` `replay` `smoke-replay` | 결정 42 |
 | 다시보기 | `35-replay` `20-trials`(`recBegin`·`trialGo`·`recFinish`) `11-crouch-dash`(`recDir`) `13-button`(`buttonIn`) `32-rush`(시드·명중 비트) `31-stage`(`tryHit` force) `29-backend`(▶·`boardEntry.replay`) `03-store`·`05-sound`·`07-input`·`25`·`27`·`28`(`REPLAY`에서 끄는 것) `worker/`(`replays` 테이블·`/replay`) | `replay` `board` `smoke-replay` | 결정 39 |
 | 입력 장치·키 설정·핫키 | `03-store`(`HOTKEYS`) `07-input` `08-touch` `09-history` `13-button`(`onButton`의 합성 입력) `23-settings-ui` | `input` `smoke-bindings` | 결정 11·28·29·35·36 |
 | 소리 | `05-sound` | `sound` `smoke-sound` | 결정 8 |
@@ -116,7 +117,7 @@
 
 도전 모드(결정 38)에 보이는 것은 `TRIAL_MODES` 중 `BOARDS_OFF`에 없는 모드(`CHALLENGE_MODES`)이고, 순위 탭도 `BOARDS_OFF`를 거른다. 끈 보드를 다시 켜려면 `BOARDS_OFF`에서 빼고 숨긴 안내 문구(10회 도전 순위 문장)를 되돌린다. 다시보기 녹화는 측정 모드(`startTrial`→`endTrial`)에만 연결돼 있다. 도전마다 연습 탭(`wave`·`rush`·`backdash`)이 있고 `MODES[m].of`가 그 도전을 가리킨다. 탭이 도전의 연습을 나누는지는 모드 이름을 직접 비교하지 말고 `modeKind()`·`practiceOf(도전)`으로만 묻는다: `renderMode`의 `PANEL_MODES` 루프(도전의 패널·`body.<도전>-mode`), `bdMode()`(bd10 타임라인·크게 알리기), `bdActive`(웨이브 연습의 백대시 판정), 더미 격파 연습(`setMode`의 `rushIdle`이 타입 더미를 세우고 `endTrial`이 지우지 않음, `rushStrike`는 점수 없이 `tryHit`만, `endCommand`는 웨이브 연속 유지, 1P/2P `setSide`는 새 더미). 이름·설명·힌트·가이드는 탭 자신의 것을 쓴다.
 
-새 모드를 추가할 때: `20-trials`의 `MODES`(필요한 능력·기술은 `needs`)(측정 모드면 `01-wardrobe-items`의 `TRIAL_MODES`도), 로컬 N회 도전이면 `CHALLENGES` 한 줄(보드·패널 id 접두어·바쁨 검사가 여기서 파생된다), 워커 `BOARDS`, 세 언어 `mode.<id>.*` 문구, `src/app.html`의 모드 탭·순위 탭 버튼. 도전 없이 타임라인·패널만 있는 모드(`bd10`·`ju`, 백대시 연습은 `of`로 bd10 것을 씀)는 `20-trials`의 `PANEL_MODES` 한 줄(모드 → id 접두어, `renderMode`가 `#<접두어>Timeline`·`#<접두어>Panel`과 `body.<모드>-mode`를 켠다).
+새 모드를 추가할 때(작을수록 좋은 기록은 점수를 음수로 저장해 "높을수록 위" 비교를 그대로 쓴다 — 웨이브 5회 = −1/100초, 결정 42. 단 업적의 `bestRec`은 0 이상 값만 받으므로 음수 점수 보드는 "몇 초 안" 같은 예/아니오(0/1)로 묻는다): `20-trials`의 `MODES`(필요한 능력·기술은 `needs`)(측정 모드면 `01-wardrobe-items`의 `TRIAL_MODES`도), 로컬 N회 도전이면 `CHALLENGES` 한 줄(보드·패널 id 접두어·바쁨 검사가 여기서 파생된다), 워커 `BOARDS`, 세 언어 `mode.<id>.*` 문구, `src/app.html`의 모드 탭·순위 탭 버튼. 도전 없이 타임라인·패널만 있는 모드(`bd10`·`ju`, 백대시 연습은 `of`로 bd10 것을 씀)는 `20-trials`의 `PANEL_MODES` 한 줄(모드 → id 접두어, `renderMode`가 `#<접두어>Timeline`·`#<접두어>Panel`과 `body.<모드>-mode`를 켠다).
 
 ## 입력 처리 순서 (판정 우선순위)
 
